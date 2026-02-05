@@ -1,0 +1,103 @@
+.rajs-list-item {
+	display: inline-block;
+	color: var(--link-color);
+	margin-right: 1em;
+}
+
+.rajs-list-item.selected {
+	color: gray;
+	text-decoration: none;
+}
+
+.rajs-list-item:last-of-type {
+	margin-right: 0;
+}
+
+.rajs-list-item:hover {
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.rajs-list-item.selected:hover {
+	cursor: default;
+	text-decoration: none;
+}
+
+.rajs-list strong:first-of-type, .rajs-list input {
+	margin-right: 2em;
+}
+
+.rajs-list-item input {
+	margin: 0.25em;
+}
+
+.rajs .tab-content {
+	margin-top: -2px;
+	border: 2px solid var(--button-border-color);
+	background: var(--button-selected-color);
+}
+
+
+.rajs .tab-bar button {
+	position: relative;
+	z-index: 100;
+	transition: none;
+}
+
+.rajs .tab-bar .active {
+	border-bottom: none;
+	padding-bottom: calc(var(--base-padding) + 2px);
+}
+
+.rajs-box {
+	border: 2px solid var(--button-border-color);
+	background: var(--background-lighter);
+	padding: 0.5em;
+	margin-bottom: 1em;
+}
+
+.rajs-box h2 {
+	margin-top: 0;
+}
+
+.rajs-box h2.accordion {
+	margin-top: 0;
+}
+
+.rajs-box h2.accordion:hover {
+	text-decoration: underline;
+}
+
+.current-rule-name {
+	font-weight: bold;
+	font-size: 1.5em;
+}
+
+.rajs-rules {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+	margin-top: 0.5em;
+	margin-bottom: 1em;
+}
+
+.rajs-rules .rajs-list-item {
+	overflow-wrap: anywhere;
+	margin: 0;
+}
+
+.rajs-rules .rajs-list-item.selected {
+	color: lightgray;
+}
+
+.rajs-rules .rajs-rules-inner {
+	padding: 0 2px;
+	border: 1px solid #444;
+	margin: 2px;
+	display: inline-block;
+	width: stretch;
+}
+
+.rajs-rules .rajs-rules-inner:hover {
+	background-color: var(--background-highlight);
+}
+

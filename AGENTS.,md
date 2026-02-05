@@ -1,0 +1,181 @@
+# Free Cities Pregmod - Development Context
+
+## Project Overview
+
+Free Cities pregmod is a modification of the original Free Cities game created by FCdev. It's a web-based interactive fiction game built on the SugarCube 2 framework. The project uses a combination of JavaScript, CSS, and Twine/Twee markup for game content.
+
+## Architecture and Structure
+
+The project follows a complex build process that combines multiple source types into a single HTML file:
+
+- **`src/`**: Main source code directory containing JavaScript files and embedded art files. This code runs inside SugarCube's eval() context.
+  - **`001-lib/`**: Contains external libraries like jQuery, Mousetrap, and WebGL components.
+  - **`002-config/`**: Configuration files including version information, SugarCube configuration, and serialization utilities.
+  - **`004-base/`**: Core base functionality of the game.
+  - **`005-passages/`**: Contains game passages and story content.
+  - **`arcologyBuilding/`**: Logic related to arcology construction and development.
+  - **`art/`**: Contains embedded art files and assets.
+  - **`budget/`**: Budget and financial management systems.
+  - **`cheats/`**: Game cheat and debugging functionality.
+  - **`Corporation/`**: Corporate mechanics and systems.
+  - **`data/`**: Game data and utilities, including backwards compatibility and patches.
+  - **`debugging/`**: Debugging tools and utilities.
+  - **`descriptions/`**: Text descriptions and content.
+  - **`endWeek/`**: End-of-week processing logic.
+  - **`events/`**: Game events and happenings.
+  - **`facilities/`**: Specialized facilities and their functionality.
+  - **`futureSocieties/`**: Future society content and mechanics.
+  - **`gui/`**: Graphical user interface components and elements.
+  - **`init/`**: Initialization logic and startup procedures (`storyInit.js`).
+  - **`interaction/`**: Player interaction systems.
+  - **`js/`**: JavaScript utilities specific to the game.
+  - **`markets/`**: Market mechanics and trading systems.
+  - **`Mods/`**: Mod-specific components (note: different from the root `mods/` directory).
+  - **`neighbor/`**: Neighbor-related game mechanics.
+  - **`npc/`**: Non-player character systems.
+  - **`personalAssistant/`**: Personal assistant functionality.
+  - **`player/`**: Player-specific attributes and systems.
+  - **`pregmod/`**: Pregmod-specific functionality.
+  - **`zz1-last/`**: Final initialization files that run last in the sequence.
+- **`js/`**: JavaScript files loaded before SugarCube, outside the eval() context - suitable for static data and code that doesn't rely heavily on SugarCube features.
+- **`css/`**: All CSS files for styling the game.
+- **`themes/`**: Custom themes that are built separately.
+- **`build/`**: Intermediate build directory.
+- **`bin/`**: Output directory where compiled game file is placed as `FC_pregmod.html`.
+- **`mods/`**: Game modifications.
+- **`devTools/`**: Development scripts, executables, and TypeScript type definitions.
+
+## Build Process
+
+The project uses a sophisticated build pipeline with two compilation methods:
+
+### Advanced Compiler (Recommended)
+Uses Node.js, npm, and Gulp for enhanced development features:
+- Advanced debugging capabilities
+- Type checking with TypeScript
+- Linting with ESLint
+- Spell checking with cspell
+- Live reloading via watcher
+- Source maps for debugging
+
+### Simple Compiler
+- No external dependencies
+- Slightly faster compilation
+- Limited debugging capabilities
+
+### Build Configuration
+The build process is configured in `build.config.json` and uses a custom Gulp pipeline (in `gulpfile.js`) that:
+1. Processes module and story components separately
+2. Combines JavaScript, CSS, and Twine source files
+3. Uses the TweeGo compiler to create the final HTML
+4. Applies minification and auto-prefixing when enabled
+
+## Development Setup
+
+### Requirements
+- Git
+- Node.js/npm
+- Code editor (VSCode recommended)
+- A modern web browser (Firefox or FCHost recommended)
+
+### Setup Process
+1. Clone the repository
+2. Navigate to project root directory
+3. Run `setup.bat` (Windows) or `setup.sh` (Mac/Linux)
+4. For VSCode users, copy `.vscode/settings.template.jsonc` to `.vscode/settings.json`
+
+### Development Scripts
+- `compile.sh`/`compile.bat`: Compile the game
+- `watcher.sh`/`watcher.bat`: Auto-recompile on file changes
+- `serve.sh`/`serve.bat`: Start local development server
+- `sanityCheck.sh`/`sanityCheck.bat`: Run code quality checks
+- `simple-compiler.sh`/`simple-compiler.bat`: Simple compilation without advanced tooling
+
+## Building and Running
+
+### Development Build
+```bash
+npm run build        # Standard build
+npm run build:debug  # Debug build with source maps
+npm run watch        # Watch and rebuild on changes
+npm run serve        # Start local server on port 6969
+```
+
+### Advanced Build Commands
+```bash
+npx gulp html       # Build just the HTML file
+npx gulp themes     # Build themes
+npx gulp mods       # Build mods
+npx gulp all        # Build everything
+```
+
+### Manual Commands
+```bash
+npm run lint        # Lint JavaScript files
+npm run spell       # Check spelling in changed files
+npm run extra       # Run custom checks on changed files
+```
+
+## Development Conventions
+
+### Code Style
+- JavaScript: ES2022+ features encouraged (arrow functions, optional chaining, nullish coalescing)
+- Naming: camelCase for variables/functions, PascalCase for classes and TypeScript types, ALLCAPS for enum members
+- CSS classes: kebab-case
+- Use `let`/`const` instead of `var`
+- Global objects: Extensive use of the `App` namespace for organizing functionality (e.g., `App.Version`, `App.Entity`, `App.Utils`)
+- State variables: SugarCube State variables are accessed via `V` (for State.variables) and `S` (for State.setup)
+- Classes: Use ES6 class syntax with inheritance and static methods where appropriate
+- Serialization: Custom serialization system using `toJSON()` and `_init()` methods for save/load compatibility
+
+### Documentation
+- JSDoc-style documentation with TypeScript type hints
+- Type definitions in `devTools/types/` directory
+- TypeScript configuration available via `tsconfig.json`
+
+### Quality Assurance
+- Contributions should pass ESLint, TypeScript, and spelling checks
+- Use `sanityCheck` scripts to verify code quality
+- Editor/IDE should have ESLint, TypeScript, and cspell support enabled
+
+### File Structure
+- JavaScript and CSS files in `src/` run inside SugarCube's eval context
+- Files in `js/` run outside SugarCube context, before SugarCube initialization
+- Twine content in `src/` uses `.tw` files
+- Game saves require patches when modifying persistent properties (see `src/data/patches/patch.js`)
+- Files in `src/` are executed in order based on their numeric prefixes (e.g., `001-lib`, `002-config`, `zz1-last`) to ensure proper initialization sequence
+- The `App` namespace is initialized in early files and populated with modules throughout the loading process
+
+## Key Dependencies
+
+### Build Tools
+- Gulp: Build automation
+- TweeGo: Twine story compiler
+- Node.js: Runtime environment
+
+### Development Dependencies
+- ESLint: Code linting
+- TypeScript: Type checking (with `checkJs: true`)
+- cspell: Spell checking
+- http-server: Local development server
+
+### Runtime Dependencies
+- jQuery: DOM manipulation
+- SugarCube 2: Interactive fiction framework (custom version in submodules)
+
+## Special Considerations
+
+1. **Save Compatibility**: When changing game state properties, create save patches to maintain compatibility
+2. **FCHost**: Custom browser environment for the game, recommended for playing
+3. **Git Workflow**: Use single-branch cloning to optimize repository size
+4. **Submodules**: The project uses a custom version of SugarCube 2 as a git submodule
+
+## Contributing
+
+- Create meaningful documentation for new functions and classes
+- Use modern JavaScript features (ES2022+)
+- Follow established naming conventions
+- Ensure code passes all quality checks before contributing
+- Report issues or ask questions via the GitLab issue system
+- When adding new functionality, follow the existing `App` namespace structure and initialization patterns
+- For save compatibility, implement proper serialization methods and create patches if modifying saved data structures

@@ -1,0 +1,1 @@
+Scripts used to modify webgl assets can be found in [this repo](https://gitgud.io/zeltop/fc-webgl-pytools/).

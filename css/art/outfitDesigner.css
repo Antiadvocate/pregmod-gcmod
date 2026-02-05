@@ -1,0 +1,97 @@
+
+.od-main {
+	display: flex;
+	width: 100%;
+}
+
+.od-preview-container {
+	position: sticky;
+	top: 12px;
+	align-self: flex-start;
+}
+
+.od-selectors {
+	display: flex;
+	gap: 8px;
+	margin: 4px;
+}
+
+.od-selector {
+	flex: 1;
+}
+
+.od-outfit-controls {
+	gap: 8px;
+}
+
+.od-controls-top {
+	display: flex;
+	gap: 8px;
+	margin: 2px;
+}
+
+.od-flags {
+}
+
+.od-flags label {
+	padding: 4px;
+	border: 1px solid #444;
+	margin: 2px;
+	display: inline-block;
+}
+
+.od-editor-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+	flex: 1;
+}
+
+.od-column {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.od-figure-wrap {
+	width: 100%;
+	display: flex;
+	gap: 4px;
+}
+
+.od-figure-btn {
+	flex: 1;
+}
+
+.od-figure-active {
+	color: yellow;
+}
+
+.od-add-btn {
+	color: green;
+}
+
+.od-remove-btn {
+	color: red;
+}
+
+.od-material-container {
+	width: 100%;
+}
+
+.od-material-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.od-box {
+	border: 2px solid var(--button-border-color);
+	background: var(--background-lighter);
+	padding: 0.5em;
+	margin-bottom: 1em;
+}
+
+.od-export-import {
+	margin: 4px;
+}

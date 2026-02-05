@@ -1,0 +1,51 @@
+A brief summary of what it takes to add a new article of clothing to Free Cities.
+
+This writer assumes you know to look for existing clothing for where to add new clothing.
+
+Core:
+
+js/003-data/clothes.js
+How the game engine views the clothing. Contains important details like its name, display name, etc.
+Has good documentation, so adding to it should be straightforward.
+
+devTools/types/FC/human.d.ts
+Add the new outfit to the Clothes type so that type-checking works correctly. This will flag mistakes in other files automatically if you are using TypeScript.
+
+js/003-data/slaveSummaryData.js
+Summary display string. Simple.
+
+The primary descriptions. Try to paint a good picture for the player, especially in the clothing file.
+Remember, this is a text game, first and foremost, so be descriptive, but to the point.
+These descriptions are used as if you are assessing an object.
+src/npc/descriptions/style/clothing.js
+src/npc/descriptions/boobs/boobs.js
+src/npc/descriptions/belly/belly.js
+src/npc/descriptions/butt/butt.js
+src/npc/descriptions/crotch/crotch.js
+
+Extra descriptions.
+src/npc/descriptions/butt/buttplug.js -  anal chastity, mostly, but could cover buttplugs as well. How does the outfit interact with it? At the very least, your outfit will need to be filed into the empty case at the end.
+src/npc/descriptions/style/clothingCorset.js - corsets
+src/npc/descriptions/style/hairClothing.js - optional hair accessories. Probably want to just add to an existing case unless you have a hat or something else.
+src/npc/descriptions/style/armwear.js - optional gloves and arm accessries
+src/npc/descriptions/style/footwear.js - shoes and shoe design, also stockings and other leggings
+src/npc/descriptions/style/upperFace.js - glasses mostly, but can include extra accessories for the outfit
+
+Flavor:
+
+Various flavor scenes and events. Flourish is appreciated here, but not required.
+Consider how your outfit interacts with the world. More exist than this, but these are the minimum.
+
+src/interaction/main/toychest.js
+src/interaction/main/useGuard.js
+src/interaction/main/walkPast.js
+src/js/birth/birth.js
+src/npc/interaction/fAbuse.js
+src/events/PE/concubineInterview.js
+src/events/RESS/modestClothing.js - may not be needed, but needs to be checked anyway! Only aplies to clothing with an exposure value of 0.
+src/events/RESS/waistlineWoes.js - optional
+
+Extra:
+
+src/endWeek/saChoosesOwnClothes.js - If you want your slaves to randomly select your outfit.
+src/endWeek/saClothes.js - If your outift has any special effects on slaves.

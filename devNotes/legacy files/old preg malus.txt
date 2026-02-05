@@ -1,0 +1,151 @@
+	/* I need to be redone phase-7 */
+	/* keep in mind breeder paraphilia overriding mental effects */
+	<<if ($slaves[$i].preg > 30)>>
+		<<if ($slaves[$i].physicalAge < 4)>>
+			<<if ($slaves[$i].pregType >= 20)>>
+				$His womb takes up most of $his body and puts tremendous pressure on $his skin and organs. This is @@.mediumorchid;very worrying@@ to $him. $He is in @@.red;constant pain@@ and each movement within $his straining womb causes additional discomfort. $He is @@.gold;terrified@@ that at any moment $he could burst.
+				<<if $slaves[$i].pregControl == "slow gestation" && $slaves[$i].intelligence > -2>>
+					$His slowed gestation rate gives $his body more time to adapt to $his hyper gravidity, easing some of $his worries.
+					<<set $slaves[$i].devotion -= 1>>
+					<<set $slaves[$i].trust -= 4>>
+				<<else>>
+					<<set $slaves[$i].devotion -= 3>>
+					<<set $slaves[$i].trust -= 8>>
+				<</if>>
+				<<set $slaves[$i].health -= 20>>
+			<<elseif ($slaves[$i].pregType >= 10)>>
+				$His womb greatly fills $his body and compresses $his internal organs. $He is in constant @@.mediumorchid;discomfort@@ and @@.red;pain@@ and can't wait for these children to be born.
+				<<if $slaves[$i].pregControl == "slow gestation" && $slaves[$i].intelligence > -2>>
+					$His slowed gestation rate gives $his body more time to adapt to $his hyper gravidity, easing some of $his worries.
+					<<set $slaves[$i].devotion -= 1>>
+				<<else>>
+					<<set $slaves[$i].devotion -= 2>>
+				<</if>>
+				<<set $slaves[$i].health -= 10>>
+			<<else>>
+				$His full womb puts pressure on $his organs. It is quite @@.mediumorchid;uncomfortable@@ to $him.
+				<<set $slaves[$i].devotion -= 2>>
+			<</if>>
+		<<elseif ($slaves[$i].physicalAge < 13)>>
+			<<if ($slaves[$i].pregType >= 20)>>
+				$His bloated womb is constantly straining to hold together. This is @@.mediumorchid;very worrying@@ to $him. $He moans @@.red;painfully@@ with each movement within $him.
+				<<if $slaves[$i].pregControl == "slow gestation" && $slaves[$i].intelligence > -2>>
+					$His slowed gestation rate gives $his body more time to adapt to $his hyper gravidity, easing some of $his worries.
+					<<set $slaves[$i].devotion -= 1>>
+				<<else>>
+					<<set $slaves[$i].devotion -= 2>>
+				<</if>>
+				<<set $slaves[$i].health -= 10>>
+			<<elseif ($slaves[$i].pregType >= 10)>>
+				<<if ($slaves[$i].muscles <= 30)>>
+					<<if canWalk($slaves[$i])>>
+						$His belly is very heavy and juts out quite far from $his body. Between constantly getting in the way and the discomfort of being so full, $his belly is @@.mediumorchid;very annoying@@ to $him.
+						<<set $slaves[$i].devotion -= 2>>
+					<</if>>
+				<<else>>
+					<<if canWalk($slaves[$i])>>
+						$His belly juts out @@.mediumorchid;annoyingly@@ far.
+						<<set $slaves[$i].devotion -= 1>>
+					<</if>>
+				<</if>>
+			<<else>>
+				<<if ($slaves[$i].muscles <= 5)>>
+					<<if canWalk($slaves[$i])>>
+						$His pregnant belly is quite tiring to carry around, leading $him to be @@.mediumorchid;somewhat annoyed.@@
+						<<set $slaves[$i].devotion -= 1>>
+					<</if>>
+				<</if>>
+			<</if>>
+		<<else>>
+			<<if ($slaves[$i].pregType >= 20)>>
+				$His straining womb is @@.mediumorchid;very worrying@@ to $him. $He @@.red;moans with pain@@ every time one of $his brood moves within $him.
+				<<if $slaves[$i].pregControl == "slow gestation" && $slaves[$i].intelligence > -2>>
+					$His slowed gestation rate gives $his body more time to adapt to $his hyper gravidity, easing some of $his worries.
+					<<set $slaves[$i].devotion -= 1>>
+				<<else>>
+					<<set $slaves[$i].devotion -= 3>>
+				<</if>>
+				<<set $slaves[$i].health -= 15>>
+			<<elseif ($slaves[$i].pregType >= 10)>>
+				<<if ($slaves[$i].muscles <= 30)>>
+					<<if canWalk($slaves[$i])>>
+						$His belly is very heavy and juts out quite far from $his body. Between constantly getting in the way and the discomfort of being so full, $his belly is @@.mediumorchid;very annoying@@ to $him.
+						<<set $slaves[$i].devotion -= 2>>
+					<</if>>
+				<</if>>
+			<</if>>
+		<</if>>
+	<<elseif ($slaves[$i].preg > 20)>>
+		<<if ($slaves[$i].physicalAge < 4)>>
+			<<if ($slaves[$i].pregType >= 20)>>
+				$His womb is becoming @@.mediumorchid;distressing@@ to $him. $He is in @@.red;pain@@ with each motion within $his straining womb. $He is @@.gold;terrified@@ of what awaits $him at the end of this pregnancy.
+				<<if $slaves[$i].pregControl == "slow gestation" && $slaves[$i].intelligence > -2>>
+					$His slowed gestation rate gives $his body more time to adapt to $his hyper gravidity, easing some of $his worries.
+					<<set $slaves[$i].devotion -= 1>>
+					<<set $slaves[$i].trust -= 2>>
+				<<else>>
+					<<set $slaves[$i].devotion -= 2>>
+					<<set $slaves[$i].trust -= 5>>
+				<</if>>
+				<<set $slaves[$i].health -= 20>>
+			<<elseif ($slaves[$i].pregType >= 10)>>
+				$His womb is becoming quite full causing $him some @@.mediumorchid;discomfort.@@ $He is eager to be free of this burden.
+				<<set $slaves[$i].devotion -= 2>>
+			<<else>>
+				<<if canWalk($slaves[$i])>>
+					$His big belly on $his small body keeps getting in $his way, @@.mediumorchid;annoying $him.@@
+					<<set $slaves[$i].devotion -= 1>>
+				<</if>>
+			<</if>>
+		<<elseif ($slaves[$i].physicalAge < 13)>>
+			<<if ($slaves[$i].pregType >= 20)>>
+				$His bloated womb is beginning to get too crowded, @@.mediumorchid;worrying@@ $him. $He moans with @@.red;discomfort@@ with each movement within $him.
+				<<set $slaves[$i].devotion -= 2>>
+				<<if $slaves[$i].pregControl == "slow gestation" && $slaves[$i].intelligence > -2>>
+					$His slowed gestation rate gives $his body more time to adapt to $his hyper gravidity, easing some of $his worries.
+					<<set $slaves[$i].devotion -= 1>>
+				<<else>>
+					<<set $slaves[$i].devotion -= 2>>
+				<</if>>
+				<<set $slaves[$i].health -= 10>>
+			<<elseif ($slaves[$i].pregType >= 10)>>
+				<<if ($slaves[$i].muscles <= 30)>>
+					<<if canWalk($slaves[$i])>>
+						$His belly is getting heavy and starting to get in $his way. Between constantly bumping things and the discomfort of being full, $his belly is @@.mediumorchid;annoying@@ to $him.
+						<<set $slaves[$i].devotion -= 1>>
+					<</if>>
+				<</if>>
+			<</if>>
+		<<else>>
+			<<if ($slaves[$i].pregType >= 20)>>
+				$His swelling womb is @@.mediumorchid; worrying@@ $him.
+				<<set $slaves[$i].devotion -= 2>>
+			<<elseif ($slaves[$i].pregType >= 10)>>
+				<<if ($slaves[$i].muscles <= 30)>>
+					<<if canWalk($slaves[$i])>>
+						$His belly is getting heavy and starting to get in $his way. Between constantly bumping things and the discomfort of being full, $his belly is @@.mediumorchid;annoying@@ to $him.
+						<<set $slaves[$i].devotion -= 1>>
+					<</if>>
+				<</if>>
+			<</if>>
+		<</if>>
+	<</if>>
+
+
+
+<<if $slaves[$i].fuckdoll == 0>>
+	<<if $slaves[$i].fetish != "mindbroken">>
+		<<if canWalk($slaves[$i])>>
+			<<if $slaves[$i].bellyImplant >= 600000>>
+				$His belly implant takes up most of $his body cavity, is tremendously heavy, and protrudes massively from $his abdomen. Between constantly bumping things and the discomfort of being so extremely full, $his belly is @@.mediumorchid;really frustrating@@ to $him.
+				<<set $slaves[$i].devotion -= 3>>
+			<<elseif $slaves[$i].bellyImplant >= 150000>>
+				$His belly implant takes up a good deal of $his body cavity, is extremely heavy, and protrudes greatly from $his abdomen. Between constantly bumping things and the discomfort of being so very full, $his belly is @@.mediumorchid;very annoying@@ to $him.
+				<<set $slaves[$i].devotion -= 2>>
+			<<elseif $slaves[$i].bellyImplant >= 10000>>
+				$His belly implant is quite heavy and tends to get in $his way. Between constantly bumping things and the discomfort of being full, $his belly is @@.mediumorchid;annoying@@ to $him.
+				<<set $slaves[$i].devotion -= 1>>
+			<</if>>
+		<</if>>
+	<</if>>
+<</if>>

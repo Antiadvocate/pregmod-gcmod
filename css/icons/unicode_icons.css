@@ -1,0 +1,4 @@
+/* Scale Font up, since some Unicode Icons are a bit small (depending on font) */
+.unicode-icons {
+	font-size: 1.5em;
+}

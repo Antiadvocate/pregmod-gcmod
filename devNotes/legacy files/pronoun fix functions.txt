@@ -1,0 +1,387 @@
+/**
+ * @param {App.Entity.SlaveState} slave
+ * @returns {string}
+ */
+window.originPronounReplace = function(slave) {
+	let r = slave.origin;
+	switch (r) {
+		case "She was the result of unprotected sex with a client. Her mother tracked you down years after her birth to force her upon you.":
+			return `${capFirstChar(slave.pronoun)} was the result of unprotected sex with a client. ${capFirstChar(slave.possessive)} mother tracked you down years after ${slave.possessive} birth to force ${slave.object} upon you.`;
+		case "You kept her after her owner failed to pay your bill for performing surgery on her.":
+			return `You kept ${slave.object} after ${slave.possessive} owner failed to pay your bill for performing surgery on ${slave.object}.`;
+		case "She comes from old money and sold herself into slavery to satisfy her obsession with the practice, believing her family would buy her back out of slavery later.":
+			return `${capFirstChar(slave.pronoun)} comes from old money and sold ${slave.objectReflexive} into slavery to satisfy ${slave.possessive} obsession with the practice, believing ${slave.possessive} family would buy ${slave.object} back out of slavery later.`;
+		case "When you took her from her previous owner, she was locked into a beautiful rosewood box lined with red velvet, crying.":
+			return `When you took ${slave.object} from ${slave.possessive} previous owner, ${slave.pronoun} was locked into a beautiful rosewood box lined with red velvet, crying.`;
+		case "Her husband sold her into slavery to escape his debts.":
+			return `${capFirstChar(slave.possessive)} husband sold ${slave.object} into slavery to escape his debts.`;
+		case "She was voluntarily enslaved after she decided that your arcology was the best place for her to get the steroids that she'd allowed to define her life.":
+			return `${capFirstChar(slave.pronoun)} was voluntarily enslaved after ${slave.pronoun} decided that your arcology was the best place for ${slave.object} to get the steroids that ${slave.pronoun}'d allowed to define ${slave.possessive} life.`;
+		case "She came to you to escape being sold to a cruel master after her producer informed her of her debt.":
+			return `${capFirstChar(slave.pronoun)} came to you to escape being sold to a cruel master after ${slave.possessive} producer informed ${slave.object} of ${slave.possessive} debt.`;
+		case "You tricked her into enslavement, manipulating her based on her surgical addiction.":
+			return `You tricked ${slave.object} into enslavement, manipulating ${slave.object} based on ${slave.possessive} surgical addiction.`;
+		case "You helped free her from a POW camp after being abandoned by her country, leaving her deeply indebted to you.":
+			return `You helped free ${slave.object} from a POW camp after being abandoned by ${slave.possessive} country, leaving ${slave.object} deeply indebted to you.`;
+		case "You purchased her in order to pave the way for her brother to take the throne.":
+			return `You purchased ${slave.object} in order to pave the way for ${slave.possessive} brother to take the throne.`;
+		case "You purchased her as a favor to her father.":
+			return `You purchased ${slave.object} as a favor to ${slave.possessive} father.`;
+		case "You purchased her from a King after his son put an illegitimate heir in her womb.":
+			return `You purchased ${slave.object} from a King after his son put an illegitimate heir in ${slave.possessive} womb.`;
+		case "You acquired her in the last stages of your career as a successful venture capitalist.":
+		case "Drugs and alcohol can be a potent mix; the night that followed it can sometimes be hard to remember. Needless to say, once your belly began swelling with her, you had to temporarily switch to a desk job for your mercenary group.":
+		case "You acquired her in the last stages of your career as a noted private military contractor.":
+		case "You never thought you would be capable of impregnating yourself, but years of pleasuring yourself with yourself after missions managed to create her.":
+		case "A fresh capture once overpowered you and had his way with you. You kept her as a painful reminder to never lower your guard again.":
+		case "Your slaving troop kept several girls as fucktoys; you sired her in your favorite.":
+		case "You enslaved her personally during the last stages of your slaving career.":
+		case "You sired her in yourself after an arcology owner, impressed by your work, rewarded you with a night you'll never forget.":
+		case "You conceived her after a male arcology owner, impressed by your work, rewarded you with a night you'll never forget.":
+		case "You sired her after a female arcology owner, impressed by your work, rewarded you with a night you'll never forget.":
+		case "You received her as a gift from an arcology owner impressed by your work.":
+		case "You captured her during your transition to the arcology":
+		case "You won her at cards, a memento from your life as one of the idle rich before you became an arcology owner.":
+		case "You brought her into the arcology mindbroken, little more than a walking collection of fuckable holes.":
+		case "You brought her into the arcology mindbroken, little more than a human onahole.":
+		case "She grew up sheltered and submissive, making her an easy target for enslavement.":
+		case "She was fresh from the slave markets when you acquired her.":
+		case "She chose to be a slave because the romanticized view of it she had turns her on.":
+		case "She was previously owned by a creative sadist, who has left a variety of mental scars on her.":
+		case "She was taken as a slave by a Sultan, who presented her as a gift to a surveyor.":
+		case "She is the winner of a martial arts slave tournament. You won her in a bet.":
+		case "She was homeless and willing to do anything for food, which in the end resulted in her becoming a slave.":
+		case "She was sold to you by an anonymous person who wanted her to suffer.":
+		case "You received her from a surgeon who botched an implant operation on her and needed to get her out of sight.":
+		case "She offered herself to you for enslavement to escape having plastic surgery foisted on her.":
+		case "You turned her into a slave girl after she fell into debt to you.":
+		case "She was raised in a radical slave school that treated her with drugs and surgery from a very young age.":
+		case "She was raised in a radical slave school that treated her from a very young age, up to the point that she never experienced male puberty.":
+		case "She was a runaway slave captured by a gang outside your arcology. You bought her cheap after she was harshly used by them.":
+		case "She was the private slave of a con artist cult leader before he had to abandon her and flee.":
+		case "You helped her give birth, leaving her deeply indebted to you.":
+		case "You purchased her from a King after she expressed knowledge of the prince's affair with another servant.":
+			r = r.replace(/\bherself\b/g, slave.objectReflexive);
+			r = r.replace(/\bHerself\b/g, capFirstChar(slave.objectReflexive));
+			r = r.replace(/\bshe\b/g, slave.pronoun);
+			r = r.replace(/\bShe\b/g, capFirstChar(slave.pronoun));
+			r = r.replace(/\bher\b/g, slave.object);
+			r = r.replace(/\bHer\b/g, capFirstChar(slave.object));
+			return r;
+		default:
+			r = r.replace(/\bherself\b/g, slave.objectReflexive);
+			r = r.replace(/\bHerself\b/g, capFirstChar(slave.objectReflexive));
+			r = r.replace(/\bshe\b/g, slave.pronoun);
+			r = r.replace(/\bShe\b/g, capFirstChar(slave.pronoun));
+			r = r.replace(/\bher\b/g, slave.possessive);
+			r = r.replace(/\bHer\b/g, capFirstChar(slave.possessive));
+			return r;
+	}
+};
+
+<<widget "originDescription">>
+	<<switch $args[0].origin>>
+
+	/*startingGirls origins*/
+	<<case "To solidify an investment in hermaphrodite self-fertility, you took part in a test successful test trial. Nine months later your daughter was born.">>
+		<<print "To solidify an investment in hermaphrodite self-fertility, you took part in a test successful test trial. Nine months later your daughter was born.">>
+	<<case "Sometimes it pays off to use your body in business deals, and other times you end up burdened with child. She is the result of the latter.">>
+		<<print "Sometimes it pays off to use your body in business deals, and other times you end up burdened with child. $He is the result of the latter.">>
+	<<case "To seal a business deal, a client asked you to knock her up. She is the end result of that fling.">>
+		<<print "To seal a business deal, a client asked you to knock her up. $He is the end result of that fling.">>
+	<<case "You acquired her in the last stages of your career as a successful venture capitalist.">>
+		<<print "You acquired $him in the last stages of your career as a successful venture capitalist.">>
+	<<case "Drugs and alcohol can be a potent mix; the night that followed it can sometimes be hard to remember. Needless to say, once your belly began swelling with her, you had to temporarily switch to a desk job for your mercenary group.">>
+		<<print "Drugs and alcohol can be a potent mix; the night that followed it can sometimes be hard to remember. Needless to say, once your belly began swelling with $him, you had to temporarily switch to a desk job for your mercenary group.">>
+	<<case "A trip to a brothel after a mission resulted in an unexpected surprise years later.">>
+		<<print "A trip to a brothel after a mission resulted in an unexpected surprise years later.">>
+	<<case "You acquired her in the last stages of your career as a noted private military contractor.">>
+		<<print "You acquired $him in the last stages of your career as a noted private military contractor.">>
+	<<case "You never thought you would be capable of impregnating yourself, but years of pleasuring yourself with yourself after missions managed to create her.">>
+		<<print "You never thought you would be capable of impregnating yourself, but years of pleasuring yourself with yourself after missions managed to create $him.">>
+	<<case "A fresh capture once overpowered you and had his way with you. You kept her as a painful reminder to never lower your guard again.">>
+		<<print "A fresh capture once overpowered you and had his way with you. You kept $him as a painful reminder to never lower your guard again.">>
+	<<case "Your slaving troop kept several girls as fucktoys; you sired her in your favorite.">>
+		<<print "Your slaving troop kept several girls as fucktoys; you sired $him in your favorite.">>
+	<<case "You enslaved her personally during the last stages of your slaving career.">>
+		<<print "You enslaved $him personally during the last stages of your slaving career.">>
+	<<case "You sired her in yourself after an arcology owner, impressed by your work, rewarded you with a night you'll never forget.">>
+		<<print "You sired $him in yourself after an arcology owner, impressed by your work, rewarded you with a night you'll never forget.">>
+	<<case "You conceived her after a male arcology owner, impressed by your work, rewarded you with a night you'll never forget.">>
+		<<print "You conceived $him after a male arcology owner, impressed by your work, rewarded you with a night you'll never forget.">>
+	<<case "You sired her after a female arcology owner, impressed by your work, rewarded you with a night you'll never forget.">>
+		<<print "You sired $him after a female arcology owner, impressed by your work, rewarded you with a night you'll never forget.">>
+	<<case "You received her as a gift from an arcology owner impressed by your work.">>
+		<<print "You received $him as a gift from an arcology owner impressed by your work.">>
+	<<case "A client paid you a large sum of credits to prove you could literally fuck yourself. She is the result of that lucrative night.">>
+		<<print "A client paid you a large sum of credits to prove you could literally fuck yourself. $He is the result of that lucrative night.">>
+	<<case "She was the result of unprotected sex with a client. He paid you quite well to enjoy your body as you grew heavy with his child.">>
+		<<print "$He was the result of unprotected sex with a client. He paid you quite well to enjoy your body as you grew heavy with his child.">>
+	<<case "She was the result of unprotected sex with a client. Her mother tracked you down years after her birth to force her upon you.">>
+		<<print "$He was the result of unprotected sex with a client. $His mother tracked you down years after $his birth to force $him upon you.">>
+	<<case "She was a fellow escort you were popular with.">>
+		<<print "$He was a fellow escort you were popular with.">>
+	<<case "She was the result of a night of hard drugs and unprotected sex after a big score. It took quite a bit of alcohol to come to terms with drunkenly knocking yourself up.">>
+		<<print "$He was the result of a night of hard drugs and unprotected sex after a big score. It took quite a bit of alcohol to come to terms with drunkenly knocking yourself up.">>
+	<<case "She was the result of a night of hard drugs and unprotected sex after a big score.">>
+		<<print "$He was the result of a night of hard drugs and unprotected sex after a big score.">>
+	<<case "She was born from one of your sex toys you knocked up.">>
+		<<print "$He was born from one of your sex toys you knocked up.">>
+	<<case "You captured her during your transition to the arcology">>
+		<<print "You captured $him during your transition to the arcology">>
+	<<case "Your late master took pleasure in using his servants in creative ways. He inseminated you with your own sperm, and nine months later, your daughter was born.">>
+		<<print "Your late master took pleasure in using his servants in creative ways. He inseminated you with your own sperm, and nine months later, your daughter was born.">>
+	<<case "She was another of your late master's servants. She spent nine months in your womb, courtesy of your master.">>
+		<<print "$He was another of your late master's servants. $He spent nine months in your womb, courtesy of your master.">>
+	<<case "She was another of your late master's servants. Your master permitted you to knock up her mother.">>
+		<<print "$He was another of your late master's servants. Your master permitted you to knock up $his mother.">>
+	<<case "She was another of your late master's servants. She helped you give birth to his child.">>
+		<<print "$He was another of your late master's servants. $He helped you give birth to his child.">>
+	<<case "She was another of your late master's servants.">>
+		<<print "$He was another of your late master's servants.">>
+	<<case "She was conceived after a successful experiment in hermaphrodite self-reproduction.">>
+		<<print "$He was conceived after a successful experiment in hermaphrodite self-reproduction.">>
+	<<case "She was conceived after a botched birth control experiment early in your career.">>
+		<<print "$He was conceived after a botched birth control experiment early in your career.">>
+	<<case "She is the product of an affair with a cute nurse who assisted you in more ways than one.">>
+		<<print "$He is the product of an affair with a cute nurse who assisted you in more ways than one.">>
+	<<case "You kept her after her owner failed to pay your bill for performing surgery on her.">>
+		<<print "You kept $him after $his owner failed to pay your bill for performing surgery on $him.">>
+	<<case "She was conceived after a night of partying and a drunken bet. She nearly killed your career.">>
+		<<print "$He was conceived after a night of partying and a drunken bet. $He nearly killed your career.">>
+	<<case "She was conceived after a night of partying and a torn condom. She nearly killed your career.">>
+		<<print "$He was conceived after a night of partying and a torn condom. $He nearly killed your career.">>
+	<<case "She was conceived after a night of partying and a torn condom.">>
+		<<print "$He was conceived after a night of partying and a torn condom.">>
+	<<case "She was one of your groupies during your celebrity career.">>
+		<<print "$He was one of your groupies during your celebrity career.">>
+	<<case "You bet your body on a sure hand, only to lose. It turns out you could fuck yourself, and not only that, get yourself pregnant.">>
+		<<print "You bet your body on a sure hand, only to lose. It turns out you could fuck yourself, and not only that, get yourself pregnant.">>
+	<<case "You bet your body on a sure hand, only to lose. Nine months later, your daughter was born.">>
+		<<print "You bet your body on a sure hand, only to lose. Nine months later, your daughter was born.">>
+	<<case "You won a sexual fling with her mother after winning at cards, a gamble that ultimately burdened you.">>
+		<<print "You won a sexual fling with $his mother after winning at cards, a gamble that ultimately burdened you.">>
+	<<case "You won her at cards, a memento from your life as one of the idle rich before you became an arcology owner.">>
+		<<print "You won $him at cards, a memento from your life as one of the idle rich before you became an arcology owner.">>
+	<<case "She was the result of a night of hard celebration after a big score under the glow of monitors and the calming hum of 750 RPM fans. It took quite a bit of alcohol to come to terms with drunkenly knocking yourself up.">>
+		<<print "$He was the result of a night of hard celebration after a big score under the glow of monitors and the calming hum of 750 RPM fans. It took quite a bit of alcohol to come to terms with drunkenly knocking yourself up.">>
+	<<case "She was the result of an intruder brute forcing your firewall, overloading your pleasure sensors, and allowing a corrupted packet to slip by. With a quick wipe of your RAM and cache with some powerful liquor, you have no idea who planted her in your womb.">>
+		<<print "$He was the result of an intruder brute forcing your firewall, overloading your pleasure sensors, and allowing a corrupted packet to slip by. With a quick wipe of your RAM and cache with some powerful liquor, you have no idea who planted $him in your womb.">>
+	<<case "She was born out of a trade for secure data access. Nine months later, your daughter was born.">>
+		<<print "$He was born out of a trade for secure data access. Nine months later, your daughter was born.">>
+	<<case "She was a case officer you captured after going dark.">>
+		<<print "$He was a case officer you captured after going dark.">>
+	<<case "You won her at cards, a memento from your life as one of the idle rich before you became an arcology owner.">>
+		<<print "You won $him at cards, a memento from your life as one of the idle rich before you became an arcology owner.">>
+	<<case "You brought her into the arcology mindbroken, little more than a walking collection of fuckable holes.">>
+		<<print "You brought $him into the arcology mindbroken, little more than a walking collection of fuckable holes.">>
+	<<case "You brought her into the arcology mindbroken, little more than a human onahole.">>
+		<<print "You brought $him into the arcology mindbroken, little more than a human onahole.">>
+/%	/*dSlavesDatabase origins*/
+	"She is a former maid with an unsettling obsessive streak."
+	"She grew up sheltered and submissive, making her an easy target for enslavement."
+	"She is a former mercenary that ended up on a losing side in the byzantine Free City power games."
+	"She was fresh from the slave markets when you acquired her."
+	"She was once a celebrity that protested the existence of slavery, but has now become a slave herself."
+	"She was a slave trader until she was betrayed by ambitious underlings and sold into enslavement."
+	"She came from a wealthy background, but she sold herself into slavery to slake her desire to submit to men and dominate women."
+	"She was sold into slavery after her father was killed by political rivals."
+	"She was born a slave and knows no other life."
+	"She is a former gladiator that wagered her freedom and lost."
+	"She is a former shut-in who built up enough debt to be sold into slavery after the death of her parents."
+	"She is a shinobi, and fanatically loyal to her master."
+	"She was once the bodyguard to a Russian drug lord, and was sold into slavery after his death by cocaine overdose."
+	"She was sold into slavery on a legal technicality."
+	"She is a spoiled former rich girl who has been discarded by several former owners for her attitude."
+	"She claims that she actually is Santa Claus."
+	"Formerly used solely for titfucking, she quickly became a nymphomaniac after experiencing 'proper' sex."
+	"A former Head Girl of a rich man's harem, she is used to being in charge of others."
+	"She grew up in a well-to-do family and discovered her fetish for servitude in college, and she decided to become the world's best slave and slave trainer in one."
+	"She was formerly owned by someone who fancied themselves a geneticist, where she acquired permanently discolored hair and odd fetishes."
+	"She is a former soldier who was sold into slavery after losing her leg to an IED."
+	"She is a former Head Girl that fetishizes her own degradation."
+	"She sold herself into slavery in an attempt to sate her incredible sex drive."
+	"She was sold into slavery from a remote, primitive village."
+	"She lived a hard life before becoming a slave."
+	"She chose to be a slave because the romanticized view of it she had turns her on."
+	"She was forced into slavery and rather brutally broken in."
+	"She was previously owned by a creative sadist, who has left a variety of mental scars on her."
+	"She was a hermit until she became a slave, and went along with it out of boredom."
+	"Before she was made a slave, she was a wealthy, popular honor student."
+	"She was groomed just for you and believes herself to be madly in love with you."
+	"She may originally be from an island nation."
+	"She was taken as a slave by a Sultan, who presented her as a gift to a surveyor."
+	"A previous owner cultivated her desire to escape slavery for his own amusement."
+	"She sold herself into slavery after a pregnancy scare, desiring to give up control of her life to someone better suited to running it."
+	"She comes from old money and sold herself into slavery to satisfy her obsession with the practice, believing her family would buy her back out of slavery later."
+	"She was sentenced to enslavement as a punishment for fraud and theft."
+	"She was captured from West Central Africa."
+	"A former headmistress, she was sentenced to slavery after she was caught training her students to be lesbian trophy slaves."
+	"She was sold to you from the public slave market, and was probably kidnapped or otherwise forced into slavery."
+	"She is the winner of a martial arts slave tournament. You won her in a bet."
+	"She was caught and enslaved while working undercover."
+	"In spite of the great demand for her kind, she has apparently eluded enslavement until recently."
+	"She came to be a slave not long after fleeing farm life for the Free Cities."
+	"When you took her from her previous owner, she was locked into a beautiful rosewood box lined with red velvet, crying."
+	"She sold herself into slavery to escape life on the streets."
+	"She is an enslaved member of an anti-slavery extremist group."
+	"Having always been a mute with no desire to communicate her origin, you aren't sure where she's from or how she ended up here."
+	"Nothing remains of the person she originally was, either mentally or physically."
+	"She is half of a famous musical duo, along with her twin sister. They fled to the Free Cities."
+	/*ddSlavesDatabase origins*/
+	"She is a life-long house slave who has always tried to be the perfect woman, despite her dick."
+	"She was raised as a girl despite her gargantuan dick to be a truly unique slave."
+	"She was once a successful drug lord, but was turned into her current self after making too many enemies."
+	"She grew up in a rich and deviant household, surrounded by but never a part of bizarre and unusual sex acts."
+	"She was homeless and willing to do anything for food, which in the end resulted in her becoming a slave."
+	"She volunteered to become a slave when she turned 18."
+	"She was forced into slavery due to extreme debt."
+	"Once she was an arcology security officer, lured to aphrodisiacs addiction and feminized by her boss (and former wife), to whom she was sold as a slave to satisfy her spousal maintenance after divorce."
+	"She sold herself into slavery to escape a life of boredom."
+	"She is a former Kkangpae gang member who was sold into slavery by her former boss as a punishment."
+	"She was sold to your predecessor by her husband to pay off his extreme debt."
+	"Her origins are unknown, but rumor has it that she is a literal demon."
+	"She was born into a slave ring that practiced heavy hormone manipulation to alter slaves from a very young age."
+	"She was given a sex-change in a freak laboratory mix-up, and sold herself into slavery out of desperation due to a lack of any way to prove her identity."
+	"She was enslaved after she fell into debt to you."
+	"She was a soldier before being enslaved."
+	"Born without limbs and abandoned by her parents, she was taken in by a posh family, given a massive cock and trained to be the wealthy lady's perfect living sex toy."
+	/*reFSAcquisition*/
+	"She offered herself for voluntary enslavement, choosing you as her new owner because you treat lactating girls well."
+	"She offered herself for voluntary enslavement, hoping to become a valuable source of milk for you."
+	"She was captured and enslaved in a conflict zone and fenced to you by a mercenary group."
+	"She made the mistake of marrying into a $arcologies[0].FSSupremacistRace neighborhood and was kidnapped then sold to you."
+	"She was beaten, sexually assaulted, and finally enslaved for being stupid enough to visit an arcology that doesn't like her kind."
+	"She came to your arcology to be enslaved out of a sense of self-loathing for her kind."
+	"She offered herself for voluntary enslavement to escape life in an area that disapproved of her sexual tendencies."
+	"She offered herself for voluntary enslavement after a lifetime as an outcast due to her sexual tendencies."
+	"She was sold to you as a way of disposing of an inconveniently pregnant young woman."
+	"She was raped and impregnated, then sold to you as a way of disposing of an inconveniently pregnant mother."
+	"She was voluntarily enslaved after she decided that your paternalistic arcology was a better place for advancement than the old world."
+	"She was voluntarily enslaved after she decided that your paternalistic arcology was a better place to live than the old world."
+	"She was sold to you by an anonymous person who wanted her to suffer."
+	"She was sold to you by an anonymous slave breaking group."
+	"She offered herself for voluntary enslavement to get to an arcology in which implants are uncommon, since she has a fear of surgery."
+	"She offered herself for voluntary enslavement after graduating from a slave school and passing her majority, because she heard you treat slaves without implants well."
+	"She came to you for enslavement out of desperation, terrified that she was about to be enslaved into a worse situation by her abusive family."
+	"She came to you for enslavement out of desperation, terrified that she was about to be asked to do something with her life by her family."
+	"She offered herself to you for enslavement after deciding you were her best hope of a good life as a slave."
+	"She was sold to you by her son, in order to raise funds for his business."
+	"You received her from a surgeon who botched an implant operation on her and needed to get her out of sight."
+	"Her husband sold her into slavery to escape his debts."
+	"She offered herself to you for enslavement because she felt your arcology was the best place for a woman of her appearance."
+	"She offered herself to you for enslavement to escape having plastic surgery foisted on her."
+	"She offered herself to you for enslavement after following a dangerous, illegal growth hormone regimen."
+	"She offered herself to you to escape enslavement in her homeland for being older and unmarried."
+	"She was voluntarily enslaved after she decided that your arcology was the best place for her to get the steroids that she'd allowed to define her life."
+	"She offered herself for enslavement out of religious conviction."
+	"She was offered to you by a group of Chattel Religionists eager to be rid of her blasphemous old world beliefs."
+	"She sold herself to you to escape those who condemned her lifestyle."
+	"She offered herself for enslavement in hope of being less dull."
+	"She sold herself to you in the hopes that her body would help keep humanity alive."
+	"She sold herself to you in the hope of someday bearing children."
+	"She thought she was important; she was not."
+	"She considered herself ugly and wished to stay out of your gene pool."
+	"She offered herself to you for enslavement because she was swept up in the romanticism of a revival of Rome."
+	"She offered herself to you for enslavement because she needs to feel a higher call."
+	"She offered herself to you for enslavement because she had a disgustingly naïve view of medieval Japanese culture."
+	"She offered herself to you for enslavement because she thought your harem her best hope for good treatment."
+	"She offered herself to you for enslavement because she thought she would have prospects of advancement among your slaves."
+	/*reRecruit
+	"She offered herself to you as a slave to escape a life of boredom."
+	"She offered herself to you as a slave to escape the hard life of a free whore."
+	"She was enslaved after she fell into debt to you."
+	"You turned her into a slave girl after she fell into debt to you."
+	"She sold herself into slavery out of fear that life on the streets was endangering her pregnancy."
+	"She offered herself as a slave to escape the horrors a blind girl faces on the streets."
+	"She came to you to escape being sold to a cruel master after her producer informed her of her debt."
+	"She sold herself into slavery to escape life on the streets."
+	"You tricked her into enslavement, manipulating her based on her surgical addiction."
+	"She was raised in a radical slave school that treated her with drugs and surgery from a very young age."
+	"She was raised in a radical slave school that treated her from a very young age, up to the point that she never experienced male puberty."
+	"She asked to be enslaved out of naïve infatuation with you."
+	"She asked to be enslaved in the hope you'd treat a fellow woman well."
+	"She asked to be enslaved since she felt you were her only hope of becoming a prettier woman."
+	"She got into debt for damaging someone's property during a student protest and you bought out her debt."
+	"She enslaved herself to be with a man she loved, only to be sold to you afterward."
+	"She (formerly he) enslaved herself to be with a man she loved, only to be sold to you afterward."
+	"She was given to you by criminals as 'tribute', after which you transformed the overthrown (male) leader of their rival gang."
+	"She was a runaway slave captured by a gang outside your arcology. You bought her cheap after she was harshly used by them."
+	"She was the private slave of a con artist cult leader before he had to abandon her and flee."
+	"She was a dickgirl chaser in the slave races before being sold to you."
+	"She was a virgin runner in the slave races before being sold to you."
+	"She was a famous virgin runner in the slave races before being sold to you."
+	"She was the housekeeper and fucktoy of a frat house before being collected by repo-men and sold to you."
+	"She was a nanny before being sold to you."
+	"She was a milk cow in the stable of a slaveholding farmer before being sold to you."
+	"She was a breeding bull in the stable of a slaveholding farmer before being sold to you."
+	"She was a virgin cow in the stable of a slaveholding farmer before being sold to you."
+	"She was in an orphanage until reaching maturity, at which point she was sold to you."
+	"She was captured in a raid on a gated community and quickly sold off."
+	"She sold herself into slavery to pay for her children's education."
+	"She sold herself into slavery to spite her father."
+	"She offered herself to you for enslavement out of devotion to her artistic 'craft'."
+	"She sold herself into slavery to pay her immigration costs."
+	"She offered to sell you her body and you graciously accepted."
+	"You helped her give birth, leaving her deeply indebted to you."
+	"She sold herself into slavery to feed herself and her growing brood."
+	"You helped free her from a POW camp after being abandoned by her country, leaving her deeply indebted to you."
+	"Her womb held a baby you desired."
+	"She is an unsuccessful cyborg experiment that was set free."
+	"She was the virgin figurehead of a new religion and 'blessed' by their Lord."
+	"She was the holy vessel of a new religion and 'blessed' by their Lord to bring forth His servants."
+	"You purchased her in order to pave the way for her brother to take the throne."
+	"You purchased her as a favor to her father."
+	"You purchased her from a King after his son put an illegitimate heir in her womb."
+	"You purchased her from a King after she expressed knowledge of the prince's affair with another servant."
+	*/
+%/
+	<<default>>
+		<<print $args[0].origin>>
+	<</switch>>
+<</widget>>
+
+<<widget "customTatDescription">>
+	<<switch $args[0].custom.tattoo>>
+	<<case "She has a famous corporate logo tattooed on the nape of her neck.">>
+		<<print "$He has a famous corporate logo tattooed on the nape of $his neck.">>
+	<<case "She has a small tattoo of a private military company's coat of arms on the nape of her neck.">>
+		<<print "$He has a small tattoo of a private military company's coat of arms on the nape of $his neck.">>
+	<<case "She has your tiny slaving emblem tattooed behind her left ear.">>
+		<<print "$He has your tiny slaving emblem tattooed behind $his left ear.">>
+	<<case "She has the geometric symbol of your old arcology engineering firm laser tattooed into the nape of her neck.">>
+		<<print "$He has the geometric symbol of your old arcology engineering firm laser tattooed into the nape of $his neck.">>
+	<<case "She has your custom emblem tattooed on her left breast.">>
+		<<print "$He has your custom emblem tattooed on $his left breast.">>
+	<<case "She has the number of times her father came in you while you were pregnant with her tattooed down her back.">>
+		<<print "$He has the number of times $his father came in you while you were pregnant with $him tattooed down $his back.">>
+	<<case "She has your name angrily tattooed on her right shoulder.">>
+		<<print "$He has your name angrily tattooed on $his right shoulder.">>
+	<<case "She has your custom emblem tattooed on her left breast. She got the tattoo after starring in a porno with you.">>
+		<<print "$He has your custom emblem tattooed on $his left breast. $He got the tattoo after starring in a porno with you.">>
+	<<case "She has your former gang's sign tattooed on her neck.">>
+		<<print "$He has your former gang's sign tattooed on $his neck.">>
+	<<case "She has your master's brand on her left breast.">>
+		<<print "$He has your master's brand on $his left breast.">>
+	<<case "She has your personal symbol tattooed on the back of her neck: it's invisible to the naked eye, but shows up starkly on medical imaging.">>
+		<<print "$He has your personal symbol tattooed on the back of $his neck: it's invisible to the naked eye, but shows up starkly on medical imaging.">>
+	<<case "She has your signature, surrounded by hearts, tattooed on the back of her neck.">>
+		<<print "$He has your signature, surrounded by hearts, tattooed on the back of $his neck.">>
+	<<case "She has your signature, surrounded by hearts, tattooed on the back of her neck. She got the tattoo when she was still free.">>
+		<<print "$He has your signature, surrounded by hearts, tattooed on the back of $his neck. $He got the tattoo when $he was still free.">>
+	<<case "She has a small tattoo of a losing hand of cards on the nape of her neck.">>
+		<<print "$He has a small tattoo of a losing hand of cards on the nape of $his neck.">>
+	<<case "She has a small tattoo of a poor hand of cards on the nape of her neck.">>
+		<<print "$He has a small tattoo of a poor hand of cards on the nape of $his neck.">>
+	<<case "She has a small tattoo of a winning hand of cards on the nape of her neck.">>
+		<<print "$He has a small tattoo of a winning hand of cards on the nape of $his neck.">>
+	<<case "She has your former digital calling card tattooed on her neck.">>
+		<<print "$He has your former digital calling card tattooed on $his neck.">>
+	<<case "She has the silhouette of an arcology tattooed on the nape of her neck.">>
+		<<print "$He has the silhouette of an arcology tattooed on the nape of $his neck.">>
+	<<case "She has a barcode tattooed on her neck.">>
+		<<print "$He has a barcode tattooed on $his neck.">>
+	<<default>>
+		<<print $args[0].custom.tattoo>>
+	<</switch>>
+<</widget>>

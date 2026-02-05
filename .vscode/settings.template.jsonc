@@ -1,0 +1,243 @@
+{
+    // VS Code Settings Template for FC-Pregmod Development
+    // This template provides recommended settings for consistent development experience
+    // Copy this file to .vscode/settings.json to use these settings
+
+    // ============================================================================
+    // GAME-SPECIFIC CONFIGURATION
+    // ============================================================================
+
+    // Twee3 and SugarCube language support for the game's story format
+    "twee3LanguageTools.storyformat.current": "sugarcube-2",
+
+    // Custom spell checker words specific to FC-Pregmod terminology
+    "cSpell.words": ["welcomingly", "storyinit", "passage", "Twine", "SugarCube"],
+
+    // ============================================================================
+    // EDITOR BEHAVIOR AND APPEARANCE
+    // ============================================================================
+
+    "editor.wordWrap": "on",                          // Wrap long lines to prevent horizontal scrolling
+    "editor.tabSize": 4,                              // Use 4-space tabs (project standard)
+    "editor.insertSpaces": false,                     // Use actual tabs, not spaces (project standard)
+    "editor.detectIndentation": false,                // Don't auto-detect indentation, stick to project settings
+    "editor.renderWhitespace": "boundary",            // Show whitespace only at word boundaries for cleaner look
+    "editor.rulers": [120],                           // Show vertical line at 120 characters (project line length limit)
+    "editor.minimap.enabled": false,                  // Disable minimap to save screen space
+    "editor.scrollBeyondLastLine": false,             // Don't scroll past the last line of content
+    "editor.renderLineHighlight": "all",              // Highlight current line for better visibility
+    "editor.bracketPairColorization.enabled": true,   // Color-code matching brackets
+    "editor.guides.bracketPairs": "active",           // Show guides for bracket pairs
+    "editor.suggestSelection": "first",               // Select first suggestion by default
+    "editor.acceptSuggestionOnEnter": "smart",        // Smart suggestion acceptance
+    "editor.inlineSuggest.enabled": true,             // Show inline suggestions as you type
+    "editor.semanticHighlighting.enabled": true,      // Enable semantic highlighting for better code understanding
+
+    // ============================================================================
+    // FORMATTING CONFIGURATION
+    // ============================================================================
+
+    "editor.formatOnSave": true,                      // Auto-format files when saving
+    "editor.formatOnPaste": true,                     // Auto-format pasted content
+    "editor.formatOnType": true,                      // Auto-format as you type
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint", // Use ESLint as default formatter for JS/TS
+
+    // ============================================================================
+    // LANGUAGE-SPECIFIC FORMATTER OVERRIDES
+    // ============================================================================
+
+    // JavaScript files: Use ESLint for formatting (project standard)
+    "[javascript]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+        "editor.formatOnPaste": true,
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true
+    },
+
+    // TypeScript files: Use ESLint for formatting (project standard)
+    "[typescript]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+        "editor.formatOnPaste": true,
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true
+    },
+
+    // JSON files: Use VS Code's built-in formatter
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features",
+        "editor.formatOnPaste": true,
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true
+    },
+
+    // CSS files: Use Prettier for consistent styling
+    "[css]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnPaste": true,
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true
+    },
+
+    // ============================================================================
+    // CODE ACTIONS AND AUTOMATION
+    // ============================================================================
+
+    // Automatically fix ESLint issues and organize imports on save
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit",            // Fix all ESLint issues automatically
+        "source.organizeImports": "explicit"           // Organize and sort imports
+    },
+
+    // ============================================================================
+    // FILE HANDLING AND HYGIENE
+    // ============================================================================
+
+    "files.trimTrailingWhitespace": true,             // Remove trailing whitespace automatically
+    "files.insertFinalNewline": true,                 // Ensure files end with newline
+    "files.trimFinalNewlines": true,                  // Remove multiple trailing newlines
+
+    // Associate Twee files with SugarCube language support
+    "files.associations": {
+        "*.tw": "twee3-sugarcube-2",                  // .tw files are SugarCube Twee files
+        "*.twee": "twee3-sugarcube-2"                 // .twee files are SugarCube Twee files
+    },
+
+    // Enable spell checking for all file types
+    "cSpell.enabledFileTypes": {
+        "*": true
+    },
+
+    // ============================================================================
+    // ESLINT CONFIGURATION
+    // ============================================================================
+
+    "eslint.validate": ["javascript", "typescript"],   // Validate JS and TS files with ESLint
+    "eslint.format.enable": true,                     // Enable ESLint formatting
+    "eslint.workingDirectories": ["./src", "./js"],   // ESLint should check these directories
+    "eslint.codeActionsOnSave.mode": "all",           // Apply all ESLint fixes on save
+
+    // ESLint should probe these file types for configuration
+    "eslint.probe": [
+        "javascript",
+        "javascriptreact",
+        "typescript",
+        "typescriptreact",
+        "html",
+        "vue",
+        "markdown",
+        "twee3-sugarcube-2"                           // Include Twee files for ESLint checking
+    ],
+
+    // ============================================================================
+    // PRETTIER CONFIGURATION
+    // ============================================================================
+
+    "prettier.requireConfig": false,                  // Don't require .prettierrc file for all files
+    "prettier.useEditorConfig": false,                // Don't use .editorconfig (use VS Code settings)
+    "prettier.documentSelectors": ["**/*.css", "**/*.scss", "**/*.less"], // Only format CSS files with Prettier
+
+    // ============================================================================
+    // TYPESCRIPT AND JAVASCRIPT PREFERENCES
+    // ============================================================================
+
+    "typescript.preferences.includePackageJsonAutoImports": "off", // Don't auto-import from package.json
+    "typescript.suggest.autoImports": false,           // Don't suggest auto-imports automatically
+    "typescript.updateImportsOnFileMove.enabled": "always", // Always update imports when moving files
+    "typescript.suggest.enabled": true,                // Enable TypeScript suggestions
+
+    "javascript.preferences.includePackageJsonAutoImports": "off", // Don't auto-import from package.json for JS
+    "javascript.suggest.enabled": true,                // Enable JavaScript suggestions
+
+    // ============================================================================
+    // SEARCH AND FILE EXCLUSIONS
+    // ============================================================================
+
+    // Exclude these patterns from search results
+    "search.exclude": {
+        "**/node_modules": true,                      // Don't search in dependencies
+        "**/build": true,                             // Don't search in build output
+        "**/bin": true,                               // Don't search in binary directories
+        "**/.eslintcache": true,                      // Don't search in ESLint cache
+        "**/sanityCheck.log": true,                   // Don't search in log files
+        "**/package-lock.json": true,                 // Don't search in lock files
+        "**/dist": true,                              // Don't search in distribution files
+        "**/.git": true,                              // Don't search in git metadata
+        "**/coverage": true,                          // Don't search in test coverage reports
+        "**/.nyc_output": true,                       // Don't search in NYC coverage output
+        "**/submodules": true                         // Don't search in git submodules
+    },
+
+    // Exclude these patterns from file watching (improves performance)
+    "files.watcherExclude": {
+        "**/node_modules/**": true,                   // Don't watch dependency changes
+        "**/build/**": true,                          // Don't watch build output changes
+        "**/bin/**": true,                            // Don't watch binary directory changes
+        "**/.git/objects/**": true,                   // Don't watch git object changes
+        "**/.git/subtree-cache/**": true,             // Don't watch git subtree cache
+        "**/tmp/**": true,                            // Don't watch temporary files
+        "**/temp/**": true,                           // Don't watch temporary files
+        "**/dist/**": true,                           // Don't watch distribution files
+        "**/submodules/**": true                      // Don't watch submodule changes
+    },
+
+    // Exclude these patterns from file explorer
+    "files.exclude": {
+        "**/.DS_Store": true,                         // Hide macOS system files
+        "**/Thumbs.db": true,                         // Hide Windows thumbnail cache
+        "**/*.log": true,                             // Hide log files
+        "**/sanityCheck.log*": true,                  // Hide sanity check logs
+        "**/.eslintcache": true,                      // Hide ESLint cache
+        "**/.tsbuildinfo": true                       // Hide TypeScript build info
+    },
+
+    // ============================================================================
+    // SEARCH BEHAVIOR
+    // ============================================================================
+
+    "search.useGlobalIgnoreFiles": true,              // Use global .gitignore files
+    "search.useParentIgnoreFiles": true,              // Use parent directory ignore files
+    "search.followSymlinks": false,                   // Don't follow symbolic links during search
+
+    // ============================================================================
+    // WORKBENCH BEHAVIOR
+    // ============================================================================
+
+    "workbench.editor.enablePreview": false,          // Don't open files in preview mode
+    "workbench.editor.enablePreviewFromQuickOpen": false, // Don't preview files from quick open
+
+    // ============================================================================
+    // GIT INTEGRATION
+    // ============================================================================
+
+    "git.autofetch": true,                            // Automatically fetch from remote
+    "git.confirmSync": false,                         // Don't confirm before sync operations
+    "git.enableSmartCommit": true,                    // Enable smart commit (stage all changes)
+    "git.ignoreLimitWarning": true,                   // Ignore warnings about large repositories
+    "scm.diffDecorations": "gutter",                  // Show diff decorations in the gutter
+
+    // GitLens configuration for enhanced Git features
+    "gitlens.integrations.enabled": true,             // Enable GitLens integrations
+    "gitlens.remotes": [
+        {
+            "domain": "gitgud.io",                    // GitLab instance domain
+            "type": "GitLab"                          // Remote type for proper integration
+        }
+    ],
+
+    // ============================================================================
+    // TERMINAL CONFIGURATION
+    // ============================================================================
+
+    "terminal.integrated.defaultProfile.windows": "PowerShell", // Use PowerShell on Windows
+    "terminal.integrated.cwd": "${workspaceFolder}",   // Terminal starts in workspace root
+    "terminal.integrated.env.windows": {
+        "NODE_ENV": "development"                     // Set NODE_ENV for development
+    },
+
+    // ============================================================================
+    // TODO TREE CONFIGURATION
+    // ============================================================================
+
+    // Configure TODO tree to find various types of task markers
+    "todo-tree.regex.regex": "(//|#|--|<!--|;|/\\*|^|^[ \\t]*(-|\\d+.))\\s*($TAGS)"
+}

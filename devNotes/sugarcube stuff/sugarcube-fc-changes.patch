@@ -1,0 +1,2890 @@
+diff --git a/README.md b/README.md
+index 49e1c66..576d145 100644
+--- a/README.md
++++ b/README.md
+@@ -1,3 +1,29 @@
++# SC2 Fork
++
++This is a fork of SC2 containing all changes made to improve the [FC pregmod (nsfw)](https://gitgud.io/pregmodfan/fc-pregmod).
++
++Important branches:
++* `fc-rebase`: Reapplied changes for FC on SC 2.37.3. Based on `fc` and `fc-majou`
++* `master`: Current SC2 version
++* `fc-majou`: ARCHIVE - SC2 with our changes, based on [majou's modifications](https://gitgud.io/majou/sugarcube-2) - Replaced by `fc-rebased`
++* `fc`: ARCHIVE - SC2 with our changes - Replaced by `fc-majou`
++
++Warning: When cloning you will be on `master` initially. You want to checkout `fc-rebase` first before doing anything else.
++
++## Building
++1. `node build.js -n -b 2` to build release version
++2. replaces `/devTools/tweeGo/storyFormats/sugarcube-2/format.js` and `devNotes/sugarcube stuff/<current SC2 version>-format.js`
++3. `node build.js -n -b 2 -u -d` to build debug version
++4. replaces `devNotes/sugarcube stuff/<current SC2 version>-debug-format.js`
++
++If you believe to have found a bug, be sure to check if it was introduced with our changes before reporting them at the SC2 repo.
++
++## Contributing
++
++Check the [documentation](https://gitgud.io/pregmodfan/fc-pregmod/-/blob/pregmod-master/devNotes/sugarcube%20stuff/building%20SugarCube.md) at the FC repo.
++
++## SC2 README; most of it stays the same, but be sure to change the url when cloning:
++
+ # SugarCube v2
+ 
+ [SugarCube](http://www.motoslave.net/sugarcube/) is a free (gratis and libre) story format for [Twine/Twee](http://twinery.org/).
+diff --git a/build.js b/build.js
+index d7d606f..e8fd369 100644
+--- a/build.js
++++ b/build.js
+@@ -34,6 +34,7 @@ const CONFIG = {
+ 			'src/lib/visibility.js',
+ 			'src/util/',
+ 			'src/storage/simplestore.js',
++			'src/storage/adapters/FCHost.Storage.js',
+ 			'src/storage/adapters/webstorage.js',
+ 			'src/storage/adapters/cookie.js',
+ 			'src/lib/debugview.js',
+@@ -56,6 +57,7 @@ const CONFIG = {
+ 			'src/macro/deprecated-macros.js',
+ 			'src/dialog.js',
+ 			'src/engine.js',
++			'src/idb_backend.js',
+ 			'src/passage.js',
+ 			'src/save.js',
+ 			'src/setting.js',
+@@ -89,6 +91,7 @@ const CONFIG = {
+ 			'src/css/ui-dialog-settings.css',
+ 			'src/css/ui-dialog-legacy.css',
+ 			'src/css/ui-bar.css',
++			'src/css/idb_backend.css',
+ 			'src/css/ui-debug-bar.css',
+ 			'src/css/ui-debug-views.css'
+ 		]
+diff --git a/docs/api/api-save.md b/docs/api/api-save.md
+index e58162f..97fe8a5 100644
+--- a/docs/api/api-save.md
++++ b/docs/api/api-save.md
+@@ -1050,6 +1050,23 @@ jQuery(document.createElement('input'))
+ 
+ <!-- *********************************************************************** -->
+ 
++### `Save.toClipboard()` {#save-api-method-toClipboard}
++
++Saves to clipboard.
++
++#### History:
++
++* `v?`: Introduced.
++
++#### Examples:
++
++```
++→ Copy a save to clipboard
++Save.toClipboard()
++```
++
++<!-- *********************************************************************** -->
++
+ ### `Save.disk.load(event)` → `Promise` {#save-api-disk-method-load}
+ 
+ Loads the given save from disk, created via [`Save.disk.save()`](#save-api-disk-method-save).
+diff --git a/docs/table-of-contents.md b/docs/table-of-contents.md
+index 21863b9..23e911d 100644
+--- a/docs/table-of-contents.md
++++ b/docs/table-of-contents.md
+@@ -429,6 +429,7 @@
+ * [Disk Saves](#save-api-disk)
+ 	* [`Save.disk.export()`](#save-api-disk-method-export)
+ 	* [`Save.disk.import()`](#save-api-disk-method-import)
++    * [`Save.toClipboard()`](#save-api-method-toClipboard)
+ 	* [`Save.disk.load()`](#save-api-disk-method-load)
+ 	* [`Save.disk.save()`](#save-api-disk-method-save)
+ * [Base64 Saves](#save-api-base64)
+diff --git a/package-lock.json b/package-lock.json
+index 5f85df4..f554149 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "SugarCube",
+-  "version": "2.37.0",
++  "version": "2.37.3",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "SugarCube",
+-      "version": "2.37.0",
++      "version": "2.37.3",
+       "license": "BSD-2-Clause",
+       "devDependencies": {
+         "@babel/cli": "^7.24.8",
+@@ -3720,10 +3720,11 @@
+       }
+     },
+     "node_modules/micromatch": {
+-      "version": "4.0.7",
+-      "resolved": "https://registry.npmjs.org/micromatch/-/micromatch-4.0.7.tgz",
+-      "integrity": "sha512-LPP/3KorzCwBxfeUuZmaR6bG2kdeHSbe0P2tY3FLRU4vYrjYz5hI4QZwV0njUx3jeuKe67YukQ1LSPZBKDqO/Q==",
++      "version": "4.0.8",
++      "resolved": "https://registry.npmjs.org/micromatch/-/micromatch-4.0.8.tgz",
++      "integrity": "sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==",
+       "dev": true,
++      "license": "MIT",
+       "dependencies": {
+         "braces": "^3.0.3",
+         "picomatch": "^2.3.1"
+diff --git a/src/css/idb_backend.css b/src/css/idb_backend.css
+new file mode 100644
+index 0000000..e8f301b
+--- /dev/null
++++ b/src/css/idb_backend.css
+@@ -0,0 +1,183 @@
++#saves-export-reminder {
++	padding: 0.5em 1em 0;
++}
++
++.idb-saves-list {
++	display: flex;
++	flex-direction: column;
++}
++
++.idb-saves-list .savesListRow {
++	display: flex;
++	flex-flow: row nowrap;
++	align-items: center;
++	border-top: 1px solid #444;
++	padding: 4px;
++}
++
++@media (min-width: 40rem) {
++	.idb-saves-list .savesListRow {
++		max-height: 2.4em;
++	}
++}
++
++.idb-saves-list .savesListRow .saveGroup {
++	display: flex;
++	flex-flow: row wrap;
++	align-items: center;
++	flex-grow: 1;
++	flex-shrink: 1;
++	/* Set min-width to allow parent correctly to resize this element's children */
++	min-width: 0;
++}
++
++.idb-saves-list .savesListRow .saveGroup > div {
++	display: flex;
++	justify-content: center;
++	margin: 0 10px;
++	flex-grow: 0;
++	flex-shrink: 0;
++}
++
++.idb-saves-list .savesListRow .saveGroup .saveId {
++	min-width: 2em;
++	margin-left: 4px;
++	margin-right: -6px;
++}
++
++
++.idb-saves-list .savesListRow .saveGroup .saveButton {
++	display: flex;
++	justify-content: center;
++	min-width: 110px;
++	margin: 0 10px;
++}
++
++.idb-saves-list .savesListRow .saveGroup .saveName {
++	width: 5em;
++}
++
++.idb-saves-list .savesListRow .saveGroup .saveButton input {
++	margin: 3px 0;
++}
++
++.idb-saves-list .savesListRow .saveGroup > .saveDetails {
++	display: flex;
++	flex: 1 1 0;
++	flex-direction: column;
++	align-items: stretch;
++	justify-content: stretch;
++	min-width: 100px;
++}
++
++.idb-saves-list .savesListRow .saveGroup > .saveDetails span {
++	max-height: 80px;
++	white-space: nowrap;
++	overflow-x: clip;
++}
++
++.jumpToSaveTransition {
++	background-color: #444;
++	transition-duration: 1s;
++}
++
++/*
++ * footer for the save list
++ */
++#savesListFooter {
++	justify-content: space-between;
++	padding: 0 !important;
++	line-height: normal;
++}
++
++#savesListFooter div {
++	display: flex;
++	justify-content: stretch;
++}
++
++.datestamp {
++	font-size: 0.8em;
++}
++
++.listMargin {
++	display: inline-block;
++	margin: 1px 0;
++}
++
++.right {
++	float: right;
++}
++
++.saveMenuButton {
++	background-color: #35a !important;
++}
++
++.saveMenuButton:hover {
++	background-color: #35a !important;
++}
++
++.saveMenuConfirm {
++	margin-top: 20px;
++	margin-left: 150px;
++}
++
++.green {
++	color: #38b20a
++}
++
++.gold {
++	color: gold;
++}
++
++.red {
++	color: #ec3535;
++}
++
++.saveBorder {
++	max-width: 700px;
++	margin: 10px 2px;
++	padding: 5px 2px 30px;
++	border: 1px solid var(--200);
++}
++
++/* dol-specific */
++#saveList ul.buttons {
++	margin: 0;
++	padding: 0;
++	list-style: none;
++	border-top: 1px solid var(--750);
++}
++
++#saveList ul.buttons li {
++	padding: 0.4em;
++	display: inline-block;
++	margin: 0;
++}
++
++#saveList ul.buttons li:last-child {
++	float: right;
++}
++
++#saveList button[id="saves-export"]:before,
++#saveList button[id="saves-toClipboard"]:before,
++#saveList button[id="saves-import"]:before,
++#saveList button[id="saves-clear"]:before {
++	/*@mixin tme-fa-icons-properties;*/
++}
++#saveList button[id="saves-export"]:before {
++	content: "\e829\00a0";
++}
++#saveList button[id="saves-toClipboard"]:before {
++	content: "\e82b\00a0";
++}
++#saveList button[id="saves-import"]:before {
++	content: "\e82a\00a0";
++}
++#saveList button[id="saves-clear"]:before {
++	content: "\e827\00a0";
++}
++
++.saves-loading .saves {
++	text-align: center;
++	margin-top: 1em;
++}
+diff --git a/src/css/ui-dialog-saves.css b/src/css/ui-dialog-saves.css
+index b150b4d..0f36f94 100644
+--- a/src/css/ui-dialog-saves.css
++++ b/src/css/ui-dialog-saves.css
+@@ -39,6 +39,10 @@
+ 	text-align: center; */
+ 	display: none !important;
+ }
++#ui-dialog-body.saves td:nth-child(2) {
++	/* min-width: max-content; Does not work on FCHost */
++	min-width: calc(2.237em * 2 + 1px); /* Two buttons + 1px for firefox */
++}
+ #ui-dialog-body.saves td:nth-child(3) {
+ 	line-height: 1.2;
+ 	width: 100%;
+@@ -142,3 +146,6 @@
+ 	/* content: "\f093"; */
+ 	content: "\f574";
+ }
++#ui-dialog-body.saves button[id="saves-clipboard-save"]::before {
++	content: "\f019";
++}
+diff --git a/src/css/ui.css b/src/css/ui.css
+new file mode 100644
+index 0000000..e69de29
+diff --git a/src/extensions/jquery/aria-plugin.js b/src/extensions/jquery/aria-plugin.js
+index 8e2d05a..d0bb5a2 100644
+--- a/src/extensions/jquery/aria-plugin.js
++++ b/src/extensions/jquery/aria-plugin.js
+@@ -41,14 +41,9 @@
+ 		return function () {
+ 			const $this = jQuery(this);
+ 
+-			// Exit if the element is disabled.
+-			//
+-			// NOTE: This should only be necessary for elements which are not disableable
+-			// per the HTML specification as disableable elements should be made inert
+-			// automatically.
+-			if ($this.ariaIsDisabled()) {
+-				return;
+-			}
++			const dataPassage = $this.attr('data-passage');
++			const initialDataPassage = window && window.SugarCube && window.SugarCube.State && window.SugarCube.State.passage;
++			const savedYOffset = window.pageYOffset;
+ 
+ 			// Toggle "aria-pressed" status, if the attribute exists.
+ 			if ($this.is('[aria-pressed]')) {
+@@ -57,6 +52,11 @@
+ 
+ 			// Call the true handler.
+ 			fn.apply(this, arguments);
++
++			const doJump = function(){ window.scrollTo(0, savedYOffset); }
++			if ( dataPassage && (window.lastDataPassageLink === dataPassage || initialDataPassage === dataPassage))
++				doJump();
++			window.lastDataPassageLink = dataPassage;
+ 		};
+ 	}
+ 
+diff --git a/src/idb_backend.js b/src/idb_backend.js
+new file mode 100644
+index 0000000..1780ec4
+--- /dev/null
++++ b/src/idb_backend.js
+@@ -0,0 +1,1469 @@
++/* eslint no-undef: "off", no-param-reassign: "off", no-alert: "off", no-fallthrough: "off", no-dupe-args: "warn", no-irregular-whitespace: "warn", max-len: "off", key-spacing: ["warn", {beforeColon: false, afterColon: true}], comma-dangle: ["warn", "always-multiline"], quotes: ["warn", "double"], indent: ["warn", "tab", {SwitchCase: 1}], id-length: "off", brace-style: ["warn", "1tbs"] */
++
++/*
++ * "simple" indexedDB backend for storing save data, working similarly to existing webStorage system
++ * indexedDB works faster, has virtually unlimited storage, but does not work properly in private mode. then again, localStorage doesn't persist in private mode either
++ * indexedDB operates asynchronously, by making requests that may be fulfilled or rejected later, without blocking the rest of the code, but also without a guarantee that requested values will be available when that rest of the code runs. this requires some working around.
++ * unlike old synchronous operations, most functions do not return the value immediately, but a promise to return it when it's completed. these promises can then be used to retrieve that data by calling Promise.then() callback function
++ * for example, `idb.getItem(0).then((value) => console.log(value))` will first attempt to retrieve save data from slot 0, and then when that is done - the then() function triggers, in this case printing retrieved value to the console
++ *
++ * this implementation doesn't rely on caches, doesn't compress save data in any way, and separates save details store from save data store to speed up building the save list and allow extra features like timestamp highlighting at minimal processing cost
++ * as a consequence, it requires more disk space, and a completely separate namespace that might need extra setup for games that override the default save list appearance
++ * generally though, just adding a "saveList" id or class to the div element where the saves should appear and replacing the function/macro that populates that div with "if (idb.active) idb.saveList(); else old-custom-way-of-building-save-menu" should be enough to make it work.
++ */
++
++const idb = (() => {
++	// return early if indexedDB is unavailable
++	if (window.indexedDB == null) {
++		return Object.freeze({
++			lock: true,
++			/* eslint-disable brace-style */
++			init() {
++				return false;
++			},
++			get active() {
++				return false;
++			},
++			set active(_) {
++			},
++			get footerHTML() {
++				return false;
++			},
++			set footerHTML(_) {
++			},
++		/* eslint-enable brace-style */
++		});
++	}
++
++	let lock = true; // don't allow multiple operations at the same time, the majority of sugarcube is not async
++	let active = true; // whether to use indexedDB or the old localStorage
++	let dbName = "idb"; // database name
++	let migrationNeeded = false; // flag to migrate old saves
++	let open = false; // some browsers randomly decide to close db still in use
++	let settings = {}; // persistent db settings stored in localStorage
++	updateSettings();
++	let saveDetails = []; // cache so we don't have to query all items from details store on every page change
++
++	let db; // database to be
++
++	let openRequest = null;
++	// open the database. should stay open while the page is open.
++	function openDB(name = dbName) {
++		return new Promise((resolve, reject) => {
++			dbName = name;
++			openRequest = indexedDB.open(idb.dbName);
++			// bring the database up to date
++			openRequest.onupgradeneeded = event => {
++				console.log("updating idb", event.oldVersion);
++				switch (event.oldVersion) {
++					case 0: // 0 means we're creating a new database from scratch
++						// create an object store for saves, containing lots of data
++						openRequest.result.createObjectStore("saves", { keyPath: "slot" });
++						// and a separate store for small details, that should be fast to access
++						openRequest.result.createObjectStore("details", { keyPath: "slot" });
++						// flag old saves from localStorage for migration
++						migrationNeeded = true;
++						break;
++					case 1:
++						break; // put db upgrade code here if it's ever needed
++				}
++			};
++			// errors most often happen in private browsing mode. nothing to do here.
++			openRequest.onerror = () => {
++				console.log("error opening idb", openRequest.error);
++				reject(openRequest.error);
++			};
++			// indexedDB is opened, mark the rest of the system as active
++			openRequest.onsuccess = () => {
++				db = openRequest.result;
++				lock = false;
++				open = true;
++				getSaveDetails().then(d => saveDetails = d);
++				console.log("idbOpen success");
++				if (navigator.storage && typeof navigator.storage.persist === "function") {
++					navigator.storage.persist();
++				}
++				db.onclose = ev => {
++					open = false;
++					active = false;
++					console.log("idb connection closed, this shouldn't happen", ev);
++					if (Errors) {
++						Errors.report("ERROR: idb connection closed unexpectedly", ev);
++					} else {
++						alert("ERROR: idb connection closed unexpectedly");
++					}
++				};
++				db.onerror = ev => {
++					console.error(`Database error: ${ev.target.errorCode}`);
++					active = false;
++				};
++				// this only triggers after initial db creation, but can't be put into onupgradeneeded because you need database to be successfully open before putting stuff into it
++				if (migrationNeeded) {
++					importFromLocalStorage();
++					migrationNeeded = false;
++				}
++				resolve(db);
++			};
++			openRequest.onblocked = () => {
++				console.log("something went wrong", openRequest.error);
++				reject(openRequest.error);
++			};
++		});
++	}
++
++	/**
++	 * synchronize internal settings with persistent storage
++	 * allowing them to survive page reload
++	 *
++	 * @param {string} setting accessor to modify
++	 * @param {boolean} value to set
++	 */
++	function updateSettings(setting, value) {
++		const storageName = "idb-settings";
++		settings = Serial.parse(localStorage.getItem(storageName)) || {
++			warnSave: false,
++			warnLoad: false,
++			warnDelete: true,
++			active: !window.FCHostPersistent,
++			useDelta: false,
++		};
++		if (setting) {
++			settings[setting] = value;
++		}
++		active = settings.active; // one-way sync, only change default when triggered by user, not by fail-safes
++		localStorage.setItem(storageName, Serial.stringify(settings));
++	}
++	updateSettings();
++
++	const baddies = [];
++	/**
++	 * scan and stringify functions that wormed their way into story vars
++	 * and other objects with custom toJSON revivals
++	 *
++	 * @param {object} target to scan
++	 * @param {object} path to report
++	 * @param {boolean} verbose flag to report objects too complex for idb
++	 */
++	function funNuke(target, path = "", verbose = true) {
++		if (!target) {
++			return console.log("no target specified");
++		}
++		for (const key in target) {
++			const value = target[key];
++			const newPath = `${path}['${key}']`;
++			if (value == null) {
++				// continue
++			} else if (typeof value === "function" || value.toJSON) {
++				// we've got a baddie, round him up!
++				if (verbose && V.idbTest) {
++					console.log(`Warn: ${newPath} of type ${typeof value} shouldn't be in STORY variables!!!`);
++				}
++				target[key] = Serial.stringify(value);
++				baddies.push(newPath);
++			} else if (typeof value === "object") {
++				funNuke(value, newPath, verbose);
++			}
++		}
++	}
++
++	/**
++	 * restore nuked functions and other nasty stuff
++	 *
++	 * @param {object} target store to alter
++	 * @param {Array} paths to restore
++	 */
++	function ekuNnuf(target = V, paths) {
++		/**
++		 * sub-function to revive specified path
++		 *
++		 * @param {object} target
++		 * @param {string} path string in a format "['path']['to']['object']"
++		 * @returns {boolean} true on success
++		 */
++		function revive(target, path) {
++			if (typeof path !== "string" || path === "") {
++				return console.log("Warn: invalid path", clone(path));
++			}
++			const accessors = path.slice(2, -2).split("']['");
++			let ref = target;
++			for (let i = 0, destination = accessors.length - 1; i <= destination; i++) {
++				if (i === destination) {
++					ref[accessors[i]] = Serial.parse(ref[accessors[i]]);
++				} else {
++					ref = ref[accessors[i]];
++				}
++			}
++			return true;
++		}
++
++		let path = paths.shift();
++		while (path) {
++			try {
++				revive(target, path);
++			} catch (ex) {
++				console.log("WARN: couldn't restore story var function", path);
++			}
++			path = paths.shift();
++		}
++	}
++
++	/**
++	 * copy saves from localStorage into indexedDB, without regard for what's already in there
++	 *
++	 * @returns {boolean} success of the operation
++	 */
++	async function importFromLocalStorage() {
++		function processSave(saveObj) {
++			const save = saveObj.state;
++			if (save.delta) {
++				save.history = State.deltaDecode(save.delta);
++			}
++			delete save.delta;
++			if (window.DoLSave) {
++				DoLSave.decompressIfNeeded({ state: save });
++			}
++
++			const vars = save.history[save.index].variables;
++			if (!vars.saveId) {
++				// assign saveId, use Math.random() to not trip prng
++				const saveId = Math.floor(Math.random() * 90000) + 10000;
++				save.history.forEach(s => s.variables.saveId = saveId);
++			}
++
++			const data = {
++				date: saveObj.date,
++				id: saveObj.id,
++				title: saveObj.title,
++				metadata: saveObj.metadata || { saveId: vars.saveId, saveName: vars.saveName },
++			};
++
++			return [save, data];
++		}
++
++		const autoSaves = Save.browser.auto.entries();
++		if (autoSaves.length > 0) {
++			const save = Save.browser.auto.getFull(autoSaves[0].index);
++			// autosave was moved from a separate list in old system to just 0
++			// if multiple autosaves are to be implemented, they can use negative slot numbers
++			const saveData = processSave(save);
++			// setItem only allows one operation at a time to prevent possible exploits, so wait for it to finish
++			await setItem(0, saveData[0], { slot: 0, data: saveData[1] });
++		}
++
++		const oldSaves = Save.browser.slot.entries();
++		for (let i = 0; i < oldSaves.length; i++) {
++			const save = Save.browser.slot.getFull(oldSaves[i].index);
++			const saveData = processSave(save);
++			await setItem(i + 1, saveData[0], { slot: i + 1, data: saveData[1] });
++		}
++
++		await getSaveDetails().then(d => saveDetails = d);
++		console.log("idb migration successful");
++		return true;
++	}
++
++	/**
++	 * turn transaction event handlers into promises
++	 *
++	 * @param {Request} transaction
++	 */
++	function makePromise(transaction) {
++		return new Promise((resolve, reject) => {
++			transaction.onsuccess = () => {
++				lock = false;
++				return resolve(transaction.result);
++			};
++			transaction.oncomplete = () => {
++				lock = false;
++				return resolve(transaction.result);
++			};
++			transaction.onerror = ev => {
++				lock = false;
++				active = false;
++				console.log(transaction.error, ev, "error");
++				return reject(transaction.error);
++			};
++			transaction.onabort = () => {
++				lock = false;
++				console.log("aborted", transaction.error);
++				return reject(transaction.error);
++			};
++		});
++	}
++
++	/**
++	 * retrieve an item from indexedDB
++	 *
++	 * @param {number} slot
++	 * @returns {Promise} promise to return a value some day
++	 */
++	async function getItem(slot) {
++		if (!open) {
++			await openDB();
++		}
++		const transactionRequest = db.transaction("saves", "readonly");
++		const item = transactionRequest.objectStore("saves").get(slot);
++
++		return makePromise(item);
++	}
++
++	/**
++	 * place a save object into saves store and a provided or calculated details object into details store
++	 * will replace existing object in specified slot without a second thought
++	 *
++	 * @param {number} slot slot to write into
++	 * @param {object} saveObj valid save object with unencoded history
++	 * @param {object} details optional save details to override what's going into details store
++	 * @returns {Promise | undefined} promise to report on success of this operation some day or return early
++	 */
++	async function setItem(slot, saveObj, details = {}) {
++		if (lock) {
++			return;
++		}
++		// if (saveObj == null || !Object.hasOwn(saveObj, "history")) return false;
++		if (saveObj == null || !saveObj.hasOwnProperty("history")) {
++			return false;
++		}
++		lock = true;
++
++		// prepare save details
++		const savesItem = { slot, data: saveObj };
++		const saveVars = saveObj.history[saveObj.index].variables;
++		const metadata = { saveId: saveVars.saveId, saveName: saveVars.saveName };
++
++		// Ensure details contains all necessary information
++		details = clone(details);
++		details.slot ??= slot;
++		details.data ??= {};
++		details.data.id ??= Story.id;
++		details.data.title ??= Config.saves.descriptions(Save.Type.Slot);
++		details.data.date ??= Date.now();
++		details.data.metadata = metadata;
++
++		// expect failures here
++		try {
++			if (!open) {
++				await openDB();
++			}
++			// sanitize complex data structures that can't be stored in idb
++			let counter = 0; // only report problems for the first frame
++			saveObj.history.forEach(s => {
++				baddies.splice(0); // clear the baddies
++				funNuke(s.variables, "", !counter++); // wrap up new baddies
++				if (baddies.length) {
++					s.baddies = clone(baddies);
++				} // seal the records
++			});
++			if (settings.useDelta) {
++				saveObj.delta = State.deltaEncode(saveObj.history);
++				delete saveObj.history;
++			}
++
++			// open a request to set or replace an existing slot
++			const transactionRequest = db.transaction(["saves", "details"], "readwrite");
++			transactionRequest.objectStore("saves").delete(slot);
++			transactionRequest.objectStore("saves").add(savesItem);
++			transactionRequest.objectStore("details").delete(slot);
++			transactionRequest.objectStore("details").add(details);
++
++			return makePromise(transactionRequest);
++		} catch (ex) {
++			// admit the defeat and go home
++			if (window.Errors) {
++				Errors.report(`idb.setItem failure unknown. Couldn't complete the save in slot ${slot}`);
++			} else {
++				alert(`idb.setItem failure unknown. Couldn't complete the save in slot ${slot}`);
++			}
++			lock = false;
++			// return a promise, because some code down the line expects .then()
++			return new Promise(resolve => resolve(false));
++		}
++	}
++
++	/**
++	 * delete save data in a specified slot
++	 *
++	 * @param {number} slot
++	 * @returns {Promise | undefined} promise to report on success or return early
++	 */
++	async function deleteItem(slot) {
++		if (lock) {
++			return;
++		}
++		if (!open) {
++			await openDB();
++		}
++		lock = true;
++
++		const transactionRequest = db.transaction(["saves", "details"], "readwrite");
++		transactionRequest.objectStore("saves").delete(slot);
++		transactionRequest.objectStore("details").delete(slot);
++
++		return makePromise(transactionRequest).then(await getSaveDetails().then(d => saveDetails = d));
++	}
++
++	/**
++	 * actually load a save from idb
++	 *
++	 * @param {number} slot
++	 */
++	function loadState(slot) {
++		if (lock) {
++			return;
++		}
++		return getItem(slot).then(value => {
++			if (value == null) {
++				return false;
++			}
++			if (value.data.delta) {
++				value.data.history = State.deltaDecode(value.data.delta);
++				delete value.data.delta;
++			}
++			value.data.history.forEach(s => {
++				// restore story var functions
++				if (s.baddies) {
++					ekuNnuf(s.variables, s.baddies);
++					delete s.baddies;
++				}
++			});
++			Save.onLoad.handlers.forEach(fn => fn({ state: value.data }));
++			State.unmarshalForSave(value.data);
++			Engine.show();
++		});
++	}
++
++	/**
++	 * save current game into idb
++	 *
++	 * @param {number} slot
++	 * @param {string} title
++	 */
++	async function saveState(slot, title) {
++		if (lock) {
++			return;
++		}
++		const saveObj = State.marshalForSave();
++		// assign V.saveId if necessary
++		if (!V.saveId) {
++			const saveId = Math.floor(Math.random() * 90000) + 10000;
++			V.saveId = saveId;
++			State.history.forEach(s => s.variables.saveId = saveId);
++			saveObj.history.forEach(s => s.variables.saveId = saveId);
++		}
++		Save.onSave.handlers.forEach(fn => fn({ state: saveObj, date: Date.now() }, { type: slot <= 0 ? "autosave" : "slot" })); // run onSave handlers
++		if (saveObj != null) {
++			await setItem(slot, saveObj, { data: { title } });
++			await getSaveDetails().then(d => saveDetails = d);
++			return true;
++		}
++		return false;
++	}
++
++	/**
++	 * get all elements from details db
++	 * details db mirrors metadata for real saves in saves db
++	 *
++	 * @returns {Array} list of details for all saves in idb
++	 */
++	async function getSaveDetails() {
++		if (!open) {
++			await openDB();
++		}
++		const transactionRequest = db.transaction(["details"], "readonly");
++		const details = transactionRequest.objectStore("details").getAll();
++
++		return makePromise(details);
++	}
++
++	/**
++	 * get DATA for ALL saves in the db
++	 * WILL fail if db is bigger than 2gb (and probably earlier)
++	 *
++	 * @returns {Array} list of data for all saves in idb
++	 */
++	async function getAllSaves() {
++		if (!open) {
++			await openDB();
++		}
++		const transactionRequest = db.transaction(["saves"], "readonly");
++		const details = transactionRequest.objectStore("saves").getAll();
++
++		return makePromise(details);
++	}
++
++	/**
++	 * mercilessly clear all object stores one step short from outright deleting the db itself
++	 *
++	 * @returns {Promise | undefined} promise to maybe report when the deed is done or return early
++	 */
++	async function clearAll() {
++		if (lock) {
++			return;
++		}
++		if (!open) {
++			await openDB();
++		}
++		const transactionRequest = db.transaction(["saves", "details"], "readwrite");
++		transactionRequest.objectStore("saves").clear();
++		transactionRequest.objectStore("details").clear();
++		saveDetails = [];
++
++		return makePromise(transactionRequest);
++	}
++
++	/**
++	 * check if saves are allowed
++	 */
++	function savesAllowed() {
++		return typeof Config.saves.isAllowed !== "function" || Config.saves.isAllowed();
++	}
++
++	/**
++	 * define saveList variables
++	 */
++
++	let listLength; // store save list length in idb
++	let listPage; // same with the current page
++	const listLengthMax = 20; // maximum number of rows
++	const listPageMax = 20; // maximum number of pages
++	let latestSave = { slot: 1, date: 0 }; // keep track of the most recent save, separately from autosave on slot 0
++	let extraSaveWarn;
++	let footerHTML = ""; // add some text to fill empty space at the deleteAll button
++
++	/**
++	 * construct a saves list page, with configurable length
++	 *
++	 * @param {number} page
++	 * @param {number} length
++	 * @returns {DocumentFragment};
++	 */
++	function generateSavesPage(page = listPage - 1, length = listLength) {
++		const listContainer = document.createElement("div");
++		listContainer.id = "saves-list";
++		listContainer.classList.add("idb-saves-list");
++		listContainer.appendChild(generateHeaderRow());
++		// cache whether saves are allowed
++		const saveUnlock = savesAllowed();
++
++		// find the most recent save that is not autosave
++		latestSave = { slot: 1, date: 0 }; // re-init latest slot every time
++		let autoSaveDate; // store timestamp for the autosave separately
++		saveDetails.forEach(d => {
++			if (d.slot === 0) {
++				autoSaveDate = d.data.date;
++			} else if (d.data.date > latestSave.date) {
++				latestSave.slot = d.slot;
++				latestSave.date = d.data.date;
++			}
++		});
++		// default list length is set here
++		if (!listLength) {
++			// idb is indexed by slot, so the highest is always last
++			const slot = saveDetails.length ? saveDetails.last().slot : 0;
++			// adjust list length to include saves in the highest slot
++			// max pages is 20 (still too low if you're using 1080x1920 portrait mode)
++			// by default, list length is 10, resulting into up to 200 slots across 20 pages
++			// max list length is 20, resulting into up to 400 slots
++			// having a save anywhere in slots > 200 shall increase list length so it won't disappear
++			// it can also be used to increase default list length without any extra variables
++			for (listLength = 10; slot > listLength * listPageMax && listLength < listLengthMax; listLength++) {
++				// TODO: this should be possible to calculate in one statement
++			}
++			length = listLength;
++		}
++		// if not set to a correct value, show the page with the most recent save
++		if (!Number.isInteger(page)) {
++			// autosave is shown on every page, so if autosave is the most recent save - open the page with the most recent non-autosave with the same ID
++			const latestSlot = saveDetails.find(d => d.slot === latestSave.slot);
++			if (latestSlot) {
++				const autoSaveExists = saveDetails[0].slot === 0;
++				const ignoreAutoSave = latestSlot.data.date > autoSaveDate || latestSlot.data.metadata.saveId === saveDetails[0].data.metadata.saveId;
++				if (!autoSaveExists || ignoreAutoSave) {
++					page = Math.floor((latestSave.slot - 1) / length);
++				} else {
++					page = 0;
++				}
++			} else {
++				page = 0;
++			}
++			listPage = page + 1;
++		}
++
++		// getSaveDetails can take longer to init listLength and listPage than it takes for their fields to be placed on page, gotta update them in such case
++		const pageField = document.getElementById("pageNum");
++		if (pageField != null) {
++			pageField.value = listPage;
++		}
++		const lengthField = document.getElementById("pageLen");
++		if (lengthField != null) {
++			lengthField.value = listLength;
++		}
++
++		// default object details for an empty slot
++		const defaultDetailsObj = { date: "", title: "", metadata: { saveId: "", saveName: "" } };
++
++		// always show autosave on top
++		const autoDetailsObj = saveDetails[0] && saveDetails[0].slot === 0 ? saveDetails[0].data : clone(defaultDetailsObj);
++		if (autoSaveDate > latestSave.date) {
++			autoDetailsObj.latestSlot = true;
++		}
++		autoDetailsObj.slot = 0;
++		// don't show if autosaves are disabled by the engine
++		if (Save.browser.auto.isEnabled()) {
++			listContainer.appendChild(generateSaveRow(autoDetailsObj));
++		}
++
++		// main loop for adding the save rows
++		for (let slot = length * page + 1; slot < length * (page + 1) + 1; slot++) {
++			// create default details
++			let detailsObj = clone(defaultDetailsObj);
++			// if a save exists in idb, replace the details with recorded ones
++			const detailsIndex = saveDetails.findIndex(d => d.slot === slot);
++			if (detailsIndex !== -1) {
++				detailsObj = saveDetails[detailsIndex].data;
++				// add a flag to highlight the most recent save
++				if (Number(latestSave.slot) === slot) {
++					detailsObj.latestSlot = true;
++				}
++			}
++			detailsObj.slot = slot;
++			detailsObj.saveUnlock = saveUnlock;
++			listContainer.appendChild(generateSaveRow(detailsObj));
++		}
++
++		return listContainer;
++	}
++
++	/**
++	 * construct the header row for the save list
++	 * warning: unnecessarily complicated DOM manipulations
++	 *
++	 * @returns {DocumentFragment} header row
++	 */
++	function generateHeaderRow() {
++		const frag = document.createDocumentFragment();
++		const saveListHeader = document.createElement("div");
++		saveListHeader.className = "savesListRow";
++		frag.appendChild(saveListHeader);
++
++		const headerSaveGroup = document.createElement("div");
++		headerSaveGroup.className = "saveGroup";
++		saveListHeader.appendChild(headerSaveGroup);
++
++		const headerSaveId = document.createElement("div");
++		headerSaveId.className = "saveId";
++		headerSaveId.innerText = "#";
++		headerSaveGroup.appendChild(headerSaveId);
++
++		const headerSaveButton = document.createElement("div");
++		headerSaveButton.className = "saveButton";
++		headerSaveButton.innerText = L10n.get("savesHeaderSaveLoad");
++		headerSaveGroup.appendChild(headerSaveButton);
++
++		const headerSaveName = document.createElement("div");
++		headerSaveName.className = "saveName";
++		headerSaveName.innerText = L10n.get("savesHeaderIDName");
++		headerSaveGroup.appendChild(headerSaveName);
++
++		const headerSaveDetails = document.createElement("div");
++		headerSaveDetails.className = "saveDetails";
++		headerSaveDetails.innerText = L10n.get("savesHeaderDetails");
++		headerSaveGroup.appendChild(headerSaveDetails);
++
++		const headerDeleteButton = document.createElement("div");
++		headerDeleteButton.className = "deleteButton";
++		headerSaveGroup.appendChild(headerDeleteButton);
++
++		return frag;
++	}
++
++	/**
++	 * Copied from ui.js
++	 * @param {string} id
++	 * @param {string} classNames
++	 * @param {string} text
++	 * @param {string} label
++	 * @param {Function} callback
++	 * @returns {jQuery}
++	 */
++	function createActionItem(id, classNames, text, label, callback) {
++		const $btn = jQuery(document.createElement("button"))
++			.attr("id", `saves-${id}`)
++			.text(text);
++
++		if (classNames) {
++			$btn.addClass(classNames);
++		}
++
++		if (callback) {
++			$btn.ariaClick({ label }, callback);
++		} else {
++			$btn.ariaDisabled(true);
++		}
++
++		return jQuery(document.createElement("li"))
++			.append($btn);
++	}
++
++	/**
++	 * Copied from ui.js
++	 * @param {string} id
++	 * @param {Function} callback
++	 * @returns {Element}
++	 */
++	function createFileInput(id, callback) {
++		const input = document.createElement("input");
++
++		jQuery(input)
++			.attr({
++				id,
++				type: "file",
++				tabindex: -1,
++				"aria-hidden": true,
++			})
++			.css({
++				display: "block",
++				visibility: "hidden",
++				position: "fixed",
++				left: "-16128px", // 8K UHD horizontal ×2.1
++				top: "-16128px", // 8K UHD horizontal ×2.1
++				width: "1px",
++				height: "1px",
++			})
++			.on("change", callback);
++
++		return input;
++	}
++
++	/**
++	 * construct the footer row for the save list
++	 * warning: unnecessarily complicated DOM manipulations
++	 *
++	 * @returns {jQuery} footer row
++	 */
++	function generateFooterRow() {
++		const $diskButtons = jQuery(document.createElement("ul"))
++			.addClass("buttons slots");
++
++		if (Has.fileAPI) {
++			// Add the disk save/load buttons and the hidden `input[type=file]`
++			// element that will be triggered by the `#saves-disk-load` button.
++			const diskLoadInput = createFileInput("saves-disk-load-handler", ev => {
++				jQuery(document).one(":dialogclosed", () => {
++					Save.disk.load(ev)
++						.then(
++							Engine.show,
++							ex => openAlert(`${ex.message.toUpperFirst()}.</p><p>${L10n.get("textAborting")}.`),
++						);
++				});
++				Dialog.close();
++			});
++
++			$diskButtons
++				.append(createActionItem(
++					"disk-save",
++					null,
++					`${L10n.get("textSave")}\u2026`,
++					L10n.get("savesLabelDiskSave"),
++					typeof Config.saves.isAllowed !== "function" || Config.saves.isAllowed(Save.Type.Disk)
++						? () => {
++							Save.disk.save(Story.name);
++							Dialog.close();
++						}
++						: null,
++				))
++				.append(createActionItem(
++					"disk-load",
++					null,
++					`${L10n.get("textLoad")}\u2026`,
++					L10n.get("savesLabelDiskLoad"),
++					() => diskLoadInput.click(),
++				));
++
++			jQuery(diskLoadInput).appendTo($diskButtons);
++		}
++
++		// save to clipboard button
++		$diskButtons
++			.append(createActionItem(
++				"clipboard-save",
++				"ui-close",
++				`${L10n.get("savesLabelToClipboard")}\u2026`,
++				L10n.get("savesLabelToClipboard"),
++				typeof Config.saves.isAllowed !== "function" || Config.saves.isAllowed(Save.Type.Disk)
++					? () => Save.toClipboard()
++					: null,
++			));
++
++		$diskButtons.append(createActionItem(
++			"clear",
++			null,
++			L10n.get("textClear"),
++			L10n.get("savesLabelBrowserClear"),
++			() => saveList("confirm clear"),
++		));
++
++		return $diskButtons;
++	}
++
++	/**
++	 * optional extra footer row
++	 */
++	function generateExtraFooterRow() {
++		if (!footerHTML) {
++			return null;
++		}
++		const container = document.createElement("ul");
++		container.className = "buttons";
++		container.innerHTML = footerHTML;
++
++		return container;
++	}
++
++	/**
++	 * Copied from ui.js
++	 * @param {"delete"|"load"|"save"} id
++	 * @param {string|null} classNames
++	 * @param {string} kind
++	 * @param {number} index
++	 * @param {Function} callback
++	 * @returns {jQuery}
++	 */
++	function createButton(id, classNames, kind, index, callback) {
++		let text;
++
++		switch (id) {
++			case "delete":
++				text = L10n.get("textDelete");
++				break;
++			case "load":
++				text = L10n.get("textLoad");
++				break;
++			case "save":
++				text = L10n.get("textSave");
++				break;
++			default:
++				throw new Error(`buildSaves unknown ID "${id}"`);
++		}
++
++		const $btn = jQuery(document.createElement("button"))
++			.attr("id", `saves-${id}-${index}`)
++			.addClass(id);
++
++		if (classNames) {
++			$btn.addClass(classNames);
++		}
++
++		if (callback) {
++			$btn.ariaClick({
++				label: `${text} ${kind} ${index > 0 ? index : "Autosave"}`,
++			}, () => {
++				try {
++					callback(index);
++				} catch (ex) {
++					openAlert(`${ex.message}.</p><p>${L10n.get("textAborting")}.`);
++				}
++			});
++		} else {
++			$btn.ariaDisabled(true);
++		}
++
++		return $btn;
++	}
++
++	/**
++	 * all this to generate a single saves row from provided details
++	 * pure js dom manipulations are ugly
++	 *
++	 * @param {object} details save details
++	 * @returns {DocumentFragment}
++	 */
++	function generateSaveRow(details) {
++		// save row to be returned
++		const row = document.createElement("div");
++		// add a fancy transition that would highlight the row with this id
++		if (details.latestSlot && details.slot !== 0) {
++			row.id = "latestSaveRow";
++		}
++		row.className = "savesListRow";
++
++		// save group container
++		const group = document.createElement("div");
++		group.className = "saveGroup";
++
++		// save ID
++		const saveId = document.createElement("div");
++		saveId.className = "saveId";
++		saveId.innerText = details.slot === 0 ? "A" : details.slot;
++		if (details.slot > listPageMax * listLengthMax || details.slot < 0) {
++			saveId.classList.add("red");
++		}
++
++		// save/load buttons container
++		const saveLoad = document.createElement("div");
++		saveLoad.className = "saveButton";
++
++		// save button
++		const $saveButton = createButton(
++			"save",
++			null,
++			L10n.get("savesTextBrowserSlot"),
++			details.slot,
++			details.saveUnlock ? () => saveList("confirm save", details) : null,
++		);
++
++		// load button
++		const $loadButton = createButton(
++			"load",
++			null,
++			L10n.get("savesTextBrowserSlot"),
++			details.slot,
++			details.date ? () => saveList("confirm load", details) : null,
++		);
++		if (details.slot !== 0) {
++			$saveButton.appendTo(saveLoad);
++		}
++		$loadButton.appendTo(saveLoad);
++
++		// save name
++		const saveName = document.createElement("div");
++		saveName.className = "saveName";
++		// highlight saves with currently loaded save's id
++		if (V.saveId === details.metadata.saveId) {
++			saveName.classList.add("gold");
++		}
++		saveName.innerText = details.metadata.saveName ? details.metadata.saveName.slice(0, 10) : details.metadata.saveId;
++
++		// save details
++		const saveDetails = document.createElement("div");
++		saveDetails.className = "saveDetails";
++		// description
++		const description = document.createElement("span");
++		description.innerText = details.title || "\xa0";
++		// date stamp
++		const date = document.createElement("span");
++		date.className = "datestamp";
++		if (details.date) {
++			// highlight (most) recent save(s)
++			if (details.latestSlot) {
++				date.classList.add("green");
++			} else if (details.date > Date.now() - 1800000) {
++				date.classList.add("gold");
++			}
++			date.innerText = new Date(details.date).toLocaleString();
++		} else {
++			date.innerText = "\xa0";
++		}
++		saveDetails.appendChild(description);
++		saveDetails.appendChild(date);
++
++		// delete button
++		const $deleteButton = createButton(
++			"delete",
++			null,
++			L10n.get("savesTextBrowserSlot"),
++			details.slot,
++			details.date ? () => saveList("confirm delete", details) : null,
++		);
++
++		group.append(saveId, saveLoad, saveName, saveDetails);
++		row.appendChild(group);
++		$deleteButton.appendTo(row);
++
++		return row;
++	}
++
++	/**
++	 * @returns {HTMLUListElement}
++	 */
++	function generatePager() {
++		const container = document.createElement("ul");
++		container.className = "buttons slots";
++		let li;
++
++		li = document.createElement("li");
++		li.append(L10n.get("savesPagerPage"));
++		container.appendChild(li);
++
++		// previous page button
++		const prevPage = document.createElement("button");
++		prevPage.append("<");
++		if (listPage > 1) {
++			prevPage.classList.add("saveMenuButton");
++			prevPage.onclick = () => {
++				--listPage;
++				saveList("show saves");
++			};
++		} else {
++			prevPage.disabled = true;
++		}
++		li = document.createElement("li");
++		li.appendChild(prevPage);
++		container.appendChild(li);
++
++
++		// page number input
++		const pageNum = document.createElement("input");
++		Object.assign(pageNum, {
++			id: "pageNum",
++			type: "number",
++			value: listPage,
++			style: "width: 3em",
++			min: 1,
++			max: listPageMax,
++			onchange: () => {
++				listPage = Math.clamp(Math.round(pageNum.value), 1, listPageMax);
++				saveList("show saves");
++			},
++		});
++		container.appendChild(pageNum); // Not in a li to keep closer to buttons
++
++		// next page button
++		const nextPage = document.createElement("button");
++		nextPage.append(">");
++		if (listPage < listPageMax) {
++			nextPage.classList.add("saveMenuButton");
++			nextPage.onclick = () => {
++				++listPage;
++				saveList("show saves");
++			};
++		} else {
++			nextPage.disabled = true;
++		}
++		nextPage.onclick = () => {
++			if (listPage < listPageMax) {
++				listPage++;
++			}
++			saveList("show saves");
++		};
++		li = document.createElement("li");
++		li.appendChild(nextPage);
++		container.appendChild(li);
++
++		li = document.createElement("li");
++		li.append(L10n.get("savesPagerSavesPerPage"));
++		container.appendChild(li);
++
++		// list length input
++		const pageLen = document.createElement("input");
++		Object.assign(pageLen, {
++			id: "pageLen",
++			type: "number",
++			value: listLength,
++			style: "width: 3em",
++			min: 1,
++			max: listLengthMax,
++			onchange: () => {
++				listLength = Math.clamp(pageLen.value, 1, listLengthMax);
++				saveList("show saves");
++			},
++		});
++		li = document.createElement("li");
++		li.append(pageLen);
++		container.appendChild(li);
++
++		// jump to most recent save button
++		const jumpToLatest = document.createElement("button");
++		jumpToLatest.className = "saveMenuButton";
++		jumpToLatest.innerText = L10n.get("savesPagerJump");
++		jumpToLatest.onclick = () => {
++			// potentially exploitable to allow saving to slots way above the limit, but the limit is arbitrary to begin with, and idb doesn't actually suffer one bit from going beyond that limit
++			listPage = Math.floor((latestSave.slot - 1) / listLength + 1);
++			saveList("show saves");
++			setTimeout(() => {
++				const el = document.getElementById("latestSaveRow");
++				if (el != null) {
++					el.classList.remove("jumpToSaveTransition");
++					el.classList.add("jumpToSaveTransition");
++				}
++			}, Engine.minDomActionDelay + 100);
++		};
++		li = document.createElement("li");
++		li.appendChild(jumpToLatest);
++		container.appendChild(li);
++
++		return container;
++	}
++
++	// itch app must die or at least update to kitch version, smh
++	const replaceChildren = !!document.body.replaceChildren;
++
++	// alias for closing the saves menu
++	if (typeof window.closeOverlay === "undefined") {
++		window.closeOverlay = Dialog.close;
++	}
++
++	/**
++	 * replace contents of saveList div with something useful
++	 *
++	 * @param {string} mode switch for displaying saves list or confirmations
++	 * @param {object} details save details for confirmations
++	 */
++	async function saveList(mode, details) {
++		if (!open) {
++			await openDB();
++		}
++		if (active && !settings.active) {
++			updateSettings("active", true);
++		} // for when it's called from old save menu
++		if (!mode) {
++			// update saveDetails every time menu opens with no options, in case game was saved in another tab
++			await getSaveDetails().then(d => saveDetails = d);
++			mode = "show saves";
++		}
++
++		await new Promise(r => setTimeout(() => r(true), 0)); // this actually ensures that #saveList had time to render into DOM
++		const savesDiv = document.getElementById("saveList") || document.getElementsByClassName("saveList")[0] || document.getElementsByClassName("saves")[0];
++		const list = document.createDocumentFragment();
++
++		// prepare a re-usable cancel button
++		const cancelButton = document.createElement("button");
++		cancelButton.className = "saveMenuButton saveMenuConfirm";
++		cancelButton.innerText = L10n.get("textCancel");
++		cancelButton.onclick = () => saveList("show saves");
++
++		// prepare old save info (if provided)
++		function generateOldSaveDescription(details) {
++			const oldSaveDescription = document.createDocumentFragment();
++			if (!details || !details.date) {
++				return oldSaveDescription;
++			}
++
++			const oldSaveTitle = document.createElement("p");
++			oldSaveTitle.innerText = `${L10n.get("savesDescTitle")} ${details.title}`;
++
++			const oldSaveData = document.createElement("p");
++			oldSaveData.innerText = `${details.metadata.saveName ? L10n.get("savesDescName") + details.metadata.saveName : L10n.get("savesDescId") + details.metadata.saveId} ${L10n.get("savesDescDate")} ${new Date(details.date).toLocaleString()}`;
++
++			oldSaveDescription.append(oldSaveTitle, oldSaveData);
++
++			return oldSaveDescription;
++		}
++
++		switch (mode) {
++			case "show saves": {
++				// print saves list
++				// show the warnings
++				if (!savesAllowed()) {
++					const notAllowedWarning = document.createElement("h3");
++					notAllowedWarning.className = "red";
++					notAllowedWarning.innerText = V.replayScene ? L10n.get("savesDisallowedReplay") : L10n.get("savesDisallowed");
++					list.appendChild(notAllowedWarning);
++				}
++
++				const exportReminder = document.createElement("p");
++				exportReminder.id = "saves-export-reminder";
++				exportReminder.innerText = L10n.get("savesExportReminder");
++				list.appendChild(exportReminder);
++
++				// extra saves warning
++				if (extraSaveWarn) {
++					const lostSaves = document.createElement("p");
++					lostSaves.innerHTML = "<i class=\"description\"><u>Where are my saves?</u></i> ";
++					const lostSavesTooltip = document.createElement("mouse");
++					lostSavesTooltip.classList.add("tooltip", "linkBlue");
++					lostSavesTooltip.innerText = "(?)";
++					lostSavesTooltip.appendChild(document.createElement("span"));
++					lostSavesTooltip.lastChild.innerText = "If you can't find your saves, it's possible you saved them using a different storage method. Try toggling the \"Use old legacy storage\" option below the saves list.";
++					lostSaves.appendChild(lostSavesTooltip);
++					list.appendChild(lostSaves);
++				}
++
++				// THE SAVES LIST
++				list.appendChild(generateSavesPage());
++
++				// button row
++				generateFooterRow().appendTo(list);
++
++				// optional footer row
++				if (footerHTML) {
++					list.appendChild(generateExtraFooterRow());
++				}
++
++				// add pager
++				list.appendChild(generatePager());
++
++				// add confirmation toggles
++				const ul = document.createElement("ul");
++				ul.className = "buttons slots";
++				let li;
++				li = document.createElement("li");
++				li.append(L10n.get("savesOptionsConfirmOn"));
++				ul.appendChild(li);
++
++				const reqSaveLabel = document.createElement("label");
++				reqSaveLabel.innerText = `${L10n.get("savesOptionsOverwrite")} `;
++				const reqSave = document.createElement("input");
++				reqSave.type = "checkbox";
++				reqSave.checked = settings.warnSave;
++				reqSave.onchange = () => updateSettings("warnSave", reqSave.checked);
++				reqSaveLabel.appendChild(reqSave);
++				li = document.createElement("li");
++				li.appendChild(reqSaveLabel);
++				ul.appendChild(li);
++
++				const reqLoadLabel = document.createElement("label");
++				reqLoadLabel.innerText = `${L10n.get("textLoad")} `;
++				const reqLoad = document.createElement("input");
++				reqLoad.type = "checkbox";
++				reqLoad.checked = settings.warnLoad;
++				reqLoad.onchange = () => updateSettings("warnLoad", reqLoad.checked);
++				reqLoadLabel.appendChild(reqLoad);
++				li = document.createElement("li");
++				li.appendChild(reqLoadLabel);
++				ul.append("|", li);
++
++				const reqDeleteLabel = document.createElement("label");
++				reqDeleteLabel.innerText = `${L10n.get("textDelete")} `;
++				const reqDelete = document.createElement("input");
++				reqDelete.type = "checkbox";
++				reqDelete.checked = settings.warnDelete;
++				reqDelete.onchange = () => updateSettings("warnDelete", reqDelete.checked);
++				reqDeleteLabel.appendChild(reqDelete);
++				li = document.createElement("li");
++				li.appendChild(reqDeleteLabel);
++				ul.append("|", li);
++
++				// last element gets floated to the right. empty one doesn't matter
++				ul.append(document.createElement("li"));
++
++				// add instant idb switcher
++				const idbtoggle = document.createElement("button");
++				idbtoggle.id = "saves-idb-toggle";
++				idbtoggle.className = "saveMenuButton";
++				idbtoggle.innerText = L10n.get("savesOptionsUseLegacy");
++				idbtoggle.onclick = () => {
++					updateSettings("active", false);
++					if (window.DoLSave) {
++						$.wiki("<<replace #saveList>><<saveList>><</replace>>");
++					} else {
++						UI.buildSaves();
++					}
++				};
++				li = document.createElement("li");
++				li.appendChild(idbtoggle);
++				ul.appendChild(li);
++
++				list.appendChild(ul);
++
++				setTimeout(() => {
++					if (replaceChildren) {
++						savesDiv.replaceChildren(list);
++					} else { // curse you, itch app!
++						savesDiv.innerHTML = "";
++						savesDiv.appendChild(list);
++					}
++					const pageField = document.getElementById("pageNum");
++					if (pageField != null) {
++						pageField.value = listPage;
++					}
++					const lengthField = document.getElementById("pageLen");
++					if (lengthField != null) {
++						lengthField.value = listLength;
++					}
++					Dialog.resize(); // fix dialog size
++				}, Engine.minDomActionDelay);
++				break;
++			}
++			case "confirm save": {
++				// skip confirmation if the slot is empty, but do not skip on saveId mismatch, even if confirmation is not required
++				if (!details.date || !settings.warnSave && details.metadata.saveId === V.saveId) {
++					return saveState(details.slot).then(window.closeOverlay());
++				}
++				const confirmSaveWarning = document.createElement("div");
++				confirmSaveWarning.className = "saveBorder";
++
++				const confirmSaveWarningTitle = document.createElement("h3");
++				confirmSaveWarningTitle.className = "red";
++				confirmSaveWarningTitle.innerText = `${details.date === "" ? L10n.get("savesWarningSaveOnSlot") : L10n.get("savesWarningOverwriteSlot")} ${details.slot}?`;
++
++				if (details.date && V.saveId !== details.metadata.saveId) {
++					const overwriteWarning = document.createElement("span");
++					overwriteWarning.className = "red";
++					overwriteWarning.innerText = L10n.get("savesWarningOverwriteID");
++				}
++
++				const saveButton = document.createElement("input");
++				Object.assign(saveButton, {
++					type: "button",
++					className: "saveMenuButton saveMenuConfirm",
++					value: L10n.get("textSave"),
++					onclick: () => saveState(details.slot).then(() => window.closeOverlay()),
++				});
++				confirmSaveWarning.append(confirmSaveWarningTitle, generateOldSaveDescription(details), saveButton, cancelButton);
++
++				list.appendChild(confirmSaveWarning);
++				setTimeout(() => {
++					if (replaceChildren) {
++						savesDiv.replaceChildren(list);
++					} else { // curse you, itch app!
++						savesDiv.innerHTML = "";
++						savesDiv.appendChild(list);
++					}
++				}, Engine.minDomActionDelay);
++				break;
++			}
++			case "confirm delete": {
++				// skip confirmation if corresponding toggle is off
++				if (!settings.warnDelete) {
++					return deleteItem(details.slot).then(() => saveList("show saves"));
++				}
++				const confirmDeleteWarning = document.createElement("div");
++				confirmDeleteWarning.className = "saveBorder";
++				const confirmDeleteWarningTitle = document.createElement("h3");
++				confirmDeleteWarningTitle.className = "red";
++				confirmDeleteWarningTitle.innerText = `${L10n.get("savesWarningDeleteInSlot") + (details.slot === 0 ? "auto" : details.slot)}?`;
++
++				const deleteButton = document.createElement("input");
++				Object.assign(deleteButton, {
++					type: "button",
++					className: "saveMenuButton saveMenuConfirm",
++					value: L10n.get("textDelete"),
++					onclick: () => deleteItem(details.slot).then(() => saveList("show saves")),
++				});
++
++				confirmDeleteWarning.append(confirmDeleteWarningTitle, generateOldSaveDescription(details), deleteButton, cancelButton);
++
++				list.appendChild(confirmDeleteWarning);
++				setTimeout(() => {
++					if (replaceChildren) {
++						savesDiv.replaceChildren(list);
++					} else { // curse you, itch app!
++						savesDiv.innerHTML = "";
++						savesDiv.appendChild(list);
++					}
++				}, Engine.minDomActionDelay);
++				break;
++			}
++			case "confirm load": {
++				// skip confirmation if corresponding toggle is off
++				if (!settings.warnLoad) {
++					Dialog.close();
++					return loadState(details.slot).then(() => window.closeOverlay());
++				}
++				const confirmLoad = document.createElement("div");
++				confirmLoad.className = "saveBorder";
++				const confirmLoadTitle = document.createElement("h3");
++				confirmLoadTitle.className = "red";
++				confirmLoadTitle.innerText = `${L10n.get("savesWarningLoad") + (details.slot === 0 ? "auto" : details.slot)}?`;
++
++				const loadButton = document.createElement("input");
++				Object.assign(loadButton, {
++					type: "button",
++					className: "saveMenuButton saveMenuConfirm",
++					value: L10n.get("textLoad"),
++					onclick: () => {
++						Dialog.close();
++						idb.loadState(details.slot).then(() => window.closeOverlay());
++					},
++				});
++				confirmLoad.append(confirmLoadTitle, generateOldSaveDescription(details), loadButton, cancelButton);
++
++				list.appendChild(confirmLoad);
++				setTimeout(() => {
++					if (replaceChildren) {
++						savesDiv.replaceChildren(list);
++					} else { // curse you, itch app!
++						savesDiv.innerHTML = "";
++						savesDiv.appendChild(list);
++					}
++				}, Engine.minDomActionDelay);
++				break;
++			}
++			case "confirm clear": {
++				// storage wipes always require confirmation
++				const confirmClear = document.createElement("div");
++				confirmClear.className = "saveBorder";
++				const confirmClearTitle = document.createElement("h2");
++				confirmClearTitle.className = "red";
++				confirmClearTitle.innerText = L10n.get("savesWarningDeleteAll");
++
++				const clearButton = document.createElement("input");
++				Object.assign(clearButton, {
++					type: "button",
++					className: "saveMenuButton saveMenuConfirm",
++					value: L10n.get("textClear"),
++					onclick: () => clearAll().then(() => saveList("show saves")),
++				});
++				confirmClear.append(confirmClearTitle, clearButton, cancelButton);
++
++				list.appendChild(confirmClear);
++				setTimeout(() => {
++					if (replaceChildren) {
++						savesDiv.replaceChildren(list);
++					} else { // curse you, itch app!
++						savesDiv.innerHTML = "";
++						savesDiv.appendChild(list);
++					}
++				}, Engine.minDomActionDelay);
++				break;
++			}
++		}
++	}
++
++	/**
++	 * test function for closing the db
++	 */
++	function close() {
++		db.close();
++		open = false;
++	}
++
++	return Object.freeze({
++		get dbName() {
++			return dbName;
++		},
++		set dbName(val) {
++			dbName = val;
++		},
++		get lock() {
++			return lock;
++		},
++		set lock(val) {
++			lock = Boolean(val);
++		},
++		get active() {
++			return active;
++		},
++		set active(val) {
++			active = val;
++		},
++		get listLength() {
++			return listLength;
++		},
++		set listLength(val) {
++			listLength = val;
++		},
++		get listPage() {
++			return listPage;
++		},
++		set listPage(val) {
++			listPage = val;
++		},
++		getItem,
++		setItem,
++		deleteItem,
++		clearAll,
++		getSaveDetails,
++		getAllSaves,
++		saveState,
++		loadState,
++		importFromLocalStorage,
++		saveList,
++		get footerHTML() {
++			return footerHTML;
++		},
++		set footerHTML(val) {
++			footerHTML = val;
++		},
++		init(dbName) {
++			return openDB(dbName);
++		},
++		close,
++		updateSettings,
++		baddies,
++		funNuke,
++		ekuNnuf,
++	});
++})();
++window.idb = idb;
+diff --git a/src/l10n/strings.js b/src/l10n/strings.js
+index 231dec8..032182a 100644
+--- a/src/l10n/strings.js
++++ b/src/l10n/strings.js
+@@ -53,6 +53,31 @@ var l10nStrings = { // eslint-disable-line no-unused-vars, no-var
+ 	// (noun) chance to act (in a game), moment, period
+ 	textTurn : 'Turn',
+ 
++	/*
++		idb related
++	*/
++	savesEnableIdb            : 'Enable indexedDB',
++	savesDisallowedReplay     : 'The scene viewer is currently in use, preventing the use of the save system.',
++	savesExportReminder       : 'Warning: If your browser cache is cleared, saves here will be lost! Consider saving to file every so often!',
++	savesHeaderSaveLoad       : 'Save/Load',
++	savesHeaderIDName         : 'ID/Name',
++	savesHeaderDetails        : 'Details',
++	savesDescTitle            : 'Title:',
++	savesDescName             : 'Save Name:',
++	savesDescId               : 'Save Id:',
++	savesDescDate             : 'Date:',
++	savesPagerJump            : 'Jump to most recent manual save',
++	savesPagerPage            : 'Page:',
++	savesPagerSavesPerPage    : 'Saves per page:',
++	savesOptionsConfirmOn     : 'Require confirmation on:',
++	savesOptionsOverwrite     : 'Overwrite',
++	savesOptionsUseLegacy     : 'Switch to legacy save storage',
++	savesWarningSaveOnSlot    : 'Save on slot',
++	savesWarningOverwriteSlot : 'Overwrite save in slot',
++	savesWarningOverwriteID   : 'Save ID does not match, continue with overwrite?',
++	savesWarningDeleteInSlot  : 'Delete save in slot',
++	savesWarningLoad          : 'Load slot',
++	savesWarningDeleteAll     : 'WARNING - DO YOU REALLY WANT TO DELETE ALL SAVES?',
+ 
+ 	/*******************************************************************************
+ 		Errors.
+@@ -144,7 +169,8 @@ var l10nStrings = { // eslint-disable-line no-unused-vars, no-var
+ 
+ 	savesLabelDiskLoad : 'Load from disk',
+ 
+-	savesLabelDiskSave : 'Save to disk',
++	savesLabelDiskSave    : 'Save to disk',
++	savesLabelToClipboard : 'Save to Clipboard',
+ 
+ 	savesTextBrowserAuto : 'Auto',
+ 
+diff --git a/src/macro/macrocontext.js b/src/macro/macrocontext.js
+index df454e9..8ce7c93 100644
+--- a/src/macro/macrocontext.js
++++ b/src/macro/macrocontext.js
+@@ -286,8 +286,8 @@ var MacroContext = (() => { // eslint-disable-line no-unused-vars, no-var
+ 			this._debugViewEnabled = false;
+ 		}
+ 
+-		error(message, source) {
+-			return appendError(this._output, `<<${this.displayName}>>: ${message}`, source ? source : this.source);
++		error(message, source, stack) {
++			return appendError(this._output, `<<${this.displayName}>>: ${message}`, source ? source : this.source, stack);
+ 		}
+ 	}
+ 
+diff --git a/src/macro/macros/if.js b/src/macro/macros/if.js
+index 9365c49..4fa3787 100644
+--- a/src/macro/macros/if.js
++++ b/src/macro/macros/if.js
+@@ -127,7 +127,7 @@ Macro.add('if', {
+ 			}
+ 		}
+ 		catch (ex) {
+-			return this.error(`bad conditional expression in <<${i === 0 ? 'if' : 'elseif'}>> clause${i > 0 ? ` (#${i})` : ''}: ${getErrorMessage(ex)}`);
++			return this.error(`bad conditional expression in <<${i === 0 ? 'if' : 'elseif'}>> clause${i > 0 ? ` (#${i})` : ''}: ${getErrorMessage(ex)}`, null, ex.stack);
+ 		}
+ 	}
+ });
+diff --git a/src/macro/macros/print.js b/src/macro/macros/print.js
+index 190eab5..7b0c4ce 100644
+--- a/src/macro/macros/print.js
++++ b/src/macro/macros/print.js
+@@ -27,7 +27,7 @@ Macro.add(['print', '=', '-'], {
+ 			}
+ 		}
+ 		catch (ex) {
+-			return this.error(`bad evaluation: ${getErrorMessage(ex)}`);
++			return this.error(`bad evaluation: ${getErrorMessage(ex)}`, null, ex.stack);
+ 		}
+ 	}
+ });
+diff --git a/src/macro/macros/set-run.js b/src/macro/macros/set-run.js
+index bdf46e5..df7401f 100644
+--- a/src/macro/macros/set-run.js
++++ b/src/macro/macros/set-run.js
+@@ -23,7 +23,7 @@ Macro.add('set', {
+ 			Scripting.evalJavaScript(this.args.full);
+ 		}
+ 		catch (ex) {
+-			return this.error(`bad evaluation: ${getErrorMessage(ex)}`);
++			return this.error(`bad evaluation: ${getErrorMessage(ex)}`, null, ex.stack);
+ 		}
+ 
+ 		// Custom debug view setup.
+diff --git a/src/markup/wikifier.js b/src/markup/wikifier.js
+index f29e327..7928a61 100644
+--- a/src/markup/wikifier.js
++++ b/src/markup/wikifier.js
+@@ -229,7 +229,7 @@ var Wikifier = (() => { // eslint-disable-line no-unused-vars, no-var
+ 		}
+ 
+ 		outputText(destination, startPos, endPos) {
+-			jQuery(destination).append(document.createTextNode(this.source.substring(startPos, endPos)));
++			destination.appendChild(document.createTextNode(this.source.substring(startPos, endPos)));
+ 		}
+ 
+ 		/*
+diff --git a/src/save.js b/src/save.js
+index a2791a1..778a343 100644
+--- a/src/save.js
++++ b/src/save.js
+@@ -6,7 +6,7 @@
+ 	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
+ 
+ ***********************************************************************************************************************/
+-/* global Config, Engine, L10n, Serial, State, createFilename, enumFrom, getTypeOf, storage */
++/* global Config, Engine, L10n, Serial, State, createFilename, enumFrom, getTypeOf, storage, idb, Dialog, UI */
+ 
+ /*
+ 	Save API (v3) static object.
+@@ -61,10 +61,71 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
+ 		// Migrate legacy browser saves from the old monolithic v2 save
+ 		// object to the new v3 style with separate entries for each save.
+ 		migrateLegacyV2BrowserSaves();
++		migrateLegacyFCBrowserSaves();
+ 
+ 		return true;
+ 	}
+ 
++	function migrateLegacyFCBrowserSaves() {
++		const index = storage.get('index');
++		// Always make space immediately, so later storage operations is less likely to fail due to full browser storage
++		storage.delete('index');
++
++		if (index === null) {
++			return;
++		}
++
++		if (index.autosave !== null) {
++			const autosave = storage.get('autosave');
++			storage.delete('autosave');
++
++			const { info, data } = splitSave(autosave);
++
++			// Property updates.
++			info.desc = info.title;
++			delete info.title;
++			info.type = Type.Auto;
++
++			const infoKey = getAutoInfoKeyFromIndex(0);
++			const dataKey = getAutoDataKeyFromIndex(0);
++
++			// If storing either chunk is going to fail, it's more likely
++			// to be the data chunk, so we attempt to store it first.
++			if (storage.set(dataKey, data)) {
++				if (!storage.set(infoKey, info)) {
++					storage.delete(dataKey);
++				}
++			}
++		}
++
++		for (const [i, slot] of index.slots.entries()) {
++			if (slot === null) {
++				continue;
++			}
++
++			const save = storage.get(`slot${i}`);
++			storage.delete(`slot${i}`);
++
++			const { info, data } = splitSave(save);
++
++			// Property updates.
++			info.desc = info.title;
++			delete info.title;
++			info.type = Type.Slot;
++
++			const infoKey = getSlotInfoKeyFromIndex(i);
++			const dataKey = getSlotDataKeyFromIndex(i);
++
++			// If storing either chunk is going to fail, it's more likely
++			// to be the data chunk, so we attempt to store it first.
++			if (storage.set(dataKey, data)) {
++				if (!storage.set(infoKey, info)) {
++					storage.delete(dataKey);
++				}
++			}
++		}
++	}
++
+ 	function migrateLegacyV2BrowserSaves() {
+ 		const oldSaves = storage.get('saves');
+ 
+@@ -305,15 +366,37 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
+ 		}
+ 
+ 		const datestamp = createDatestamp(new Date());
++		let saveName = `${baseName}-${datestamp}`;
++
++		// Only use the new format:
++		// * For FC_pregmod
++		// * For single saves, not save bundles
++		if (Story.id === 'free-cities' && extension === 'save') {
++			try {
++				// new file naming scheme
++				const vars = State.top.variables;
++				const arcologyName = vars.arcologies === undefined || vars.arcologies.length === 0 ? 'New_Game_Setup' : vars.arcologies[0].name.replaceAll(' ', '_').substring(0, 20);
++				const week = String(vars.week || 0).padStart(5, '0');
++				const slaveCount = String(vars.slaves?.length || 0).padStart(5, '0');
++				const release = String(vars.releaseID || '').padStart(5, '0');
++
++				saveName = `${baseName}-${arcologyName}-W${week}-S${slaveCount}-R${release}-${datestamp}`;
++			}
++ 			catch (ex) {
++				console.error(ex);
++				console.error('Could not find required data in V for the new naming scheme, falling back to the legacy naming scheme. See error above for details');
++			}
++		}
++
+ 		const fileExt   = createFilename(extension) || 'save';
+ 
+ 		saveAs(
+ 			new Blob([data], { type : 'text/plain;charset=UTF-8' }),
+-			`${baseName}-${datestamp}.${fileExt}`
++			`${saveName}.${fileExt}`
+ 		);
+ 	}
+ 
+-	function saveToBrowserStorage(saveData) {
++	function saveToBrowserStorage(saveData, compression = true) {
+ 		const {
+ 			data,
+ 			dataKey,
+@@ -324,7 +407,7 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
+ 		try {
+ 			// If storing either chunk is going to fail, it's more likely
+ 			// to be the data chunk, so we attempt to store it first.
+-			if (storage.set(dataKey, data)) {
++			if (storage.set(dataKey, data, compression)) {
+ 				if (!storage.set(infoKey, info)) {
+ 					storage.delete(dataKey);
+ 				}
+@@ -460,6 +543,25 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
+ 		});
+ 	}
+ 
++	function autoGetFull(index) {
++		if (!Number.isInteger(index)) {
++			throw new TypeError('auto save index must be an integer');
++		}
++
++		if (index < 0 || index > MAX_INDEX) {
++			throw new RangeError(`auto save index out of bounds (range: 0–${MAX_INDEX}; received: ${index})`);
++		}
++
++		const info = storage.get(getAutoInfoKeyFromIndex(index));
++		const data = storage.get(getAutoDataKeyFromIndex(index));
++
++		if (!info || !data) {
++			throw new Error(L10n.get('saveErrorNonexistent'));
++		}
++
++		return Object.assign(info, data);
++	}
++
+ 	function autoSave(desc, metadata) {
+ 		if (
+ 			!autoIsEnabled()
+@@ -469,6 +571,13 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
+ 			return false;
+ 		}
+ 
++		// idb intercept, don't care about no titles or metadata
++		// don't know of a game where it would be relevant
++		if (idb.active) {
++			idb.saveState(0, desc);
++			return true;
++		}
++
+ 		const index   = (findNewest(Type.Auto).index + 1) % Config.saves.maxAutoSaves;
+ 		const infoKey = getAutoInfoKeyFromIndex(index);
+ 		const dataKey = getAutoDataKeyFromIndex(index);
+@@ -477,7 +586,7 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
+ 			data
+ 		} = splitSave(marshal(createDetails(Type.Auto, desc, metadata)));
+ 
+-		saveToBrowserStorage({ data, dataKey, info, infoKey });
++		saveToBrowserStorage({ data, dataKey, info, infoKey }, false);
+ 	}
+ 
+ 	function autoSize() {
+@@ -574,6 +683,25 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
+ 		});
+ 	}
+ 
++	function slotGetFull(index) {
++		if (!Number.isInteger(index)) {
++			throw new TypeError('auto save index must be an integer');
++		}
++
++		if (index < 0 || index > MAX_INDEX) {
++			throw new RangeError(`auto save index out of bounds (range: 0–${MAX_INDEX}; received: ${index})`);
++		}
++
++		const info = storage.get(getSlotInfoKeyFromIndex(index));
++		const data = storage.get(getSlotDataKeyFromIndex(index));
++
++		if (!info || !data) {
++			throw new Error(L10n.get('saveErrorNonexistent'));
++		}
++
++		return Object.assign(info, data);
++	}
++
+ 	function slotSave(index, desc, metadata) {
+ 		if (!Number.isInteger(index)) {
+ 			throw new TypeError('slot save index must be an integer');
+@@ -692,7 +820,7 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
+ 						dataKey : getAutoDataKeyFromIndex(save.index),
+ 						info    : save.info,
+ 						infoKey : getAutoInfoKeyFromIndex(save.index)
+-					}));
++					}, false));
+ 					bundle.slot.forEach(save => saveToBrowserStorage({
+ 						data    : save.data,
+ 						dataKey : getSlotDataKeyFromIndex(save.index),
+@@ -712,6 +840,60 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
+ 		});
+ 	}
+ 
++	function exportToClipboard() {
++		if (typeof Config.saves.isAllowed === 'function' && !Config.saves.isAllowed()) {
++			if (Dialog.isOpen()) {
++				$(document).one(':dialogclosed', () => UI.alert(L10n.get('savesDisallowed')));
++			}
++			else {
++				UI.alert(L10n.get('savesDisallowed'));
++			}
++
++			return;
++		}
++
++		function fallbackCopyTextToClipboard(text) {
++			const textArea = document.createElement('textarea');
++			textArea.value = text;
++
++			textArea.style.top = '0';
++			textArea.style.left = '0';
++			textArea.style.position = 'fixed';
++
++			document.body.appendChild(textArea);
++			textArea.focus();
++			textArea.select();
++
++			try {
++				const successful = document.execCommand('copy');
++				const msg = successful ? 'successful' : 'unsuccessful';
++				console.log('Fallback: Copying save data was', msg);
++			}
++ 			catch (err) {
++				console.error('Fallback: Oops, unable to copy save data', err);
++			}
++
++			document.body.removeChild(textArea);
++		}
++
++		function copyTextToClipboard(text) {
++			if (!navigator.clipboard) {
++				fallbackCopyTextToClipboard(text);
++				return;
++			}
++
++			navigator.clipboard.writeText(text).then(
++				() => console.log('Async: Copying save data to clipboard was successful!'),
++				err => console.error('Async: Could not copy save data: ', err)
++			);
++		}
++
++		const details = createDetails(Type.Disk);
++		const text = LZString.compressToBase64(Serial.stringify(marshal(details)));
++
++		copyTextToClipboard(text);
++	}
++
+ 	function diskLoad(event) {
+ 		return new Promise((resolve, reject) => {
+ 			const reader = new FileReader();
+@@ -841,7 +1023,7 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
+ 				dataKey : getAutoDataKeyFromIndex(save.index),
+ 				info    : save.info,
+ 				infoKey : getAutoInfoKeyFromIndex(save.index)
+-			}));
++			}, false));
+ 			bundle.slot.forEach(save => saveToBrowserStorage({
+ 				data    : save.data,
+ 				dataKey : getSlotDataKeyFromIndex(save.index),
+@@ -1087,6 +1269,7 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
+ 						delete    : { value : autoDelete },
+ 						entries   : { value : autoEntries },
+ 						get       : { value : autoGet },
++						getFull   : { value : autoGetFull },
+ 						has       : { value : autoHas },
+ 						isEnabled : { value : autoIsEnabled },
+ 						load      : { value : autoLoad },
+@@ -1102,6 +1285,7 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
+ 						delete    : { value : slotDelete },
+ 						entries   : { value : slotEntries },
+ 						get       : { value : slotGet },
++						getFull   : { value : slotGetFull },
+ 						has       : { value : slotHas },
+ 						isEnabled : { value : slotIsEnabled },
+ 						load      : { value : slotLoad },
+@@ -1132,21 +1316,25 @@ var Save = (() => { // eslint-disable-line no-unused-vars, no-var
+ 			}))
+ 		},
+ 
++		toClipboard : { value : exportToClipboard },
++
+ 		// Event Functions.
+ 		onLoad : {
+ 			value : Object.preventExtensions(Object.create(null, {
+-				add    : { value : onLoadAdd },
+-				clear  : { value : onLoadClear },
+-				delete : { value : onLoadDelete },
+-				size   : { get : onLoadSize }
++				add      : { value : onLoadAdd },
++				clear    : { value : onLoadClear },
++				delete   : { value : onLoadDelete },
++				size     : { get : onLoadSize },
++				handlers : { get : () => onLoadHandlers }
+ 			}))
+ 		},
+ 		onSave : {
+ 			value : Object.preventExtensions(Object.create(null, {
+-				add    : { value : onSaveAdd },
+-				clear  : { value : onSaveClear },
+-				delete : { value : onSaveDelete },
+-				size   : { get : onSaveSize }
++				add    	 : { value : onSaveAdd },
++				clear  	 : { value : onSaveClear },
++				delete 	 : { value : onSaveDelete },
++				size   	 : { get : onSaveSize },
++				handlers : { get : () => onSaveHandlers }
+ 			}))
+ 		},
+ 
+diff --git a/src/state.js b/src/state.js
+index ef475a2..50de80b 100644
+--- a/src/state.js
++++ b/src/state.js
+@@ -18,9 +18,6 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
+ 	// Currently active/played moment index.
+ 	let _activeIndex = -1;
+ 
+-	// Titles of all moments which have expired (i.e. fallen off the bottom of the stack).
+-	let _expired = [];
+-
+ 	// (optional) Seedable PRNG object.
+ 	let _prng = null;
+ 
+@@ -45,7 +42,6 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
+ 		_history     = [];
+ 		_active      = momentCreate();
+ 		_activeIndex = -1;
+-		_expired     = [];
+ 		_prng        = _prng === null ? null : prngCreate(_prng.seed);
+ 
+ 		// Reset the temporary variables.
+@@ -88,10 +84,6 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
+ 			state.delta = historyDeltaEncode(_history);
+ 		}
+ 
+-		if (_expired.length > 0) {
+-			state.expired = Array.from(_expired);
+-		}
+-
+ 		if (_prng !== null) {
+ 			state.seed = _prng.seed;
+ 		}
+@@ -129,7 +121,6 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
+ 		// Restore the properties.
+ 		_history     = noDelta ? clone(state.history) : historyDeltaDecode(state.delta);
+ 		_activeIndex = state.index;
+-		_expired     = Object.hasOwn(state, 'expired') ? Array.from(state.expired) : [];
+ 
+ 		if (Object.hasOwn(state, 'seed')) {
+ 			// Only the PRNG's seed should be restored here as `momentActivate()`
+@@ -159,21 +150,21 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
+ 		Returns the titles of expired moments.
+ 	*/
+ 	function stateExpired() {
+-		return _expired;
++		return [];
+ 	}
+ 
+ 	/*
+ 		Returns the total number of played moments (expired + in-play history moments).
+ 	*/
+ 	function stateTurns() {
+-		return _expired.length + historyLength();
++		return historyLength();
+ 	}
+ 
+ 	/*
+ 		Returns the passage titles of all played moments (expired + in-play history moments).
+ 	*/
+ 	function stateTitles() {
+-		return _expired.concat(_history.slice(0, historyLength()).map(moment => moment.title));
++		return _history.slice(0, historyLength()).map(moment => moment.title);
+ 	}
+ 
+ 	/*
+@@ -184,10 +175,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
+ 			return false;
+ 		}
+ 
+-		if (_expired.includes(title)) {
+-			return true;
+-		}
+-		else if (_history.slice(0, historyLength()).some(moment => moment.title === title)) {
++		if (_history.slice(0, historyLength()).some(moment => moment.title === title)) {
+ 			return true;
+ 		}
+ 
+@@ -204,8 +192,8 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
+ 	*/
+ 	function momentCreate(title, variables) {
+ 		return {
+-			title     : title == null ? '' : String(title),       // lazy equality for null
+-			variables : variables == null ? {} : clone(variables) // lazy equality for null
++			title     : title == null ? '' : String(title), // lazy equality for null
++			variables : variables == null ? {} : variables   // lazy equality for null
+ 		};
+ 	}
+ 
+@@ -416,7 +404,7 @@ var State = (() => { // eslint-disable-line no-unused-vars, no-var
+ 
+ 		// Truncate the history, if necessary, by discarding moments from the bottom.
+ 		while (historySize() > Config.history.maxStates) {
+-			_expired.push(_history.shift().title);
++			_history.shift();
+ 		}
+ 
+ 		// Activate the new top moment.
+diff --git a/src/storage/adapters/FCHost.Storage.js b/src/storage/adapters/FCHost.Storage.js
+new file mode 100644
+index 0000000..e48a6c8
+--- /dev/null
++++ b/src/storage/adapters/FCHost.Storage.js
+@@ -0,0 +1,171 @@
++/***********************************************************************************************************************
++
++	lib/simplestore/adapters/FCHost.Storage.js
++
++	Copyright Â© 2013â€“2019 Thomas Michael Edwards <thomasmedwards@gmail.com>. All rights reserved.
++	Use of this source code is governed by a BSD 2-clause "Simplified" License, which may be found in the LICENSE file.
++
++***********************************************************************************************************************/
++/* global SimpleStore, Serial */
++
++SimpleStore.adapters.push((() => {
++	'use strict';
++
++	// Adapter readiness state.
++	let _ok = false;
++
++
++	/*******************************************************************************************************************
++		_FCHostStorageAdapter Class.
++        Note that FCHost is only intended for a single document, so we ignore both prefixing and storageID
++	*******************************************************************************************************************/
++	class _FCHostStorageAdapter {
++		constructor(persistent) {
++			let engine = null;
++			let name   = null;
++
++			if (persistent) {
++				engine = window.FCHostPersistent;
++				name   = 'FCHostPersistent';
++			}
++			else {
++			    engine = window.FCHostSession;
++				name   = 'FCHostSession';
++			}
++
++			Object.defineProperties(this, {
++				_engine : {
++					value : engine
++				},
++
++				name : {
++					value : name
++				},
++
++				persistent : {
++					value : !!persistent
++				}
++			});
++		}
++
++		/* legacy */
++		get length() {
++			if (BUILD_DEBUG) { console.log(`[<SimpleStore:${this.name}>.length : Number]`); }
++
++			return this._engine.size();
++		}
++		/* /legacy */
++
++		size() {
++			if (BUILD_DEBUG) { console.log(`[<SimpleStore:${this.name}>.size() : Number]`); }
++
++			return this._engine.size();
++		}
++
++		keys() {
++			if (BUILD_DEBUG) { console.log(`[<SimpleStore:${this.name}>.keys() : String Array]`); }
++
++			return this._engine.keys();
++		}
++
++		has(key) {
++			if (BUILD_DEBUG) { console.log(`[<SimpleStore:${this.name}>.has(key: "${key}") : Boolean]`); }
++
++			if (typeof key !== 'string' || !key) {
++				return false;
++			}
++
++			return this._engine.has(key);
++		}
++
++		get(key) {
++			if (BUILD_DEBUG) { console.log(`[<SimpleStore:${this.name}>.get(key: "${key}") : Any]`); }
++
++			if (typeof key !== 'string' || !key) {
++				return null;
++			}
++
++			const value = this._engine.get(key);
++
++			return value == null ? null : _FCHostStorageAdapter._deserialize(value); // lazy equality for null
++		}
++
++		set(key, value) {
++			if (BUILD_DEBUG) { console.log(`[<SimpleStore:${this.name}>.set(key: "${key}", value: \u2026) : Boolean]`); }
++
++			if (typeof key !== 'string' || !key) {
++				return false;
++			}
++
++			this._engine.set(key, _FCHostStorageAdapter._serialize(value));
++
++			return true;
++		}
++
++		delete(key) {
++			if (BUILD_DEBUG) { console.log(`[<SimpleStore:${this.name}>.delete(key: "${key}") : Boolean]`); }
++
++			if (typeof key !== 'string' || !key) {
++				return false;
++			}
++
++			this._engine.remove(key);
++
++			return true;
++		}
++
++		clear() {
++			if (BUILD_DEBUG) { console.log(`[<SimpleStore:${this.name}>.clear() : Boolean]`); }
++
++			this._engine.clear();
++
++			return true;
++		}
++
++		static _serialize(obj) {
++			return Serial.stringify(obj);
++		}
++
++		static _deserialize(str) {
++			return Serial.parse(str);
++		}
++	}
++
++
++	/*******************************************************************************************************************
++		Adapter Utility Functions.
++	*******************************************************************************************************************/
++	function adapterInit() {
++		// FCHost feature test.
++		function hasFCHostStorage() {
++			try {
++			    if (typeof window.FCHostPersistent !== 'undefined')
++			        return true;
++			}
++			catch (ex) { /* no-op */ }
++
++			return false;
++		}
++
++		_ok = hasFCHostStorage();
++
++		return _ok;
++	}
++
++	function adapterCreate(storageId, persistent) {
++		if (!_ok) {
++			throw new Error('adapter not initialized');
++		}
++
++		return new _FCHostStorageAdapter(persistent);
++	}
++
++
++	/*******************************************************************************************************************
++		Module Exports.
++	*******************************************************************************************************************/
++	return Object.freeze(Object.defineProperties({}, {
++		init   : { value : adapterInit },
++		create : { value : adapterCreate }
++	}));
++})());
+diff --git a/src/storage/adapters/webstorage.js b/src/storage/adapters/webstorage.js
+index 7a6b1b0..cce893d 100644
+--- a/src/storage/adapters/webstorage.js
++++ b/src/storage/adapters/webstorage.js
+@@ -110,7 +110,7 @@ SimpleStore.adapters.push((() => {
+ 			return value == null ? null : WebStorageAdapter._deserialize(value); // lazy equality for null
+ 		}
+ 
+-		set(key, value) {
++		set(key, value, compression = true) {
+ 			if (BUILD_DEBUG) { console.log(`[<SimpleStore:${this.name}>.set(key: "${key}", value: \u2026) : Boolean]`); }
+ 
+ 			if (typeof key !== 'string' || !key) {
+@@ -118,7 +118,8 @@ SimpleStore.adapters.push((() => {
+ 			}
+ 
+ 			try {
+-				this._engine.setItem(this._prefix + key, WebStorageAdapter._serialize(value));
++				this._engine.setItem(this._prefix + key, WebStorageAdapter
++					._serialize(value, this.persistent && compression));
+ 			}
+ 			catch (ex) {
+ 				// If the exception is a quota exceeded error, massage it into something
+@@ -166,12 +167,15 @@ SimpleStore.adapters.push((() => {
+ 			return true;
+ 		}
+ 
+-		static _serialize(obj) {
+-			return LZString.compressToUTF16(Serial.stringify(obj));
++		static _serialize(obj, compression) {
++			if (compression) {
++				return LZString.compressToUTF16(Serial.stringify(obj));
++			}
++			return Serial.stringify(obj);
+ 		}
+ 
+ 		static _deserialize(str) {
+-			return Serial.parse(LZString.decompressFromUTF16(str));
++			return Serial.parse(!str || str[0] === '{' ? str : LZString.decompressFromUTF16(str));
+ 		}
+ 	}
+ 
+diff --git a/src/story.js b/src/story.js
+index 0d2e3e8..910e2df 100644
+--- a/src/story.js
++++ b/src/story.js
+@@ -365,6 +365,12 @@ var Story = (() => { // eslint-disable-line no-unused-vars, no-var
+ 		return true;
+ 	}
+ 
++	// Add passage as is.
++	function addDirect(passage) {
++		_passages[passage.name] = passage;
++		return true;
++	}
++
+ 	function delete$(name) {
+ 		let type = typeof name;
+ 
+@@ -572,6 +578,7 @@ var Story = (() => { // eslint-disable-line no-unused-vars, no-var
+ 
+ 		// Passage Functions.
+ 		add        : { value : add },
++		addDirect  : { value : addDirect },
+ 		delete     : { value : delete$ },
+ 		filter     : { value : filter },
+ 		find       : { value : find },
+diff --git a/src/sugarcube.js b/src/sugarcube.js
+index 983a6c1..2c2b8a1 100644
+--- a/src/sugarcube.js
++++ b/src/sugarcube.js
+@@ -9,7 +9,7 @@
+ /*
+ 	global Alert, Browser, Config, Dialog, Engine, Fullscreen, Has, LoadScreen, SimpleStore, L10n, Macro,
+ 	       Outliner, Passage, Save, Scripting, Setting, SimpleAudio, State, Story, UI, UIBar, DebugBar,
+-	       Util, Visibility, Wikifier, triggerEvent
++	       Util, Visibility, Wikifier, triggerEvent, idb
+ */
+ /* eslint-disable no-var */
+ 
+@@ -218,6 +218,9 @@ jQuery(() => {
+ 		// Initialize the settings.
+ 		Setting.init();
+ 
++		// Initialize indexedDB
++		idb.init(Story.id);
++
+ 		// Initialize the macros.
+ 		Macro.init();
+ 
+diff --git a/src/ui.js b/src/ui.js
+index 7d4b789..d2fac52 100644
+--- a/src/ui.js
++++ b/src/ui.js
+@@ -8,7 +8,7 @@
+ ***********************************************************************************************************************/
+ /*
+ 	global Alert, Config, Dialog, Engine, Has, L10n, Save, Setting, State, Story, Wikifier,
+-	       createSlug, errorPrologRegExp, triggerEvent
++	       createSlug, errorPrologRegExp, triggerEvent, idb
+ */
+ 
+ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
+@@ -299,6 +299,20 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
+ 						)
+ 						.appendTo($tdDesc);
+ 
++					// Add the save button, possibly disabled.
++					$tdLoad.append(createButton(
++						'save',
++						null,
++						L10n.get('savesTextBrowserSlot'),
++						index,
++						index < Config.saves.maxSlotSaves && slotAllowed
++							? index => {
++								Save.browser.slot.save(index);
++								buildSaves();
++							}
++							: null
++					));
++
+ 					// Add the load button.
+ 					$tdLoad.append(createButton(
+ 						'load',
+@@ -359,6 +373,15 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
+ 							: null
+ 					));
+ 
++					// Add the load button.
++					$tdLoad.append(createButton(
++						'load',
++						'ui-close',
++						L10n.get('savesTextBrowserSlot'),
++						index,
++						null
++					));
++
+ 					// Add the disabled delete button.
+ 					$tdDele.append(createButton(
+ 						'delete',
+@@ -438,6 +461,21 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
+ 				jQuery(slotImportInput).appendTo($dialogBody);
+ 			}
+ 
++			if (!idb.lock) {
++				// Add the IDB button.
++				$slotButtons.append(createActionItem(
++					'change-mode',
++					null,
++					L10n.get('savesEnableIdb'),
++					L10n.get('savesEnableIdb'),
++					() => {
++						Dialog.create('saves', 'saves').append($(document.createElement('h3')).addClass('saves-loading').text('Loading the save list, please wait...'));
++						idb.updateSettings('active', true);
++						idb.saveList();
++					}
++				));
++			}
++
+ 			// Add the slots clear button.
+ 			$slotButtons.append(createActionItem(
+ 				'clear',
+@@ -453,16 +491,16 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
+ 			));
+ 		}
+ 
+-		// Add the disk load and save buttons.
+-		if (Has.fileAPI) {
+-			jQuery(document.createElement('h2'))
+-				.text(L10n.get('savesHeaderDisk'))
+-				.appendTo($dialogBody);
++		jQuery(document.createElement('h2'))
++			.text(L10n.get('savesHeaderDisk'))
++			.appendTo($dialogBody);
+ 
+-			const $diskButtons = jQuery(document.createElement('ul'))
+-				.addClass('buttons')
+-				.appendTo($dialogBody);
++		const $diskButtons = jQuery(document.createElement('ul'))
++			.addClass('buttons')
++			.appendTo($dialogBody);
+ 
++		// Add the disk load and save buttons.
++		if (Has.fileAPI) {
+ 			// Add the disk save/load buttons and the hidden `input[type=file]`
+ 			// element that will be triggered by the `#saves-disk-load` button.
+ 			const diskLoadInput = createFileInput('saves-disk-load-handler', ev => {
+@@ -497,6 +535,17 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
+ 			jQuery(diskLoadInput).appendTo($dialogBody);
+ 		}
+ 
++		$diskButtons
++			.append(createActionItem(
++				'clipboard-save',
++				'ui-close',
++				`${L10n.get('savesLabelToClipboard')}\u2026`,
++				L10n.get('savesLabelToClipboard'),
++				typeof Config.saves.isAllowed !== 'function' || Config.saves.isAllowed(Save.Type.Disk)
++					? () => Save.toClipboard()
++					: null
++			));
++
+ 		return true;
+ 	}
+ 
+@@ -718,7 +767,13 @@ var UI = (() => { // eslint-disable-line no-unused-vars, no-var
+ 	}
+ 
+ 	function openSaves(/* options, closeFn */ ...args) {
+-		buildSaves();
++		// use idb when available
++		if (idb.active) {
++			Dialog.create('saves', 'saves').append($(document.createElement('h3')).addClass('saves-loading').text('Loading the save list, please wait...'));
++			idb.saveList();
++		} else {
++			buildSaves();
++		}
+ 		Dialog.open(...args);
+ 	}
+ 
+diff --git a/src/uibar.js b/src/uibar.js
+index 984a6bd..6c12eca 100644
+--- a/src/uibar.js
++++ b/src/uibar.js
+@@ -7,7 +7,7 @@
+ 
+ ***********************************************************************************************************************/
+ /*
+-	global Alert, Config, Dialog, Engine, L10n, Save, Setting, State, Story, UI, Wikifier, setDisplayTitle
++	global Alert, Config, Dialog, Engine, L10n, Save, Setting, State, Story, UI, Wikifier, setDisplayTitle, idb
+ */
+ 
+ var UIBar = (() => { // eslint-disable-line no-unused-vars, no-var
+@@ -207,9 +207,7 @@ var UIBar = (() => { // eslint-disable-line no-unused-vars, no-var
+ 
+ 			if (Story.has(passageName)) {
+ 				addUiUpdateHandler(() => {
+-					const frag = document.createDocumentFragment();
+-					new Wikifier(frag, Story.get(passageName).processText().trim());
+-					$el.empty().append(frag);
++					$el.empty().append(Story.get(passageName).render());
+ 				});
+ 			}
+ 			else {
+@@ -298,7 +296,13 @@ var UIBar = (() => { // eslint-disable-line no-unused-vars, no-var
+ 				role : 'button'
+ 			}, ev => {
+ 				ev.preventDefault();
+-				UI.buildSaves();
++				// use idb when available
++				if (idb.active) {
++					Dialog.create('saves', 'saves').append($(document.createElement('h3')).addClass('saves-loading').text('Loading the save list, please wait...'));
++					idb.saveList();
++				}
++				// but keep the old system just in case
++				else UI.buildSaves();
+ 				Dialog.open();
+ 			})
+ 			.text(L10n.get('savesTitle'));
+diff --git a/src/util/appenderror.js b/src/util/appenderror.js
+index 1af99bf..401b2b7 100644
+--- a/src/util/appenderror.js
++++ b/src/util/appenderror.js
+@@ -11,11 +11,11 @@
+ /*
+ 	Appends an error view to the given DOM element or fragment and logs a message to the console.
+ */
+-function appendError(output, message, source) { // eslint-disable-line no-unused-vars
++function appendError(output, message, source, stack) { // eslint-disable-line no-unused-vars
+ 	const $wrapper = jQuery(document.createElement('div'));
+ 	const $toggle  = jQuery(document.createElement('button'));
+ 	const $source  = jQuery(document.createElement('pre'));
+-	const mesg     = `${L10n.get('errorViewTitle')}: ${message || 'unknown error'}`;
++	const mesg     = `${L10n.get('errorViewTitle')}: ${message || 'unknown error'} ${Config.saves.version}`;
+ 
+ 	$toggle
+ 		.addClass('error-toggle')
+@@ -49,6 +49,16 @@ function appendError(output, message, source) { // eslint-disable-line no-unused
+ 			hidden        : 'hidden'
+ 		})
+ 		.appendTo($wrapper);
++
++	if (stack) {
++		const lines = stack.split('\n');
++		for (const ll of lines) {
++			const div = document.createElement('div');
++			div.append(ll.replace(/file:.*\//, '<path>/'));
++			$source.append(div);
++		}
++	}
++
+ 	$wrapper
+ 		.addClass('error-view')
+ 		.appendTo(output);
+diff --git a/src/util/geterrormessage.js b/src/util/geterrormessage.js
+index 2768dae..518a985 100644
+--- a/src/util/geterrormessage.js
++++ b/src/util/geterrormessage.js
+@@ -16,5 +16,5 @@ function getErrorMessage(O) { // eslint-disable-line no-unused-vars
+ 		return 'unknown error';
+ 	}
+ 
+-	return typeof O === 'object' && 'message' in O ? O.message : String(O);
++	return typeof O === 'object' && 'message' in O ? `${O.name || 'NoErrorName'}: ${O.message}` : String(O);
+ }

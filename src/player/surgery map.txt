@@ -1,0 +1,105 @@
+PC elective surgery roadmap
+
+	*CYBERNETICS
+	*RACIAL RECONSTRUCTION
+	*GENE MODS
+
+Face:
+	younger
+	older
+	undo age
+	face
+	TD change shape (expensive, limited)
+	add/remove lip implants
+	teeth
+	voice
+	ear shape
+	horns
+
+	*BALD
+	*TEETH
+	*EXTREME FACIAL RECONSTRUCTION
+
+Skin:
+	color
+	remove freckles and other features
+
+Body:
+	Liposuction
+	shoulder reconstruction
+	hip reconstruction
+	restore heels
+
+	*BROOD HIPS
+	*HEIGHT RECONSTRUCTION
+
+Breasts:
+	boob size
+	breast shape
+	nipple size
+	areolae size + shape
+	breat mesh if supplied
+
+	*EXTREME BREAST SIZES + STRING IMPLANTS
+	*EXOTIC NIPPLES
+	*LACT IMPLANT
+
+Belly:
+	fix belly sag
+	waist reconstruction
+	csec scar
+	belly implant if supplied
+
+	*REINFORCE
+	*BROODMOTHER
+	*BELLY IMPLANT INSTALLATION + MEGA FILL
+
+Butt:
+	See breasts
+
+Dick:
+	add/remove dick (SD should recognize if PC should have had a dick already)
+	circumcise
+	re-foreskin
+	foreskin tuck
+
+Balls:
+	add/remove balls
+	Ball implant up/down
+	ball up hormonal
+	internalize
+	tighten scrot
+	vasectomy
+	add prostate
+	
+	*PROSTATE MODS
+
+Vagina:
+	add/remove vagina
+	restore vag
+	rehymen
+	tighten vag
+	clit reduction
+	clit enlargement
+	clit hood circumcision
+	clit hood restoration
+	labia reduction
+	labia increase
+	cervix implant if supplied
+
+Anus:
+	tighten
+	fix anal area
+	cervix implant if supplied
+
+Ovaries:
+	add ovaries
+	menopause reset
+	
+	*MPREG
+	*OVARY MODS
+
+Sex type:
+	this is all fine, nothing to add here
+	
+	*NULL

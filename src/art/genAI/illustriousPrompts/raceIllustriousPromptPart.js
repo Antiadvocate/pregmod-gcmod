@@ -1,0 +1,15 @@
+App.Art.GenAI.Ill.RacePromptPart = class RacePromptPart extends App.Art.GenAI.PromptPart {
+	/**
+	 * @override
+	 */
+	positive() {
+		if (this.slave.race === "white") {
+			return ["caucasian"];
+		} else if (this.slave.race === "black") {
+			return ["african"];
+		} else if (this.slave.race === "catgirl") {
+			return []; // catgirl/catboy race is covered by gender prompt (SD 1.X)/demographics prompt
+		}
+		return [this.slave.race];
+	}
+};

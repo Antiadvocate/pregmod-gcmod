@@ -1,0 +1,6 @@
+.card {
+	border: 2px solid var(--button-border-color);
+	background-color: var(--background-lighter);
+	padding: 1em;
+	margin-bottom: 1em;
+}

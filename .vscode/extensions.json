@@ -1,0 +1,57 @@
+{
+    // VS Code Extensions Configuration for FC-Pregmod Development
+    // These extensions enhance development experience, code quality, and maintainability
+    "recommendations": [
+        // Spell checking and code quality
+        "streetsidesoftware.code-spell-checker",        // Catches typos and spelling errors in code and comments
+        "naumovs.color-highlight",                     // Highlights color values (hex, rgb, named colors) for better visibility
+        "usernamehw.errorlens",                        // Shows errors and warnings inline without opening Problems panel
+
+        // Code formatting and linting
+        "dbaeumer.vscode-eslint",                      // JavaScript/TypeScript linting and formatting (project uses ESLint)
+        "esbenp.prettier-vscode",                      // Code formatter for CSS/SCSS/LESS files
+
+        // Git and version control
+        "waderyan.gitblame",                          // Shows git blame information inline
+        "donjayamanne.git-extension-pack",            // Essential Git tools (diff, history, etc.)
+        "eamodio.gitlens",                            // Advanced Git integration with blame, history, and more
+        "gitlab.gitlab-workflow",                      // GitLab-specific features for merge requests and CI/CD
+
+        // AI and code intelligence
+        "visualstudioexptteam.vscodeintellicode",     // AI-powered code completions and suggestions
+
+        // Documentation and markup
+        "davidanson.vscode-markdownlint",             // Markdown linting for README and documentation files
+        "christian-kohler.path-intellisense",         // Autocomplete for file paths and imports
+
+        // Task and TODO management
+        "gruntfuggly.todo-tree",                      // Collects and displays all TODO/FIXME comments in a tree view
+        "wayou.vscode-todo-highlight",                // Highlights TODO/FIXME comments in different colors
+
+        // Game-specific language support
+        "cyrusfirheir.twee3-language-tools",          // Twee3 and SugarCube syntax highlighting and support
+
+        // TypeScript and JavaScript development
+        "ms-vscode.vscode-typescript-next",           // Latest TypeScript language support
+        "ms-vscode.vscode-json",                      // JSON language support with validation
+        "redhat.vscode-yaml",                         // YAML support for configuration files
+
+        // Web development
+        "ms-vscode.vscode-html",                      // HTML language support
+        "bradlc.vscode-tailwindcss",                  // Tailwind CSS IntelliSense (if using Tailwind)
+        "formulahendry.auto-rename-tag",              // Auto-rename paired HTML/XML tags
+
+        // CSS and styling
+        "ms-vscode.vscode-css",                       // CSS language support
+        "ms-vscode.vscode-scss",                      // SCSS/Sass language support
+        "ms-vscode.vscode-less",                      // LESS language support
+        "ms-vscode.vscode-emmet",                     // HTML/CSS abbreviations and snippets
+
+        // JavaScript debugging and profiling
+        "ms-vscode.vscode-js-debug",                  // JavaScript debugging support
+        "ms-vscode.vscode-js-debug-companion",        // Companion extension for JS debugging
+        "ms-vscode.vscode-js-profile-flame",          // JavaScript performance profiling (flame chart)
+        "ms-vscode.vscode-js-profile-table",          // JavaScript performance profiling (table view)
+        "ms-vscode.vscode-js-profile-visualizer"      // JavaScript performance profiling (visualizer)
+    ]
+}
