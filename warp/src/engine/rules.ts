@@ -92,10 +92,11 @@ const setNum = (get: (p: Person) => number, set: (p: Person, n: number) => void,
 export const RULE_EFFECTS: EffectDef[] = [
   {
     id: "assignment", label: "Set assignment", kind: "text",
-    apply: (p, v, _s, dry) => {
+    apply: (p, v, s, dry) => {
       if (p.assignment === v) return null;
+      if (isMinor(p) && !MINOR_ASSIGNMENTS.includes(v as Assignment)) return null;
       const was = p.assignment;
-      if (!dry) p.assignment = v as Assignment;
+      if (!dry) setAssignment(s, p, v as Assignment);
       return `assignment: ${was} → ${v}`;
     },
   },
@@ -130,8 +131,34 @@ export const RULE_EFFECTS: EffectDef[] = [
 
 export const EFFECT_BY_ID: Record<string, EffectDef> = Object.fromEntries(RULE_EFFECTS.map((e) => [e.id, e]));
 
+/** THE AGE GATE.
+ *
+ *  Children exist in this engine because births do, and the moment they exist every assignment
+ *  dropdown in the app will happily offer them to the brothel. So the gate is in the engine rather
+ *  than in the interface: `assignToFacility` and the assignment setter both go through here, and
+ *  there is no path around it — a rules effect, a facility move and a hand edit all land on the
+ *  same function. Under eighteen: rest, the nursery, the schoolroom, the spa, the clinic. That is
+ *  the whole list, and it is not configurable.
+ */
+export const MINOR_ASSIGNMENTS: Assignment[] = ["rest", "classes", "get treatment", "learn in the schoolroom", "rest in the spa", "get treatment in the clinic", "work as a servant"];
+export const MINOR_FACILITIES = ["nursery", "schoolroom", "spa", "clinic"];
+
+export function isMinor(p: Person): boolean { return p.age < 18; }
+
+export function allowedAssignments(p: Person, all: Assignment[]): Assignment[] {
+  return isMinor(p) ? all.filter((a) => MINOR_ASSIGNMENTS.includes(a)) : all;
+}
+
+/** The one writer for what somebody is doing. Returns what was refused, if anything. */
+export function setAssignment(s: SaveState, p: Person, a: Assignment): string | null {
+  if (isMinor(p) && !MINOR_ASSIGNMENTS.includes(a)) return `${p.name} is ${p.age}. That is not a thing she can be assigned to.`;
+  p.assignment = a;
+  return null;
+}
+
 /** Facility membership is authoritative on the facility, mirrored on the person. One writer. */
 export function assignToFacility(s: SaveState, p: Person, facilityId?: string): void {
+  if (facilityId && isMinor(p) && !MINOR_FACILITIES.includes(facilityId)) return;
   for (const f of Object.values(s.arcology.facilities)) {
     f.workers = f.workers.filter((id) => id !== p.id);
     if (f.manager === p.id && f.id !== facilityId) delete f.manager;

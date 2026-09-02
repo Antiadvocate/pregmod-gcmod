@@ -21,7 +21,7 @@ import { FACILITY_BY_ID } from "../data/facilities";
 import { ASSIGNMENT_BY_ID } from "../data/assignments";
 import { Ledger, arcologyMoney, weeklyMoney } from "./economy";
 import { tickHealth } from "./health";
-import { tickPregnancy, tickChild, tryConception } from "./pregnancy";
+import { tickPregnancy, tickChild, tickAge, tryConception } from "./pregnancy";
 import { tickBond, refresh, applyTreatment, read } from "./obedience";
 import { clamp, shove, tickWeek, tickEmotions, tickDischarge, addState, wear } from "./psyche";
 import { decayMemory, reflect, remember } from "./memory";
@@ -157,6 +157,7 @@ export function endWeek(s: SaveState): WeekReport {
       startRumor(s, `${p.name} had her baby`, { about: p.id, salience: 6, from: p.id });
     }
     for (const n of tickChild(s, p)) push(n, "neutral", 7, p.id);
+    for (const n of tickAge(s, p)) push(n, "neutral", 3, p.id);
 
     // THE WEEK, AS SHE WILL REMEMBER IT
     const mem = s.memory[p.id];

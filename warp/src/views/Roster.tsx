@@ -13,7 +13,7 @@ import type { Assignment, Person } from "../engine/types";
 import { explain, read } from "../engine/obedience";
 import { band, wear, aperture, perception } from "../engine/psyche";
 import { explainFor } from "../engine/society";
-import { assignToFacility } from "../engine/rules";
+import { assignToFacility, allowedAssignments, isMinor, setAssignment, MINOR_FACILITIES } from "../engine/rules";
 import { ASSIGNMENTS } from "../data/assignments";
 import { FACILITIES, FACILITY_BY_ID } from "../data/facilities";
 import { PROCEDURES } from "../engine/health";
@@ -98,6 +98,7 @@ function RosterCard({ p, onOpen }: { p: Person; onOpen: () => void }) {
             <span className="text-[14px]">{p.name}</span>
             <span className="text-[11px] dim font-mono">{p.age} · {p.origin.nationality}</span>
             {p.status === "indentured" ? <Chip>indentured {p.indenture_weeks}w</Chip> : null}
+            {p.age < 18 ? <Chip>child</Chip> : null}
           </div>
           <div className="text-[11.5px] dim truncate mt-0.5">{fac ? fac.name : p.assignment}</div>
         </div>
@@ -207,6 +208,7 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
 
       {tab === "body" && (
         <div className="space-y-4">
+          {isMinor(p) ? <Card className="text-[12px] mid">She is {p.age}. Nothing on this page applies to her.</Card> : null}
           <Card>
             <p className="font-prose text-[14.5px] leading-relaxed">{p.body.appearance_facts}</p>
             <p className="text-[12.5px] dim mt-2">{p.body.appearance_now}</p>
@@ -249,7 +251,7 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
             </Card>
           </Section>
 
-          <Section title="Marking her">
+          {isMinor(p) ? null : <Section title="Marking her">
             <div className="grid gap-2 sm:grid-cols-2">
               {MODIFICATIONS.map((m) => (
                 <div key={m.id} className="card-2 p-3 flex items-center gap-3">
@@ -271,9 +273,9 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
                 </div>
               ))}
             </div>
-          </Section>
+          </Section>}
 
-          <Section title="Procedures">
+          {isMinor(p) ? null : <Section title="Procedures">
             <div className="grid gap-2 sm:grid-cols-2">
               {PROCEDURES.map((proc) => (
                 <div key={proc.id} className="card-2 p-3 flex items-center gap-3">
@@ -301,21 +303,35 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
                 </div>
               ))}
             </div>
-          </Section>
+          </Section>}
         </div>
       )}
 
       {tab === "work" && (
         <div className="space-y-4">
+          {isMinor(p) ? (
+            <Card className="text-[12px] mid">
+              {p.name} is {p.age}. Rest, the nursery, the schoolroom and medical care are the entire list
+              of things she can be assigned to, and the gate is in the engine rather than in this dropdown —
+              a standing order cannot route around it either.
+            </Card>
+          ) : null}
           <Field label="Assignment">
-            <select value={p.assignment} onChange={(e) => mutate((s) => { s.people[id].assignment = e.target.value as Assignment; assignToFacility(s, s.people[id], undefined); s.people[id].assignment = e.target.value as Assignment; })}>
-              {ASSIGNMENTS.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
+            <select value={p.assignment} onChange={(e) => mutate((s) => {
+              const person = s.people[id];
+              assignToFacility(s, person, undefined);
+              setAssignment(s, person, e.target.value as Assignment);
+            })}>
+              {allowedAssignments(p, ASSIGNMENTS.map((a) => a.id)).map((a) => {
+                const def = ASSIGNMENTS.find((x) => x.id === a)!;
+                return <option key={a} value={a}>{def.label}</option>;
+              })}
             </select>
           </Field>
           <Field label="Facility" hint="A facility overrides the assignment above with its own work.">
             <select value={p.facility ?? ""} onChange={(e) => mutate((s) => assignToFacility(s, s.people[id], e.target.value || undefined))}>
               <option value="">— none —</option>
-              {FACILITIES.filter((f) => save.arcology.facilities[f.id]?.level > 0).map((f) => {
+              {FACILITIES.filter((f) => save.arcology.facilities[f.id]?.level > 0 && (!isMinor(p) || MINOR_FACILITIES.includes(f.id))).map((f) => {
                 const built = save.arcology.facilities[f.id];
                 return <option key={f.id} value={f.id} disabled={built.workers.length >= built.capacity && p.facility !== f.id}>
                   {f.name} ({built.workers.length}/{built.capacity})

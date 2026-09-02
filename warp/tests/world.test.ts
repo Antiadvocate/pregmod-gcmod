@@ -10,10 +10,10 @@ import { newGame } from "../src/engine/state.ts";
 import { endWeek } from "../src/engine/week.ts";
 import { generatePerson } from "../src/engine/generate.ts";
 import { applyDiff, showsDeparture, findInteriorLeak, findMaxim, findEcho } from "../src/engine/turn.ts";
-import { preview, runOrders, describe, assignToFacility } from "../src/engine/rules.ts";
+import { preview, runOrders, describe, assignToFacility, isMinor, setAssignment, allowedAssignments } from "../src/engine/rules.ts";
 import { scoreFor, axesOf, explainFor, adoptDoctrine } from "../src/engine/society.ts";
 import { DOCTRINE_BY_ID } from "../src/data/doctrines.ts";
-import { tryConception } from "../src/engine/pregnancy.ts";
+import { tryConception, tickAge } from "../src/engine/pregnancy.ts";
 import { newMemory } from "../src/engine/memory.ts";
 import { refresh } from "../src/engine/obedience.ts";
 import { runManager } from "../src/engine/managers.ts";
@@ -285,6 +285,51 @@ import { practise, skill } from "../src/engine/player.ts";
     const p = pressure(s);
     return p >= 0 && p <= 12;
   })());
+}
+
+/* ── the age gate, and the clock ─────────────────────────────────────────────────────────────
+ * Births produce children, and the moment children exist every assignment dropdown in the app will
+ * offer them to the brothel. The gate is in the engine, on the one writer, so a rules effect and a
+ * facility move and a hand edit all hit it.
+ */
+{
+  const s = newGame({ seed: "test-minor", starting_slaves: 1 });
+  const child = generatePerson({ seed: "child", age: 18, week: 1 });
+  child.age = 9;
+  child.birth_week = s.arcology.week - 9 * 52;
+  s.people[child.id] = child;
+  s.memory[child.id] = newMemory();
+
+  check("a child is a minor", isMinor(child));
+  check("and cannot be assigned to the work", !!setAssignment(s, child, "whore") && child.assignment !== "whore");
+  check("nor moved into a facility that is not for her", (() => {
+    s.arcology.facilities["brothel"].level = 1;
+    s.arcology.facilities["brothel"].capacity = 4;
+    assignToFacility(s, child, "brothel");
+    return child.facility !== "brothel";
+  })());
+  check("the nursery is allowed", (() => {
+    s.arcology.facilities["nursery"].level = 1;
+    s.arcology.facilities["nursery"].capacity = 4;
+    assignToFacility(s, child, "nursery");
+    return child.facility === "nursery";
+  })());
+  check("a standing order cannot route around it", (() => {
+    s.orders.push({ id: "o-test", name: "everyone whores", enabled: true, priority: 1, conditions: [], effects: [{ field: "assignment", value: "whore" }] });
+    runOrders(s, false);
+    return child.assignment !== "whore";
+  })());
+  check("and the picker offers her only what she may do",
+    allowedAssignments(child, ["rest", "whore", "classes"]).join() === "rest,classes");
+
+  // Time passes for adults too — only children aged, which is the bug you do not notice for a
+  // hundred weeks and then cannot unsee.
+  const grown = Object.values(s.people).find((p) => p.age >= 18)!;
+  const wasAge = grown.age;
+  grown.birth_week = s.arcology.week - wasAge * 52;
+  s.arcology.week += 52;
+  tickAge(s, grown);
+  check("adults age on the same clock as everybody else", grown.age === wasAge + 1, { was: wasAge, now: grown.age });
 }
 
 /* ── the player's own skills are not decoration ─────────────────────────────────────────────

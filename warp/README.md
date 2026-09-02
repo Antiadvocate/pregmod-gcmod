@@ -74,6 +74,11 @@ two dials at the bottom.
   nothing whatever to the second. Unrest is what your own household is carrying — resentment, no
   hope, nothing left to lose — and the only things that move it are the things that change what
   they carry. The week an owner discovers this is the week the drones are pointing outward.
+- **Nobody is exempt from the clock, and children are.** Everyone ages on the same fifty-two week
+  tick — only children aged in the first pass, which is the bug you do not notice for a hundred
+  weeks and then cannot unsee. And the age gate lives in the engine on the single writer for what
+  somebody is doing, not in the dropdown: under eighteen it is rest, the nursery, the schoolroom and
+  medical care, and a standing order cannot route around it either.
 - **You are a character.** Your five skills each have exactly one reader in the engine and each
   grows from the thing it affects. And the household keeps a private model of you, which the You
   screen aggregates into the sentence they would say about you if you were not in the room.
@@ -111,7 +116,7 @@ at week 4 costs.
 npm install
 npm run dev       # http://localhost:5173
 npm run build     # static bundle in dist/ — no server, no backend
-npm test          # 87 behavioural tests over the deterministic core
+npm test          # 94 behavioural tests over the deterministic core
 npm run lint      # tsc --noEmit
 npm run balance   # a year of an arcology, printed as a ledger — how both economy bugs were found
 ```

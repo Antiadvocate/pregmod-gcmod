@@ -78,6 +78,24 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
         </Section>
       ) : null}
 
+      {save.notifications.filter((n) => !n.seen).length ? (
+        <Section title="Since you last looked" right={
+          <Button size="sm" kind="ghost" onClick={() => mutate((s) => { for (const n of s.notifications) n.seen = true; })}>mark read</Button>
+        }>
+          <div className="space-y-1.5">
+            {save.notifications.filter((n) => !n.seen).slice(-10).reverse().map((n) => (
+              <div key={n.id} className="card-2 px-3 py-2 flex gap-3 items-baseline">
+                <span className="font-mono text-[11px] dim shrink-0">wk {n.week}</span>
+                <span className="text-[12.5px] flex-1" style={{ color: n.kind === "danger" ? "var(--danger)" : n.kind === "warning" ? "var(--warn)" : n.kind === "good" ? "var(--good)" : undefined }}>
+                  {n.text}
+                </span>
+                {n.person && save.people[n.person] ? <span className="text-[11px] dim shrink-0">{save.people[n.person].name}</span> : null}
+              </div>
+            ))}
+          </div>
+        </Section>
+      ) : null}
+
       {lastReport?.problems.length ? (
         <Section title="Problems">
           <Card>

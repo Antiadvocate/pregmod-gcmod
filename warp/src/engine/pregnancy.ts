@@ -175,6 +175,28 @@ function childName(state: SaveState, mother: Person, f: Fetus): string {
   return (free.length ? r.pick(free) : r.pick(pool)) + "";
 }
 
+/** TIME PASSES FOR EVERYONE.
+ *
+ *  Only children aged, which is the bug you do not notice for a hundred weeks and then cannot
+ *  unsee: a two-hundred-week campaign in which a woman bought at nineteen is still nineteen, while
+ *  the doctrine that prefers youth goes on approving of her forever. Adults age on the same
+ *  fifty-two week clock, and it costs them fertility and a little of the face.
+ */
+export function tickAge(state: SaveState, p: Person): string[] {
+  if ((state.arcology.week - p.birth_week) % 52 !== 0 || state.arcology.week === p.birth_week) return [];
+  if (p.age >= 18) {
+    p.age++;
+    // Physical age is what treatment and hard living have actually done, and it is what the
+    // doctrines and the market read. It usually tracks; it does not have to.
+    p.physical_age = Math.max(18, p.physical_age + 1);
+    p.womb.fertility = clamp(p.womb.fertility - (p.physical_age > 30 ? 3 : 1), 0, 100);
+    if (p.physical_age > 28) p.body.face = clamp(p.body.face - 0.6, 5, 99);
+    if (p.age % 10 === 0) return [`${p.name} is ${p.age}.`];
+    return [];
+  }
+  return [];
+}
+
 /** Children grow. A nursery raises them into somebody; no nursery and they grow up anyway, worse. */
 export function tickChild(state: SaveState, p: Person): string[] {
   if (p.age >= 18) return [];
