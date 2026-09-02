@@ -16,6 +16,12 @@ import { DOCTRINE_BY_ID } from "../src/data/doctrines.ts";
 import { tryConception } from "../src/engine/pregnancy.ts";
 import { newMemory } from "../src/engine/memory.ts";
 import { refresh } from "../src/engine/obedience.ts";
+import { runManager } from "../src/engine/managers.ts";
+import { enact, tickPolicies } from "../src/engine/policies.ts";
+import { Ledger } from "../src/engine/economy.ts";
+import { unrest } from "../src/engine/security.ts";
+import { EVENTS, pressure } from "../src/engine/events.ts";
+import { practise, skill } from "../src/engine/player.ts";
 
 /* ── the week survives being run ────────────────────────────────────────────────────────────── */
 {
@@ -187,6 +193,118 @@ import { refresh } from "../src/engine/obedience.ts";
   let inside = 0;
   for (let i = 0; i < 300; i++) { if (tryConception(s, a, b.id, 6)) { inside++; a.womb.fetuses = []; } }
   check("the fertile window is a real window", inside > outside * 3, { inside, outside });
+}
+
+/* ── managers do something, including the wrong thing ──────────────────────────────────────── */
+{
+  const s = newGame({ seed: "test-managers", starting_slaves: 4 });
+  s.arcology.facilities["brothel"].level = 1;
+  s.arcology.facilities["brothel"].capacity = 4;
+  const [boss, worker] = Object.values(s.people);
+  assignToFacility(s, boss, "brothel");
+  assignToFacility(s, worker, "brothel");
+  s.arcology.facilities["brothel"].manager = boss.id;
+
+  // A manager under the post's floor sabotages, and it shows up as money rather than as flavour.
+  boss.bond = { ...boss.bond, bond: -40, fear: 0, resentment: 70, hope: 0 };
+  refresh(boss, s.memory[boss.id]);
+  const cashBefore = s.arcology.cash;
+  const bad = runManager(s, "brothel");
+  check("a manager who hates you costs you money", s.arcology.cash < cashBefore, { before: cashBefore, after: s.arcology.cash });
+  check("and it is reported rather than silent", bad.lines.length > 0 && bad.income < 1, bad.lines.map((l) => l.text));
+
+  // A good one is worth having.
+  boss.bond = { ...boss.bond, bond: 80, fear: 5, resentment: 0, hope: 60 };
+  boss.skills.management.madam = 70;
+  refresh(boss, s.memory[boss.id]);
+  const good = runManager(s, "brothel");
+  check("a good manager raises what the room earns", good.income > 1.2, good.income);
+  check("and trains the people in it faster", good.training > 1.2, good.training);
+}
+
+/* ── policies, and the doctrine that will not have them ────────────────────────────────────── */
+{
+  const s = newGame({ seed: "test-policy", starting_slaves: 2 });
+  s.arcology.cash = 100000;
+  check("a policy can be enacted", enact(s, "curfew").ok);
+  check("and not twice", !enact(s, "curfew").ok);
+  adoptDoctrine(s, "paternalist");
+  s.arcology.doctrines["paternalist"].adoption = 70;
+  const refused = enact(s, "public_punishment");
+  check("a doctrine your citizens hold refuses the policy that contradicts it", !refused.ok, refused);
+
+  // Hope-bearing policies actually reach the household.
+  const before = Object.values(s.people).map((p) => p.bond.hope);
+  enact(s, "manumission");
+  const led = new Ledger();
+  tickPolicies(s, led);
+  const after = Object.values(s.people).map((p) => p.bond.hope);
+  check("a published price at which she could buy herself out reaches her", after.every((h, i) => h > before[i]), { before, after });
+}
+
+/* ── unrest is not security, and the difference is the point ───────────────────────────────── */
+{
+  const s = newGame({ seed: "test-unrest", starting_slaves: 4 });
+  for (const p of Object.values(s.people)) {
+    p.bond.resentment = 90;
+    p.bond.hope = 0;
+    p.bond.bond = -50;
+    refresh(p, s.memory[p.id]);
+  }
+  const high = unrest(s);
+  check("a household carrying that much reads as unrest", high > 50, high);
+  s.arcology.security = 100;
+  check("and maximum security does absolutely nothing to it", Math.abs(unrest(s) - high) < 0.01);
+  for (const p of Object.values(s.people)) { p.bond.resentment = 0; p.bond.hope = 70; p.bond.bond = 50; refresh(p, s.memory[p.id]); }
+  check("what moves it is what the people are carrying", unrest(s) < 20, unrest(s));
+}
+
+/* ── every event can fire ──────────────────────────────────────────────────────────────────────
+ * Events are the most crash-prone code in a sim like this: each one reaches into a different
+ * corner of the state, and the corner is usually empty on the week it finally fires. So every
+ * option of every event is resolved against a real save, once.
+ */
+{
+  let threw: unknown = null;
+  let fired = 0;
+  for (const def of EVENTS) {
+    for (const opt of def.options) {
+      const s = newGame({ seed: `test-event-${def.id}-${opt.id}`, starting_slaves: 4 });
+      s.arcology.cash = 80000;
+      const person = Object.values(s.people)[0];
+      const e = {
+        id: "x", kind: def.id, person: person.id, seed: "", options: [],
+        week: s.arcology.week, severity: def.severity,
+      };
+      try { opt.resolve(s, e, person); fired++; } catch (err) { threw = `${def.id}/${opt.id}: ${String(err)}`; }
+    }
+  }
+  check(`every option of every event resolves (${fired})`, !threw, threw);
+  check("and the pressure controller stays in range", (() => {
+    const s = newGame({ seed: "test-pressure", starting_slaves: 3 });
+    const p = pressure(s);
+    return p >= 0 && p <= 12;
+  })());
+}
+
+/* ── the player's own skills are not decoration ─────────────────────────────────────────────
+ * Five numbers were listed on a screen with a sentence each describing what they did, and nothing
+ * in the engine read four of them. A skill with a description and no reader is a lie told in the
+ * interface, so each one is asserted against the place that reads it.
+ */
+{
+  const s = newGame({ seed: "test-skills", starting_slaves: 2 });
+  s.player.skills = { trading: 0, slaving: 0, medicine: 0, engineering: 0, hacking: 0 };
+  const base = { trading: skill.trading(s), slaving: skill.slaving(s), medicine: skill.medicine(s), engineering: skill.engineering(s) };
+  s.player.skills = { trading: 100, slaving: 100, medicine: 100, engineering: 100, hacking: 100 };
+  check("trading buys people cheaper", skill.trading(s) < base.trading);
+  check("slaving trains them faster", skill.slaving(s) > base.slaving);
+  check("medicine makes surgery cost them less", skill.medicine(s) < base.medicine);
+  check("engineering makes building cheaper", skill.engineering(s) < base.engineering);
+  check("hacking shows you what the neighbours are running", skill.hacking(s) && !skill.hacking({ ...s, player: { ...s.player, skills: {} } } as typeof s));
+
+  practise(s, "medicine", 5);
+  check("and practice is capped rather than unbounded", (s.player.skills.medicine ?? 0) <= 100);
 }
 
 /* ── facility membership has one writer ─────────────────────────────────────────────────────── */

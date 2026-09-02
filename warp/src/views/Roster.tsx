@@ -17,10 +17,12 @@ import { assignToFacility } from "../engine/rules";
 import { ASSIGNMENTS } from "../data/assignments";
 import { FACILITIES, FACILITY_BY_ID } from "../data/facilities";
 import { PROCEDURES } from "../engine/health";
+import { WARDROBE, MODIFICATIONS, GARMENT_BY_NAME } from "../data/wardrobe";
 import { sell } from "../engine/market";
 import { enrichPerson } from "../engine/forge";
 import { modelsAvailable } from "../config";
 import { getEdge } from "../engine/social";
+import { practise, skill } from "../engine/player";
 
 type Sort = "name" | "devotion" | "trust" | "health" | "income" | "trouble";
 
@@ -75,6 +77,13 @@ export default function Roster() {
       </Sheet>
     </>
   );
+}
+
+/** Anything already worn by somebody in the household is paid for. */
+function ownedGarments(save: ReturnType<typeof useGame>["save"]): Set<string> {
+  const worn = new Set<string>();
+  for (const p of Object.values(save.people)) { worn.add(p.clothes); worn.add(p.collar); worn.add(p.shoes); }
+  return worn;
 }
 
 function RosterCard({ p, onOpen }: { p: Person; onOpen: () => void }) {
@@ -215,21 +224,74 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
           {p.body.marks.length ? (
             <Section title="Marks"><Card><ul className="text-[12.5px] mid space-y-1">{p.body.marks.map((m, i) => <li key={i}>{m.what} — {m.where} (wk {m.week})</li>)}</ul></Card></Section>
           ) : null}
+          <Section title="What she is wearing" >
+            <Card>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {(["clothes", "collar", "shoes"] as const).map((slot) => (
+                  <Field key={slot} label={slot}>
+                    <select value={p[slot]} onChange={(e) => mutate((s) => {
+                      const g = GARMENT_BY_NAME[e.target.value];
+                      if (g && g.cost && !ownedGarments(save).has(g.name)) s.arcology.cash -= g.cost;
+                      s.people[id][slot] = e.target.value;
+                    })}>
+                      {WARDROBE.filter((g) => g.slot === slot).map((g) => (
+                        <option key={g.id} value={g.name}>{g.name}{g.cost ? ` — ¤${g.cost}` : ""}</option>
+                      ))}
+                    </select>
+                  </Field>
+                ))}
+              </div>
+              <div className="text-[11.5px] dim">
+                {[p.clothes, p.collar, p.shoes].map((n) => GARMENT_BY_NAME[n]).filter(Boolean).map((g) => (
+                  `${g!.name}: ×${g!.appeal.toFixed(2)} on what she earns${g!.relaxation ? `, ${g!.relaxation > 0 ? "+" : ""}${g!.relaxation.toFixed(2)} a week to her` : ""}${g!.note ? ` — ${g!.note}` : ""}`
+                )).join(" · ")}
+              </div>
+            </Card>
+          </Section>
+
+          <Section title="Marking her">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {MODIFICATIONS.map((m) => (
+                <div key={m.id} className="card-2 p-3 flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="text-[13px]">{m.name}</div>
+                    <div className="text-[11px] dim font-mono">¤{m.cost} · {m.where}{m.resented > 3 ? " · she will not forgive this quickly" : ""}</div>
+                  </div>
+                  <Button size="sm" disabled={save.arcology.cash < m.cost}
+                    onClick={() => mutate((s) => {
+                      const person = s.people[id];
+                      s.arcology.cash -= m.cost;
+                      person.body.marks.push({ kind: m.kind, where: m.where, what: m.name, week: s.arcology.week });
+                      person.psyche.relaxation = Math.max(-10, person.psyche.relaxation + m.relaxation);
+                      if (m.resented) {
+                        person.bond.resentment = Math.min(100, person.bond.resentment + m.resented * 1.5);
+                        person.bond.weeks_since_cruelty = 0;
+                      }
+                    })}>do it</Button>
+                </div>
+              ))}
+            </div>
+          </Section>
+
           <Section title="Procedures">
             <div className="grid gap-2 sm:grid-cols-2">
               {PROCEDURES.map((proc) => (
                 <div key={proc.id} className="card-2 p-3 flex items-center gap-3">
                   <div className="flex-1">
                     <div className="text-[13px]">{proc.name}</div>
-                    <div className="text-[11px] dim font-mono"><Money n={-proc.cost} /> · {proc.recovery}w recovery · {proc.toll} health</div>
+                    <div className="text-[11px] dim font-mono">
+                      <Money n={-proc.cost} /> · {Math.max(0, Math.round(proc.recovery * skill.medicine(save)))}w recovery · {Math.round(proc.toll * skill.medicine(save))} health
+                    </div>
                   </div>
                   <Button size="sm" disabled={save.arcology.cash < proc.cost || p.health.recovery_weeks > 0}
                     onClick={() => mutate((s) => {
                       const person = s.people[id];
                       s.arcology.cash -= proc.cost;
                       proc.apply(person);
-                      person.health.health = Math.max(-100, person.health.health - proc.toll);
-                      person.health.recovery_weeks += proc.recovery;
+                      const med = skill.medicine(s);
+                      person.health.health = Math.max(-100, person.health.health - proc.toll * med);
+                      person.health.recovery_weeks += Math.max(0, Math.round(proc.recovery * med));
+                      practise(s, "medicine", 2);
                       for (const m of person.body.marks) if (!m.week) m.week = s.arcology.week;
                       if (proc.resented) {
                         person.bond.resentment = Math.min(100, person.bond.resentment + proc.resented * 2);

@@ -20,6 +20,8 @@ import { clamp } from "./psyche";
 import { applyTreatment } from "./obedience";
 import { remember } from "./memory";
 import { startRumor } from "./social";
+import { scoreFor } from "./society";
+import { DOCTRINE_BY_ID } from "../data/doctrines";
 
 export interface EventOption {
   id: string;
@@ -41,6 +43,12 @@ export interface EventDef {
   /** True when this event came out of your household rather than out of the world. These fire at
    *  tension 0; world events do not. */
   endogenous: boolean;
+}
+
+/** How a person scores against one adopted doctrine — the flashpoint event's whole condition. */
+function scoreOf(s: SaveState, p: Person, doctrineId: string): number {
+  const d = DOCTRINE_BY_ID[doctrineId];
+  return d ? scoreFor(p, d) : 0;
 }
 
 const owned = (s: SaveState): Person[] => Object.values(s.people).filter((p) => p.status === "owned" || p.status === "indentured");
@@ -190,7 +198,120 @@ export const EVENTS: EventDef[] = [
       { id: "no", label: "Decline", resolve: () => `Declined. He will ask again.` },
     ],
   },
+  {
+    id: "pair_bond", severity: "minor", endogenous: true,
+    candidates: (s) => {
+      const out: { person?: Person }[] = [];
+      for (const e of s.edges) {
+        if (e.warmth < 55) continue;
+        const back = s.edges.find((x) => x.from === e.to && x.to === e.from);
+        if (!back || back.warmth < 55) continue;
+        const p = s.people[e.from];
+        if (p && (p.status === "owned" || p.status === "indentured")) out.push({ person: p });
+      }
+      return out;
+    },
+    weight: () => 4,
+    seed: (s, c) => {
+      const e = s.edges.filter((x) => x.from === c.person!.id).sort((a, b) => b.warmth - a.warmth)[0];
+      const other = e ? s.people[e.to] : undefined;
+      return `${c.person!.name} and ${other?.name ?? "one of the others"} have become something. They are being careful about it in front of you, which is how you know.`;
+    },
+    options: [
+      { id: "allow", label: "Leave them alone",
+        resolve: (s, _e, p) => {
+          const edge = s.edges.filter((x) => x.from === p!.id).sort((a, b) => b.warmth - a.warmth)[0];
+          const other = edge ? s.people[edge.to] : undefined;
+          for (const person of [p!, other].filter(Boolean) as Person[]) {
+            applyTreatment(person, { kind: "recognition", size: 4, why: "allowed to have somebody" }, s.arcology.week);
+            person.psyche.relaxation = clamp(person.psyche.relaxation + 1, -10, 10);
+          }
+          if (edge) { edge.roles.push("lover"); }
+          return `Nothing was said about it, which was the correct thing to say.`;
+        } },
+      { id: "separate", label: "Separate them",
+        resolve: (s, _e, p) => {
+          const edge = s.edges.filter((x) => x.from === p!.id).sort((a, b) => b.warmth - a.warmth)[0];
+          const other = edge ? s.people[edge.to] : undefined;
+          for (const person of [p!, other].filter(Boolean) as Person[]) {
+            applyTreatment(person, { kind: "cruelty", size: 5, why: "separated from the one person who was helping" }, s.arcology.week);
+            const mem = s.memory[person.id];
+            if (mem) remember(mem, { content: "the one good thing here was taken away on purpose", week: s.arcology.week, importance: 8, charge: "sharp", core: true });
+          }
+          return `Different floors, different shifts. They still find ways.`;
+        } },
+      { id: "use", label: "Put them to work together", note: "they perform better; they also become one thing rather than two",
+        resolve: (s, _e, p) => {
+          applyTreatment(p!, { kind: "kindness", size: 2, why: "kept with her person" }, s.arcology.week);
+          p!.skills.entertainment = clamp(p!.skills.entertainment + 6, 0, 100);
+          return `Booked as a pair. The takings say it was the right call and neither of them will look at you.`;
+        } },
+    ],
+  },
+  {
+    id: "doctrine_flashpoint", severity: "notable", endogenous: false,
+    candidates: (s) => {
+      const strong = Object.entries(s.arcology.doctrines).filter(([, st]) => st.adoption > 65).map(([id]) => id);
+      if (!strong.length) return [];
+      return owned(s).filter((p) => strong.some((d) => scoreOf(s, p, d) < -0.4)).map((person) => ({ person }));
+    },
+    weight: () => 5,
+    seed: (s, c) => {
+      const strong = Object.entries(s.arcology.doctrines).sort((a, b) => b[1].adoption - a[1].adoption)[0];
+      return `Somebody wrote about ${c.person!.name} on the public boards. Your arcology believes what it believes about bodies now — ${Math.round(strong?.[1].adoption ?? 0)}% of it does — and she is standing evidence against it.`;
+    },
+    options: [
+      { id: "change", label: "Change her to fit", note: "expensive, and she is the one who pays it",
+        resolve: (s, _e, p) => { s.arcology.cash -= 9000; applyTreatment(p!, { kind: "cruelty", size: 5, why: "remade to suit the doctrine" }, s.arcology.week); p!.health.recovery_weeks += 2; return `Nine thousand and two weeks in the clinic.`; } },
+      { id: "hide", label: "Keep her out of sight",
+        resolve: (s, _e, p) => { p!.assignment = "house servant"; applyTreatment(p!, { kind: "neglect", size: 3, why: "hidden away" }, s.arcology.week); return `She works the back corridors now.`; } },
+      { id: "defend", label: "Say publicly that she stays as she is", note: "costs standing; buys something else",
+        resolve: (s, _e, p) => { s.arcology.rep -= 800; applyTreatment(p!, { kind: "recognition", size: 8, why: "defended in public, at cost" }, s.arcology.week); const mem = s.memory[p!.id]; if (mem) remember(mem, { content: "he stood up in front of the whole arcology and said she stays as she is", week: s.arcology.week, importance: 10, charge: "bright", core: true }); return `It cost eight hundred reputation. She heard about it within the hour.`; } },
+    ],
+  },
+  {
+    id: "mercenary_offer", severity: "minor", endogenous: false,
+    candidates: (s) => (!s.arcology.mercenaries.hired && s.arcology.cash > 25000 ? [{}] : []),
+    weight: (s) => (s.arcology.security < 40 ? 5 : 2),
+    seed: () => `A company that has just finished somewhere else is looking for a retainer. Their captain is direct about the price and evasive about the last contract.`,
+    options: [
+      { id: "hire", label: "Take them on", note: "¤22,000 up front — under the usual rate",
+        resolve: (s) => { s.arcology.cash -= 22000; s.arcology.mercenaries = { hired: true, strength: 50, loyalty: 55, upkeep: 3500 }; s.arcology.security = clamp(s.arcology.security + 18, 0, 100); return `Hired. They moved into the freight level the same day.`; } },
+      { id: "pass", label: "Pass", resolve: () => `They went east.` },
+    ],
+  },
+  {
+    id: "returned", severity: "major", endogenous: true,
+    candidates: (s) => (Object.values(s.people).some((p) => p.status === "free" && p.exit_note === "escaped") ? [{}] : []),
+    weight: () => 6,
+    seed: (s) => {
+      const gone = Object.values(s.people).find((p) => p.status === "free" && p.exit_note === "escaped");
+      return `${gone?.name ?? "Somebody who used to be yours"} is at the residential doors. She came back on her own, and she is not explaining why yet.`;
+    },
+    options: [
+      { id: "take", label: "Take her back in",
+        resolve: (s) => {
+          const gone = Object.values(s.people).find((p) => p.status === "free" && p.exit_note === "escaped");
+          if (!gone) return "";
+          gone.status = "owned";
+          delete gone.exit_week;
+          gone.exit_note = undefined;
+          applyTreatment(gone, { kind: "recognition", size: 6, why: "came back and was let in" }, s.arcology.week);
+          gone.bond.hope = clamp(gone.bond.hope + 20, 0, 100);
+          startRumor(s, `${gone.name} came back on her own`, { salience: 8, about: gone.id });
+          return `${gone.name} is upstairs. Whatever happened out there, she is not saying.`;
+        } },
+      { id: "refuse", label: "Leave her at the door",
+        resolve: (s) => {
+          const gone = Object.values(s.people).find((p) => p.status === "free" && p.exit_note === "escaped");
+          startRumor(s, `he left ${gone?.name ?? "her"} standing at the door`, { salience: 7 });
+          for (const p of owned(s)) p.bond.hope = clamp(p.bond.hope - 6, 0, 100);
+          return `She stood there a while. The household watched from four floors up.`;
+        } },
+    ],
+  },
 ];
+
 
 export const EVENT_BY_ID: Record<string, EventDef> = Object.fromEntries(EVENTS.map((e) => [e.id, e]));
 

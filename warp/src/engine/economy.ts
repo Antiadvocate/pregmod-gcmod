@@ -12,6 +12,7 @@ import { FACILITY_BY_ID } from "../data/facilities";
 import { ASSIGNMENT_BY_ID } from "../data/assignments";
 import { clamp } from "./psyche";
 import { societyScore } from "./society";
+import { GARMENT_BY_NAME } from "../data/wardrobe";
 
 export class Ledger {
   lines: LedgerEntry[] = [];
@@ -48,7 +49,12 @@ export function appeal(p: Person): number {
   if (p.psyche.state === "broken") n *= 0.75;
   if (p.health.injuries.some((i) => !i.healed_week && i.severity !== "minor")) n *= 0.8;
   if (p.fame.prestige) n *= 1 + p.fame.prestige * 0.28;
-  return clamp(n, 0.2, 2.4);
+  // What she is wearing is not decoration in an arcology; it is part of the offer.
+  for (const worn of [p.clothes, p.collar, p.shoes]) {
+    const g = GARMENT_BY_NAME[worn];
+    if (g) n *= g.appeal;
+  }
+  return clamp(n, 0.2, 2.6);
 }
 
 /** How well she does the work she is doing, 0.2 … 1.8. Skill, and then whether she is trying. */

@@ -62,6 +62,21 @@ two dials at the bottom.
   household.
 - **Memory is real.** Episodic → gist → belief. What a slave remembers about being here outweighs
   this week's arithmetic, which is why a good month cannot undo a bad year.
+- **Managers run things, including badly.** Each post has one effect that materially changes the
+  week, computed from that person's skill, devotion and nature — and a floor. A manager under the
+  post's minimum does the job badly on purpose and skims the takings, which is the one place in the
+  engine where disloyalty has a lever. A household where loyalty has no consequence is decoration.
+- **Policies** are arcology-wide law with a price and a weekly cost, and your own doctrine can
+  refuse one: a Paternalist citizenry will not have public punishment on the books, and a policy
+  that drifts out of line with what your people have come to believe bleeds standing every week it
+  stays.
+- **Crime and unrest are different problems.** Watch, drones and mercenaries move the first and do
+  nothing whatever to the second. Unrest is what your own household is carrying — resentment, no
+  hope, nothing left to lose — and the only things that move it are the things that change what
+  they carry. The week an owner discovers this is the week the drones are pointing outward.
+- **You are a character.** Your five skills each have exactly one reader in the engine and each
+  grows from the thing it affects. And the household keeps a private model of you, which the You
+  screen aggregates into the sentence they would say about you if you were not in the room.
 - **The household is coupled.** Nervous systems lean on each other pairwise and as a room, and news
   moves through facilities as a field: dread travels fast through a clenched room, warm news through
   a settled one, and a rumour nobody is charged enough to repeat dies of boredom.
@@ -96,7 +111,7 @@ at week 4 costs.
 npm install
 npm run dev       # http://localhost:5173
 npm run build     # static bundle in dist/ — no server, no backend
-npm test          # 63 behavioural tests over the deterministic core
+npm test          # 87 behavioural tests over the deterministic core
 npm run lint      # tsc --noEmit
 npm run balance   # a year of an arcology, printed as a ledger — how both economy bugs were found
 ```
@@ -120,11 +135,15 @@ src/engine/     the world. Nothing in here imports React.
   society.ts      doctrine as one scoring function
   economy.ts      every number, with a ledger line for each
   rules.ts        standing orders: conditions, effects, dry run
+  managers.ts     what a Head Girl, a Madam or a Wardeness actually does to a week
+  policies.ts     arcology law, and the doctrine that refuses it
+  security.ts     crime outside, unrest inside, and the neighbours' schemes
+  player.ts       you, as your household reads you
   turn.ts         the scene turn and its guards
   prompts.ts      the compiled state document
   generate.ts     a whole person, offline
   forge.ts        the interior, when a model is available
-src/data/       doctrines, facilities, assignments, nations and careers
+src/data/       doctrines, facilities, assignments, policies, wardrobe, nations and careers
 src/views/      the interface. Nothing in here knows a rule.
 tests/          behavioural tests; each one names the failure it prevents
 ```

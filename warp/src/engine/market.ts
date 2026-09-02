@@ -13,6 +13,8 @@ import { rng } from "./rng";
 import { newMemory } from "./memory";
 import { refresh } from "./obedience";
 import { clamp } from "./psyche";
+import { practise, skill } from "./player";
+import { marketDiscount } from "./policies";
 
 export interface MarketDef {
   id: string;
@@ -84,17 +86,26 @@ export function rollMarkets(state: SaveState): MarketState {
  *  your own read of people; a clever owner finds more. */
 export function inspect(state: SaveState, offer: MarketOffer): { found: string[]; cost: number } {
   const cost = Math.round(offer.price * 0.03);
-  const skill = clamp((state.player.skills["trading"] ?? 20) / 100, 0.1, 0.9);
+  const eye = clamp((state.player.skills["trading"] ?? 20) / 100, 0.1, 0.9);
   const r = rng(`inspect:${offer.id}`);
-  const found = offer.hidden.filter(() => r.chance(0.35 + skill));
+  const found = offer.hidden.filter(() => r.chance(0.35 + eye));
   return { found, cost };
 }
 
+/** What you would actually pay: the asking price, less what your own trading and your own market
+ *  licence take off it. Shown in the market so the discount is visible rather than a surprise. */
+export function askingPrice(state: SaveState, offer: MarketOffer): number {
+  return Math.max(200, Math.round(offer.price * skill.trading(state) * (1 - marketDiscount(state))));
+}
+
 export function buy(state: SaveState, offer: MarketOffer): { ok: boolean; why?: string; person?: Person } {
-  if (state.arcology.cash < offer.price) return { ok: false, why: "you cannot cover it" };
+  const price = askingPrice(state, offer);
+  if (state.arcology.cash < price) return { ok: false, why: "you cannot cover it" };
   const p = offer.person;
-  state.arcology.cash -= offer.price;
-  p.economics.price_paid = offer.price;
+  state.arcology.cash -= price;
+  p.economics.price_paid = price;
+  practise(state, "trading", 2);
+  practise(state, "slaving", 1);
   p.origin.acquired_week = state.arcology.week;
   p.status = "owned";
   state.people[p.id] = p;

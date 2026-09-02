@@ -31,6 +31,11 @@ import { runOrders } from "./rules";
 import { selectEvents } from "./events";
 import { rollMarkets, recruitResult } from "./market";
 import { rng } from "./rng";
+import { runHeadGirl, runManager, type ManagerEffect } from "./managers";
+import { tickPolicies } from "./policies";
+import { tickSecurity, unrest } from "./security";
+import { GARMENT_BY_NAME } from "../data/wardrobe";
+import { refreshPlayer, practise, skill } from "./player";
 
 const alive = (s: SaveState): Person[] => Object.values(s.people).filter((p) => p.status === "owned" || p.status === "indentured");
 
@@ -54,6 +59,18 @@ export function endWeek(s: SaveState): WeekReport {
     if (p && order) push(`${order.name}: ${p.name} — ${run.changes.join("; ")}`, "neutral", 3, p.id);
   }
 
+  /* ── 1b. the people who run things ──────────────────────────────────────────────────────── */
+  // Managers are resolved BEFORE the work, because what they do is change what the work is. Their
+  // own week is worked in the loop below like anybody else's.
+  const managed = new Map<string, ManagerEffect>();
+  for (const fac of Object.values(s.arcology.facilities)) {
+    if (!fac.level || !fac.manager) continue;
+    const eff = runManager(s, fac.id);
+    managed.set(fac.id, eff);
+    lines.push(...eff.lines);
+  }
+  lines.push(...runHeadGirl(s));
+
   /* ── 2. the work ────────────────────────────────────────────────────────────────────────── */
   const dead: Person[] = [];
   for (const p of alive(s)) {
@@ -63,8 +80,12 @@ export function endWeek(s: SaveState): WeekReport {
     const asgDef = ASSIGNMENT_BY_ID[p.assignment];
     const load = facDef?.psyche ?? asgDef?.psyche ?? { relaxation: 0, wear: 0, health: 0, energy: 20 };
 
+    const mgr = p.facility ? managed.get(p.facility) : undefined;
+    const managedByThem = mgr && fac?.manager !== p.id;
+
     // MONEY
     const money = weeklyMoney(s, p);
+    if (managedByThem && mgr) money.income = Math.round(money.income * mgr.income);
     if (money.income) led.earn("slaves", `${p.name} — ${money.note || p.assignment}`, money.income, p.id);
     led.spend("upkeep", `${p.name}`, money.upkeep, p.id);
     if (money.rep) led.entry("standing", `${p.name}`, 0, money.rep, p.id);
@@ -78,7 +99,10 @@ export function endWeek(s: SaveState): WeekReport {
     // being a place: the shove lands, the resting point takes the wear, and the emotion the work
     // produced gets a name that the narrator will use later.
     tickWeek(p.psyche);
-    const felt = shove(p.psyche, load.relaxation * (1 + (p.health.energy < 25 ? 0.4 : 0)));
+    // What she is wearing, every day, all week. Small and relentless — the way clothing actually is.
+    let worn = 0;
+    for (const item of [p.clothes, p.collar, p.shoes]) worn += GARMENT_BY_NAME[item]?.relaxation ?? 0;
+    const felt = shove(p.psyche, load.relaxation * (1 + (p.health.energy < 25 ? 0.4 : 0)) + worn + (managedByThem && mgr ? mgr.care : 0));
     if (load.wear < -0.8) p.psyche.braced_run += 2;
     if (load.wear > 0.8) p.psyche.settled_run += 2;
 
@@ -96,9 +120,9 @@ export function endWeek(s: SaveState): WeekReport {
     const trains = { ...(facDef?.trains ?? {}), ...(asgDef?.trains ?? {}) };
     const aptitude = 1 + ({ impaired: -0.5, slow: -0.25, average: 0, sharp: 0.25, brilliant: 0.5 }[p.persona.intelligence]);
     const willing = clamp(1 + read(p).devotion / 200, 0.4, 1.4);
-    const teacher = fac && facDef?.manager && fac.manager ? 1.7 : 1;
+    const teacher = (fac && facDef?.manager && fac.manager ? 1.7 : 1) * skill.slaving(s);
     for (const [skill, rate] of Object.entries(trains)) {
-      const gain = (rate as number) * aptitude * willing * teacher;
+      const gain = (rate as number) * aptitude * willing * teacher * (managedByThem && mgr ? mgr.training : 1);
       const key = skill as keyof typeof p.skills;
       if (typeof p.skills[key] === "number") {
         const before = p.skills[key] as number;
@@ -115,7 +139,7 @@ export function endWeek(s: SaveState): WeekReport {
     }
 
     // HEALTH AND THE BODY
-    const hw = tickHealth(s, p, { health: load.health, energy: load.energy });
+    const hw = tickHealth(s, p, { health: load.health + (managedByThem && mgr ? mgr.health : 0), energy: load.energy });
     for (const n of hw.notes) push(`${p.name}: ${n}.`, n.includes("healed") || n.includes("back on her feet") ? "good" : "bad", 5, p.id);
     if (hw.died) { dead.push(p); continue; }
 
@@ -196,6 +220,12 @@ export function endWeek(s: SaveState): WeekReport {
   }
 
   /* ── 4. the arcology reacts to the household ────────────────────────────────────────────── */
+  lines.push(...tickPolicies(s, led));
+
+  const sec = tickSecurity(s);
+  lines.push(...sec.lines);
+  if (sec.cash) led.entry("security", "what it cost when it went wrong", sec.cash);
+
   const soc = tickSociety(s);
   led.entry("doctrine", "your citizens, on how you live", soc.cash, soc.rep);
   for (const l of soc.lines) push(l, "neutral", 6);
@@ -257,6 +287,13 @@ export function endWeek(s: SaveState): WeekReport {
   if (overworked.length) problems.push(`${overworked.length} of them have nothing left in the tank.`);
   const wornOut = alive(s).filter((p) => wear(p.psyche) > 0.7);
   if (wornOut.length) problems.push(`${wornOut.length} have been braced so long their resting point has moved.`);
+  const u = unrest(s);
+  if (u > 50) problems.push(`Household unrest is at ${Math.round(u)}. No amount of security touches this number.`);
+
+  // You get better at this by doing it: a week of running a household is a week of practice.
+  practise(s, "slaving", 0.5 + alive(s).length * 0.05);
+  practise(s, "trading", 0.15);
+  refreshPlayer(s);
 
   const report: WeekReport = {
     week,

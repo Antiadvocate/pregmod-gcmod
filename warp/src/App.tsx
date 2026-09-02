@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import {
-  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText,
+  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound,
 } from "lucide-react";
 import type { SaveState } from "./engine/types";
 import { GameProvider, useGame } from "./lib/game";
@@ -24,8 +24,9 @@ import Market from "./views/Market";
 import Orders from "./views/Orders";
 import Report from "./views/Report";
 import SettingsView from "./views/Settings";
+import You from "./views/You";
 
-export type Route = "penthouse" | "people" | "scene" | "arcology" | "doctrine" | "market" | "orders" | "report" | "settings";
+export type Route = "penthouse" | "people" | "scene" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "settings";
 
 const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "penthouse", label: "Penthouse", icon: Building2 },
@@ -36,6 +37,7 @@ const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "market", label: "Market", icon: ShoppingBag },
   { id: "orders", label: "Orders", icon: ClipboardList },
   { id: "report", label: "Week", icon: FileText },
+  { id: "you", label: "You", icon: UserRound },
   { id: "settings", label: "Settings", icon: Cog },
 ];
 
@@ -109,6 +111,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
             {route === "market" && <Market />}
             {route === "orders" && <Orders />}
             {route === "report" && <Report />}
+            {route === "you" && <You />}
             {route === "settings" && <SettingsView onSwitch={onSwitch} />}
           </div>
         </main>

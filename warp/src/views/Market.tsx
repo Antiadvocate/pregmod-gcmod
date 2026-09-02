@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Chip, Empty, Meter, Money, Section, Sheet } from "../lib/ui";
-import { MARKETS, buy, inspect } from "../engine/market";
+import { MARKETS, askingPrice, buy, inspect } from "../engine/market";
 import { read } from "../engine/obedience";
 import { band } from "../engine/psyche";
 import { societyScore } from "../engine/society";
@@ -35,7 +35,7 @@ export default function Market() {
                       <div className="flex items-baseline gap-2">
                         <span className="text-[14px]">{p.name}</span>
                         <span className="text-[11px] dim font-mono">{p.age} · {p.origin.nationality}</span>
-                        <span className="ml-auto font-mono text-[13px] acc">¤{o.price.toLocaleString()}</span>
+                        <span className="ml-auto font-mono text-[13px] acc">¤{askingPrice(save, o).toLocaleString()}</span>
                       </div>
                       <div className="font-prose text-[13px] mid mt-1.5">&ldquo;{o.pitch}&rdquo;</div>
                       <div className="text-[11.5px] dim mt-1.5">{p.body.appearance_facts}</div>
@@ -106,8 +106,9 @@ export default function Market() {
             </Card>
 
             <div className="flex items-center gap-3">
-              <span className="font-mono text-[16px] acc">¤{open.price.toLocaleString()}</span>
-              <Button kind="primary" disabled={save.arcology.cash < open.price}
+              <span className="font-mono text-[16px] acc">¤{askingPrice(save, open).toLocaleString()}</span>
+              {askingPrice(save, open) < open.price ? <span className="text-[11px] dim">asking ¤{open.price.toLocaleString()}; you talked them down</span> : null}
+              <Button kind="primary" disabled={save.arcology.cash < askingPrice(save, open)}
                 onClick={() => { mutate((s) => { buy(s, open); }); setOpen(null); }}>
                 buy her
               </Button>

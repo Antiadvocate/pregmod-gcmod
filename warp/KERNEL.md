@@ -132,6 +132,41 @@ The whole point of doing it this way is that `explainFor()` can produce a senten
 old implementation was a spray of conditionals across forty files, which is why nobody could ever
 answer "why did my Supremacist arcology dislike her".
 
+## 8b. Force, in two halves
+
+`engine/security.ts`. **Crime** is the citizens: it rises with poverty and low watch, falls with
+security, and costs money and prosperity. Defence is `security/50 + bodyguard + mercenaries`, and it
+decides how much of a theft you get back and whether a raid comes through the freight doors.
+
+**Unrest** is your own household, and it is computed from what they are carrying:
+
+```
+unrest = mean(0.6·resentment + 40·flight_risk − 0.25·hope − 0.15·max(0, devotion))
+```
+
+Nothing in the security half of this file touches it. Past 55 the angriest person in the house does
+something — runs, or refuses an instruction in front of four other people — and either outcome moves
+everyone else's hope, in opposite directions. That symmetry is the point: an escape that succeeds
+makes the rest of the household believe it is possible, and one that is caught makes them believe it
+is not.
+
+The neighbours run schemes (embargo, influence, cyber, raid) that fill over weeks once attitude
+drops past −50, and a scheme announces itself when it starts — but reading what it actually is
+requires the player's own hacking skill. Otherwise it is "something is happening over there and you
+cannot see what", which is the honest rendering of the same state.
+
+## 8c. Managers
+
+`engine/managers.ts`. `managerQuality` is the post's skill, willingness (read devotion), physical
+ability to do the job, and intelligence, multiplied — 0.1 … 2.2. Each post spends that on one thing:
+the Madam on income and training and keeping the worst customers off her girls, the Attendant on
+whether the spa is rest or recovery, the Wardeness on how fast somebody breaks and how much is left,
+the Stewardess on a line of household upkeep the player can point at, the Head Girl on the two people
+who most need something — by her own nature, warmly or otherwise.
+
+Under the post's `min_devotion` the effect inverts: 0.75× income, a skim of ¤400–1,300 out of the
+takings, and a line in the report saying it is not an accident.
+
 ## 9. The guards
 
 Because the narrator is a model with authority to invent and the bookkeeper is told the prose is
