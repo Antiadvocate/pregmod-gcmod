@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.test-bundle.mjs
+.balance.mjs
+*.local
+.DS_Store
+
+# The repo root ignores lockfiles; Warp needs its own for reproducible CI installs (npm ci).
+!package-lock.json
