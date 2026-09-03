@@ -22,6 +22,11 @@ import { sell } from "../engine/market";
 import { enrichPerson } from "../engine/forge";
 import { modelsAvailable } from "../config";
 import { getEdge } from "../engine/social";
+import Acts from "./Acts";
+import HerPanel from "./HerPanel";
+import { romanceOf, RUNG_BY_ID } from "../engine/romance";
+import { paintPortrait } from "../engine/turn";
+import { getLocalImage } from "../config";
 import { practise, skill } from "../engine/player";
 
 type Sort = "name" | "devotion" | "trust" | "health" | "income" | "trouble";
@@ -99,6 +104,7 @@ function RosterCard({ p, onOpen }: { p: Person; onOpen: () => void }) {
             <span className="text-[11px] dim font-mono">{p.age} · {p.origin.nationality}</span>
             {p.status === "indentured" ? <Chip>indentured {p.indenture_weeks}w</Chip> : null}
             {p.age < 18 ? <Chip>child</Chip> : null}
+            {p.romance && p.romance.standing !== "property" ? <Chip on>{RUNG_BY_ID[p.romance.standing].name.toLowerCase()}</Chip> : null}
           </div>
           <div className="text-[11.5px] dim truncate mt-0.5">{fac ? fac.name : p.assignment}</div>
         </div>
@@ -126,7 +132,8 @@ function RosterCard({ p, onOpen }: { p: Person; onOpen: () => void }) {
 
 function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
   const { save, mutate } = useGame();
-  const [tab, setTab] = useState<"read" | "body" | "work" | "history">("read");
+  const [tab, setTab] = useState<"do" | "her" | "read" | "body" | "work" | "history">("do");
+  const [painting, setPainting] = useState(false);
   const [forging, setForging] = useState(false);
   const p = save.people[id];
   const r = read(p, save.memory[id]);
@@ -134,7 +141,11 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
 
   return (
     <div>
+      {p.body.portrait_url ? (
+        <img src={p.body.portrait_url} alt="" className="w-full max-h-64 object-cover rounded-lg mb-3" />
+      ) : null}
       <div className="flex flex-wrap items-center gap-2 mb-4">
+        {p.romance && p.romance.standing !== "property" ? <Chip on>{RUNG_BY_ID[p.romance.standing].name}</Chip> : null}
         <Chip>{p.origin.nationality}</Chip>
         <Chip>{p.age}</Chip>
         <Chip>{p.pronouns}</Chip>
@@ -142,13 +153,23 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
         {p.womb.fetuses.length ? <Chip>{p.womb.weeks}w pregnant</Chip> : null}
         {p.body.lactation ? <Chip>lactating</Chip> : null}
         <span className="ml-auto text-[11px] dim font-mono">owned {p.economics.weeks_owned}w</span>
+        {getLocalImage() ? (
+          <Button size="sm" kind="ghost" disabled={painting} onClick={async () => {
+            setPainting(true);
+            try { await paintPortrait(save, id); mutate(() => {}); } catch { /* the panel says nothing; Settings has the diagnostics */ }
+            setPainting(false);
+          }}>{painting ? "painting…" : p.body.portrait_url ? "repaint" : "paint her"}</Button>
+        ) : null}
       </div>
 
       <div className="flex gap-1 mb-4">
-        {(["read", "body", "work", "history"] as const).map((t) => (
+        {(["do", "her", "read", "body", "work", "history"] as const).map((t) => (
           <Button key={t} size="sm" kind={tab === t ? "primary" : "ghost"} onClick={() => setTab(t)}>{t}</Button>
         ))}
       </div>
+
+      {tab === "do" && <Acts id={id} />}
+      {tab === "her" && <HerPanel id={id} />}
 
       {tab === "read" && (
         <div className="space-y-4">

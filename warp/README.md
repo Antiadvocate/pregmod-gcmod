@@ -10,6 +10,11 @@ its kernel, its memory model, its two-model turn, its guards. Warp is the city-s
 This is not pregmod with a new skin, and it is not Weft with slaves in it. It is the whole thing
 rebuilt: same features, different physics under them, and no passage tree anywhere.
 
+**It is a brothel simulator with the economy underneath it, not an economy game with women in it.**
+The loop is: pick somebody, do something to her, find out who she is by watching what it does, and
+decide what she becomes to you. Everything else — the arcology, the doctrines, the ledger — is the
+frame that loop hangs on.
+
 ---
 
 ## The one change everything else follows from
@@ -37,6 +42,90 @@ in play within a fortnight. The person panel says which: *"Most of what holds he
 The old game could not have told you that at any price, because the answer was distributed across
 eleven hundred `devotion +=` call sites. Here it is one function, and the report can name the week
 that did it.
+
+## The loop
+
+**Acts.** Twenty-eight of them, in the base game's own vocabulary — its fetishes (`buttslut`,
+`cumslut`, `humiliation`, `submissive`, `dom`, `masochist`, `sadist`, `pregnancy`, `boobs`), its
+paraphilias, its quirks (`painal queen`, `gagfuck queen`, `strugglefuck queen`, `tease`, `romantic`)
+and its flaws (`hates anal`, `repressed`, `shamefast`, `idealistic`). Renaming all of that into
+softer words would produce a rebuild its audience opens once.
+
+**An act is not an increment.** The same hour lands three ways depending on who it is being done to:
+
+| | what happens |
+|---|---|
+| **it hits her fetish** | arousal, relaxation and bond all move up together, resentment goes negative, and the fetish gets *stronger* — feed one long enough and it stops being a preference and becomes a paraphilia |
+| **it hits her flaw** | she does it, she hates it, resentment lands at three times base, and the nervous system takes a real hit. Keep going and the flaw **wears**; a hundred and twenty repetitions past that is a woman with the matching quirk who asks for it. That road is the most expensive thing in the game and it is meant to be |
+| **it hits neither** | it is a Tuesday. She is somewhere else while it happens and the record says so |
+
+**You find out who she is by doing things and watching.** Fetishes, quirks and flaws all start
+unknown. They are discovered by hitting them, not by reading a stat block, and the panel only shows
+you the read on what you have actually found out.
+
+**Firsts are remembered.** The first time anything is done to her goes into the bank as a core
+memory that never decays. The four hundredth does not. Both are counted.
+
+## The road to marrying one, and past it
+
+The genre has always let you marry a slave, as a flag on a record. Here it is seven rungs —
+**property → favourite → kept → courted → betrothed → wife → she has the collar** — each gated on
+something you cannot buy, each bought with a **rite you actually play**, and each one the whole
+household and every doctrine you hold has an opinion about.
+
+The gate that bites is **fragility**: what share of her obedience is bought with fear rather than
+earned. Courting allows 35%, betrothal 22%, marriage 15%. You cannot marry a woman who is only
+saying yes because of what happens if she says no — not because the engine disapproves, but because
+there is nothing there to marry. **An arcology run on terror reaches `kept` and stops dead, and the
+panel tells you exactly which number is the wall.** Time is a second gate, and what she actually
+remembers about being here is a third, which no amount of this week's kindness can fake.
+
+Then it goes one rung past the wedding. **Dominion** runs −100 (you decide everything) to +100 (she
+does), and it moves only by what you do when she asks for something. She generates real requests out
+of her own fetish, flaw, drive and week — carrying a mechanical payload, voiced by a model in her own
+words — and you grant them, refuse them, or put her in her place for asking. Past 40 she moves people
+around the household and tells you afterwards; past 70 she pushes doctrine; past 85 she closes the
+books.
+
+At the top, **you hand her the collar and the registry change is real**. The weekly report is
+addressed to her. The arcology is then run off *her* personality — a cold-conscience woman handed it
+puts the worst-behaved girl in the cellblock, a warm one pulls the sick one off the floors — and the
+Penthouse becomes what she wants from you this week.
+
+Breaking a public promise at betrothed or wife is the single most expensive act in the game. Every
+other woman in the household files it, and their hope drops.
+
+## Pictures, and why they have to be local
+
+A game like this without images has a hole in it, and a hosted image API cannot fill it: it refuses
+most of what this needs to draw and bills for the rest. On your own GPU it is free and unrefusable,
+so it is automatic — Settings → Pictures points at **ComfyUI or an A1111-style WebUI**, and you get a
+portrait per person and a picture of the moment after every scene.
+
+Three things hold a cast still across a campaign: the exact clause that drew a portrait is **locked**
+onto the person and reused verbatim forever (clothes, belly and mood are added as separate clauses,
+so changing a shirt never changes a face); the portraits themselves go in as **reference images**
+through a `%ref1%` token, so Flux Kontext, IP-Adapter, PuLID and InstantID all work; and **seeds are
+held** per person and per room-and-cast. Prompts are built in both dialects — sentences for Flux and
+SD3, comma-separated tags for SD1.5, SDXL and Pony.
+
+## Events that were not written by anybody
+
+The hand-written events are the spine. The other half is a model pointed at **one specific woman's
+complete record** — her fetish, her flaw, what has been done to her, what she remembers, where she
+stands with you — inventing the situation that her particular week would throw up.
+
+The guardrail is shaped so an uncensored local model can be as inventive as it likes: **it writes
+the situation and the wording of the options, and never the consequences.** Every option names an
+effect from a closed table, the engine resolves it, and anything unrecognised is dropped on the
+floor. So it cannot invent a state change, reach a person it was not given, or touch anybody the age
+gate excludes.
+
+Settings says plainly whether your narrator slot will actually write this material: a hosted model
+declines a fair share of it and softens the rest, which is the half-written-scene failure the
+genre's players recognise immediately. Put a local model behind the narrator (`local/…` routes to
+KoboldCpp, llama-server, LM Studio or Ollama) and leave the bookkeeper hosted — it only emits JSON,
+which is what small models are worst at.
 
 ## What else survives, and how it changed
 
@@ -110,13 +199,32 @@ When a model is configured, the scene runs Weft's two-model turn: a **narrator**
 The prompt is a compiled state document, not a transcript, so a turn at week 400 costs what a turn
 at week 4 costs.
 
+## Playing it off GitHub Pages
+
+The whole thing is a static bundle, so your own repo can serve it and there is nothing to host.
+
+1. Repo **Settings → Pages → Build and deployment → Source → GitHub Actions**.
+2. Push this branch (or run **Deploy Warp to Pages** from the Actions tab).
+3. Open the URL Pages gives you. That is the game.
+
+Every push that touches `warp/` rebuilds and republishes it, and the workflow runs the typecheck
+and the test suite first, so a broken push does not become a broken page.
+
+**What still needs your own machine.** Saves live in that browser's IndexedDB — the page has no
+server and nothing you do in it leaves the device. If you want prose and pictures, the model and
+the sampler are yours too: put a local model in the narrator slot and point Settings → Pictures at
+ComfyUI or an A1111-style WebUI. A page served over `https` may refuse a plain `http://localhost`
+call, which is the one real friction of playing this from Pages — run `npm run dev` locally when
+you want the local model, or give KoboldCpp/ComfyUI an https tunnel (KoboldCpp's `--remotetunnel`
+prints one).
+
 ## Running it
 
 ```bash
 npm install
 npm run dev       # http://localhost:5173
 npm run build     # static bundle in dist/ — no server, no backend
-npm test          # 94 behavioural tests over the deterministic core
+npm test          # 143 behavioural tests over the deterministic core
 npm run lint      # tsc --noEmit
 npm run balance   # a year of an arcology, printed as a ledger — how both economy bugs were found
 ```
@@ -134,6 +242,11 @@ src/engine/     the world. Nothing in here imports React.
   types.ts        the model: people, arcology, save
   psyche.ts       the kernel — one scalar and every threshold on it
   obedience.ts    devotion and trust, derived. Start here.
+  intimacy.ts     the core loop: what an act does, and to whom
+  romance.ts      the seven rungs, the rites, dominion, and the inversion
+  asks.ts         what she wants, and what your answer costs
+  dynamic.ts      model-invented situations, on a closed effect table
+  portrait.ts     what to say to the sampler so the cast holds still
   memory.ts       episodic → gist → belief
   social.ts       edges, co-regulation, the rumour field
   week.ts         the macro tick, in stated order
@@ -148,7 +261,9 @@ src/engine/     the world. Nothing in here imports React.
   prompts.ts      the compiled state document
   generate.ts     a whole person, offline
   forge.ts        the interior, when a model is available
-src/data/       doctrines, facilities, assignments, policies, wardrobe, nations and careers
+src/data/       intimacy (acts, fetishes, quirks, flaws), doctrines, facilities,
+                assignments, policies, wardrobe, nations and careers
+src/lib/        diffusion.ts — ComfyUI and A1111 clients, reference sheets, seeds
 src/views/      the interface. Nothing in here knows a rule.
 tests/          behavioural tests; each one names the failure it prevents
 ```

@@ -21,7 +21,9 @@ import { Button, Chip, cx } from "../lib/ui";
 import type { ActionMode } from "../engine/types";
 import { runTurn } from "../engine/turn";
 import { rollback } from "../engine/state";
-import { modelsAvailable } from "../config";
+import { modelsAvailable, getLocalImage } from "../config";
+import { generateLocalImage } from "../lib/diffusion";
+import { scenePrompt } from "../engine/portrait";
 import { band } from "../engine/psyche";
 
 const MODES: { id: ActionMode; label: string; hint: string }[] = [
@@ -39,6 +41,7 @@ export default function Scene() {
   const [streaming, setStreaming] = useState("");
   const [notes, setNotes] = useState<string[]>([]);
   const [castOpen, setCastOpen] = useState(false);
+  const [painting, setPainting] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   const turns = save.history.slice(-24);
@@ -58,6 +61,20 @@ export default function Scene() {
     setStreaming("");
     setNotes(res.notes);
     mutate(() => {});
+
+    // The picture comes after the turn has committed, so the prose never waits on the GPU and a
+    // frame that fails to paint costs nothing.
+    const ep = getLocalImage();
+    if (ep?.auto_scene) {
+      setPainting(true);
+      try {
+        const sp = scenePrompt(save, { summary: res.entry.summary });
+        const img = await generateLocalImage({ ...sp, aspect: "landscape", onProgress: (n) => setNotes([n]) });
+        mutate((s) => { const last = s.history.at(-1); if (last) last.image = img.url; });
+        setNotes([]);
+      } catch (e) { setNotes([`no picture: ${(e as Error).message}`]); }
+      setPainting(false);
+    }
     setBusy(false);
   }
 
@@ -102,6 +119,7 @@ export default function Scene() {
                 {t.mode === "say" ? <>&ldquo;{t.action}&rdquo;</> : t.mode === "think" ? <em>{t.action}</em> : t.mode === "story" ? <span className="dim">[{t.action}]</span> : t.action}
               </div>
             ) : null}
+            {t.image ? <img src={t.image} alt="" className="w-full rounded-lg mb-3" /> : null}
             <div className={t.bookkeeping === "offline" ? "stage" : "prose-stream"}>
               {t.prose.split(/\n\n+/).map((para, i) => <p key={i}>{para}</p>)}
             </div>
@@ -124,6 +142,7 @@ export default function Scene() {
             </div>
           </div>
         ))}
+        {painting ? <div className="text-[11.5px] dim mb-3">painting…</div> : null}
         {streaming ? (
           <div className="prose-stream opacity-80">{streaming.split(/\n\n+/).map((para, i) => <p key={i}>{para}</p>)}</div>
         ) : null}

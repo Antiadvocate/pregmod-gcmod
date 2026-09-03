@@ -1,12 +1,20 @@
-# Builds Warp (warp/) and publishes it to GitHub Pages.
+# Publishes Warp to GitHub Pages.
 #
 # Warp is a static bundle with no backend: the engine, the saves and the model key all live in the
-# browser, so "deploy" is one artifact upload. Nothing here touches the legacy pregmod build.
+# browser, so "deploy" is one artifact upload and the published page is the whole game.
+#
+# It builds from THIS branch as well as main, because the branch is where the work is and waiting
+# for a merge to be able to play it is a silly reason not to play it.
+#
+# To turn it on, once: repo Settings → Pages → Build and deployment → Source → GitHub Actions.
+# If the deploy step is refused with an environment-protection error, the same page has
+# "Deployment branches" under the github-pages environment — add the branch there, or just run
+# this workflow from the Actions tab with "Run workflow".
 name: Deploy Warp to Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, "claude/**"]
     paths: ["warp/**", ".github/workflows/warp-pages.yml"]
   workflow_dispatch:
 
@@ -36,6 +44,12 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      # A single-page app served from a project subpath needs 404.html to be the app, or a deep
+      # link and a hard refresh both land on GitHub's own 404 page. Warp keeps its state in the
+      # browser rather than in the URL, so this is belt and braces — and it costs one copy.
+      - run: cp dist/index.html dist/404.html
+      # Pages will not serve a directory containing an underscore-prefixed path without this.
+      - run: touch dist/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -20,6 +20,11 @@ import { clamp, shove, tickPsyche, addState, band, tensionCue } from "./psyche";
 import { remember, learn } from "./memory";
 import { moveEdge, addRole, startRumor } from "./social";
 import { snapshot } from "./state";
+import { resolveAct, actDirective, type ActOutcome } from "./intimacy";
+import { ACT_BY_ID } from "../data/intimacy";
+import { getLocalImage } from "../config";
+import { generateLocalImage } from "../lib/diffusion";
+import { scenePrompt, lockSignature, portraitPrompt } from "./portrait";
 
 export interface Diff {
   summary?: string;
@@ -145,6 +150,107 @@ export async function runTurn(
   advanceClock(s, diff?.minutes ?? 10);
   for (const p of present(s)) refresh(p, s.memory[p.id]);
   return { prose, entry, notes };
+}
+
+/**
+ * AN ACT, PLAYED AS A SCENE.
+ *
+ * The interaction loop, end to end: the engine resolves what actually happened to her (arousal,
+ * the nervous system, bond, resentment, skills, whatever she has just found out about herself),
+ * hands the narrator that as law, and — where a local sampler is configured — paints the moment.
+ * The prose and the picture are downstream of the resolution, never the other way round, so a
+ * model that refuses, times out or writes something else does not change a single number.
+ */
+export async function runActTurn(
+  s: SaveState,
+  personId: string,
+  actId: string,
+  opts?: { onDelta?: (c: string) => void; onImage?: (url: string) => void; onProgress?: (n: string) => void; public?: boolean; signal?: AbortSignal },
+): Promise<{ outcome: ActOutcome | { error: string }; prose: string; notes: string[] }> {
+  const p = s.people[personId];
+  if (!p) return { outcome: { error: "she is not here" }, prose: "", notes: [] };
+
+  snapshot(s);
+  const outcome = resolveAct(s, p, actId, { public: opts?.public });
+  if ("error" in outcome) return { outcome, prose: "", notes: [] };
+
+  s.turn++;
+  if (!s.scene.present.includes(personId)) s.scene.present.push(personId);
+  const act = ACT_BY_ID[actId];
+  const notes: string[] = [];
+  let prose = "";
+  let tokensIn = 0, tokensOut = 0, cost = 0;
+
+  if (modelsAvailable()) {
+    const res = await call({
+      system: NARRATOR_SYSTEM,
+      user: `${digest(s, act.name)}\n\n${actDirective(s, p, outcome)}`,
+      model: s.models.narrator_model,
+      fallback: s.models.fallback_model,
+      onDelta: opts?.onDelta,
+      signal: opts?.signal,
+      maxTokens: 1100,
+      temperature: 0.95,
+    });
+    if (res.ok) {
+      prose = salvage(res.text);
+      tokensIn = res.usage.prompt_tokens; tokensOut = res.usage.completion_tokens; cost = res.usage.cost ?? 0;
+    } else notes.push(`the narrator did not answer (${res.error ?? "unknown"})`);
+  }
+  if (!prose) prose = offlineAct(s, p, outcome);
+
+  const entry: TurnEntry = {
+    turn: s.turn, week: s.arcology.week,
+    action: act.name, mode: "do", prose,
+    summary: `${act.what} — she ${outcome.landing} it`,
+    present: [...s.scene.present], location: s.scene.location, time: s.scene.time,
+    bookkeeping: modelsAvailable() ? "ok" : "offline",
+    tokens_in: tokensIn, tokens_out: tokensOut, cost,
+  };
+  s.history.push(entry);
+  if (s.history.length > 200) s.history.shift();
+  advanceClock(s, 45);
+
+  // The picture, after the turn has committed — so the prose never waits on the GPU and a frame
+  // that fails to paint is silent.
+  if (getLocalImage()) {
+    try {
+      lockSignature(p, getLocalImage()?.prompt_style === "tags" ? "tags" : "natural");
+      const sp = scenePrompt(s, { act: actId, people: [personId] });
+      const img = await generateLocalImage({ ...sp, aspect: "landscape", onProgress: opts?.onProgress, signal: opts?.signal });
+      entry.image = img.url;
+      opts?.onImage?.(img.url);
+    } catch (e) { notes.push(`no picture: ${(e as Error).message}`); }
+  }
+
+  refresh(p, s.memory[p.id]);
+  return { outcome, prose, notes };
+}
+
+/** With no narrator, the act still happened and the engine says exactly what it was. */
+function offlineAct(s: SaveState, p: Person, o: ActOutcome): string {
+  const act = ACT_BY_ID[o.act];
+  const lines = [`${s.scene.time} — ${s.scene.location}.`, `${act.what.charAt(0).toUpperCase()}${act.what.slice(1)}.`];
+  const because = o.because.replace(/\.?$/, ".");
+  lines.push(`${p.name} ${o.landing === "wanted" ? "wanted it" : o.landing === "hated" ? "hated it" : o.landing === "endured" ? "endured it" : o.landing === "willing" ? "was willing" : "was somewhere else for it"} — ${because}`);
+  if (o.first) lines.push("First time.");
+  if (o.finished) lines.push("She got there.");
+  if (o.discovered) lines.push(`Found out: ${o.discovered}.`);
+  if (o.converted) lines.push(`Changed for good: ${o.converted}.`);
+  lines.push(`arousal ${o.arousal >= 0 ? "+" : ""}${o.arousal} · relaxation ${o.relaxation >= 0 ? "+" : ""}${o.relaxation.toFixed(2)} · bond ${o.bond >= 0 ? "+" : ""}${o.bond} · resentment +${o.resentment}`);
+  return lines.join("\n");
+}
+
+/** Her portrait, on demand. The clause that draws her is locked the first time and reused after. */
+export async function paintPortrait(s: SaveState, personId: string, onProgress?: (n: string) => void): Promise<string | null> {
+  const p = s.people[personId];
+  if (!p || !getLocalImage()) return null;
+  lockSignature(p, getLocalImage()?.prompt_style === "tags" ? "tags" : "natural");
+  const { prompt, seed } = portraitPrompt(p);
+  const img = await generateLocalImage({ prompt, seed, aspect: "portrait", onProgress });
+  p.body.portrait_url = img.url;
+  p.body.portrait_seed = img.seed;
+  return img.url;
 }
 
 function present(s: SaveState): Person[] {

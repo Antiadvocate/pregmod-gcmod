@@ -17,6 +17,15 @@ import type { Body, Bond, Health, Person, Persona, Psyche, Skills, Womb, Pronoun
 import { NATIONS, CAREERS, ORIGINS, NATION_WEIGHT, type Nation } from "../data/people";
 import { newPsyche, clamp } from "./psyche";
 import { rng, type Rng } from "./rng";
+import { QUIRKS, FLAWS } from "../data/intimacy";
+
+/** How common each thing is. Submissive and cumslut are the two the trade selects for, because the
+ *  trade selects for what sells; sadist and dom are rare in a population that is being sold. */
+const FETISH_POOL = [
+  { id: "submissive", w: 5 }, { id: "cumslut", w: 4 }, { id: "buttslut", w: 3 },
+  { id: "boobs", w: 3 }, { id: "humiliation", w: 2.5 }, { id: "masochist", w: 2 },
+  { id: "pregnancy", w: 1.5 }, { id: "dom", w: 1.2 }, { id: "sadist", w: 0.8 },
+];
 
 let seq = 0;
 export function personId(): string { return `p${Date.now().toString(36)}${(seq++).toString(36)}`; }
@@ -280,7 +289,23 @@ function generatePersona(r: Rng, career: (typeof CAREERS)[number], origin: (type
       "clever above everything; she has to be interested before anything else happens",
       "familiar — she wants somebody who reminds her of home",
     ]),
-    fetishes: r.chance(0.45) ? [{ name: r.pick(["submission", "dominance", "being watched", "pregnancy", "humiliation", "cuddling", "pain", "buttslut", "oral fixation"]), strength: r.int(20, 70), known: false }] : [],
+    // The base game's own lists. Most people have one thing; a few have two; `none` is a real
+    // answer and roughly a third of the population gets it, because a world where everybody has a
+    // kink is a world where the kink means nothing.
+    fetishes: (() => {
+      const roll = r();
+      if (roll < 0.32) return [{ name: "none", strength: 0, known: false }];
+      const first = r.weighted(FETISH_POOL, (f) => f.w);
+      const out = [{ name: first.id, strength: Math.round(clamp(r.normal(55, 25), 10, 100)), known: false }];
+      if (r.chance(0.18)) {
+        const second = r.weighted(FETISH_POOL.filter((f) => f.id !== first.id), (f) => f.w);
+        out.push({ name: second.id, strength: Math.round(clamp(r.normal(35, 18), 10, 80)), known: false });
+      }
+      return out;
+    })(),
+    quirk: r.chance(0.42) ? { id: r.pick(QUIRKS).id, known: false } : undefined,
+    flaw: r.chance(0.38) ? { id: r.pick(FLAWS).id, known: false, worn: 0 } : undefined,
+    preferred_hole: { hole: r.weighted(["mouth", "vagina", "anus", "boobs"] as const, (h) => (h === "vagina" ? 4 : h === "mouth" ? 3 : h === "anus" ? 1.5 : 1)), known: false },
     gregariousness: +clamp(r.normal(0.5, 0.22), 0.02, 1).toFixed(2),
   };
 }

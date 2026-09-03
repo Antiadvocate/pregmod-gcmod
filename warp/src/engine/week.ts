@@ -36,6 +36,8 @@ import { tickPolicies } from "./policies";
 import { tickSecurity, unrest } from "./security";
 import { GARMENT_BY_NAME } from "../data/wardrobe";
 import { refreshPlayer, practise, skill } from "./player";
+import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf } from "./romance";
+import { collectAsks } from "./asks";
 
 const alive = (s: SaveState): Person[] => Object.values(s.people).filter((p) => p.status === "owned" || p.status === "indentured");
 
@@ -184,6 +186,7 @@ export function endWeek(s: SaveState): WeekReport {
       applyTreatment(p, { kind: "kindness", size: 2, why: `a week in the ${facDef.name.toLowerCase()}` }, week);
     }
     tickBond(p);
+    lines.push(...tickRomance(s, p));
     refresh(p, mem);
 
     // Indenture runs down, and it is the one clock the player cannot quietly extend.
@@ -219,6 +222,9 @@ export function endWeek(s: SaveState): WeekReport {
   for (const rum of s.rumors) {
     if (rum.week === week - 1 && rum.knowers.length > 3) push(`Everybody has heard: ${rum.content}.`, "neutral", 3);
   }
+
+  // Whoever is running this place, if it is not you.
+  lines.push(...keeperRunsTheWeek(s).lines);
 
   /* ── 4. the arcology reacts to the household ────────────────────────────────────────────── */
   lines.push(...tickPolicies(s, led));
@@ -277,6 +283,13 @@ export function endWeek(s: SaveState): WeekReport {
   arc.week++;
 
   s.market = rollMarkets(s);
+  // What the household wants from you this week. Two, at most, and the ones with the most standing
+  // to ask go first — a screen of twelve requests is a queue, and a queue is not a decision.
+  s.asks = collectAsks(s);
+  for (const ask of s.asks) {
+    const who = s.people[ask.person];
+    if (who) push(`${who.name} wants something.`, "neutral", 7, who.id);
+  }
   s.events = [...s.events.filter((e) => week - e.week < 2), ...selectEvents(s)];
   for (const e of s.events.filter((x) => x.week === arc.week - 1 || x.week === arc.week)) {
     push(e.seed, e.severity === "major" ? "warning" : "neutral", 10, e.person);
@@ -294,6 +307,8 @@ export function endWeek(s: SaveState): WeekReport {
   // You get better at this by doing it: a week of running a household is a week of practice.
   practise(s, "slaving", 0.5 + alive(s).length * 0.05);
   practise(s, "trading", 0.15);
+  const keeper = theKeeper(s);
+  if (keeper) push(`${keeper.name} closed the week. This is her report; you are reading it because she let you.`, "warning", 11, keeper.id);
   refreshPlayer(s);
 
   const report: WeekReport = {

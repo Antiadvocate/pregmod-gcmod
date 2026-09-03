@@ -2,7 +2,9 @@
 import { useEffect, useState } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Chip, Field, Section } from "../lib/ui";
-import { getApiKey, setApiKey, getLocalEndpoint, setLocalEndpoint, modelsAvailable } from "../config";
+import { getApiKey, setApiKey, getLocalEndpoint, setLocalEndpoint, modelsAvailable, getLocalImage, setLocalImage, LOCAL_IMAGE_DEFAULTS, type LocalImageEndpoint } from "../config";
+import { generateLocalImage, KONTEXT_WORKFLOW, listLocalCheckpoints, WORKFLOW_TOKENS } from "../lib/diffusion";
+import { dynamicReadiness } from "../engine/dynamic";
 import { exportSave } from "../store";
 import { llmErrors } from "../llm";
 
@@ -19,6 +21,17 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
   const [key, setKey] = useState(getApiKey());
   const [local, setLocal] = useState(getLocalEndpoint()?.url ?? "");
   const [theme, setTheme] = useState(document.documentElement.dataset.theme ?? "brass");
+  const [img, setImg] = useState<LocalImageEndpoint>(getLocalImage() ?? { url: "", backend: "comfy" });
+  const [testing, setTesting] = useState("");
+  const [testImg, setTestImg] = useState<string | null>(null);
+  const [checkpoints, setCheckpoints] = useState<string[]>([]);
+  const dyn = dynamicReadiness(save);
+
+  const saveImg = (patch: Partial<LocalImageEndpoint>) => {
+    const next = { ...img, ...patch };
+    setImg(next);
+    setLocalImage(next.url ? next : null);
+  };
 
   useEffect(() => { document.documentElement.dataset.theme = theme; localStorage.setItem("warp-theme", theme); }, [theme]);
 
@@ -41,6 +54,85 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
           </div>
           <datalist id="warp-models">{SUGGESTED.map((m) => <option key={m} value={m} />)}</datalist>
           <div className="text-[11.5px] dim">{modelsAvailable() ? "Configured." : "Nothing configured — the game runs offline."}</div>
+        </Card>
+      </Section>
+
+      <Section title="Pictures">
+        <Card>
+          <div className="text-[11.5px] dim mb-3">
+            Point this at ComfyUI or an A1111-style WebUI on your own machine and the game draws itself: a portrait
+            per person that holds still across a campaign, and a picture of the moment after every scene.
+            It has to be local — a hosted image API refuses most of what this game needs to draw, and bills for the
+            rest at a few cents a frame. On your own GPU it is free, which is what makes a picture a turn reasonable.
+          </div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2">
+              <Field label="Server" hint="ComfyUI http://127.0.0.1:8188 · A1111/Forge http://127.0.0.1:7860">
+                <input value={img.url} placeholder="http://127.0.0.1:8188" onChange={(e) => saveImg({ url: e.target.value })} />
+              </Field>
+            </div>
+            <Field label="Backend">
+              <select value={img.backend} onChange={(e) => saveImg({ backend: e.target.value as "comfy" | "a1111" })}>
+                <option value="comfy">ComfyUI</option>
+                <option value="a1111">A1111 / Forge / SD.Next</option>
+              </select>
+            </Field>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <Field label="Checkpoint" hint={checkpoints.length ? `${checkpoints.length} found on the server` : undefined}>
+              <input list="warp-ckpts" value={img.checkpoint ?? ""} onChange={(e) => saveImg({ checkpoint: e.target.value })} />
+              <datalist id="warp-ckpts">{checkpoints.map((c) => <option key={c} value={c} />)}</datalist>
+            </Field>
+            <Field label="Steps"><input type="number" value={img.steps ?? LOCAL_IMAGE_DEFAULTS.steps} onChange={(e) => saveImg({ steps: Number(e.target.value) })} /></Field>
+            <Field label="CFG"><input type="number" step="0.5" value={img.cfg ?? LOCAL_IMAGE_DEFAULTS.cfg} onChange={(e) => saveImg({ cfg: Number(e.target.value) })} /></Field>
+          </div>
+          <Field label="Prompt dialect" hint="SD1.5, SDXL and Pony parse comma-separated tags and stop attending past about seventy tokens. Flux and SD3 read sentences.">
+            <div className="flex gap-2">
+              {(["natural", "tags"] as const).map((d) => (
+                <Button key={d} size="sm" kind={(img.prompt_style ?? "natural") === d ? "primary" : undefined} onClick={() => saveImg({ prompt_style: d })}>{d}</Button>
+              ))}
+            </div>
+          </Field>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <Chip on={img.lock_seed !== false} onClick={() => saveImg({ lock_seed: img.lock_seed === false })}>hold a scene's seed</Chip>
+            <Chip on={!!img.auto_scene} onClick={() => saveImg({ auto_scene: !img.auto_scene })}>paint every scene turn</Chip>
+          </div>
+          {img.backend === "comfy" ? (
+            <Field label="Workflow (API format)" hint={`Export yours from ComfyUI with Workflow → Export (API) and replace the values Warp should fill with ${WORKFLOW_TOKENS.slice(0, 8).join(" ")}. Blank uses a plain txt2img graph. Numbers are substituted through their quotes, so "seed": "%seed%" arrives as a real number.`}>
+              <textarea rows={4} className="font-mono text-[11px]" value={img.workflow ?? ""} onChange={(e) => saveImg({ workflow: e.target.value })} />
+            </Field>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" disabled={!img.url} onClick={async () => {
+              setTesting("painting a test…"); setTestImg(null);
+              try {
+                const res = await generateLocalImage({ prompt: "a woman standing in a lit corridor, photographic", aspect: "portrait", onProgress: (n) => setTesting(n) });
+                setTestImg(res.url); setTesting(`came back in ${(res.took_ms / 1000).toFixed(1)}s`);
+              } catch (e) { setTesting((e as Error).message); }
+            }}>paint a test</Button>
+            {img.backend === "comfy" ? (
+              <>
+                <Button size="sm" kind="ghost" onClick={() => saveImg({ workflow: KONTEXT_WORKFLOW })}>load Flux Kontext</Button>
+                <Button size="sm" kind="ghost" onClick={async () => setCheckpoints(await listLocalCheckpoints())}>list checkpoints</Button>
+              </>
+            ) : null}
+          </div>
+          {testing ? <div className="text-[11.5px] mid mt-2">{testing}</div> : null}
+          {testImg ? <img src={testImg} alt="" className="mt-3 rounded-lg max-h-64" /> : null}
+        </Card>
+      </Section>
+
+      <Section title="What the model is asked to write">
+        <Card>
+          <div className="text-[12.5px] mid mb-2">{dyn.note}</div>
+          <div className="text-[11.5px] dim">
+            The scenes, the generated events and the wording of what she asks for all go through the narrator slot.
+            This game asks for explicit material as a matter of course, and a hosted model will decline a fair share
+            of it, soften the rest, and give you the half-written scenes the genre's players recognise immediately.
+            Put a local model behind the narrator — KoboldCpp, llama-server, LM Studio, Ollama — and prefix the id
+            with <span className="font-mono">local/</span>. The bookkeeper can stay hosted: it only ever emits JSON,
+            which is the thing small models are worst at.
+          </div>
         </Card>
       </Section>
 

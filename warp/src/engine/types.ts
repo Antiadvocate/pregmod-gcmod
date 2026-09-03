@@ -160,8 +160,17 @@ export interface Persona {
   /** Conditioned desire: what their world trained them to find attractive. Drives first reads. */
   taste: string;
   /** The paraphilias and fetishes the old game modelled as a single enum, kept as a set with
-   *  strengths, because people are not one thing. */
+   *  strengths, because people are not one thing. Strength runs the base game's scale: 10+ enjoys,
+   *  60+ likes, 95+ loves, and past 100 it stops being a preference and becomes a paraphilia. */
   fetishes: { name: string; strength: number; known: boolean }[];
+  /** A paraphilia she has actually crossed into — the fetish that stopped being optional. */
+  paraphilia?: string;
+  /** The good half of a specific taste, and the thing she will not do gladly. Both from the base
+   *  game's lists, both discoverable rather than displayed. */
+  quirk?: { id: string; known: boolean };
+  flaw?: { id: string; known: boolean; worn: number };
+  /** Which hole she would pick if it were up to her, and whether you have worked that out. */
+  preferred_hole?: { hole: string; known: boolean };
   /** 0–1 sociability; drives rumour spread and who starts conversations in a facility. */
   gregariousness: number;
 }
@@ -296,6 +305,28 @@ export interface Bond {
   read: { devotion: number; trust: number; label: string };
 }
 
+/** WHERE SHE STANDS WITH YOU — the ladder, and the thing at the top of it.
+ *
+ *  `dominion` is the axis nothing else in this genre models: −100 is you deciding everything,
+ *  +100 is her deciding everything, and it moves by what you actually do when she asks for
+ *  something. Past the top of it the game inverts and she is the one running the arcology.
+ *  See engine/romance.ts. */
+export interface Romance {
+  standing: "property" | "favourite" | "kept" | "courted" | "betrothed" | "wife" | "keeper";
+  since_week: number;
+  /** −100 (you decide) … +100 (she decides). */
+  dominion: number;
+  /** Rites performed, by id — the theatrics, and the gate on the next rung. */
+  rites: string[];
+  /** What she has asked for that you granted, and what you refused. Both are remembered. */
+  granted: number;
+  refused: number;
+  /** She is the only one you touch. Costs you every other body in the household. */
+  exclusive?: boolean;
+  /** Set at the wedding: what she is called now, and what you promised. */
+  vow?: string;
+}
+
 export interface Person {
   id: string;
   name: string;
@@ -349,6 +380,15 @@ export interface Person {
   fame: { prestige: 0 | 1 | 2 | 3; why: string; porn_fame: number; porn_focus: string };
   /** Everything the week counted, so the report can say what actually happened to them. */
   counters: Record<string, number>;
+  /** Everything that has been done to her, counted by act. The report, the fetish discovery and
+   *  her own asks all read this — a woman who has been in the arcade four hundred times is not the
+   *  same person as one who has been in it twice, and nothing else in the record says so. */
+  acts?: Record<string, number>;
+  /** Firsts, with the week. A first is a different event from the four hundredth and the engine
+   *  should be able to tell you when it was. */
+  firsts?: Record<string, number>;
+  /** Where she stands with you, and who is deciding. See engine/romance.ts. */
+  romance?: Romance;
   /** Set when the person is a background body — a Fuckdoll, a tank subject, or one of the many
    *  in a facility nobody is looking at. They still get a full nervous system (it is arithmetic
    *  and free); they do not get described in the prompt. See KERNEL.md on LOD. */
@@ -578,6 +618,9 @@ export interface TurnEntry {
   tokens_in?: number;
   tokens_out?: number;
   cost?: number;
+  /** The picture of this moment, when a local sampler painted one. Stored inline as a shrunk JPEG;
+   *  see lib/diffusion.ts for why that matters to a long campaign. */
+  image?: string;
 }
 
 export interface SceneState {
@@ -678,6 +721,8 @@ export interface SaveState {
   reports: WeekReport[];
   orders: StandingOrder[];
   events: PendingEvent[];
+  /** What the household is asking you for this week. See engine/asks.ts. */
+  asks?: import("./asks").Ask[];
   notifications: Notification[];
   /** Market state — who is for sale this week, and at what. Regenerated weekly. */
   market: MarketState;
@@ -712,6 +757,13 @@ export interface Player {
   /** The self-report the engine is not allowed to overrule: how tightly the player is holding
    *  themselves. Caps their relaxation, never lifts it. */
   tightness?: number;
+  /** SET WHEN SOMEBODY ELSE IS RUNNING THIS. The person id of whoever holds the arcology and, on
+   *  the registry, holds you. See engine/romance.ts — this is the far end of the ladder, and it is
+   *  a playable state rather than a game over. */
+  owned_by?: string;
+  /** What you have left in the tank, 0–100. Spent on the interaction loop, back by the week: a
+   *  body that has been at it all week is not a body that wants a fifth thing. */
+  need?: number;
 }
 
 export interface MarketState {

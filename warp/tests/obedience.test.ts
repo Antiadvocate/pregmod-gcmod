@@ -14,9 +14,13 @@ import { read, refresh, tickBond, applyTreatment, explain } from "../src/engine/
 const bonded = generatePerson({ seed: "bonded" });
 const feared = generatePerson({ seed: "feared" });
 
-// Same nervous system, so the only difference is what is holding them.
+// Same nervous system, so the only difference is what is holding them. Relaxation is pinned rather
+// than taken from the generator: this test is about bond against fear, and it should not start
+// failing because somebody added a field to the forge and shifted the seeded rolls behind it.
 feared.psyche = structuredClone(bonded.psyche);
 feared.persona.attachment = structuredClone(bonded.persona.attachment);
+bonded.psyche.relaxation = 0;
+feared.psyche.relaxation = 0;
 
 bonded.bond = { bond: 70, fear: 5, resentment: 10, hope: 55, weeks_since_kindness: 1, weeks_since_cruelty: 30, read: { devotion: 0, trust: 0, label: "" } };
 feared.bond = { bond: 0, fear: 85, resentment: 45, hope: 8, weeks_since_kindness: 20, weeks_since_cruelty: 0, read: { devotion: 0, trust: 0, label: "" } };
@@ -29,8 +33,14 @@ check("but the engine knows which is which", f0.fragility > 0.8 && b0.fragility 
 for (let i = 0; i < 8; i++) { tickBond(bonded); tickBond(feared); }
 const b1 = read(bonded), f1 = read(feared);
 
-check("fear-held obedience collapses when the pressure stops", f1.devotion < f0.devotion - 25, { was: f0.devotion, now: f1.devotion });
-check("bond-held obedience survives being left alone", b1.devotion > b0.devotion - 12, { was: b0.devotion, now: b1.devotion });
+// Stated as a proportion rather than as a number of points. The claim is "fear-bought obedience
+// mostly evaporates and earned obedience mostly does not", and an absolute threshold turns that
+// claim into an assertion about this month's tuning constants instead.
+const feltLoss = 1 - f1.devotion / Math.max(1, f0.devotion);
+const bondLoss = 1 - b1.devotion / Math.max(1, b0.devotion);
+check("fear-held obedience mostly evaporates when the pressure stops", feltLoss > 0.5, { was: f0.devotion, now: f1.devotion, lost: feltLoss });
+check("bond-held obedience mostly survives being left alone", bondLoss < 0.2, { was: b0.devotion, now: b1.devotion, lost: bondLoss });
+check("and the fear-held one loses far more of it than the bonded one", feltLoss > bondLoss * 2.5, { feltLoss, bondLoss });
 check("and they no longer read the same", Math.abs(b1.devotion - f1.devotion) > 30, { bonded: b1.devotion, feared: f1.devotion });
 
 // A broken promise is the expensive move, and it costs hope rather than devotion directly.

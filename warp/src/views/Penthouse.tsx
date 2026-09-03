@@ -11,6 +11,9 @@ import { Button, Card, Empty, Meter, Money, Section, Stat } from "../lib/ui";
 import { endWeek } from "../engine/week";
 import { writeWeekProse } from "../engine/forge";
 import { resolveEvent, EVENT_BY_ID } from "../engine/events";
+import { generateDynamicEvent, resolveDynamic, dynamicReadiness } from "../engine/dynamic";
+import { grantAsk, refuseAsk, voiceAsk } from "../engine/asks";
+import { theKeeper } from "../engine/romance";
 import { read } from "../engine/obedience";
 import { band, wear } from "../engine/psyche";
 import { modelsAvailable } from "../config";
@@ -18,6 +21,9 @@ import { modelsAvailable } from "../config";
 export default function Penthouse({ go }: { go: (r: Route) => void }) {
   const { save, mutate } = useGame();
   const [running, setRunning] = useState(false);
+  const [inventing, setInventing] = useState(false);
+  const dyn = dynamicReadiness(save);
+  const keeper = theKeeper(save);
   const arc = save.arcology;
   const people = Object.values(save.people).filter((p) => p.status === "owned" || p.status === "indentured");
   const lastReport = save.reports.at(-1);
@@ -35,6 +41,12 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
       const text = await writeWeekProse(save, report);
       if (text) mutate(() => { /* report is already in the save; the prose was written onto it */ });
     }
+    // Put the week's requests into their own mouths, when there is a model to do it. The payload
+    // was fixed before this ran and is not passed to the model; only the wording changes.
+    if (modelsAvailable() && save.asks?.length) {
+      const voiced = await Promise.all(save.asks.map(async (a) => ({ id: a.id, says: await voiceAsk(save, a) })));
+      mutate((s) => { for (const v of voiced) { const a = s.asks?.find((x) => x.id === v.id); if (a) a.text = v.says; } });
+    }
     setRunning(false);
     go("report");
   }
@@ -48,8 +60,51 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
         <Stat label="owned" value={people.length} sub={`${people.filter((p) => p.assignment === "rest").length} idle`} />
       </div>
 
+      {keeper ? (
+        <Card className="mb-6" >
+          <div className="text-[11px] uppercase tracking-wider dim mb-1">this is her arcology now</div>
+          <p className="font-prose text-[15px]">
+            {keeper.name} runs {arc.name}. The week below is her report. What you get is a say, when she asks for one.
+          </p>
+        </Card>
+      ) : null}
+
+      {save.asks?.length ? (
+        <Section title={keeper ? "What she wants from you" : "They are asking"}>
+          <div className="space-y-3">
+            {save.asks.map((ask) => {
+              const who = save.people[ask.person];
+              if (!who) return null;
+              return (
+                <Card key={ask.id}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="chip on">{who.name}</span>
+                    <span className="text-[11px] uppercase tracking-wider dim">{ask.kind === "instruction" ? "not asking" : ask.kind}</span>
+                  </div>
+                  <p className="font-prose text-[15px] leading-relaxed mb-3">{ask.text}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" kind="primary" onClick={() => mutate((s) => { grantAsk(s, ask); })}>
+                      do it{ask.cash ? ` · ¤${ask.cash.toLocaleString()}` : ""}
+                    </Button>
+                    <Button size="sm" onClick={() => mutate((s) => { refuseAsk(s, ask, false); })}>no</Button>
+                    <Button size="sm" kind="danger" onClick={() => mutate((s) => { refuseAsk(s, ask, true); })}>put her in her place</Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </Section>
+      ) : null}
+
       {save.events.length ? (
-        <Section title="Waiting on you">
+        <Section title="Waiting on you" right={
+          <Button size="sm" kind="ghost" disabled={inventing || !dyn.ready} title={dyn.note} onClick={async () => {
+            setInventing(true);
+            const e = await generateDynamicEvent(save);
+            if (e) mutate((s) => { s.events.push(e); });
+            setInventing(false);
+          }}>{inventing ? "…" : "something else happens"}</Button>
+        }>
           <div className="space-y-3">
             {save.events.map((e) => {
               const person = e.person ? save.people[e.person] : undefined;
@@ -62,8 +117,10 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
                   </div>
                   <p className="font-prose text-[15px] leading-relaxed mb-3">{e.seed}</p>
                   <div className="flex flex-wrap gap-2">
-                    {(EVENT_BY_ID[e.kind]?.options ?? e.options).map((o) => (
-                      <Button key={o.id} size="sm" title={o.note} onClick={() => mutate((s) => { resolveEvent(s, e, o.id); })}>
+                    {(e.kind === "dynamic" ? e.options : EVENT_BY_ID[e.kind]?.options ?? e.options).map((o) => (
+                      <Button key={o.id} size="sm" title={o.note} onClick={() => mutate((s) => {
+                        if (e.kind === "dynamic") resolveDynamic(s, e, o.id); else resolveEvent(s, e, o.id);
+                      })}>
                         {o.label}
                       </Button>
                     ))}
@@ -93,6 +150,23 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
               </div>
             ))}
           </div>
+        </Section>
+      ) : null}
+
+      {!save.events.length ? (
+        <Section title="Nothing is happening" right={
+          <Button size="sm" disabled={inventing || !dyn.ready} title={dyn.note} onClick={async () => {
+            setInventing(true);
+            const e = await generateDynamicEvent(save);
+            if (e) mutate((s) => { s.events.push(e); });
+            setInventing(false);
+          }}>{inventing ? <><Loader2 size={13} className="animate-spin" /> inventing</> : "make something happen"}</Button>
+        }>
+          <Card className="text-[12px] dim">
+            {dyn.ready
+              ? `${dyn.note} A generated situation is built out of one specific woman's record — her fetish, her flaw, what has been done to her, what she remembers — so it is hers rather than a slave event.`
+              : dyn.note}
+          </Card>
         </Section>
       ) : null}
 

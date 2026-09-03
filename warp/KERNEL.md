@@ -167,6 +167,47 @@ who most need something — by her own nature, warmly or otherwise.
 Under the post's `min_devotion` the effect inverts: 0.75× income, a skim of ¤400–1,300 out of the
 takings, and a line in the report saying it is not an accident.
 
+## 8d. The act
+
+`engine/intimacy.ts`, and the only entry point is `resolveAct`. Affinity runs −1.5 … +1.5 and is the
+sum of: the flaw (−1, reduced by how worn it is, to a floor of −0.25), the quirk (+0.5), every
+matching fetish (+strength/100, ×1.4 once it has become a paraphilia), and a tenderness bonus that
+scales with the bond and with how long it has been since anybody was good to her.
+
+What it does with that:
+
+```
+arousal      += base · (1 + affinity) · (1 + libido/200)
+relaxation   += base ≥ 0 ? base · (1 + max(0, affinity))
+                         : base · (affinity < 0 ? 1 + |affinity|·1.6 : max(0.15, 1 − affinity))
+bond         += base + affinity·3 − (willing ? 0 : 1.5)
+resentment   += base · (affinity < 0 ? 3 : affinity > 0.5 ? 0 : 1) + …
+```
+
+The asymmetry in the relaxation line is the whole model: a negative act is *worse* on somebody who
+hates it and *nearly harmless* on somebody who wants it, and a positive act is better on the person
+who wants it and never harmful to anybody.
+
+Two slow conversions run off the same number. A flaw accrues one point of wear per hit and converts
+to its mirror quirk at 120. A fetish that is fed gains 0.6 strength per hit and becomes a paraphilia
+at 110. Both are campaign-length roads, and both are visible in the panel while they happen.
+
+## 8e. The ladder and dominion
+
+`engine/romance.ts`. Seven rungs, gated on devotion, trust, bond, hope, weeks at the previous rung,
+`memoryTilt`, and — the one that bites — `fragility` at 0.55 / 0.35 / 0.22 / 0.15 / 0.10. Every rung
+past `favourite` also needs a rite, which costs money and standing and is played as a scene.
+
+`dominion` (−100 … +100) moves only through `shiftDominion`, called from granting and refusing asks,
+from the weekly romance tick, and from the rites. It is ceilinged by standing — `{property: −40,
+favourite: −20, kept: 0, courted: 25, betrothed: 50, wife: 100}` — so a favourite with opinions is
+still a favourite. `herReach` reads it: assignments at 40, spending at 55, doctrine at 70, the books
+at 85.
+
+At the top, `player.owned_by` is set and `keeperRunsTheWeek` runs each week off her conscience: below
+0.35 she puts the least devoted woman in the cellblock, above 0.65 she pulls the hurt one out, and
+her doctrine preference is pushed 4 points a week. Same code, two arcologies.
+
 ## 9. The guards
 
 Because the narrator is a model with authority to invent and the bookkeeper is told the prose is
