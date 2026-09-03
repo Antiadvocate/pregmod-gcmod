@@ -8,12 +8,12 @@
  */
 import { useEffect, useState } from "react";
 import {
-  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2,
+  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, MoreHorizontal,
 } from "lucide-react";
 import type { SaveState } from "./engine/types";
 import { GameProvider, useGame } from "./lib/game";
 import { listSaves, getSave } from "./store";
-import { cx } from "./lib/ui";
+import { cx, Sheet } from "./lib/ui";
 import Start from "./views/Start";
 import Penthouse from "./views/Penthouse";
 import Roster from "./views/Roster";
@@ -70,9 +70,17 @@ export default function App() {
   );
 }
 
+/** On a phone, five destinations fit. The other six lived off the right-hand edge of a bar that
+ *  scrolled without saying so, which is the same as not existing — the Cheats screen was shipped
+ *  and unreachable on the device it was asked for. */
+const PRIMARY: Route[] = ["penthouse", "people", "scene", "arcology", "market"];
+
 function Shell({ onSwitch }: { onSwitch: () => void }) {
   const { save, rev } = useGame();
   const [route, setRoute] = useState<Route>("penthouse");
+  const [moreOpen, setMoreOpen] = useState(false);
+  const primary = NAV.filter((n) => PRIMARY.includes(n.id));
+  const rest = NAV.filter((n) => !PRIMARY.includes(n.id));
   const unseen = save.notifications.filter((n) => !n.seen).length + save.events.length;
 
   return (
@@ -120,13 +128,35 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
         </main>
       </div>
 
-      <nav className="tabbar md:hidden flex shrink-0 overflow-x-auto">
-        {NAV.map((n) => (
-          <button key={n.id} className={cx("flex-1 min-w-[56px] py-2.5 grid place-items-center", route === n.id ? "acc" : "dim")} onClick={() => setRoute(n.id)}>
-            <n.icon size={18} strokeWidth={1.8} />
+      <nav className="tabbar md:hidden flex shrink-0">
+        {primary.map((n) => (
+          <button key={n.id} className={cx("flex-1 py-2 grid place-items-center gap-0.5", route === n.id ? "acc" : "dim")} onClick={() => setRoute(n.id)}>
+            <n.icon size={19} strokeWidth={1.8} />
+            <span className="text-[9.5px]">{n.label}</span>
           </button>
         ))}
+        <button className={cx("flex-1 py-2 grid place-items-center gap-0.5", rest.some((n) => n.id === route) ? "acc" : "dim")} onClick={() => setMoreOpen(true)}>
+          <MoreHorizontal size={19} strokeWidth={1.8} />
+          <span className="text-[9.5px]">More</span>
+          {unseen ? <span className="absolute" /> : null}
+        </button>
       </nav>
+
+      <Sheet open={moreOpen} onClose={() => setMoreOpen(false)} title="Everything else">
+        <div className="grid grid-cols-2 gap-2">
+          {rest.map((n) => (
+            <button key={n.id} className={cx("card-2 px-3 py-3 flex items-center gap-2.5 text-left", route === n.id && "acc")}
+              onClick={() => { setRoute(n.id); setMoreOpen(false); }}>
+              <n.icon size={17} strokeWidth={1.8} />
+              <span className="text-[13px]">{n.label}</span>
+            </button>
+          ))}
+          <button className="card-2 px-3 py-3 flex items-center gap-2.5 text-left col-span-2"
+            onClick={() => { setMoreOpen(false); onSwitch(); }}>
+            <span className="text-[13px]">New game / saves</span>
+          </button>
+        </div>
+      </Sheet>
     </div>
   );
 }

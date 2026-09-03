@@ -134,6 +134,37 @@ input:focus, select, textarea:focus { outline: none; border-color: var(--accent-
 select { appearance: none; background-image: none; }
 label { color: var(--text-mid); font-size: 12px; }
 
+/* sliders — the cheat screen is mostly these, and the browser default is a blue
+   that belongs to a different application entirely */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  padding: 0;
+  height: 22px;
+  border: none;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 999px; background: var(--ink-3);
+}
+input[type="range"]::-moz-range-track {
+  height: 4px; border-radius: 999px; background: var(--ink-3);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; margin-top: -6px;
+  border-radius: 999px; background: var(--accent);
+  border: 2px solid var(--ink-0);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border-radius: 999px; background: var(--accent);
+  border: 2px solid var(--ink-0);
+  cursor: pointer;
+}
+input[type="range"]:focus { outline: none; }
+
 /* the meter, used everywhere a bounded number appears ---------------------- */
 .meter { height: 4px; border-radius: 999px; background: var(--ink-3); overflow: hidden; }
 .meter > div { height: 100%; border-radius: 999px; transition: width .35s cubic-bezier(.2,.8,.3,1); }
