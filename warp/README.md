@@ -217,22 +217,30 @@ at week 4 costs.
 
 ## Playing it off GitHub Pages
 
-The whole thing is a static bundle, so your own repo can serve it and there is nothing to host.
+The whole thing is a static bundle, so your own repo serves it and there is nothing to host.
 
-1. Repo **Settings → Pages → Build and deployment → Source → GitHub Actions**.
-2. Push this branch (or run **Deploy Warp to Pages** from the Actions tab).
-3. Open the URL Pages gives you. That is the game.
+**Set this once:** Settings → Pages → Build and deployment → Source: **Deploy from a branch**,
+Branch: **gh-pages** / **(root)**.
 
-Every push that touches `warp/` rebuilds and republishes it, and the workflow runs the typecheck
-and the test suite first, so a broken push does not become a broken page.
+Then every push under `warp/` builds it and republishes. The page is at
+`https://<you>.github.io/<repo>/`, and the workflow's run summary prints your exact URL.
+
+> **Why a branch and not the "GitHub Actions" source.** That path deploys through the `github-pages`
+> *environment*, which ships with a protection rule allowing only the repository's default branch —
+> so from any feature branch every run dies on *"Branch … is not allowed to deploy to github-pages
+> due to environment protection rules."* You can allow the branch under Settings → Environments →
+> github-pages → Deployment branches and tags, but it is a per-repo setting three levels deep that
+> breaks again the next time the branch is named something else. Pushing the built site to
+> `gh-pages` has no environment in the loop and works from any branch forever.
+
+The workflow typechecks and runs the test suite before it publishes, so a broken push does not
+become a broken page.
 
 **What still needs your own machine.** Saves live in that browser's IndexedDB — the page has no
-server and nothing you do in it leaves the device. If you want prose and pictures, the model and
-the sampler are yours too: put a local model in the narrator slot and point Settings → Pictures at
-ComfyUI or an A1111-style WebUI. A page served over `https` may refuse a plain `http://localhost`
-call, which is the one real friction of playing this from Pages — run `npm run dev` locally when
-you want the local model, or give KoboldCpp/ComfyUI an https tunnel (KoboldCpp's `--remotetunnel`
-prints one).
+server and nothing you do in it leaves the device. The model and the sampler are yours too. One real
+friction: a page served over `https` may refuse a plain `http://localhost` call, so for the local
+narrator and local pictures either run `npm run dev` on the machine you are playing on, or give
+KoboldCpp and ComfyUI an https tunnel (KoboldCpp's `--remotetunnel` prints one).
 
 ## Running it
 

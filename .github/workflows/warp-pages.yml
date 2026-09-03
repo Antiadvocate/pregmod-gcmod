@@ -1,15 +1,27 @@
-# Publishes Warp to GitHub Pages.
+# Publishes Warp to GitHub Pages, from whatever branch you are working on.
 #
-# Warp is a static bundle with no backend: the engine, the saves and the model key all live in the
-# browser, so "deploy" is one artifact upload and the published page is the whole game.
+# ── WHY THIS DOES NOT USE actions/deploy-pages ───────────────────────────────────────────────
 #
-# It builds from THIS branch as well as main, because the branch is where the work is and waiting
-# for a merge to be able to play it is a silly reason not to play it.
+# The modern "Source: GitHub Actions" path deploys through the `github-pages` ENVIRONMENT, and that
+# environment ships with a protection rule allowing only the repository's DEFAULT branch to deploy.
+# On any other branch every run gets:
 #
-# To turn it on, once: repo Settings → Pages → Build and deployment → Source → GitHub Actions.
-# If the deploy step is refused with an environment-protection error, the same page has
-# "Deployment branches" under the github-pages environment — add the branch there, or just run
-# this workflow from the Actions tab with "Run workflow".
+#   Branch "…" is not allowed to deploy to github-pages due to environment protection rules.
+#
+# You can allow the branch (Settings → Environments → github-pages → Deployment branches and tags),
+# but it is a setting three levels deep that has to be redone per repo and silently breaks again the
+# next time somebody works on a differently-named branch.
+#
+# So this builds the site and pushes it to a `gh-pages` branch instead. No environment, no
+# protection rules, works from any branch forever, and uses only the token GitHub already gives the
+# run — no third-party actions in the deploy path.
+#
+# ── THE ONE SETTING YOU HAVE TO CHANGE ───────────────────────────────────────────────────────
+#
+#   Settings → Pages → Build and deployment → Source: "Deploy from a branch"
+#                                             Branch: gh-pages   /  (root)
+#
+# Then push anything under warp/ and the page updates. The run summary repeats this, with your URL.
 name: Deploy Warp to Pages
 
 on:
@@ -18,48 +30,82 @@ on:
     paths: ["warp/**", ".github/workflows/warp-pages.yml"]
   workflow_dispatch:
 
+# Only what the deploy actually needs: permission to push the built site to a branch.
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: warp-pages
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: warp
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: warp/package-lock.json
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
-      # A single-page app served from a project subpath needs 404.html to be the app, or a deep
-      # link and a hard refresh both land on GitHub's own 404 page. Warp keeps its state in the
-      # browser rather than in the URL, so this is belt and braces — and it costs one copy.
-      - run: cp dist/index.html dist/404.html
-      # Pages will not serve a directory containing an underscore-prefixed path without this.
-      - run: touch dist/.nojekyll
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: warp/dist
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+
+      - name: Install
+        working-directory: warp
+        run: npm ci
+
+      # A broken push should not become a broken page.
+      - name: Typecheck
+        working-directory: warp
+        run: npm run lint
+
+      - name: Test
+        working-directory: warp
+        run: npm test
+
+      - name: Build
+        working-directory: warp
+        run: npm run build
+
+      - name: Prepare the site
+        working-directory: warp/dist
+        run: |
+          # Pages runs Jekyll over the branch unless told not to, and Jekyll drops any path
+          # beginning with an underscore — which is most of a bundler's output on a bad day.
+          touch .nojekyll
+          # Warp keeps its state in IndexedDB rather than in the URL, so this is belt and braces:
+          # a deep link or a hard refresh on a project subpath otherwise lands on GitHub's 404.
+          cp index.html 404.html
+
+      - name: Publish to gh-pages
+        working-directory: warp/dist
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # A fresh orphan commit every time: the branch stays one build deep instead of
+          # accumulating a megabyte of superseded bundles for the rest of the repo's life.
+          git init -q
+          git checkout -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Deploy Warp from ${GITHUB_REF_NAME} @ ${GITHUB_SHA:0:7}"
+          git push -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+
+      - name: Say what to do next
+        run: |
+          OWNER="${GITHUB_REPOSITORY%%/*}"
+          REPO="${GITHUB_REPOSITORY##*/}"
+          {
+            echo "## Warp is built and pushed to \`gh-pages\`"
+            echo ""
+            echo "If the page is not live yet, set this once:"
+            echo ""
+            echo "**Settings → Pages → Build and deployment**"
+            echo "- Source: **Deploy from a branch**"
+            echo "- Branch: **gh-pages** / **(root)**"
+            echo ""
+            echo "Then it is at: https://${OWNER,,}.github.io/${REPO}/"
+            echo ""
+            echo "_Built from \`${GITHUB_REF_NAME}\`. Every push under \`warp/\` republishes it._"
+          } >> "$GITHUB_STEP_SUMMARY"
