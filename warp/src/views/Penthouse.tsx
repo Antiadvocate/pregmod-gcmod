@@ -14,6 +14,7 @@ import { resolveEvent, EVENT_BY_ID } from "../engine/events";
 import { generateDynamicEvent, resolveDynamic, dynamicReadiness } from "../engine/dynamic";
 import { grantAsk, refuseAsk, voiceAsk } from "../engine/asks";
 import { theKeeper } from "../engine/romance";
+import { SlaveHead } from "./SlaveArt";
 import { read } from "../engine/obedience";
 import { band, wear } from "../engine/psyche";
 import { modelsAvailable } from "../config";
@@ -162,11 +163,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             setInventing(false);
           }}>{inventing ? <><Loader2 size={13} className="animate-spin" /> inventing</> : "make something happen"}</Button>
         }>
-          <Card className="text-[12px] dim">
-            {dyn.ready
-              ? `${dyn.note} A generated situation is built out of one specific woman's record — her fetish, her flaw, what has been done to her, what she remembers — so it is hers rather than a slave event.`
-              : dyn.note}
-          </Card>
+          <Card className="text-[12px] dim">{dyn.note}</Card>
         </Section>
       ) : null}
 
@@ -185,6 +182,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
           <div className="space-y-2">
             {flags.slice(0, 6).map(({ p, r }) => (
               <Card key={p.id} className="flex items-center gap-3 py-3" onClick={() => go("people")}>
+                <SlaveHead person={p} size={40} />
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px]">{p.name} <span className="dim">· {band(p.psyche)}</span></div>
                   <div className="text-[11.5px] dim truncate">
@@ -208,8 +206,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             <div className="flex-1 min-w-[220px]">
               <div className="text-[13px] mb-1">End week {arc.week}</div>
               <div className="text-[11.5px] dim">
-                Standing orders run first, then everyone works their assignment, then the arcology and the world answer.
-                {save.orders.filter((o) => o.enabled).length ? ` ${save.orders.filter((o) => o.enabled).length} orders are armed.` : " No standing orders are armed."}
+                {save.orders.filter((o) => o.enabled).length} standing orders armed.
               </div>
             </div>
             <Button kind="primary" onClick={runWeek} disabled={running}>

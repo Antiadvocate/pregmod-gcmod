@@ -27,6 +27,7 @@ import { romanceOf, RUNG_BY_ID } from "../engine/romance";
 import { paintPortrait } from "../engine/turn";
 import { getLocalImage, modelsAvailable } from "../config";
 import { askHer } from "../engine/consult";
+import SlaveArt, { SlaveHead } from "./SlaveArt";
 import { practise, skill } from "../engine/player";
 
 type Sort = "name" | "devotion" | "trust" | "health" | "income" | "trouble";
@@ -132,6 +133,7 @@ function RosterCard({ p, onOpen }: { p: Person; onOpen: () => void }) {
   return (
     <Card onClick={onOpen} className="py-3">
       <div className="flex items-start gap-3">
+        <SlaveHead person={p} size={54} />
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
             <span className="text-[14px]">{p.name}</span>
@@ -175,9 +177,22 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
 
   return (
     <div>
-      {p.body.portrait_url ? (
-        <img src={p.body.portrait_url} alt="" className="w-full max-h-64 object-cover rounded-lg mb-3" />
-      ) : null}
+      {/* Her, then the numbers about her — in that order, at that ratio. */}
+      <div className="flex gap-4 mb-4">
+        <div className="card-2 shrink-0 px-2" style={{ width: 132 }}>
+          <SlaveArt person={p} height={300} />
+        </div>
+        <div className="flex-1 min-w-0">
+          {p.body.portrait_url ? <img src={p.body.portrait_url} alt="" className="w-full max-h-40 object-cover rounded-lg mb-2" /> : null}
+          <p className="font-prose text-[14px] leading-relaxed">{p.body.appearance_facts}</p>
+          <p className="text-[12px] dim mt-1">{p.body.appearance_now}. Wearing {p.clothes}.</p>
+          <div className="grid grid-cols-3 gap-2 mt-3">
+            <Meter value={r.devotion} range={[-100, 100]} label={r.label} />
+            <Meter value={r.trust} range={[-100, 100]} label={r.trust_label} />
+            <Meter value={p.health.health} range={[-100, 100]} label="health" />
+          </div>
+        </div>
+      </div>
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {p.romance && p.romance.standing !== "property" ? <Chip on>{RUNG_BY_ID[p.romance.standing].name}</Chip> : null}
         <Chip>{p.origin.nationality}</Chip>
@@ -231,10 +246,7 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
                 <Meter value={p.bond.resentment} range={[0, 100]} invert label="resentment" />
                 <Meter value={p.bond.hope} range={[0, 100]} label="hope" />
               </div>
-              <p className="text-[11.5px] dim mt-3">
-                Fear decays 15% a week when nothing maintains it. Bond does not. Two slaves reading the same devotion
-                behave completely differently a month after you stop applying pressure — that difference is these four bars.
-              </p>
+              <p className="text-[11.5px] dim mt-3">Fear decays 15% a week unmaintained. Bond does not.</p>
             </Card>
           </Section>
 

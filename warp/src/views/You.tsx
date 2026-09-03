@@ -60,11 +60,7 @@ export default function You() {
 
       <Section title="How tightly you are holding yourself">
         <Card>
-          <div className="text-[12px] dim mb-3">
-            Your own report, and the engine is not allowed to overrule it. It can cap how open the world is
-            permitted to write you; it can never lift you above tension you have actually earned. Nobody else in
-            this game gets to say this about themselves, and you never have to.
-          </div>
+          <div className="text-[12px] dim mb-3">Caps how open the narrator may write you. Never lifts it.</div>
           <input type="range" min={0} max={5} value={save.player.tightness ?? 0}
             onChange={(e) => mutate((s) => { s.player.tightness = Number(e.target.value); })} />
           <div className="text-[12px] mid mt-1">{TIGHTNESS[save.player.tightness ?? 0]}</div>

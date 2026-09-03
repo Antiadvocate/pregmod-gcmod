@@ -60,8 +60,7 @@ export default function Orders() {
       </Section>
 
       <Card className="text-[11.5px] dim">
-        Rules run in ascending order before anything else in the week, and a later rule beats an earlier one on the same
-        field. That is the only precedence law. Anybody marked exempt on their own panel is skipped entirely.
+        Lowest priority runs first; a later rule wins on the same field. Exempt slaves are skipped.
       </Card>
 
       <Sheet open={!!editing} onClose={() => setEditing(null)} title="Edit order" wide>

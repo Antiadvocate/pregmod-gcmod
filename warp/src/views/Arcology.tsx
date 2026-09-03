@@ -30,10 +30,7 @@ export default function ArcologyView() {
             <div>
               <div className="mb-2"><Meter value={arc.security} label="security — against the outside" /></div>
               <Meter value={unrest(save)} range={[0, 100]} invert label="unrest — inside your own household" />
-              <div className="text-[11px] dim mt-2">
-                Two different problems. Watch and drones move the first number and do nothing whatever to the
-                second; the only things that move unrest are the ones that change what your people are carrying.
-              </div>
+              <div className="text-[11px] dim mt-2">Security does not touch unrest.</div>
             </div>
             <div>
               <div className="text-[13px] mb-1.5">{arc.mercenaries.hired ? "A mercenary company, on retainer" : "No mercenaries"}</div>

@@ -28,10 +28,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
     <div className="min-h-dvh grid place-items-center p-6">
       <div className="w-full max-w-lg">
         <h1 className="font-display text-[34px] leading-none tracking-tight mb-1">Warp</h1>
-        <p className="mid text-[13px] mb-7">
-          An arcology that remembers. Free Cities' city-state, rebuilt on a nervous system —
-          devotion and trust are read off the people rather than stored on them.
-        </p>
+        <p className="mid text-[13px] mb-7">Free Cities, rebuilt.</p>
 
         <Card className="mb-5">
           <Field label="Arcology"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="left blank, it names itself" /></Field>

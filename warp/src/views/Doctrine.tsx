@@ -59,10 +59,7 @@ export default function Doctrine() {
             })}
           </div>
         ) : (
-          <Card><div className="text-[13px] mid">
-            No doctrine. Your arcology has no culture of its own — it earns nothing from what it believes, and the
-            people in it are read as nothing in particular. Adopt up to four; conflicting ones cannot be held together.
-          </div></Card>
+          <Card><div className="text-[13px] mid">No doctrine adopted. Up to four; conflicting ones cannot coexist.</div></Card>
         )}
       </Section>
 

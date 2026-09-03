@@ -19,6 +19,7 @@ import { runActTurn } from "../engine/turn";
 import { getLocalImage, modelsAvailable } from "../config";
 import type { ActOutcome } from "../engine/intimacy";
 import { isPublic, placeOf } from "../engine/places";
+import SlaveArt from "./SlaveArt";
 
 /** The one word the panel colours by, said in English rather than in the engine's enum. */
 const LANDING: Record<string, string> = {
@@ -80,8 +81,8 @@ export default function Acts({ id }: { id: string }) {
         </div>
         <div className="text-[11.5px] dim mt-2">
           in <span className="hi">{placeOf(save).name}</span>
-          {isPublic(save) ? <span className="bad"> — in front of the arcology, which makes all of this public use and costs her more</span> : ""}
-          <span className="dim"> · change it in the Scene</span>
+          {isPublic(save) ? <span className="bad"> — in public</span> : ""}
+          <span className="dim"> · change in Scene</span>
         </div>
         <div className="flex flex-wrap gap-1.5 mt-3">
           {knownFetish.map((f) => (
@@ -91,13 +92,16 @@ export default function Acts({ id }: { id: string }) {
           {p.persona.quirk?.known ? <Chip>{p.persona.quirk.id}</Chip> : null}
           {p.persona.flaw?.known ? <Chip tone="bad" title={`worn ${p.persona.flaw.worn ?? 0}/120`}>{p.persona.flaw.id}</Chip> : null}
           {!knownFetish.length && !p.persona.quirk?.known && !p.persona.flaw?.known ? (
-            <span className="text-[11.5px] dim">You do not know what she is into yet. You find that out by doing things and watching.</span>
+            <span className="text-[11.5px] dim">Nothing known about what she likes yet.</span>
           ) : null}
         </div>
       </Card>
 
       {last ? (
         <Card>
+          <div className="flex gap-3 mb-3">
+            <div className="card-2 shrink-0 px-1" style={{ width: 96 }}><SlaveArt person={p} height={200} /></div>
+            <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <Chip tone={last.outcome.landing === "hated" ? "bad" : last.outcome.landing === "wanted" ? "good" : undefined}>
               {LANDING[last.outcome.landing]}
@@ -115,6 +119,8 @@ export default function Acts({ id }: { id: string }) {
           ) : (
             <div className="stage">{last.prose}</div>
           )}
+            </div>
+          </div>
           <div className="text-[11px] dim font-mono mt-2">
             arousal {last.outcome.arousal >= 0 ? "+" : ""}{last.outcome.arousal} · relaxation {last.outcome.relaxation >= 0 ? "+" : ""}{last.outcome.relaxation.toFixed(2)} · bond {last.outcome.bond >= 0 ? "+" : ""}{last.outcome.bond} · resentment +{last.outcome.resentment}
             {Object.entries(last.outcome.trained).map(([k, v]) => ` · ${k} +${v}`)}

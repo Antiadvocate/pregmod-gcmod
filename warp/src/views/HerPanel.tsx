@@ -162,9 +162,8 @@ export default function HerPanel({ id }: { id: string }) {
       ) : null}
 
       <Card className="text-[11.5px] dim">
-        The gate that actually bites is the fear one. Right now {Math.round(r.fragility * 100)}% of her obedience is
-        bought with fear rather than earned — you cannot court somebody who is only saying yes because of what
-        happens if she says no, and the ladder checks. Terror gets you to <span className="hi">kept</span> and stops.
+        {Math.round(r.fragility * 100)}% of her obedience is fear rather than bond. Courting needs it under 35%,
+        marriage under 15%.
       </Card>
     </div>
   );

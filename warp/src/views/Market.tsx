@@ -10,6 +10,7 @@ import { read } from "../engine/obedience";
 import { band } from "../engine/psyche";
 import { societyScore } from "../engine/society";
 import type { MarketOffer } from "../engine/types";
+import SlaveArt, { SlaveBust } from "./SlaveArt";
 
 export default function Market() {
   const { save, mutate } = useGame();
@@ -32,6 +33,7 @@ export default function Market() {
                   const fit = societyScore(save, p).total;
                   return (
                     <Card key={o.id} onClick={() => setOpen(o)}>
+                      <div className="float-right ml-3" style={{ width: 70 }}><SlaveBust person={p} height={130} /></div>
                       <div className="flex items-baseline gap-2">
                         <span className="text-[14px]">{p.name}</span>
                         <span className="text-[11px] dim font-mono">{p.age} · {p.origin.nationality}</span>
@@ -71,10 +73,13 @@ export default function Market() {
       <Sheet open={!!open} onClose={() => setOpen(null)} title={open?.person.name ?? ""} wide>
         {open ? (
           <div className="space-y-4">
-            <Card>
-              <p className="font-prose text-[14.5px] leading-relaxed">{open.person.body.appearance_facts}</p>
-              <p className="text-[12.5px] dim mt-2">{open.person.origin.background}</p>
-            </Card>
+            <div className="flex gap-4">
+              <div className="card-2 shrink-0 px-2" style={{ width: 130 }}><SlaveArt person={open.person} height={290} /></div>
+              <Card className="flex-1">
+                <p className="font-prose text-[14.5px] leading-relaxed">{open.person.body.appearance_facts}</p>
+                <p className="text-[12.5px] dim mt-2">{open.person.origin.background}</p>
+              </Card>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <Meter value={open.person.health.health} range={[-100, 100]} label="health" />
               <Meter value={read(open.person).devotion} range={[-100, 100]} label="devotion" />
@@ -92,8 +97,8 @@ export default function Market() {
                   {found[open.id]
                     ? found[open.id].length
                       ? <ul className="space-y-1">{found[open.id].map((f, i) => <li key={i} className="bad">· {f}</li>)}</ul>
-                      : <span className="dim">An hour with her turned up nothing. That is not the same as there being nothing.</span>
-                    : <span className="dim">An hour and a doctor, at 3% of the asking price. You will not always find everything.</span>}
+                      : <span className="dim">Turned up nothing.</span>
+                    : <span className="dim">An hour and a doctor, 3% of asking.</span>}
                 </div>
                 {!found[open.id] ? (
                   <Button size="sm" onClick={() => {
