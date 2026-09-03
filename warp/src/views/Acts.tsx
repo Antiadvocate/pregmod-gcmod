@@ -18,6 +18,7 @@ import { affinity, canDo } from "../engine/intimacy";
 import { runActTurn } from "../engine/turn";
 import { getLocalImage, modelsAvailable } from "../config";
 import type { ActOutcome } from "../engine/intimacy";
+import { isPublic, placeOf } from "../engine/places";
 
 /** The one word the panel colours by, said in English rather than in the engine's enum. */
 const LANDING: Record<string, string> = {
@@ -56,6 +57,7 @@ export default function Acts({ id }: { id: string }) {
     const res = await runActTurn(save, id, actId, {
       onProgress: (n) => setProgress(n),
       onImage: (url) => { image = url; },
+      public: isPublic(save),
     });
     mutate(() => {});
     if (!("error" in res.outcome)) {
@@ -75,6 +77,11 @@ export default function Acts({ id }: { id: string }) {
           <div className="meter w-24"><div style={{ width: `${p.psyche.arousal}%`, background: p.psyche.arousal > 70 ? "var(--danger)" : "var(--accent)" }} /></div>
           <span className="font-mono">{Math.round(p.psyche.arousal)}</span>
           <span className="dim ml-2">{p.psyche.arousal > 80 ? "she is wound up and it is obvious" : p.psyche.arousal > 40 ? "warming" : "nothing doing on its own"}</span>
+        </div>
+        <div className="text-[11.5px] dim mt-2">
+          in <span className="hi">{placeOf(save).name}</span>
+          {isPublic(save) ? <span className="bad"> — in front of the arcology, which makes all of this public use and costs her more</span> : ""}
+          <span className="dim"> · change it in the Scene</span>
         </div>
         <div className="flex flex-wrap gap-1.5 mt-3">
           {knownFetish.map((f) => (

@@ -25,6 +25,7 @@ import { modelsAvailable, getLocalImage } from "../config";
 import { generateLocalImage } from "../lib/diffusion";
 import { scenePrompt } from "../engine/portrait";
 import { band } from "../engine/psyche";
+import { goTo, openPlaces, placeOf } from "../engine/places";
 
 const MODES: { id: ActionMode; label: string; hint: string }[] = [
   { id: "do", label: "do", hint: "you act; the world resolves it" },
@@ -42,6 +43,8 @@ export default function Scene() {
   const [notes, setNotes] = useState<string[]>([]);
   const [castOpen, setCastOpen] = useState(false);
   const [painting, setPainting] = useState(false);
+  const [placesOpen, setPlacesOpen] = useState(false);
+  const [arrivalNotes, setArrivalNotes] = useState<string[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
 
   const turns = save.history.slice(-24);
@@ -81,12 +84,36 @@ export default function Scene() {
   return (
     <div className="flex flex-col h-full">
       <div className="px-4 py-2 hairline flex items-center gap-2 overflow-x-auto shrink-0">
-        <span className="text-[11px] dim shrink-0 font-mono">{save.scene.location}</span>
+        <button className="text-[11px] acc shrink-0 font-mono" onClick={() => setPlacesOpen((v) => !v)}>{save.scene.location} ▾</button>
         {present.map((p) => (
           <Chip key={p.id} on title={`${band(p.psyche)} · ${p.bond.read.label}`}>{p.name}</Chip>
         ))}
         <Button size="sm" kind="ghost" onClick={() => setCastOpen((v) => !v)}>{castOpen ? "done" : "who is here"}</Button>
       </div>
+
+      {placesOpen ? (
+        <div className="px-4 py-3 hairline shrink-0">
+          <div className="flex flex-wrap gap-1.5">
+            {openPlaces(save).map((pl) => (
+              <Chip key={pl.id} on={placeOf(save).id === pl.id}
+                title={`${pl.look} — ${pl.privacy === "public" ? "in front of the arcology" : pl.privacy === "household" ? "the others are here" : "private"}`}
+                onClick={() => mutate((s) => {
+                  const { arrivals } = goTo(s, pl.id);
+                  setArrivalNotes(arrivals.map((a) => `${s.people[a.id]?.name}: ${a.shove < 0 ? "walking in here costs her something" : "she is easier in this room"} — ${a.about}`));
+                  setPlacesOpen(false);
+                })}>
+                {pl.name}{pl.privacy === "public" ? " · public" : ""}
+              </Chip>
+            ))}
+          </div>
+          <div className="text-[11px] dim mt-2">
+            Going somewhere puts you in a room with whoever works it. What a room holds for somebody is what
+            happened to her in it, and she gets some of that walking in — habituated, so the place she works every
+            day has stopped doing it and the one she has been kept out of has not.
+          </div>
+          {arrivalNotes.map((n, i) => <div key={i} className="text-[11.5px] mid mt-1">· {n}</div>)}
+        </div>
+      ) : null}
 
       {castOpen ? (
         <div className="px-4 py-3 hairline flex flex-wrap gap-1.5 shrink-0">

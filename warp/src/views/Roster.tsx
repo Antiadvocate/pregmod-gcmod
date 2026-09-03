@@ -20,13 +20,13 @@ import { PROCEDURES } from "../engine/health";
 import { WARDROBE, MODIFICATIONS, GARMENT_BY_NAME } from "../data/wardrobe";
 import { sell } from "../engine/market";
 import { enrichPerson } from "../engine/forge";
-import { modelsAvailable } from "../config";
 import { getEdge } from "../engine/social";
 import Acts from "./Acts";
 import HerPanel from "./HerPanel";
 import { romanceOf, RUNG_BY_ID } from "../engine/romance";
 import { paintPortrait } from "../engine/turn";
-import { getLocalImage } from "../config";
+import { getLocalImage, modelsAvailable } from "../config";
+import { askHer } from "../engine/consult";
 import { practise, skill } from "../engine/player";
 
 type Sort = "name" | "devotion" | "trust" | "health" | "income" | "trouble";
@@ -81,6 +81,40 @@ export default function Roster() {
         {openId && save.people[openId] ? <PersonPanel id={openId} onClose={() => setOpenId(null)} /> : null}
       </Sheet>
     </>
+  );
+}
+
+/** ASK HER SOMETHING. Out of scene, in her own voice, out of her own knowledge, and it leaves no
+ *  trace: no memory forms, no bond moves, no clock advances. A channel where you can ask a woman
+ *  what she thinks without it becoming an event is a different thing from another scene. */
+function AskHer({ id }: { id: string }) {
+  const { save } = useGame();
+  const [q, setQ] = useState("");
+  const [says, setSays] = useState("");
+  const [busy, setBusy] = useState(false);
+  const p = save.people[id];
+  if (!p) return null;
+
+  async function ask() {
+    if (!q.trim() || busy) return;
+    setBusy(true);
+    setSays("");
+    const res = await askHer(save, id, q.trim());
+    setSays(res.says);
+    setBusy(false);
+  }
+
+  return (
+    <Card>
+      <div className="text-[11px] uppercase tracking-wider dim mb-2">ask her something · leaves no trace</div>
+      <div className="flex gap-2">
+        <input value={q} placeholder={`ask ${p.name} anything`} onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") void ask(); }} />
+        <Button size="sm" onClick={ask} disabled={busy || !q.trim()}>{busy ? "…" : "ask"}</Button>
+      </div>
+      {says ? <p className="font-prose text-[15px] leading-relaxed mt-3">{says}</p> : null}
+      {!modelsAvailable() ? <div className="text-[11px] dim mt-2">Needs a model — this one is all voice.</div> : null}
+    </Card>
   );
 }
 
@@ -173,6 +207,7 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
 
       {tab === "read" && (
         <div className="space-y-4">
+          <AskHer id={id} />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <Meter value={r.devotion} range={[-100, 100]} label={`devotion — ${r.label}`} />
             <Meter value={r.trust} range={[-100, 100]} label={`trust — ${r.trust_label}`} />

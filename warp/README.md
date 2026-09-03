@@ -66,6 +66,22 @@ you the read on what you have actually found out.
 **Firsts are remembered.** The first time anything is done to her goes into the bank as a core
 memory that never decays. The four hundredth does not. Both are counted.
 
+**Rooms.** A scene happens somewhere, and where decides three things: who is standing in it (the
+women assigned to that facility are *there*), whether what you do is private, household or **in
+front of paying citizens** — the same act on the concourse is public use, costs her more and hits a
+different set of fetishes — and what the room does to her walking in. What a place holds for
+somebody is what happened to her in it, computed from her own bank, bounded at a fifth of a bad
+conversation, and **habituated**: the room she works in every day has stopped announcing itself, and
+the one she has been kept out of for a month has not. The same corridor is charged for one of two
+women and inert for the other.
+
+**Asking her things.** A quiet aside that leaves no trace — no memory forms, no bond moves, no clock
+advances. She answers as herself, out of her own memories and beliefs and the facts she has actually
+been told, at whatever openness she currently has: a frightened woman says the safe thing, a broken
+one agrees with whatever she thinks you want, and one who trusts you will tell you something that
+does not flatter her. A channel for asking a woman what she thinks without it becoming an event is
+a different thing from another scene, and the genre has never had one.
+
 ## The road to marrying one, and past it
 
 The genre has always let you marry a slave, as a flag on a record. Here it is seven rungs —
@@ -224,7 +240,7 @@ prints one).
 npm install
 npm run dev       # http://localhost:5173
 npm run build     # static bundle in dist/ — no server, no backend
-npm test          # 143 behavioural tests over the deterministic core
+npm test          # 152 behavioural tests over the deterministic core
 npm run lint      # tsc --noEmit
 npm run balance   # a year of an arcology, printed as a ledger — how both economy bugs were found
 ```
@@ -247,6 +263,8 @@ src/engine/     the world. Nothing in here imports React.
   asks.ts         what she wants, and what your answer costs
   dynamic.ts      model-invented situations, on a closed effect table
   portrait.ts     what to say to the sampler so the cast holds still
+  places.ts       the rooms, and what a room holds for one particular person
+  consult.ts      asking her something, out of scene, in her own voice
   memory.ts       episodic → gist → belief
   social.ts       edges, co-regulation, the rumour field
   week.ts         the macro tick, in stated order

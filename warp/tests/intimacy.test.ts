@@ -17,6 +17,8 @@ import { ascend, nextRung, renounce, romanceOf, shiftDominion, herReach, keeperR
 import { generateAsk, grantAsk, refuseAsk } from "../src/engine/asks.ts";
 import { DYNAMIC_EFFECTS, resolveDynamic } from "../src/engine/dynamic.ts";
 import { visualSignature, scenePrompt } from "../src/engine/portrait.ts";
+import { goTo, openPlaces, isPublic, groundShove } from "../src/engine/places.ts";
+import { PLACE_BY_ID } from "../src/data/places.ts";
 
 function planted(seed: string, opts: { fetish?: string; flaw?: string; quirk?: string } = {}) {
   const s = newGame({ seed, starting_slaves: 1 });
@@ -267,6 +269,57 @@ function planted(seed: string, opts: { fetish?: string; flaw?: string; quirk?: s
   check("every effect in the closed table is callable", Object.entries(DYNAMIC_EFFECTS).every(([, def]) => {
     try { def.run(s, p, 3); return true; } catch { return false; }
   }));
+}
+
+/* ── the rooms ──────────────────────────────────────────────────────────────────────────────── */
+{
+  const { s, p } = planted("rooms");
+  s.arcology.facilities["brothel"].level = 1;
+  s.arcology.facilities["brothel"].capacity = 4;
+  p.facility = "brothel";
+  s.arcology.facilities["brothel"].workers.push(p.id);
+
+  const open = openPlaces(s).map((x) => x.id);
+  check("only rooms that exist are open", open.includes("penthouse") && open.includes("brothel_floor") && !open.includes("arcade_hall"), open);
+
+  const { place } = goTo(s, "brothel_floor");
+  check("going somewhere puts you in the room with whoever works it", s.scene.present.includes(p.id) && place.id === "brothel_floor");
+  check("and the room decides whether what happens is in front of people", isPublic(s));
+  goTo(s, "penthouse");
+  check("the suite does not", !isPublic(s));
+
+  // The same act, in front of the arcology, costs her more than it does upstairs.
+  const priv = resolveAct(s, p, "oral", { public: false });
+  const pub = resolveAct(s, p, "oral", { public: true });
+  if (!("error" in priv) && !("error" in pub)) {
+    check("doing it in public costs her more", pub.resentment > priv.resentment && pub.relaxation < priv.relaxation, { priv, pub });
+  }
+}
+
+{
+  // THE ROOM GOT THERE FIRST — and it habituates, which is the difference between this and a
+  // haunted house.
+  const { s, p } = planted("ground");
+  const bad = { id: "x", content: "the worst afternoon of her life", week: 2, importance: 9, charge: "sharp" as const, decay: 1, source: "lived" as const, where: "the cellblock" };
+  s.memory[p.id].episodic.push({ ...bad }, { ...bad, id: "y", week: 3 });
+  s.arcology.week = 30;
+  s.arcology.facilities["cellblock"].level = 1;
+  const g = groundShove(s, p, PLACE_BY_ID["cellblock_floor"]);
+  check("walking into a room she has a history with lands before anybody speaks", g.shove < -0.3, g);
+  check("and it is bounded — a fifth of a bad conversation", Math.abs(g.shove) <= 1.2);
+
+  // Now she has been in it constantly. It stops announcing itself.
+  for (let i = 0; i < 8; i++) {
+    s.memory[p.id].episodic.push({ ...bad, id: `r${i}`, week: 28, importance: 4 });
+  }
+  const habituated = groundShove(s, p, PLACE_BY_ID["cellblock_floor"]);
+  check("a room she is in every day stops doing it to her", Math.abs(habituated.shove) < Math.abs(g.shove), { was: g.shove, now: habituated.shove });
+
+  // And it is personal: the same room is inert for somebody it never happened to.
+  const other = generatePerson({ seed: "stranger", age: 25 });
+  s.people[other.id] = other;
+  s.memory[other.id] = newMemory();
+  check("and it is hers, not the room's", groundShove(s, other, PLACE_BY_ID["cellblock_floor"]).shove === 0);
 }
 
 /* ── the pictures ───────────────────────────────────────────────────────────────────────────── */
