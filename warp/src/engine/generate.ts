@@ -50,7 +50,10 @@ export function generatePerson(opts: GenOptions = {}): Person {
     ? NATIONS.find((n) => n.name === opts.nation) ?? r.weighted(NATIONS, (n) => n.weight)
     : r.weighted(NATIONS, (n) => n.weight / NATION_WEIGHT);
   const q = clamp(opts.quality ?? 0, -1, 1);
-  const sex = opts.sex ?? (r.chance(0.86) ? "female" : r.chance(0.6) ? "futa" : "male");
+  // The art pack draws a female body and the trade deals in women, so the default roll is female
+  // or futa. Plain male is still generatable, it just has to be asked for — the alternative was
+  // what the cheat screen turned up: a slave called Jonas, drawn as a woman.
+  const sex = opts.sex ?? (r.chance(0.9) ? "female" : "futa");
   const age = opts.age ?? Math.round(clamp(r.normal(23, 5), 18, 46));
   const female = sex !== "male";
   const pronouns: Pronouns = female ? "she/her" : "he/him";

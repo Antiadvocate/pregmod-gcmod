@@ -40,7 +40,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
               ))}
             </div>
           </Field>
-          <Button kind="primary" onClick={begin} disabled={busy} className="w-full mt-2">Take the arcology</Button>
+          <Button kind="primary" onClick={begin} disabled={busy} className="w-full mt-2">Start a new game</Button>
           {!modelsAvailable() ? (
             <p className="text-[11.5px] dim mt-3">
               No model configured. Everything works — the people, the week, the economy, the doctrine — you simply

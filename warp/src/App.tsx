@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import {
-  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound,
+  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2,
 } from "lucide-react";
 import type { SaveState } from "./engine/types";
 import { GameProvider, useGame } from "./lib/game";
@@ -25,8 +25,9 @@ import Orders from "./views/Orders";
 import Report from "./views/Report";
 import SettingsView from "./views/Settings";
 import You from "./views/You";
+import Cheats from "./views/Cheats";
 
-export type Route = "penthouse" | "people" | "scene" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "settings";
+export type Route = "penthouse" | "people" | "scene" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
 
 const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "penthouse", label: "Penthouse", icon: Building2 },
@@ -38,6 +39,7 @@ const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "orders", label: "Orders", icon: ClipboardList },
   { id: "report", label: "Week", icon: FileText },
   { id: "you", label: "You", icon: UserRound },
+  { id: "cheats", label: "Cheats", icon: Wand2 },
   { id: "settings", label: "Settings", icon: Cog },
 ];
 
@@ -98,7 +100,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
               {n.id === "penthouse" && unseen ? <span className="ml-auto chip on">{unseen}</span> : null}
             </button>
           ))}
-          <button className="railbtn mt-auto" onClick={onSwitch}>switch save</button>
+          <button className="railbtn mt-auto" onClick={onSwitch} title="new game, or load another save">new game / saves</button>
         </nav>
 
         <main className="flex-1 min-w-0 overflow-y-auto">
@@ -112,13 +114,14 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
             {route === "orders" && <Orders />}
             {route === "report" && <Report />}
             {route === "you" && <You />}
+            {route === "cheats" && <Cheats />}
             {route === "settings" && <SettingsView onSwitch={onSwitch} />}
           </div>
         </main>
       </div>
 
       <nav className="tabbar md:hidden flex shrink-0 overflow-x-auto">
-        {NAV.slice(0, 7).map((n) => (
+        {NAV.map((n) => (
           <button key={n.id} className={cx("flex-1 min-w-[56px] py-2.5 grid place-items-center", route === n.id ? "acc" : "dim")} onClick={() => setRoute(n.id)}>
             <n.icon size={18} strokeWidth={1.8} />
           </button>

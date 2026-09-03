@@ -37,6 +37,19 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
 
   return (
     <>
+      <Section title="Start over">
+        <Card>
+          <div className="text-[12.5px] mid mb-3">
+            A new game generates a fresh arcology and a fresh household. This save is kept — it is in the list on the
+            way in, and nothing here deletes it.
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button kind="primary" onClick={onSwitch}>new game, or load another save</Button>
+            <Button onClick={() => exportSave(save)}>export this one first</Button>
+          </div>
+        </Card>
+      </Section>
+
       <Section title="Models">
         <Card>
           <Field label="OpenRouter key" hint="Stored in this browser only, sent to OpenRouter and nowhere else. Warp works without one — you get stage directions instead of prose.">
@@ -160,7 +173,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => exportSave(save)}>export to a file</Button>
-            <Button kind="ghost" onClick={onSwitch}>switch save</Button>
+            <Button kind="ghost" onClick={onSwitch}>new game / saves</Button>
           </div>
         </Card>
       </Section>
