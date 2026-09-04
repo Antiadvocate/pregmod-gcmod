@@ -7,6 +7,7 @@ import "./obedience.test.ts";
 import "./kernel.test.ts";
 import "./world.test.ts";
 import "./intimacy.test.ts";
+import "./reversal.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);

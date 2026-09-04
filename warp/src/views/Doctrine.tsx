@@ -86,8 +86,12 @@ export default function Doctrine() {
                     </div>
                   </div>
                 </div>
-                <Button size="sm" className="mt-2.5" disabled={!!clash.length || adopted.length >= 4}
-                  onClick={() => mutate((s) => adoptDoctrine(s, d.id))}>adopt</Button>
+                {d.earned ? (
+                  <div className="text-[11.5px] dim mt-2.5 font-prose">{d.earned}</div>
+                ) : (
+                  <Button size="sm" className="mt-2.5" disabled={!!clash.length || adopted.length >= 4}
+                    onClick={() => mutate((s) => adoptDoctrine(s, d.id))}>adopt</Button>
+                )}
               </Card>
             );
           })}

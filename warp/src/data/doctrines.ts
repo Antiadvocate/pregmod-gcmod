@@ -16,6 +16,8 @@
  * unused next to the conditionals. Each axis runs −1 … +1 and every doctrine names its pole.
  */
 
+import { SUPPLICATIONISM } from "./reversal";
+
 export type Axis =
   | "age"          // + mature, − young
   | "height"       // + statuesque, − petite
@@ -48,6 +50,8 @@ export interface Doctrine {
   look: string;
   /** Research unlock cost, when it has one. */
   research?: number;
+  /** Not adoptable from the doctrine screen. Some things you have to be seen doing first. */
+  earned?: string;
 }
 
 export const DOCTRINES: Doctrine[] = [
@@ -280,6 +284,9 @@ export const DOCTRINES: Doctrine[] = [
     wants: { breeding: 0.4 }, rep: 16, cash: -300, research: 12000,
     look: "family portraits in the concourse, lineage charts as public art",
   },
+  // The one with a plot chain attached. Declared next door because the chain owns it; see
+  // data/reversal.ts and engine/reversal.ts.
+  SUPPLICATIONISM,
 ];
 
 export const DOCTRINE_BY_ID: Record<string, Doctrine> = Object.fromEntries(DOCTRINES.map((d) => [d.id, d]));

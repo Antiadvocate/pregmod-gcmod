@@ -14,6 +14,7 @@ import { resolveEvent, EVENT_BY_ID } from "../engine/events";
 import { generateDynamicEvent, resolveDynamic, dynamicReadiness } from "../engine/dynamic";
 import { grantAsk, refuseAsk, voiceAsk } from "../engine/asks";
 import { theKeeper } from "../engine/romance";
+import { nextEvent as chainEvent, resolveChain, reversalOf, subjectOf, GESTURES, gestureAvailable, doGesture, type Reaction } from "../engine/reversal";
 import { SlaveHead } from "./SlaveArt";
 import { read } from "../engine/obedience";
 import { band, wear } from "../engine/psyche";
@@ -23,11 +24,16 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
   const { save, mutate } = useGame();
   const [running, setRunning] = useState(false);
   const [inventing, setInventing] = useState(false);
+  const [aftermath, setAftermath] = useState<{ line: string; reactions: Reaction[] } | null>(null);
   const dyn = dynamicReadiness(save);
   const keeper = theKeeper(save);
   const arc = save.arcology;
   const people = Object.values(save.people).filter((p) => p.status === "owned" || p.status === "indentured");
   const lastReport = save.reports.at(-1);
+  const rev = reversalOf(save);
+  const chain = chainEvent(save);
+  const her = subjectOf(save);
+  const canGesture = gestureAvailable(save);
 
   const flags = people
     .map((p) => ({ p, r: read(p, save.memory[p.id]) }))
@@ -68,6 +74,65 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             {keeper.name} runs {arc.name}. The week below is her report. What you get is a say, when she asks for one.
           </p>
         </Card>
+      ) : null}
+
+      {chain ? (
+        <Section title="Supplicationism" right={<span className="text-[11px] uppercase tracking-wider dim">deference {Math.round(rev.deference)}</span>}>
+          <Card className="border-l-2">
+            <div className="text-[13px] mb-2">{chain.title}</div>
+            <p className="font-prose text-[15px] leading-relaxed whitespace-pre-line mb-4">{chain.text(save, her?.name)}</p>
+            <div className="flex flex-wrap gap-2">
+              {chain.options.map((o) => (
+                <Button key={o.id} size="sm" title={o.note} onClick={() => {
+                  let out: { line: string; reactions: Reaction[] } = { line: "", reactions: [] };
+                  mutate((s) => { out = resolveChain(s, o.id); });
+                  setAftermath(out);
+                }}>{o.label}</Button>
+              ))}
+            </div>
+            {chain.options.some((o) => o.note) ? (
+              <div className="text-[11px] dim mt-2">{chain.options.filter((o) => o.note).map((o) => `${o.label}: ${o.note}`).join(" · ")}</div>
+            ) : null}
+          </Card>
+        </Section>
+      ) : null}
+
+      {!chain && canGesture && her && rev.done.length > 0 ? (
+        <Section title="In public" right={<span className="text-[11px] uppercase tracking-wider dim">deference {Math.round(rev.deference)}</span>}>
+          <Card>
+            <p className="font-prose text-[15px] leading-relaxed mb-3">
+              The arcology takes its cue from the most recent thing it watched you do, and it has been {Math.max(0, arc.week - (rev.last_public ?? 0))} weeks.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {GESTURES.map((g) => (
+                <Button key={g.id} size="sm" title={g.note} onClick={() => {
+                  let out: { line: string; reactions: Reaction[] } = { line: "", reactions: [] };
+                  mutate((s) => { out = doGesture(s, g.id); });
+                  setAftermath(out);
+                }}>{g.label}</Button>
+              ))}
+            </div>
+            <div className="text-[11px] dim mt-2">{GESTURES.map((g) => `${g.label}: ${g.note}${g.rep ? ` · ${g.rep} rep` : ""}`).join(" · ")}</div>
+          </Card>
+        </Section>
+      ) : null}
+
+      {aftermath ? (
+        <Section title="What came of it" right={<Button size="sm" kind="ghost" onClick={() => setAftermath(null)}>done</Button>}>
+          <Card>
+            <p className="font-prose text-[15px] leading-relaxed">{aftermath.line}</p>
+            {aftermath.reactions.length ? (
+              <ul className="mt-3 space-y-1.5 text-[13px]">
+                {aftermath.reactions.map((rx) => (
+                  <li key={rx.id} className="flex gap-2">
+                    <span className="dim" style={{ color: rx.tone === "bad" ? "var(--danger)" : rx.tone === "good" ? "var(--good)" : rx.tone === "warning" ? "var(--warn)" : undefined }}>·</span>
+                    <span>{rx.line}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </Card>
+        </Section>
       ) : null}
 
       {save.asks?.length ? (

@@ -723,6 +723,8 @@ export interface SaveState {
   events: PendingEvent[];
   /** What the household is asking you for this week. See engine/asks.ts. */
   asks?: import("./asks").Ask[];
+  /** The Supplicationism plot chain — see engine/reversal.ts. */
+  reversal?: import("./reversal").ReversalState;
   notifications: Notification[];
   /** Market state — who is for sale this week, and at what. Regenerated weekly. */
   market: MarketState;

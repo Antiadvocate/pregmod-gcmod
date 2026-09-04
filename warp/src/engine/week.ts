@@ -38,6 +38,7 @@ import { GARMENT_BY_NAME } from "../data/wardrobe";
 import { refreshPlayer, practise, skill } from "./player";
 import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf } from "./romance";
 import { collectAsks } from "./asks";
+import { tickReversal } from "./reversal";
 
 const alive = (s: SaveState): Person[] => Object.values(s.people).filter((p) => p.status === "owned" || p.status === "indentured");
 
@@ -232,6 +233,10 @@ export function endWeek(s: SaveState): WeekReport {
   const sec = tickSecurity(s);
   lines.push(...sec.lines);
   if (sec.cash) led.entry("security", "what it cost when it went wrong", sec.cash);
+
+  // The plot chain, which is a society pass of its own: it moves your standing with the trade, it
+  // moves the arcology's adoption, and it is where the service fees come from once they are open.
+  lines.push(...tickReversal(s));
 
   const soc = tickSociety(s);
   led.entry("doctrine", "your citizens, on how you live", soc.cash, soc.rep);

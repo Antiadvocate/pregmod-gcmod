@@ -111,6 +111,52 @@ Penthouse becomes what she wants from you this week.
 Breaking a public promise at betrothed or wife is the single most expensive act in the game. Every
 other woman in the household files it, and their hope drops.
 
+## The story: Supplicationism
+
+The original had a seventy-two week plot chain — a name at week 4, an invasion at 43, a bombing at
+58, a coup at 71 — and it was scored on one hidden sum: whether you had bought enough mercenaries,
+guns and drones by the time somebody came for the building. It worked, and the reason it worked is
+that the test was never announced.
+
+This one keeps the shape and changes the sum. **Fifteen fixed beats between week 3 and week 69**,
+each firing once, each gated on a number the game never asks you to raise on purpose:
+**deference** — how far the arcology has actually watched you go in public.
+
+The thesis is one line and the game does not editorialise about it: *you bought her, she owns you,
+both are on the register, and neither cancels the other.* You can still sell her. That is the part
+the trade cannot get past, and it is why the road costs you everything it costs.
+
+It runs: the first night on the floor. The household finding out. Your name coming second on the
+instruments. Carrying her bag through the concourse at shift change. A broker who has sourced you
+eleven women writing four lines that do not use the word. Serving her plate at Eiger's table. The
+first man rich enough to say out loud that what he wants is to be *under* her — which opens the
+service fees, and from then on the arcology runs on citizens paying for the privilege. The
+registrar filing an instrument in both directions for the first time in twelve thousand transfers.
+Censure. A waiting list. A woman you gave power to using it badly, and what you do about that. An
+embargo. An offer to buy you out. And then the Association coming for the building.
+
+Two things make it a game rather than a slideshow:
+
+**The household answers per person, out of what each woman already is.** Handing power to a
+submissive is a cruelty and the engine records it as one — she stops eating and her hope drops.
+Handing it to a sadist with no conscience is a mistake you will meet again around week 52. A woman
+carrying more than fifty-five resentment takes what she is given without a word, because she has a
+great deal of unfinished business and now she has somewhere to put it. A broken woman agrees, and
+the report says plainly that she would have agreed with the opposite.
+
+**The ending is scored on the household, not on your guns.** At week 69 the lifts stop answering
+and the question is who inside the building agrees with the people outside it. Each woman is
+counted by what is actually holding her — bond and hope stand, fear and resentment do not — and a
+building full of frightened women loses it with every gun you own, while a household that wants you
+there holds it with none. If it goes the other way the line is the only one it can be: the doors
+opened from the inside.
+
+The doctrine is not something you tick on the Doctrine screen. It is adopted at the rate the
+arcology has watched you live, it displaces Degradationism and both Racial doctrines on arrival
+because they cannot be true at the same time, and between the fixed beats there are three small
+things you can do any week — wait on her at the table, carry for her on the commercial level, kneel
+to her at the club — so a cautious answer early never leaves the chain dead with no way back in.
+
 ## Pictures, and why they have to be local
 
 A game like this without images has a hole in it, and a hosted image API cannot fill it: it refuses

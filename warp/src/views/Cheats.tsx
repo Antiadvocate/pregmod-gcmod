@@ -13,6 +13,8 @@ import { FETISHES } from "../data/intimacy";
 import { LADDER, RUNG_BY_ID, romanceOf } from "../engine/romance";
 import { endWeek } from "../engine/week";
 import { read } from "../engine/obedience";
+import { reversalOf, nextEvent as chainEvent } from "../engine/reversal";
+import { CHAIN } from "../data/reversal";
 
 export default function Cheats() {
   const { save, mutate } = useGame();
@@ -230,6 +232,51 @@ export default function Cheats() {
           </Card>
         </Section>
       ) : null}
+
+      <Section title="Supplicationism">
+        <Card>
+          <div className="flex flex-wrap gap-2 items-end mb-3">
+            <Field label={`deference — ${Math.round(reversalOf(save).deference)}`}>
+              <input type="range" min={0} max={100} value={Math.round(reversalOf(save).deference)}
+                onChange={(e) => mutate((s) => { reversalOf(s).deference = Number(e.target.value); })} />
+            </Field>
+            <Field label={`the Association — ${Math.round(reversalOf(save).association)}`}>
+              <input type="range" min={-100} max={100} value={Math.round(reversalOf(save).association)}
+                onChange={(e) => mutate((s) => { reversalOf(s).association = Number(e.target.value); })} />
+            </Field>
+            <Button size="sm" onClick={() => mutate((s) => {
+              const rev = reversalOf(s);
+              rev.fees_open = !rev.fees_open; say(rev.fees_open ? "service fees open" : "service fees closed");
+            })}>{reversalOf(save).fees_open ? "close the fees" : "open the fees"}</Button>
+            <Button size="sm" onClick={() => mutate((s) => {
+              const rev = reversalOf(s);
+              rev.deference = 0; rev.done = []; rev.association = 0; rev.fees_open = false; rev.embargo = 0;
+              delete rev.pending; delete rev.ended; delete rev.subject; delete rev.last_public; delete rev.last_gesture;
+              say("chain reset");
+            })}>reset the chain</Button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {CHAIN.map((e) => {
+              const rev = reversalOf(save);
+              const state = rev.pending === e.id ? "on" : rev.done.includes(e.id) ? "done" : "";
+              return (
+                <Chip key={e.id} on={state === "on"} tone={state === "done" ? "good" : undefined} onClick={() => mutate((s) => {
+                  const r = reversalOf(s);
+                  r.done = CHAIN.slice(0, CHAIN.indexOf(e)).map((x) => x.id);
+                  r.deference = Math.max(r.deference, e.needs_deference ?? 0);
+                  r.pending = e.id;
+                  s.arcology.week = Math.max(s.arcology.week, e.week);
+                  delete r.ended;
+                  say(`jumped to "${e.title}" — it is waiting in the penthouse`);
+                })}>{e.week}. {e.title}{state === "done" ? " ✓" : ""}</Chip>
+              );
+            })}
+          </div>
+          <div className="text-[11px] dim mt-2">
+            {chainEvent(save) ? `Waiting: ${chainEvent(save)!.title}.` : reversalOf(save).ended ? `Finished: ${reversalOf(save).ended}.` : "Nothing pending. The next beat is gated on its week and your deference."}
+          </div>
+        </Card>
+      </Section>
 
       <Section title="Time">
         <Card>
