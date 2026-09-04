@@ -63,6 +63,12 @@ export function canDo(p: Person, act: ActDef): string | null {
       case "dick": if (p.body.dick === null || p.body.dick === 0) return "she has no cock"; if (p.chastity.penis) return "she is locked"; break;
       case "breasts": if (p.body.boobs < 200) return "there is nothing there to use"; break;
       case "milk": if (!p.body.lactation) return "she is not lactating"; break;
+      case "balls": if (p.body.balls === null || p.body.balls === 0) return "she has nothing to empty"; break;
+      case "feet": if (p.body.marks.some((m) => m.kind === "prosthetic" && /leg|foot|feet/i.test(m.where))) break;
+        if (p.health.recovery_weeks > 2) return "she is not steady enough on them"; break;
+      case "pregnant": if (!p.womb.fetuses.length) return "she is not carrying"; break;
+      case "belly": if (p.body.belly < 4000) return "there is not enough of her yet"; break;
+      case "nipples": if (p.body.nipples !== "fuckable") return "her nipples do not take anything"; break;
     }
   }
   if (p.health.recovery_weeks > 0 && act.group !== "tenderness") return "she is still in recovery";

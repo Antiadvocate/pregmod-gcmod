@@ -171,6 +171,12 @@ export function backfill(s: SaveState): { people: number; fetishes: number; quir
   for (const p of Object.values(s.people)) {
     const r = rng(`backfill:${p.id}`);
     let touched = false;
+    // Foreskin arrived with the surgery table, so a save written before it has none — and an
+    // undefined foreskin reads as uncircumcised, which is a silent wrong answer on half of them.
+    if (p.body.foreskin === undefined) {
+      p.body.foreskin = (p.body.dick === null || p.body.dick === 0) ? null : (r.chance(0.65) ? r.int(2, 5) : 0);
+      touched = true;
+    }
     if (!p.persona.fetishes?.length) {
       p.persona.fetishes = r.chance(0.68)
         ? [{ name: r.pick(FETISH_POOL), strength: Math.round(clamp(r.normal(60, 22), 15, 100)), known: false }]

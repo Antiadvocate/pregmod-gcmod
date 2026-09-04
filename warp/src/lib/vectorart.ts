@@ -192,6 +192,47 @@ function hairLength(p: Person): string {
   return "Short";
 }
 
+/** True if she is heavy enough that the pack's Fat variants are the right ones. */
+function heavyset(p: Person): boolean { return p.body.weight > 30; }
+function heavy(p: Person, kind: string): boolean {
+  return p.body.marks.filter((m) => m.kind === kind).length >= 3;
+}
+
+/**
+ * THE COCK, at its actual size.
+ *
+ * This used to ask for `Art_Vector_Penis` and `Art_Vector_Flaccid`, neither of which is a file in
+ * the pack — it ships eleven of each, indexed by size, plus a full circumcised set. The loader
+ * drops layers that 404 without complaining, so every futa in the arcology was drawn with nothing
+ * between her legs and nobody found out. Same indexing as the original: clamp 1..11, minus one.
+ */
+function cockLayers(p: Person): Layer[] {
+  const d = p.body.dick;
+  if (d === null || d <= 0) return [];
+  const size = Math.min(10, Math.max(0, Math.round(d) - 1));
+  const circ = p.body.foreskin === 0 ? "Circ" : "";
+  const out: Layer[] = [];
+  // Balls sit behind the shaft, and only when there is something there to draw.
+  if (p.body.balls !== null && p.body.balls > 0) out.push({ id: "Balls" });
+  // Hard when she is somewhere near comfortable and not locked up; soft otherwise. The old game
+  // keyed this off drugs and chastity; relaxation is the equivalent here and reads on the figure.
+  const hard = !p.chastity.penis && p.psyche.relaxation > -2;
+  out.push({ id: `${hard ? "Penis" : "Flaccid"}${circ}_${size}` });
+  return out;
+}
+
+function areolaLayer(p: Person): string {
+  const shape = p.body.marks.find((m) => m.kind === "tattoo" && /areola/i.test(m.where))?.what ?? "";
+  if (/heart/i.test(shape)) return "Boob_Areola_Heart";
+  if (/star/i.test(shape)) return "Boob_Areola_Star";
+  if (p.body.marks.some((m) => m.kind === "piercing" && /nipple/i.test(m.where)))
+    return heavy(p, "piercing") ? "Boob_Areola_Piercingheavy" : "Boob_Areola_Piercing";
+  if (p.body.boobs > 1400) return "Boob_Areola_Huge";
+  if (p.body.boobs > 900) return "Boob_Areola_Large";
+  if (p.body.nipples === "puffy" || p.body.nipples === "huge") return "Boob_Areola_Wide";
+  return "Boob_Areola";
+}
+
 function nippleLayer(p: Person): string {
   switch (p.body.nipples) {
     case "tiny": return "Boob_NippleTiny";
@@ -265,9 +306,16 @@ export function layersFor(p: Person): Layer[] {
   out.push({ id: "Feet" });
 
   // the front of the body
-  if (p.body.vagina !== null) out.push({ id: "Pussy" });
+  if (p.body.vagina !== null) {
+    out.push({ id: "Pussy" });
+    if (p.body.marks.some((m) => m.kind === "piercing" && /pussy|clit|labia|genital/i.test(m.where)))
+      out.push({ id: heavy(p, "piercing") ? "Pussy_Piercing_Heavy" : "Pussy_Piercing" });
+    if (p.body.marks.some((m) => m.kind === "tattoo" && /pussy|groin|genital/i.test(m.where)))
+      out.push({ id: heavyset(p) ? "Pussy_TattooFat" : "Pussy_Tattoo" });
+  }
   out.push({ id: pubicLayer(p) });
-  if (p.body.dick !== null && p.body.dick > 0) out.push({ id: "Flaccid" }, { id: "Penis" });
+  out.push(...cockLayers(p));
+  if (p.chastity.vagina && p.body.vagina !== null) out.push({ id: heavyset(p) ? "Chastity_Vagina_Fat" : "Chastity_Vagina" });
 
   const belly = bellyTransform(p);
   if (belly) out.push({ id: "Belly", transform: belly });
@@ -275,7 +323,7 @@ export function layersFor(p: Person): Layer[] {
   const boob = boobTransform(p, heightScale);
   if (boob) {
     out.push({ id: "Boob_Alt", transform: boob });
-    out.push({ id: "Boob_Areola", transform: boob });
+    out.push({ id: areolaLayer(p), transform: boob });
     out.push({ id: nippleLayer(p), transform: boob });
   }
 

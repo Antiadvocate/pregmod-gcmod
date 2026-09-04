@@ -22,6 +22,7 @@ import { sell } from "../engine/market";
 import { enrichPerson } from "../engine/forge";
 import { getEdge } from "../engine/social";
 import Acts from "./Acts";
+import Surgery from "./Surgery";
 import HerPanel from "./HerPanel";
 import { romanceOf, RUNG_BY_ID } from "../engine/romance";
 import { paintPortrait } from "../engine/turn";
@@ -168,7 +169,7 @@ function RosterCard({ p, onOpen }: { p: Person; onOpen: () => void }) {
 
 function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
   const { save, mutate } = useGame();
-  const [tab, setTab] = useState<"do" | "her" | "read" | "body" | "work" | "history">("do");
+  const [tab, setTab] = useState<"do" | "her" | "read" | "body" | "theatre" | "work" | "history">("do");
   const [painting, setPainting] = useState(false);
   const [forging, setForging] = useState(false);
   const p = save.people[id];
@@ -212,13 +213,14 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
       </div>
 
       <div className="flex gap-1 mb-4">
-        {(["do", "her", "read", "body", "work", "history"] as const).map((t) => (
+        {(["do", "her", "read", "body", "theatre", "work", "history"] as const).map((t) => (
           <Button key={t} size="sm" kind={tab === t ? "primary" : "ghost"} onClick={() => setTab(t)}>{t}</Button>
         ))}
       </div>
 
       {tab === "do" && <Acts id={id} />}
       {tab === "her" && <HerPanel id={id} />}
+      {tab === "theatre" && <Surgery id={id} />}
 
       {tab === "read" && (
         <div className="space-y-4">

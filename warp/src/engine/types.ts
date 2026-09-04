@@ -50,7 +50,7 @@ export interface Body {
   /** Milliliters per breast. 0 = flat. Implants are recorded separately so purists can tell. */
   boobs: number;
   boob_implant: number;
-  nipples: "tiny" | "cute" | "puffy" | "inverted" | "partially inverted" | "huge" | "flat";
+  nipples: "tiny" | "cute" | "puffy" | "inverted" | "partially inverted" | "huge" | "flat" | "fuckable";
   areolae: 0 | 1 | 2 | 3 | 4;
   butt: number;          // 0–10 scale, the old game's, because it is a good scale
   butt_implant: number;
@@ -65,6 +65,9 @@ export interface Body {
   labia: 0 | 1 | 2 | 3;
   hymen: boolean;
   dick: number | null;     // 0–10
+  /** Foreskin, on its own scale, because circumcision is a state you can be put into and the art
+   *  pack has a whole parallel set of layers for it. null when there is nothing to have one. */
+  foreskin: number | null;
   balls: number | null;    // 0–10
   prostate: 0 | 1 | 2 | 3;
   anus: number;            // 0–4
@@ -732,6 +735,10 @@ export interface SaveState {
   retcons: { text: string; week: number; kind: "veto" | "correction" }[];
   /** World-scale facts, always in context. */
   canon: string[];
+  /** The content switches, which the original carried as V.seeExtreme, V.seeCircumcision and the
+   *  rest. Defaulted on — this is the game it is — but the surgery table and a handful of acts
+   *  read them, because the original let you turn the ugliest parts off and so does this. */
+  content?: { extreme?: boolean; circumcision?: boolean; watersports?: boolean };
   /** Everything the integrity checks caught, counted rather than forgotten. */
   integrity: { fires: { week: number; kind: string; detail: string }[] };
   /** Rollback ring, newest last, max 8. */

@@ -186,6 +186,7 @@ function generateBody(r: Rng, nation: Nation, age: number, sex: "female" | "male
     labia: female ? (r.int(0, 2) as 0 | 1 | 2) : 0,
     hymen: female && r.chance(0.18),
     dick: sex === "female" ? null : r.int(2, 5),
+    foreskin: sex === "female" ? null : (r.chance(0.65) ? r.int(2, 5) : 0),
     balls: sex === "female" ? null : r.int(2, 4),
     prostate: sex === "female" ? 0 : 1,
     anus: r.int(0, 2),

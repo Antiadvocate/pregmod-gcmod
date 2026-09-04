@@ -32,6 +32,8 @@ const LANDING: Record<string, string> = {
 
 const GROUPS: { id: string; label: string }[] = [
   { id: "use", label: "Use her" },
+  { id: "hers", label: "Serve her" },
+  { id: "feet", label: "Feet" },
   { id: "service", label: "Put her to work" },
   { id: "play", label: "Play" },
   { id: "tenderness", label: "Be good to her" },
