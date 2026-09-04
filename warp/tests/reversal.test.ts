@@ -223,5 +223,13 @@ function world(seed: string, n = 3) {
     if (dead) break;
   }
   check("no option is a dead button", dead === undefined, dead);
+
+  // An old save arrives mid-campaign with a beat due and nothing stamped as pending.
+  const old = world("oldsave");
+  old.arcology.week = 40;
+  const offered = nextEvent(old)!;
+  const { line } = resolveChain(old, offered.options[0].id);
+  check("and a beat offered without having been stamped still answers",
+    !!line && reversalOf(old).done.includes(offered.id), { offered: offered.id, line });
   check("the chain follows a person", !!subjectOf(s));
 }

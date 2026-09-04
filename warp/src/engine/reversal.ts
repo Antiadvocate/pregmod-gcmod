@@ -281,7 +281,10 @@ export function tickReversal(s: SaveState): ReportLine[] {
 /** Answer the beat. Returns what happened, plus how the household took it. */
 export function resolveChain(s: SaveState, optionId: string): { line: string; reactions: Reaction[] } {
   const rev = reversalOf(s);
-  const event = rev.pending ? CHAIN.find((e) => e.id === rev.pending) : undefined;
+  // Fall back to whatever is currently offered. tickReversal normally stamps `pending` at the end
+  // of the week, but a save from before the chain existed arrives mid-campaign with a beat already
+  // due and nothing stamped, and the button underneath it has to work.
+  const event = (rev.pending ? CHAIN.find((e) => e.id === rev.pending) : undefined) ?? nextEvent(s);
   if (!event) return { line: "", reactions: [] };
   const her = subjectOf(s);
   const week = s.arcology.week;
