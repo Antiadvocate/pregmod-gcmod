@@ -20,11 +20,13 @@ import { clamp, shove, tickPsyche, addState, band, tensionCue } from "./psyche";
 import { remember, learn } from "./memory";
 import { moveEdge, addRole, startRumor } from "./social";
 import { snapshot } from "./state";
+import { hash } from "./rng";
 import { resolveAct, actDirective, type ActOutcome } from "./intimacy";
 import { ACT_BY_ID } from "../data/intimacy";
 import { getLocalImage } from "../config";
-import { generateLocalImage } from "../lib/diffusion";
-import { scenePrompt, lockSignature, portraitPrompt } from "./portrait";
+import { generateLocalImage, DEFAULT_NEGATIVE } from "../lib/diffusion";
+import { controlPrompt, CONTROL_NEGATIVE } from "../lib/dollrender";
+import { scenePrompt, lockSignature, portraitPrompt, visualSignature } from "./portrait";
 
 export interface Diff {
   summary?: string;
@@ -248,6 +250,40 @@ export async function paintPortrait(s: SaveState, personId: string, onProgress?:
   lockSignature(p, getLocalImage()?.prompt_style === "tags" ? "tags" : "natural");
   const { prompt, seed } = portraitPrompt(p);
   const img = await generateLocalImage({ prompt, seed, aspect: "portrait", onProgress });
+  p.body.portrait_url = img.url;
+  p.body.portrait_seed = img.seed;
+  return img.url;
+}
+
+/**
+ * THE REALISTIC PASS, OVER THE FIGURE THE GAME ALREADY DREW.
+ *
+ * The caller hands in a PNG of the vector doll — see lib/dollrender.ts for why that is the whole
+ * trick — and it goes to the sampler as a ControlNet image. What comes back is the same body, at
+ * the same proportions, in the same pose, made of skin instead of flat colour.
+ *
+ * The prompt is deliberately thin. The control image is already carrying her shape, and a prompt
+ * that describes it again only gives the sampler a second opinion to argue with; the words are
+ * left to do material and light, which is what the line art cannot say.
+ */
+export async function paintRealistic(
+  s: SaveState, personId: string, poseDataUrl: string,
+  opts?: { denoise?: number; onProgress?: (n: string) => void },
+): Promise<string | null> {
+  const p = s.people[personId];
+  if (!p || !getLocalImage()) return null;
+  const dialect = getLocalImage()?.prompt_style === "tags" ? "tags" : "natural";
+  lockSignature(p, dialect);
+  const worn = p.clothes === "no clothing" ? (dialect === "tags" ? "nude" : "wearing nothing") : `wearing ${p.clothes}`;
+  const img = await generateLocalImage({
+    prompt: controlPrompt(`${p.body.visual_signature ?? visualSignature(p, dialect)}, ${worn}`),
+    negative: `${CONTROL_NEGATIVE}, ${DEFAULT_NEGATIVE}`,
+    pose: poseDataUrl,
+    denoise: opts?.denoise ?? 0.72,
+    seed: p.body.portrait_seed ?? (hash(p.id) % 2147483647),
+    aspect: "portrait",
+    onProgress: opts?.onProgress,
+  });
   p.body.portrait_url = img.url;
   p.body.portrait_seed = img.seed;
   return img.url;

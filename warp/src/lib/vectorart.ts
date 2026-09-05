@@ -27,6 +27,7 @@
  *     ty = −225.438 · s + 216.274
  */
 import type { Person } from "../engine/types";
+import { restingPose, type ArmPos, type Pose } from "./rig";
 
 export const ART_BASE = "art/vector";
 
@@ -47,6 +48,19 @@ export const CROPS = {
 } as const;
 
 export type Crop = keyof typeof CROPS;
+
+/**
+ * The full-body window has to follow the arms. `Arm_Left_High` reaches x 482 and the fixed crop
+ * stopped at 380, so every raised-arm pose was drawn with her hands cut off at the wrist — invisible
+ * while the compositor only ever asked for three positions, and immediately obvious once poses
+ * arrived. Widening the crop for everyone instead would shrink her in the common poses, so the
+ * window tracks what is actually in the frame.
+ */
+export function cropFor(crop: Crop, pose?: { armL: string; armR: string }): string {
+  if (crop !== "full" || !pose) return CROPS[crop];
+  const raised = pose.armL === "High" || pose.armL === "Rebel" || pose.armR === "High";
+  return raised ? "175 40 320 890" : CROPS.full;
+}
 
 export interface Layer {
   /** File stem, without the `Art_Vector_` prefix or the `.svg`. */
@@ -110,7 +124,7 @@ export function paletteFor(p: Person): Record<string, string> {
   const eye = match(EYE, p.body.eye_color, "#6b4423");
   return {
     skin,
-    shadow: shade(skin, 0.86),
+    shadow: shade(skin, 0.45),
     head: skin,
     torso: skin,
     penis: shade(skin, 0.97),
@@ -140,7 +154,18 @@ export function paletteFor(p: Person): Record<string, string> {
 export function styleFor(p: Person, scope: string): string {
   const pal = paletteFor(p);
   const rules = Object.entries(pal).map(([cls, hex]) => `.${scope} .${cls}{fill:${hex};}`);
-  // Stroked art (the outlines) must not be repainted by the fill rules above.
+  // THE OUTLINE. The pack ships bare fills with no stroke of any kind and relies on its `.shadow`
+  // paths for every internal edge, which at a roster thumbnail's size collapses into one flat
+  // silhouette — most of why the figure read as a paper cut-out rather than a drawing. A stroke in
+  // USER units (not `vector-effect: non-scaling-stroke`, which pins it to one screen pixel and
+  // disappears at any size worth looking at) gives the line weight back and scales with her.
+  //
+  // It also earns its keep on the way out: the ControlNet lineart preprocessor reads edges, and a
+  // flat silhouette gives it almost nothing to hold onto.
+  const line = shade(pal.skin, 0.32);
+  rules.push(`.${scope} path,.${scope} ellipse,.${scope} circle,.${scope} polygon{stroke:${line};stroke-width:1.6;stroke-linejoin:round;paint-order:stroke fill;}`);
+  rules.push(`.${scope} .hair,.${scope} .eyebrow_hair,.${scope} .pubic_hair,.${scope} .underarm_hair{stroke:${shade(pal.hair, 0.55)};}`);
+  rules.push(`.${scope} .sclera,.${scope} .eye,.${scope} .white{stroke-width:0.8;}`);
   rules.push(`.${scope} svg{overflow:visible;}`);
   return rules.join("");
 }
@@ -289,16 +314,59 @@ function bellyTransform(p: Person): string | undefined {
 }
 
 /**
+ * WHICH ARMS SHE HAS.
+ *
+ * The pack ships five prosthetic families beside the flesh ones — Basic, Beauty, Combat, Sexy and
+ * Swiss — and a None for a side that is simply gone. The rebuild had no prosthetics at all, so all
+ * of that art sat unreferenced; a `prosthetic` mark on her body now picks the family, and a woman
+ * missing an arm is drawn missing an arm instead of drawn whole.
+ */
+function armFamily(p: Person): { prefix: string; kit: string } {
+  const fitted = p.body.marks.find((m) => m.kind === "prosthetic" && /arm|hand|limb/i.test(m.where));
+  if (fitted) {
+    const w = fitted.what.toLowerCase();
+    const kit = /combat/.test(w) ? "ProstheticCombat" : /beaut/.test(w) ? "ProstheticBeauty"
+      : /sex/.test(w) ? "ProstheticSexy" : /swiss|multi/.test(w) ? "ProstheticSwiss" : "ProstheticBasic";
+    return { prefix: "Arm", kit };
+  }
+  return { prefix: p.body.weight > 30 ? "ArmFat" : "Arm", kit: "" };
+}
+
+/**
+ * `Arm_<Side>_<Position>` for flesh, `Arm_<Side>_<Kit>_<Position>` for a fitted limb — the kit sits
+ * between the side and the position, which is not where you would guess. The sets are also not
+ * complete: Rebel and Thumb_Down exist on the left only, so an unheld position falls back to Mid.
+ * The renderer skips layers it cannot find, and a silently missing arm is exactly the class of bug
+ * that put every futa's cock in the bin.
+ */
+const RIGHT_HAS: ArmPos[] = ["High", "Mid", "Low", "None"];
+
+function armLayer(fam: { prefix: string; kit: string }, side: "Left" | "Right", pos: ArmPos): string {
+  if (pos === "None") return `${fam.prefix}_${side}_None`;
+  const use: ArmPos = side === "Right" && !RIGHT_HAS.includes(pos) ? "Mid" : pos;
+  return fam.kit ? `${fam.prefix}_${side}_${fam.kit}_${use}` : `${fam.prefix}_${side}_${use}`;
+}
+
+/**
  * THE STACK. Back to front, and every entry optional at render time.
  */
-export function layersFor(p: Person): Layer[] {
+export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
   const out: Layer[] = [];
   const len = hairLength(p);
   const style = hairStyle(p);
   const heightScale = Math.max(0.7, Math.min(1.25, p.body.height_cm / 170));
 
-  // behind the body
+  // BEHIND THE BODY, and the arms belong here with it.
+  //
+  // The original's order is stated once in VectorArtJS and is not obvious: hair back, then ARMS,
+  // then butt, legs, feet, torso, and only then the front of the body. Drawing the arms late — as
+  // this did — looks fine while every pose has them hanging at her sides, and falls apart the
+  // moment one goes up: the raised arm paints over the hair it should be behind, and a woman with
+  // her hands behind her head ends up wearing her hair as a cap. The art is cut for this order.
   if (len) out.push({ id: `Hair_Back_${style}_${len}` }, { id: `Hair_Back_${style}` });
+
+  const limb = armFamily(p);
+  out.push({ id: armLayer(limb, "Left", pose.armL) }, { id: armLayer(limb, "Right", pose.armR) });
 
   out.push({ id: buttLayer(p) });
   out.push({ id: legLayer(p) });
@@ -326,11 +394,6 @@ export function layersFor(p: Person): Layer[] {
     out.push({ id: areolaLayer(p), transform: boob });
     out.push({ id: nippleLayer(p), transform: boob });
   }
-
-  // arms: where her hands are is a read on her body, not decoration
-  const armPos = p.psyche.relaxation <= -5 ? "High" : p.psyche.relaxation >= 4 ? "Low" : "Mid";
-  const fat = p.body.weight > 30 ? "ArmFat" : "Arm";
-  out.push({ id: `${fat}_Left_${armPos}` }, { id: `${fat}_Right_${armPos}` });
 
   // the face
   out.push({ id: "Head" });

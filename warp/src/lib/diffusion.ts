@@ -29,6 +29,24 @@ import { getLocalImage, LOCAL_IMAGE_DEFAULTS, type LocalImageEndpoint } from "..
 
 export interface DiffusionRequest {
   prompt: string;
+  /**
+   * THE PAPER DOLL, AS THE CONTROL IMAGE. A PNG data URL of the vector figure in the exact pose
+   * she is in, wired to `%pose%`.
+   *
+   * This is the answer to the problem every game of this kind has with generated art: the sampler
+   * has no idea who anybody is, so asking twice gets two different women. Words alone do not fix
+   * it — "olive skin, auburn hair, heavy breasts" describes a thousand people. But her body is
+   * already drawn, at her real proportions, in her real pose, by a compositor that is deterministic
+   * and reads the same state the prose does. Handing that render to ControlNet as line art pins the
+   * silhouette, the proportions, the pose and the framing, and leaves the sampler with only the job
+   * it is good at: skin, light and material.
+   *
+   * The consequence worth having is that the realistic pass INHERITS the rig. She is drawn kneeling
+   * because the scene put her kneeling, not because somebody wrote "kneeling" in a prompt and hoped.
+   */
+  pose?: string;
+  /** How far the sampler is allowed from the control render. Low keeps the doll's exact shape. */
+  denoise?: number;
   negative?: string;
   seed?: number;
   aspect?: "portrait" | "landscape" | "square";
@@ -140,6 +158,7 @@ export async function buildReferenceSheet(refs: string[], tile = 512): Promise<s
 export const WORKFLOW_TOKENS = [
   "%prompt%", "%negative%", "%seed%", "%width%", "%height%", "%steps%", "%cfg%",
   "%sampler%", "%scheduler%", "%checkpoint%", "%ref1%", "%ref2%", "%ref3%", "%ref4%",
+  "%pose%", "%denoise%",
 ];
 
 /** A plain txt2img graph, for anybody who has not exported their own. Needs only a checkpoint. */
@@ -169,6 +188,31 @@ export const KONTEXT_WORKFLOW = JSON.stringify({
   "10": { class_type: "KSampler", inputs: { seed: "%seed%", steps: "%steps%", cfg: 1, sampler_name: "euler", scheduler: "simple", denoise: 1, model: ["1", 0], positive: ["7", 0], negative: ["8", 0], latent_image: ["9", 0] } },
   "11": { class_type: "VAEDecode", inputs: { samples: ["10", 0], vae: ["1", 2] } },
   "12": { class_type: "SaveImage", inputs: { filename_prefix: "warp", images: ["11", 0] } },
+}, null, 2);
+
+/**
+ * THE ONE THAT MAKES HER REAL AND STILL HER.
+ *
+ * The figure the game already draws goes in as ControlNet line art, so the sampler is handed her
+ * silhouette, her proportions and her pose and only has to invent surface. Change her weight, put
+ * her in chastity, break her arm, kneel her down for a scene — the control render changes with the
+ * state, so the realistic image changes with it too, and none of that had to be described in words.
+ *
+ * Needs a ControlNet lineart model in `models/controlnet` and the checkpoint of your choice.
+ * Denoise around 0.7 keeps the pose and repaints everything else; drop it towards 0.5 if the
+ * sampler is wandering off her body, raise it towards 0.85 for more licence.
+ */
+export const CONTROL_WORKFLOW = JSON.stringify({
+  "1": { class_type: "CheckpointLoaderSimple", inputs: { ckpt_name: "%checkpoint%" } },
+  "2": { class_type: "LoadImage", inputs: { image: "%pose%", upload: "image" } },
+  "3": { class_type: "CLIPTextEncode", inputs: { text: "%prompt%", clip: ["1", 1] } },
+  "4": { class_type: "CLIPTextEncode", inputs: { text: "%negative%", clip: ["1", 1] } },
+  "5": { class_type: "ControlNetLoader", inputs: { control_net_name: "control_v11p_sd15_lineart.pth" } },
+  "6": { class_type: "ControlNetApplyAdvanced", inputs: { positive: ["3", 0], negative: ["4", 0], control_net: ["5", 0], image: ["2", 0], strength: 0.85, start_percent: 0, end_percent: 0.85 } },
+  "7": { class_type: "VAEEncode", inputs: { pixels: ["2", 0], vae: ["1", 2] } },
+  "8": { class_type: "KSampler", inputs: { seed: "%seed%", steps: "%steps%", cfg: "%cfg%", sampler_name: "%sampler%", scheduler: "%scheduler%", denoise: "%denoise%", model: ["1", 0], positive: ["6", 0], negative: ["6", 1], latent_image: ["7", 0] } },
+  "9": { class_type: "VAEDecode", inputs: { samples: ["8", 0], vae: ["1", 2] } },
+  "10": { class_type: "SaveImage", inputs: { filename_prefix: "warp", images: ["9", 0] } },
 }, null, 2);
 
 /** Numbers are matched WITH their quotes first, so `"seed": "%seed%"` arrives as a real number.
@@ -221,8 +265,20 @@ async function comfyGenerate(ep: LocalImageEndpoint, req: DiffusionRequest): Pro
     }
   }
 
+  // The control render goes up the same way a reference does, but it means something different:
+  // a reference says "her face looked like this", a control says "her body is exactly here".
+  const wantsPose = wf.includes("%pose%");
+  if (wantsPose && !req.pose) {
+    throw new Error("this workflow expects the figure as a control image (%pose%) and none was rendered — use a workflow without %pose%, or generate from a screen that has her drawn");
+  }
+  if (wantsPose && req.pose) {
+    req.onProgress?.("sending the pose");
+    refVals.pose = await comfyUpload(ep, req.pose, "warp-pose.png");
+  }
+
   const filled = fillWorkflow(wf, {
     prompt: req.prompt,
+    denoise: req.denoise ?? 0.72,
     negative: req.negative ?? ep.negative ?? DEFAULT_NEGATIVE,
     seed, width: w, height: h,
     steps: ep.steps || LOCAL_IMAGE_DEFAULTS.steps,

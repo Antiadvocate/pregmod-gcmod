@@ -5,7 +5,7 @@
  * is she like that", which is the question the old game could not answer at any price because the
  * answer was distributed across every passage that had ever touched her.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { Search, X } from "lucide-react";
 import { useGame } from "../lib/game";
 import { Button, Card, Chip, Empty, Field, Meter, Money, Section, Sheet, cx } from "../lib/ui";
@@ -25,8 +25,10 @@ import Acts from "./Acts";
 import Surgery from "./Surgery";
 import HerPanel from "./HerPanel";
 import { romanceOf, RUNG_BY_ID } from "../engine/romance";
-import { paintPortrait } from "../engine/turn";
+import { paintPortrait, paintRealistic } from "../engine/turn";
 import { getLocalImage, modelsAvailable } from "../config";
+import { POSES, restingPose, type Pose } from "../lib/rig";
+import { renderDoll } from "../lib/dollrender";
 import { askHer } from "../engine/consult";
 import SlaveArt, { SlaveHead } from "./SlaveArt";
 import { practise, skill } from "../engine/player";
@@ -172,6 +174,9 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
   const [tab, setTab] = useState<"do" | "her" | "read" | "body" | "theatre" | "work" | "history">("do");
   const [painting, setPainting] = useState(false);
   const [forging, setForging] = useState(false);
+  const [pose, setPose] = useState<Pose | undefined>(undefined);
+  const [note, setNote] = useState("");
+  const doll = useRef<SVGSVGElement>(null);
   const p = save.people[id];
   const r = read(p, save.memory[id]);
   const mem = save.memory[id];
@@ -180,8 +185,8 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
     <div>
       {/* Her, then the numbers about her — in that order, at that ratio. */}
       <div className="flex gap-4 mb-4">
-        <div className="card-2 shrink-0 px-2" style={{ width: 132 }}>
-          <SlaveArt person={p} height={300} />
+        <div className="card-2 shrink-0 px-2" style={{ width: 190 }}>
+          <SlaveArt person={p} height={430} pose={pose} svgRef={doll} />
         </div>
         <div className="flex-1 min-w-0">
           {p.body.portrait_url ? <img src={p.body.portrait_url} alt="" className="w-full max-h-40 object-cover rounded-lg mb-2" /> : null}
@@ -204,13 +209,42 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
         {p.body.lactation ? <Chip>lactating</Chip> : null}
         <span className="ml-auto text-[11px] dim font-mono">owned {p.economics.weeks_owned}w</span>
         {getLocalImage() ? (
-          <Button size="sm" kind="ghost" disabled={painting} onClick={async () => {
-            setPainting(true);
-            try { await paintPortrait(save, id); mutate(() => {}); } catch { /* the panel says nothing; Settings has the diagnostics */ }
-            setPainting(false);
-          }}>{painting ? "painting…" : p.body.portrait_url ? "repaint" : "paint her"}</Button>
+          <>
+            <Button size="sm" kind="ghost" disabled={painting} onClick={async () => {
+              setPainting(true); setNote("");
+              try { await paintPortrait(save, id); mutate(() => {}); }
+              catch (e) { setNote((e as Error).message); }
+              setPainting(false);
+            }}>{painting ? "painting…" : p.body.portrait_url ? "repaint" : "paint her"}</Button>
+            {/* The realistic pass runs over the figure on the left rather than over a description
+                of her, so what comes back is this body in this pose. See lib/dollrender.ts. */}
+            <Button size="sm" kind="ghost" disabled={painting} onClick={async () => {
+              setPainting(true); setNote("");
+              try {
+                if (!doll.current) throw new Error("she is still being drawn — try again in a moment");
+                const shot = await renderDoll(doll.current);
+                await paintRealistic(save, id, shot.dataUrl, { onProgress: setNote });
+                mutate(() => {});
+                setNote("");
+              } catch (e) { setNote((e as Error).message); }
+              setPainting(false);
+            }}>make her real</Button>
+          </>
         ) : null}
       </div>
+
+      {/* Pose is a real control, not a toy: it drives the art, the aria label, and — when the
+          realistic pass runs — the ControlNet image, so what the sampler returns is her in it. */}
+      <div className="flex flex-wrap gap-1.5 items-center mb-4">
+        <span className="text-[11px] uppercase tracking-wider dim mr-1">pose</span>
+        <Chip on={!pose} onClick={() => setPose(undefined)}>as she is</Chip>
+        {POSES.map((x) => (
+          <Chip key={x.id} on={pose?.id === x.id} title={x.reads} onClick={() => setPose(x)}>{x.name}</Chip>
+        ))}
+        <span className="text-[11.5px] dim basis-full mt-1">{(pose ?? restingPose(p)).reads}.</span>
+      </div>
+
+      {note ? <Card className="mb-4 text-[12.5px] acc">{note}</Card> : null}
 
       <div className="flex gap-1 mb-4">
         {(["do", "her", "read", "body", "theatre", "work", "history"] as const).map((t) => (

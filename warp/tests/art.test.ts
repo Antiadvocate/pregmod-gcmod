@@ -13,8 +13,11 @@
  */
 import { readdirSync } from "node:fs";
 import { check } from "./harness.ts";
+import { newMemory } from "../src/engine/memory.ts";
+import { refresh } from "../src/engine/obedience.ts";
 import { generatePerson } from "../src/engine/generate.ts";
 import { layersFor } from "../src/lib/vectorart.ts";
+import { POSES, restingPose, frameAt, transformFor, jointFor, PIVOT } from "../src/lib/rig.ts";
 
 const have = new Set(
   readdirSync("public/art/vector")
@@ -91,4 +94,103 @@ function bodyPart(id: string): boolean { return !id.startsWith("Hair_"); }
   const cut = layersFor(p).map((l) => l.id);
   check("and circumcision uses the pack's parallel set",
     cut.some((id) => id.startsWith("PenisCirc_") && have.has(id)), cut.filter((i) => /Penis|Flaccid/.test(i)));
+}
+
+
+/* ── the rig ────────────────────────────────────────────────────────────────────────────────── */
+{
+  // Every pose × every limb family has to resolve, including the prosthetic sets that carry only
+  // three positions on the right. This is the check the arm fallback exists for.
+  const missing = new Set<string>();
+  const families: [string, string][] = [
+    ["flesh", ""], ["fat", "fat"],
+    ["basic", "set of basic prosthetic limbs"], ["beauty", "set of advanced beauty limbs"],
+    ["combat", "set of advanced combat limbs"], ["sexy", "set of advanced sex limbs"],
+  ];
+  for (const [label, what] of families) {
+    for (const pose of POSES) {
+      const p = generatePerson({ seed: `rig-${label}-${pose.id}`, sex: "female" });
+      if (what === "fat") p.body.weight = 60;
+      else if (what) p.body.marks.push({ kind: "prosthetic", where: "arms", what, week: 1 });
+      for (const l of layersFor(p, pose)) {
+        if (/^(Arm|ArmFat)/.test(l.id) && !have.has(l.id)) missing.add(`${label}/${pose.id}: ${l.id}`);
+      }
+    }
+  }
+  check("every pose resolves to real arm art, on flesh and on all four prosthetic sets",
+    missing.size === 0, [...missing].slice(0, 6));
+}
+
+{
+  // Poses have to actually differ, or the whole rig is decoration.
+  const p = generatePerson({ seed: "distinct", sex: "female" });
+  const sigs = new Set(POSES.map((pose) => layersFor(p, pose).map((l) => l.id).join("|")));
+  check("the poses are not all the same picture", sigs.size >= 5, sigs.size);
+}
+
+{
+  // The involuntary layer must read her state, not just tick.
+  const calm = generatePerson({ seed: "breath", sex: "female" });
+  calm.psyche.relaxation = 6; calm.psyche.arousal = 5;
+  const scared = generatePerson({ seed: "breath", sex: "female" });
+  scared.psyche.relaxation = -8; scared.psyche.arousal = 5;
+
+  // Sample a few seconds and count how many times the chest crosses its resting scale: a
+  // frightened woman breathes faster than a comfortable one, and it should be visible.
+  const crossings = (p: typeof calm) => {
+    let n = 0, prev = 0;
+    for (let ms = 0; ms < 20000; ms += 40) {
+      const v = frameAt(p, restingPose(p), ms).chest.scale - 1;
+      if (prev <= 0 && v > 0) n++;
+      prev = v;
+    }
+    return n;
+  };
+  const a = crossings(calm), b = crossings(scared);
+  check("a frightened woman breathes faster than a comfortable one", b > a * 1.2, { calm: a, scared: b });
+}
+
+{
+  const p = generatePerson({ seed: "phase", sex: "female" });
+  const q = generatePerson({ seed: "phase-other", sex: "female" });
+  const f1 = frameAt(p, restingPose(p), 3000);
+  const f2 = frameAt(q, restingPose(q), 3000);
+  check("two women at the same instant are not the same animation",
+    f1.hips.dx !== f2.hips.dx || f1.chest.scale !== f2.chest.scale, { f1, f2 });
+}
+
+{
+  // The composed transform has to be legal SVG and has to pivot where the joint actually is.
+  let bad: string | undefined;
+  const p = generatePerson({ seed: "xform", sex: "futa" });
+  const f = frameAt(p, restingPose(p), 1234);
+  for (const l of layersFor(p)) {
+    const x = transformFor(jointFor(l.id), f);
+    if (x && !/^[a-z0-9()\-. ]+$/i.test(x)) { bad = `${l.id}: ${x}`; break; }
+    if (/NaN|Infinity|undefined/.test(x)) { bad = `${l.id}: ${x}`; break; }
+  }
+  check("no joint produces a malformed transform", bad === undefined, bad);
+  check("the head pivots at the neck, not the canvas origin", PIVOT.neck[1] > 150 && PIVOT.neck[1] < 230, PIVOT.neck);
+}
+
+{
+  // A blink is an event, not a wave: she should be open the overwhelming majority of the time.
+  const p = generatePerson({ seed: "blink", sex: "female" });
+  let shut = 0, n = 0;
+  for (let ms = 0; ms < 120000; ms += 33) { n++; if (frameAt(p, restingPose(p), ms).eyelid < 0.5) shut++; }
+  const pct = shut / n;
+  check("she blinks, and does not sit there with her eyes shut", pct > 0 && pct < 0.12, { closed: `${(pct * 100).toFixed(1)}%` });
+}
+
+{
+  const p = generatePerson({ seed: "state-pose", sex: "female" });
+  p.psyche.state = "intact"; p.health.energy = 60; p.health.health = 0;
+  p.psyche.relaxation = -8;
+  const braced = restingPose(p).id;
+  p.psyche.relaxation = 3; p.bond.bond = 90; p.bond.fear = 2;
+  refresh(p, newMemory());
+  const easy = restingPose(p).id;
+  p.health.energy = 5;
+  const spent = restingPose(p).id;
+  check("how she stands is read off her state", braced !== easy && spent === "spent", { braced, easy, spent });
 }
