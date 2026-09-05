@@ -159,17 +159,35 @@ to her at the club — so a cautious answer early never leaves the chain dead wi
 
 ## Pictures, and why they have to be local
 
-A game like this without images has a hole in it, and a hosted image API cannot fill it: it refuses
-most of what this needs to draw and bills for the rest. On your own GPU it is free and unrefusable,
-so it is automatic — Settings → Pictures points at **ComfyUI or an A1111-style WebUI**, and you get a
-portrait per person and a picture of the moment after every scene.
+The figure is the base game's own vector pack — 575 layers on one shared canvas, recoloured per
+person by an injected stylesheet. No GPU, no key, no network after the first draw.
 
-Three things hold a cast still across a campaign: the exact clause that drew a portrait is **locked**
-onto the person and reused verbatim forever (clothes, belly and mood are added as separate clauses,
-so changing a shirt never changes a face); the portraits themselves go in as **reference images**
-through a `%ref1%` token, so Flux Kontext, IP-Adapter, PuLID and InstantID all work; and **seeds are
-held** per person and per room-and-cast. Prompts are built in both dialects — sentences for Flux and
-SD3, comma-separated tags for SD1.5, SDXL and Pony.
+**It is rigged now.** The pack was drawn with the parts already separated, which is a skeleton
+nobody had declared: five joints with pivots measured off the real path data — neck, chest, both
+shoulders, hips. Twelve named poses on top of it, using arm positions the pack had shipped all
+along and the compositor had never asked for. Underneath that, an involuntary layer — breath, sway,
+weight shift, head drift, blink — computed as a pure function of (person, milliseconds), so one
+requestAnimationFrame serves the whole roster and each woman is phase-offset by her own id.
+
+All of it reads her state. A braced woman has her shoulders up and her chin down. A frightened one
+breathes about twice as fast as a comfortable one, and holds it shallower. A woman running on
+nothing sags. You are supposed to be able to tell how she is across the room before you read a
+number.
+
+**And then the realistic pass, which is the part worth explaining.** A diffusion model has no idea
+who anybody is, and words cannot fix that — "olive skin, auburn hair, heavy breasts" describes
+several thousand people, and asking twice gets two of them. Every game of this kind hits that wall.
+
+But her body is already drawn, at her real proportions, in her real pose, by a compositor that is
+deterministic and reads the same state the prose reads. So the figure on screen is rasterised and
+handed to ControlNet as the control image, and the sampler is left with the one job it is good at:
+skin, light, material. The realistic image inherits everything — put on weight and it is heavier,
+get put in chastity and it is there, kneel for a scene and she is kneeling, because the rig knelt
+her rather than because somebody typed the word and hoped.
+
+Local only, and not out of principle: a hosted image API refuses most of what this game needs to
+draw, and charges for the rest. On your own sampler it is free and unrefusable, which is what lets
+it be automatic rather than a button you remember to press.
 
 ## Events that were not written by anybody
 

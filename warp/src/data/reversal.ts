@@ -172,15 +172,30 @@ It is unusual. They file it at 3:40 in the afternoon and give you a copy on the 
     week: 37,
     needs_deference: 58,
     title: "The household divides",
-    text: () => `Two of them come to you together, which is how you know they have been talking.
+    text: (s, her = "she") => {
+      // Both women are real people out of the household rather than two slots: the one who wants
+      // it is whoever is furthest up already, and the one who does not is the most submissive
+      // woman in the building. The chain has spent forty weeks establishing that handing power to
+      // the second kind is a cruelty, and this is where it stops being an abstraction.
+      const cast = Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 18);
+      const asks = cast.filter((p) => p.name !== her).sort((a, b) => (b.romance?.dominion ?? -100) - (a.romance?.dominion ?? -100))[0];
+      const dreads = cast.filter((p) => p.name !== her && p.id !== asks?.id)
+        .sort((a, b) => (b.persona.fetishes?.find((f) => f.name === "submissive")?.strength ?? 0)
+          - (a.persona.fetishes?.find((f) => f.name === "submissive")?.strength ?? 0))[0];
+      const A = asks?.name ?? "the one doing the speaking";
+      const B = dreads?.name ?? "the one standing behind her";
+      const years = asks ? Math.max(1, Math.round(asks.economics.weeks_owned / 52)) : 4;
 
-The one doing the speaking wants what ${"the east suite"} has. She has thought about it, she has a specific arrangement in mind, and she has clearly rehearsed the sentence about how she would be very good at it.
+      return `${A} and ${B} come to you together, which is how you know they have been talking.
 
-The one standing behind her wants the opposite, badly, and cannot say so with the first one in the room. She has spent four years learning exactly how to be what she is and you are proposing to take the floor out from under that, and no part of her wants to be handed anything.`,
+${A} does the speaking. She wants what ${her} has. She has thought about it, she has a specific arrangement in mind, and she has clearly rehearsed the sentence about how she would be very good at it — you can hear the rehearsal in it, which is not the same as it being untrue.
+
+${B} stands behind her and says nothing, because ${B} wants the opposite, badly, and cannot say so with ${A} in the room. She has spent ${years === 1 ? "the better part of a year" : `${years} years`} learning exactly how to be what she is, and you are proposing to take the floor out from under that. No part of her wants to be handed anything. She came along because not coming along would have been a statement.`;
+    },
     options: [
-      { id: "both", label: "Give them each what they asked for", note: "including the one who asked for nothing" },
-      { id: "level", label: "Raise them both", note: "the second one will not thank you" },
-      { id: "hold", label: "Neither, for now" },
+      { id: "both", label: "Give them each what they actually asked for", note: "one gets standing, the other gets left exactly as she is" },
+      { id: "level", label: "Raise them both the same", note: "fair, and one of them will not survive it well" },
+      { id: "hold", label: "Neither, for now", note: "they will both read that as an answer" },
     ],
   },
   {

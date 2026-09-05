@@ -89,6 +89,10 @@ const setNum = (get: (p: Person) => number, set: (p: Person, n: number) => void,
     return `${label}: ${was} → ${n}`;
   };
 
+/** The facilities that count as care rather than work — being moved into one is a rescue, and a
+ *  rescue is supposed to end. */
+const CARE = ["spa", "clinic"];
+
 export const RULE_EFFECTS: EffectDef[] = [
   {
     id: "assignment", label: "Set assignment", kind: "text",
@@ -107,7 +111,14 @@ export const RULE_EFFECTS: EffectDef[] = [
       if (p.facility === id) return null;
       if (id && !s.arcology.facilities[id]?.level) return null;
       const was = p.facility ?? "nowhere";
-      if (!dry) assignToFacility(s, p, id || undefined);
+      if (!dry) {
+        // Moving her INTO care remembers where she came from, so there is something to put her
+        // back on when she has mended. Moving her anywhere else is the player deciding, and
+        // overwrites the note rather than preserving a stale one.
+        if (CARE.includes(id)) { if (!p.pulled_from) p.pulled_from = { facility: p.facility, assignment: p.assignment, week: s.arcology.week }; }
+        else delete p.pulled_from;
+        assignToFacility(s, p, id || undefined);
+      }
       return `moved: ${was} → ${id || "the penthouse"}`;
     },
   },
@@ -124,7 +135,31 @@ export const RULE_EFFECTS: EffectDef[] = [
   { id: "collar", label: "Set collar", kind: "text",
     apply: (p, v, _s, dry) => { if (p.collar === v) return null; if (!dry) p.collar = String(v); return `collar: ${v}`; } },
   { id: "release", label: "Take out of the facility and rest", kind: "bool",
-    apply: (p, _v, s, dry) => { if (!p.facility && p.assignment === "rest") return null; if (!dry) { assignToFacility(s, p, undefined); p.assignment = "rest"; } return "pulled out and rested"; } },
+    apply: (p, _v, s, dry) => {
+      if (!p.facility && p.assignment === "rest") return null;
+      if (!dry) {
+        // Same round trip as a move into care: the badly hurt one is coming back too.
+        if (!p.pulled_from) p.pulled_from = { facility: p.facility, assignment: p.assignment, week: s.arcology.week };
+        assignToFacility(s, p, undefined);
+        p.assignment = "rest";
+      }
+      return "pulled out and rested";
+    } },
+  {
+    id: "back_to_work", label: "Put her back where she was", kind: "bool",
+    apply: (p, _v, s, dry) => {
+      const from = p.pulled_from;
+      if (!from) return null;
+      const facility = from.facility && s.arcology.facilities[from.facility]?.level ? from.facility : undefined;
+      if (p.facility === facility && p.assignment === from.assignment) { if (!dry) delete p.pulled_from; return null; }
+      if (!dry) {
+        assignToFacility(s, p, facility);
+        if (!facility) setAssignment(s, p, from.assignment);
+        delete p.pulled_from;
+      }
+      return `back on the rota after ${s.arcology.week - from.week} week${s.arcology.week - from.week === 1 ? "" : "s"}`;
+    },
+  },
   { id: "flag_review", label: "Flag for your attention", kind: "text",
     apply: (p, v, s, dry) => { if (!dry) s.notifications.push({ id: `n${s.arcology.week}-${p.id}-${Math.random().toString(36).slice(2, 6)}`, week: s.arcology.week, text: `${p.name}: ${v}`, kind: "warning", person: p.id, seen: false }); return `flagged: ${v}`; } },
 ];
@@ -285,6 +320,17 @@ export function defaultOrders(): StandingOrder[] {
       id: "o-break", name: "Nobody breaks on my watch", enabled: true, priority: 20,
       conditions: [{ field: "state", op: "eq", value: "fracturing" }],
       effects: [{ field: "facility", value: "spa" }, { field: "flag_review", value: "coming apart — moved to the spa" }],
+    },
+    {
+      // The counterpart to the two rules above. Without it they are a one-way door and the
+      // household ends up parked in the spa, earning nothing, permanently.
+      id: "o-return", name: "Back on the rota when she has mended", enabled: true, priority: 25,
+      conditions: [
+        { field: "state", op: "eq", value: "intact" },
+        { field: "health", op: "gt", value: -10 },
+        { field: "energy", op: "gt", value: 55 },
+      ],
+      effects: [{ field: "back_to_work", value: true }],
     },
     {
       id: "o-flight", name: "Watch the ones looking at the door", enabled: true, priority: 30,

@@ -252,10 +252,16 @@ function areolaLayer(p: Person): string {
   if (/star/i.test(shape)) return "Boob_Areola_Star";
   if (p.body.marks.some((m) => m.kind === "piercing" && /nipple/i.test(m.where)))
     return heavy(p, "piercing") ? "Boob_Areola_Piercingheavy" : "Boob_Areola_Piercing";
-  if (p.body.boobs > 1400) return "Boob_Areola_Huge";
-  if (p.body.boobs > 900) return "Boob_Areola_Large";
-  if (p.body.nipples === "puffy" || p.body.nipples === "huge") return "Boob_Areola_Wide";
-  return "Boob_Areola";
+  // `areolae` is generated 0-4 and was being ignored in favour of guessing from breast size, which
+  // is a different fact: a small-breasted woman with wide areolae is a thing the pack can draw and
+  // the game could not. The original's own ladder, restored.
+  switch (Math.max(0, Math.min(4, Math.round(p.body.areolae ?? 0)))) {
+    case 4: return "Boob_Areola_Massive";
+    case 3: return "Boob_Areola_Huge";
+    case 2: return "Boob_Areola_Wide";
+    case 1: return "Boob_Areola_Large";
+    default: return "Boob_Areola";
+  }
 }
 
 function nippleLayer(p: Person): string {
@@ -283,9 +289,39 @@ function pubicLayer(p: Person): string {
 
 /** Which of the six face variants she has. Stable per person — derived from the id, so she has the
  *  same face every time she is drawn, forever, without storing anything. */
-function faceVariant(p: Person, n: number): number {
+/**
+ * WHICH FACE SHE HAS.
+ *
+ * The pack ships six sets of eyes, mouths and noses, and this hashed her id to pick one — which
+ * kept a face stable across a campaign (the thing it was written for) but meant `face_shape` was
+ * generated, described in the prose, and then drawn at random. A woman the panel called "exotic"
+ * had a one-in-six chance of looking it.
+ *
+ * The shape now picks the set and the hash only breaks ties inside it, so a face is still stable
+ * and still varied, and now also agrees with the sentence next to it.
+ */
+const FACE_SETS: Record<string, number[]> = {
+  cute: [0, 3],
+  sensual: [1, 4],
+  exotic: [2, 5],
+  androgynous: [3, 5],
+  masculine: [4, 5],
+  normal: [0, 1, 2],
+};
+
+function faceHash(p: Person): number {
   let h = 0;
   for (let i = 0; i < p.id.length; i++) h = (h * 31 + p.id.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+/** `salt` keeps eyes, mouth and nose from all landing on the same index for the same person. */
+function faceVariant(p: Person, n: number, salt = 0): number {
+  const h = faceHash(p) + salt * 2654435761;
+  if (n === 6) {
+    const set = FACE_SETS[p.body.face_shape] ?? FACE_SETS.normal;
+    return set[h % set.length];
+  }
   return h % n;
 }
 
@@ -398,9 +434,11 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
   // the face
   out.push({ id: "Head" });
   out.push({ id: "Face" });
+  // All three features come in six types. These asked for six, four and three, so mouths E and F
+  // and noses D, E and F were in the pack and never once drawn.
   out.push({ id: `Eyes_${TYPES[faceVariant(p, 6)]}` });
-  out.push({ id: `Mouth_${TYPES[faceVariant(p, 4)]}` });
-  out.push({ id: `Nose_${TYPES[faceVariant(p, 3)]}` });
+  out.push({ id: `Mouth_${TYPES[faceVariant(p, 6, 7)]}` });
+  out.push({ id: `Nose_${TYPES[faceVariant(p, 6, 13)]}` });
   out.push({ id: p.body.face > 70 ? "Lip_Heavy" : "Lip_Light" });
   out.push({ id: `Eyebrow_${TYPES[faceVariant(p, 4)]}_${BROWS[faceVariant(p, 4)]}` });
 

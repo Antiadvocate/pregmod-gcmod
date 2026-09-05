@@ -365,3 +365,59 @@ import { practise, skill } from "../src/engine/player.ts";
   assignToFacility(s, a, undefined);
   check("leaving a facility clears both sides", !s.arcology.facilities["spa"].workers.length && a.facility === undefined);
 }
+
+/* ── care has to be a round trip ────────────────────────────────────────────────────────────── */
+{
+  /**
+   * The bug this protects against had no visible cause and killed every long campaign.
+   *
+   * The default "nobody breaks on my watch" order moves a fracturing woman to the spa. Nothing in
+   * the game ever moved her out again. So a household drifted into the spa one woman at a time,
+   * the facilities emptied, income went to nothing while upkeep carried on, and the arcology went
+   * bankrupt somewhere around week eighty with the report showing only "0 working, 8 beds empty".
+   * A hundred and four weeks of the same save went from −272,470 to +1,635,088 on the fix.
+   */
+  const s = newGame({ seed: "roundtrip", starting_slaves: 3 });
+  const brothel = s.arcology.facilities["brothel"];
+  brothel.level = 1; brothel.capacity = 6;
+  // The spa has to exist, or the safety order has nowhere to send her and silently does nothing —
+  // which is correct behaviour, and is also how the first version of this test fooled itself.
+  s.arcology.facilities["spa"].level = 1;
+  s.arcology.facilities["spa"].capacity = 4;
+  const her = Object.values(s.people)[0];
+  assignToFacility(s, her, "brothel");
+  check("she starts on the rota", her.facility === "brothel" && brothel.workers.includes(her.id));
+
+  // Break her, and let the safety rule do its job.
+  her.psyche.state = "fracturing";
+  runOrders(s, false);
+  check("the safety order pulls her out of the brothel", her.facility === "spa", her.facility);
+  check("and remembers where she came from", her.pulled_from?.facility === "brothel", her.pulled_from);
+
+  // Still broken: she stays put.
+  runOrders(s, false);
+  check("she is not sent back while she is still coming apart", her.facility === "spa");
+
+  // Mended.
+  her.psyche.state = "intact";
+  her.health.health = 20;
+  her.health.energy = 90;
+  runOrders(s, false);
+  check("once she has mended she goes back to the job she was doing",
+    her.facility === "brothel" && s.arcology.facilities["brothel"].workers.includes(her.id),
+    { facility: her.facility, workers: s.arcology.facilities["brothel"].workers.length });
+  check("and the note is cleared, so a later rescue records the new job", her.pulled_from === undefined);
+}
+
+{
+  // The whole point, measured: a household put to work stays solvent over two years.
+  const s = newGame({ seed: "solvent", starting_slaves: 4 });
+  const brothel = s.arcology.facilities["brothel"];
+  brothel.level = 1; brothel.capacity = 8;
+  for (const p of Object.values(s.people)) if (p.status === "owned") assignToFacility(s, p, "brothel");
+  for (let w = 0; w < 104; w++) endWeek(s);
+  const working = Object.values(s.people).filter((p) => p.facility === "brothel").length;
+  check("two years of working the brothel does not end in bankruptcy",
+    s.arcology.cash > 0, { cash: Math.round(s.arcology.cash), working });
+  check("and the household is still on the rota rather than parked in the spa", working >= 3, working);
+}

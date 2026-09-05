@@ -213,6 +213,13 @@ export function sanitize(raw: SaveState): SaveState {
     }
     refresh(p, s.memory[p.id]);
   }
+  // A save written before the return rule existed has the old three orders and a household that
+  // may already be parked in the spa with no way out. Add the missing one rather than resetting
+  // orders wholesale, which would throw away everything the player has written.
+  if (s.orders && !s.orders.some((o) => o.id === "o-return")) {
+    const fresh = defaultOrders().find((o) => o.id === "o-return");
+    if (fresh) s.orders.push(fresh);
+  }
   return s;
 }
 

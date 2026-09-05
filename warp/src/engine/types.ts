@@ -357,6 +357,14 @@ export interface Person {
   assignment: Assignment;
   facility?: string;            // facility id when assigned to one
   /** Standing orders exemptions — the rules engine skips a person flagged here. */
+  /** WHERE SHE WAS BEFORE SOMEBODY PULLED HER OUT.
+   *
+   *  Set when a standing order moves her somewhere for her own good, and cleared when she goes
+   *  back. Without it the safety rules are a one-way door: the default "nobody breaks on my watch"
+   *  order moved a fracturing woman to the spa, and nothing in the game ever moved her out again,
+   *  so a household drifted into the spa one woman at a time, earned nothing, and bankrupted the
+   *  arcology by about week eighty with no visible cause. */
+  pulled_from?: { facility?: string; assignment: Assignment; week: number };
   rules_exempt: boolean;
   rules_applied: string[];      // ids of rules that touched them last week, for the report
   /** Legal status. `indenture` counts down; a freed person leaves the roster and enters the
