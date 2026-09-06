@@ -16,7 +16,7 @@ import { check } from "./harness.ts";
 import { newMemory } from "../src/engine/memory.ts";
 import { refresh } from "../src/engine/obedience.ts";
 import { generatePerson } from "../src/engine/generate.ts";
-import { layersFor } from "../src/lib/vectorart.ts";
+import { layersFor, styleFor } from "../src/lib/vectorart.ts";
 import { POSES, restingPose, frameAt, transformFor, jointFor, PIVOT } from "../src/lib/rig.ts";
 
 const have = new Set(
@@ -193,4 +193,71 @@ function bodyPart(id: string): boolean { return !id.startsWith("Hair_"); }
   p.health.energy = 5;
   const spent = restingPose(p).id;
   check("how she stands is read off her state", braced !== easy && spent === "spent", { braced, easy, spent });
+}
+
+/* ── the face ───────────────────────────────────────────────────────────────────────────────── */
+{
+  /**
+   * Four separate bugs put a wire frame on every woman in the game, and all four were in the face.
+   *
+   *   1. `Art_Vector_Face` is a COMPLETE face — eyes, brows, nose and lips already on it, an
+   *      alternative to the feature system rather than a base for it. It was being drawn under the
+   *      features, so every woman wore two faces slightly out of register.
+   *   2. The feature types were picked from independent hashes. The pack's six sets were drawn to
+   *      go together in specific combinations; shuffling them produces a face nobody drew.
+   *   3. `Lip_Light`/`Lip_Heavy` and `Nose_Light`/`Nose_Heavy` are PIERCINGS. They were on
+   *      everybody, unconditionally.
+   *   4. A stroke on every path, which outlines every internal cut as well as the silhouette.
+   */
+  const p = generatePerson({ seed: "face", sex: "female" });
+  const ids = layersFor(p).map((l) => l.id);
+
+  check("the standalone Face layer is not stacked under the features", !ids.includes("Face"), ids.filter((i) => /Face/.test(i)));
+  check("and nobody is wearing piercings they were never given",
+    !ids.some((i) => /^(Lip|Nose)_(Light|Heavy)$/.test(i)), ids.filter((i) => /^(Lip|Nose)_/.test(i)));
+
+  p.body.marks.push({ kind: "piercing", where: "lip", what: "a ring", week: 1 });
+  check("but a woman who has been pierced is drawn pierced",
+    layersFor(p).map((l) => l.id).includes("Lip_Light"));
+}
+
+{
+  // The feature set has to be one of the original's rows, not four independent draws.
+  const SETS = new Set<string>();
+  const shapes = ["normal", "cute", "sensual", "exotic", "androgynous", "masculine"];
+  const races = ["white", "asian", "black", "latina", "middle eastern", "mixed", "indo-aryan"];
+  let loose: string | undefined;
+  for (const race of races) {
+    for (const shape of shapes) {
+      const p = generatePerson({ seed: `set-${race}-${shape}`, sex: "female" });
+      p.origin.race = race;
+      p.body.face_shape = shape as typeof p.body.face_shape;
+      const ids = layersFor(p).map((l) => l.id);
+      const eyes = ids.find((i) => i.startsWith("Eyes_"));
+      const mouth = ids.find((i) => i.startsWith("Mouth_"));
+      const nose = ids.find((i) => i.startsWith("Nose_"));
+      const brow = ids.find((i) => i.startsWith("Eyebrow_"));
+      if (!eyes || !mouth || !nose || !brow) { loose = `${race}/${shape}: incomplete face`; break; }
+      for (const id of [eyes, mouth, nose, brow]) if (!have.has(id)) { loose = `${race}/${shape}: ${id} is not a file`; break; }
+      SETS.add(`${eyes}|${mouth}|${nose}`);
+    }
+    if (loose) break;
+  }
+  check("every race and face shape resolves to a complete face of real files", loose === undefined, loose);
+  check("and the shapes are not all the same face", SETS.size >= 12, SETS.size);
+
+  // The same woman must not change face between renders.
+  const a = generatePerson({ seed: "stable", sex: "female" });
+  const one = layersFor(a).map((l) => l.id).filter((i) => /^(Eyes|Mouth|Nose|Eyebrow)_/.test(i)).join(",");
+  const two = layersFor(a).map((l) => l.id).filter((i) => /^(Eyes|Mouth|Nose|Eyebrow)_/.test(i)).join(",");
+  check("and a face is stable across renders", one === two, [one, two]);
+}
+
+{
+  // The pack is fills only. An outline on every path draws a seam down every internal cut.
+  const p = generatePerson({ seed: "nostroke", sex: "female" });
+  const css = styleFor(p, "t");
+  check("the stylesheet sets no stroke, because the original's does not", !/stroke/i.test(css),
+    css.match(/[^;{}]*stroke[^;}]*/g)?.slice(0, 3));
+  check("and the shadow paths are the near-black the art was drawn for", /\.shadow\{fill:#010101/.test(css));
 }

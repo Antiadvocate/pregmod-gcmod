@@ -124,7 +124,7 @@ export function paletteFor(p: Person): Record<string, string> {
   const eye = match(EYE, p.body.eye_color, "#6b4423");
   return {
     skin,
-    shadow: shade(skin, 0.45),
+    shadow: "#010101",
     head: skin,
     torso: skin,
     penis: shade(skin, 0.97),
@@ -154,18 +154,11 @@ export function paletteFor(p: Person): Record<string, string> {
 export function styleFor(p: Person, scope: string): string {
   const pal = paletteFor(p);
   const rules = Object.entries(pal).map(([cls, hex]) => `.${scope} .${cls}{fill:${hex};}`);
-  // THE OUTLINE. The pack ships bare fills with no stroke of any kind and relies on its `.shadow`
-  // paths for every internal edge, which at a roster thumbnail's size collapses into one flat
-  // silhouette — most of why the figure read as a paper cut-out rather than a drawing. A stroke in
-  // USER units (not `vector-effect: non-scaling-stroke`, which pins it to one screen pixel and
-  // disappears at any size worth looking at) gives the line weight back and scales with her.
-  //
-  // It also earns its keep on the way out: the ControlNet lineart preprocessor reads edges, and a
-  // flat silhouette gives it almost nothing to hold onto.
-  const line = shade(pal.skin, 0.32);
-  rules.push(`.${scope} path,.${scope} ellipse,.${scope} circle,.${scope} polygon{stroke:${line};stroke-width:1.6;stroke-linejoin:round;paint-order:stroke fill;}`);
-  rules.push(`.${scope} .hair,.${scope} .eyebrow_hair,.${scope} .pubic_hair,.${scope} .underarm_hair{stroke:${shade(pal.hair, 0.55)};}`);
-  rules.push(`.${scope} .sclera,.${scope} .eye,.${scope} .white{stroke-width:0.8;}`);
+  // NO STROKE. The pack is fills only and the original's own stylesheet never sets a stroke on
+  // anything — the internal definition comes entirely from `.shadow` paths filled near-black, and
+  // the shapes are cut to butt against each other exactly. Adding an outline to every path draws a
+  // line around every one of those internal cuts as well as the silhouette, so a thigh gets a seam
+  // down it and a face gets a wire frame. That was mine, and it was wrong.
   rules.push(`.${scope} svg{overflow:visible;}`);
   return rules.join("");
 }
@@ -384,6 +377,93 @@ function armLayer(fam: { prefix: string; kit: string }, side: "Left" | "Right", 
 }
 
 /**
+ * THE FACE — the part the original does properly and this did not.
+ *
+ * The pack ships six sets each of eyes, mouths, noses and eyebrows, and the obvious thing to do
+ * with six of anything is pick one at random. That is what this used to do, and it is wrong twice
+ * over: the sets were drawn to go together in specific combinations, and picking each feature from
+ * its own hash produces a face nobody drew — eyes from one design sitting above a mouth from
+ * another, at coordinates that were never meant to meet.
+ *
+ * The original's answer is a hand-built table keyed on race and face shape, seventy-odd rows of it,
+ * every row a matched set. That is why its faces look drawn and the shuffled version looks like a
+ * ransom note. It is ported here verbatim.
+ *
+ * Two other things were wrong in the same place and were most of the visible mess:
+ *
+ *   · `Art_Vector_Face` was being drawn under the features. It is not a base layer — it is a
+ *     COMPLETE face, eyes brows nose and lips already on it, an alternative to this whole system.
+ *     Stacking the feature layers on top of it drew a second face over the first, slightly out of
+ *     register, which is where the lines across the cheeks and through the mouth came from.
+ *   · `Lip_Light` and `Lip_Heavy` are LIP PIERCINGS, and `Nose_Light`/`Nose_Heavy` are nose rings.
+ *     They were being drawn on everybody unconditionally, which is why every woman in the arcology
+ *     had two small steel studs beside her mouth that nobody had bought her.
+ */
+type FaceSet = readonly [eyes: string, mouth: string, nose: string, brow: string];
+
+const FACES: Record<string, Record<string, FaceSet>> = {
+  white: {
+    normal: ["TypeB", "TypeA", "TypeA", "TypeA"], masculine: ["TypeD", "TypeF", "TypeF", "TypeE"],
+    androgynous: ["TypeE", "TypeE", "TypeE", "TypeF"], cute: ["TypeB", "TypeB", "TypeD", "TypeA"],
+    sensual: ["TypeC", "TypeC", "TypeC", "TypeC"], exotic: ["TypeA", "TypeC", "TypeC", "TypeC"],
+  },
+  asian: {
+    normal: ["TypeA", "TypeC", "TypeC", "TypeD"], masculine: ["TypeD", "TypeD", "TypeB", "TypeC"],
+    androgynous: ["TypeE", "TypeE", "TypeA", "TypeC"], cute: ["TypeC", "TypeC", "TypeC", "TypeF"],
+    sensual: ["TypeA", "TypeA", "TypeE", "TypeC"], exotic: ["TypeB", "TypeC", "TypeF", "TypeA"],
+  },
+  latina: {
+    normal: ["TypeB", "TypeE", "TypeD", "TypeB"], masculine: ["TypeE", "TypeD", "TypeF", "TypeC"],
+    androgynous: ["TypeA", "TypeD", "TypeB", "TypeD"], cute: ["TypeF", "TypeB", "TypeB", "TypeF"],
+    sensual: ["TypeB", "TypeE", "TypeC", "TypeF"], exotic: ["TypeC", "TypeA", "TypeC", "TypeE"],
+  },
+  black: {
+    normal: ["TypeD", "TypeB", "TypeF", "TypeF"], masculine: ["TypeA", "TypeD", "TypeF", "TypeE"],
+    androgynous: ["TypeF", "TypeE", "TypeB", "TypeE"], cute: ["TypeC", "TypeE", "TypeD", "TypeB"],
+    sensual: ["TypeC", "TypeF", "TypeA", "TypeC"], exotic: ["TypeE", "TypeE", "TypeC", "TypeA"],
+  },
+  "middle eastern": {
+    normal: ["TypeB", "TypeA", "TypeA", "TypeA"], masculine: ["TypeD", "TypeF", "TypeA", "TypeB"],
+    androgynous: ["TypeF", "TypeB", "TypeF", "TypeF"], cute: ["TypeB", "TypeB", "TypeC", "TypeA"],
+    sensual: ["TypeA", "TypeD", "TypeA", "TypeC"], exotic: ["TypeE", "TypeE", "TypeE", "TypeE"],
+  },
+  mixed: {
+    normal: ["TypeE", "TypeA", "TypeD", "TypeA"], masculine: ["TypeF", "TypeD", "TypeE", "TypeC"],
+    androgynous: ["TypeC", "TypeB", "TypeD", "TypeF"], cute: ["TypeC", "TypeD", "TypeA", "TypeD"],
+    sensual: ["TypeA", "TypeE", "TypeC", "TypeD"], exotic: ["TypeA", "TypeC", "TypeC", "TypeC"],
+  },
+};
+
+/** This game's nationalities carry races the original did not name; map to the nearest row it has
+ *  rather than falling through to one default and making half the cast look related. */
+const RACE_ALIAS: Record<string, string> = {
+  "indo-aryan": "middle eastern",
+  "southern european": "white",
+  semitic: "middle eastern",
+  amerindian: "latina",
+  malay: "asian",
+  "pacific islander": "asian",
+  "mixed race": "mixed",
+};
+
+const BROW_FULLNESS = ["Natural", "Thin", "Thick", "Bushy", "Tapered", "Threaded", "Pencilthin"];
+
+function faceLayers(p: Person): Layer[] {
+  const race = RACE_ALIAS[p.origin.race] ?? p.origin.race;
+  const rows = FACES[race] ?? FACES.white;
+  const shape = rows[p.body.face_shape] ? p.body.face_shape : "normal";
+  const [eyes, mouth, nose, brow] = rows[shape];
+  // Only the brow's fullness is hers to vary — the four features are a set and stay one.
+  const fullness = BROW_FULLNESS[faceHash(p) % BROW_FULLNESS.length];
+  return [
+    { id: `Eyes_${eyes}` },
+    { id: `Mouth_${mouth}` },
+    { id: `Nose_${nose}` },
+    { id: `Eyebrow_${brow}_${fullness}` },
+  ];
+}
+
+/**
  * THE STACK. Back to front, and every entry optional at render time.
  */
 export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
@@ -433,14 +513,13 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
 
   // the face
   out.push({ id: "Head" });
-  out.push({ id: "Face" });
-  // All three features come in six types. These asked for six, four and three, so mouths E and F
-  // and noses D, E and F were in the pack and never once drawn.
-  out.push({ id: `Eyes_${TYPES[faceVariant(p, 6)]}` });
-  out.push({ id: `Mouth_${TYPES[faceVariant(p, 6, 7)]}` });
-  out.push({ id: `Nose_${TYPES[faceVariant(p, 6, 13)]}` });
-  out.push({ id: p.body.face > 70 ? "Lip_Heavy" : "Lip_Light" });
-  out.push({ id: `Eyebrow_${TYPES[faceVariant(p, 4)]}_${BROWS[faceVariant(p, 4)]}` });
+  out.push(...faceLayers(p));
+  // Facial piercings, which is what Lip_* and Nose_Light/Heavy actually are.
+  const pierced = (where: RegExp) => p.body.marks.filter((m) => m.kind === "piercing" && where.test(m.where)).length;
+  const lips = pierced(/lip|mouth/i);
+  if (lips) out.push({ id: lips > 1 ? "Lip_Heavy" : "Lip_Light" });
+  const nose = pierced(/nose|septum/i);
+  if (nose) out.push({ id: nose > 1 ? "Nose_Heavy" : "Nose_Light" });
 
   // in front
   if (len) out.push({ id: `Hair_Fore_${style}_${len}` }, { id: `Hair_Fore_${style}` });
