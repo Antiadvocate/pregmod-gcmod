@@ -16,7 +16,7 @@
 import type { Body, Bond, Health, Person, Persona, Psyche, Skills, Womb, Pronouns } from "./types";
 import { NATIONS, CAREERS, ORIGINS, NATION_WEIGHT, type Nation } from "../data/people";
 import { newPsyche, clamp } from "./psyche";
-import { rng, type Rng } from "./rng";
+import { rng, hash, type Rng } from "./rng";
 import { QUIRKS, FLAWS } from "../data/intimacy";
 
 /** How common each thing is. Submissive and cumslut are the two the trade selects for, because the
@@ -27,8 +27,35 @@ const FETISH_POOL = [
   { id: "pregnancy", w: 1.5 }, { id: "dom", w: 1.2 }, { id: "sadist", w: 0.8 },
 ];
 
-let seq = 0;
-export function personId(): string { return `p${Date.now().toString(36)}${(seq++).toString(36)}`; }
+/**
+ * A PERSON'S ID COMES FROM HER SEED, NOT FROM THE CLOCK.
+ *
+ * This used to be `Date.now()` plus a counter, which looks harmless and is not. Person ids are
+ * threaded through the engine as identity, and identity is used for more than lookup:
+ *
+ *   · Every seeded RNG stream keyed on a person — conception, illness, a manager skimming — is
+ *     seeded on her id, so a clock-based id gave a different stream on every run and the game
+ *     stopped being reproducible from its seed the moment it touched a body.
+ *   · The thread detectors iterate pairs with `a.id >= b.id` to visit each pair once, so the order
+ *     the household is examined in came from wall-clock time too.
+ *
+ * The result was a test suite that passed locally and failed in CI about half the time, and a
+ * documented-deterministic engine that was not. Derived from the seed, all of that is stable: the
+ * same seed produces the same woman with the same name in the same order, every run, forever.
+ *
+ * Two hashes rather than one, salted differently, because a 32-bit id collides at about one in a
+ * hundred once a household has run a thousand people through it — and a collision here is two
+ * different women sharing a memory ledger, which is a save-corrupting bug that would surface once
+ * a month and never reproduce. Sixty-four bits puts it out of reach.
+ *
+ * A caller that passes no seed gets a random one, and an id derived from that — still random, but
+ * random in exactly one place instead of two. Callers that generate in bulk pass a seed with the
+ * index in it (`${seed}:${i}`), so distinctness is the caller's to keep, where it belongs.
+ */
+export function personId(seed: number | string): string {
+  const s = String(seed);
+  return `p${hash(s).toString(36)}${hash(`id:${s}`).toString(36)}`;
+}
 
 export interface GenOptions {
   seed?: number | string;
@@ -45,7 +72,8 @@ export interface GenOptions {
 }
 
 export function generatePerson(opts: GenOptions = {}): Person {
-  const r = rng(opts.seed ?? Math.floor(Math.random() * 1e9));
+  const seed = opts.seed ?? Math.floor(Math.random() * 1e9);
+  const r = rng(seed);
   const nation = opts.nation
     ? NATIONS.find((n) => n.name === opts.nation) ?? r.weighted(NATIONS, (n) => n.weight)
     : r.weighted(NATIONS, (n) => n.weight / NATION_WEIGHT);
@@ -95,7 +123,7 @@ export function generatePerson(opts: GenOptions = {}): Person {
     births: age > 24 && r.chance(0.2) ? r.int(1, 2) : 0,
     miscarriages: 0,
     abortions: 0,
-    sired_by: {},
+    sired_by: {}, exposures: 0,
   };
 
   const bond: Bond = {
@@ -109,7 +137,7 @@ export function generatePerson(opts: GenOptions = {}): Person {
   };
 
   const p: Person = {
-    id: personId(),
+    id: personId(seed),
     name,
     surname,
     pronouns,

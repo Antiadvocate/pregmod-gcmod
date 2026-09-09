@@ -62,7 +62,8 @@ export function tryConception(state: SaveState, mother: Person, fatherId: string
   const fertileWindow = w.cycle_day >= 11 && w.cycle_day <= 17;
   const base = (w.fertility / 100) * (fertileWindow ? 0.35 : 0.04) * clamp(intensity, 0, 6);
   const health = clamp(1 + mother.health.health / 200, 0.5, 1.4);
-  if (rng(`conceive:${state.arcology.week}:${mother.id}`)() > base * health) return null;
+  const n = (w.exposures = (w.exposures ?? 0) + 1);
+  if (rng(`conceive:${state.arcology.week}:${mother.id}:${n}`)() > base * health) return null;
 
   const father = fatherId ? state.people[fatherId] : null;
   const seed = `${mother.id}:${fatherId}:${state.arcology.week}`;

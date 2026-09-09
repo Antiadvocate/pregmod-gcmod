@@ -103,7 +103,18 @@ function house(seed: string, n = 6) {
     a.bond.resentment = 4; refresh(a, s.memory[a.id]); endWeek(s);
     check("one week outside the condition does not cool a thread", t.heat >= before && !t.ended, { before, after: t.heat });
     a.bond.resentment = 80; refresh(a, s.memory[a.id]); endWeek(s);
-    check("and it picks up where it left off", t.heat > before, { before, after: t.heat });
+    // Not `heat > before`: sixteen weeks of a condition holding puts a talkers thread on the cap,
+    // and a capped thread cannot climb, so that assertion was asking heat to exceed 100. What
+    // "picks up where it left off" actually means is that the miss is forgotten — the counter is
+    // back to zero, so the next bad week starts the four-week grace over rather than continuing a
+    // count from before the good one.
+    check("and it picks up where it left off", t.heat >= before && !t.misses && !t.ended, { before, after: t.heat, misses: t.misses });
+
+    // The other half of the same contract: the grace is finite. Four consecutive weeks outside
+    // the condition and it does start to cool.
+    const held = t.heat;
+    for (let w = 0; w < 4; w++) { a.bond.resentment = 4; refresh(a, s.memory[a.id]); endWeek(s); }
+    check("but four bad weeks in a row do cool it", t.heat < held, { held, after: t.heat });
   } else check("hysteresis: a thread was open to test", false);
 }
 

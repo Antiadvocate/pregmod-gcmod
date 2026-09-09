@@ -171,6 +171,25 @@ import { practise, skill } from "../src/engine/player.ts";
   const capacities = many.map((p) => p.psyche.capacity_born);
   check("resting points vary", Math.max(...capacities) - Math.min(...capacities) > 3);
   check("everybody arrives with a body described in words", many.every((p) => p.body.appearance_facts.length > 20));
+
+  // THE ONE THAT WOULD HAVE CAUGHT IT. Person ids used to carry `Date.now()`, which meant every
+  // RNG stream keyed on a person — conception, illness, a manager's hand in the till — was keyed
+  // on wall-clock time, and half the suite passed or failed depending on what second it ran in.
+  // Ids being a pure function of the seed is what makes "seed 41822, week 9" a complete bug report.
+  check("the same seed makes the same id", a.id === b.id && a.id !== c.id, { a: a.id, b: b.id, c: c.id });
+  check("and ids do not collide across a household-sized run", new Set(many.map((p) => p.id)).size === many.length);
+
+  const g1 = newGame({ seed: "same-world", starting_slaves: 6 });
+  const g2 = newGame({ seed: "same-world", starting_slaves: 6 });
+  const ids = (g: typeof g1) => Object.keys(g.people).sort().join(",");
+  check("two games from one seed hold the same people", ids(g1) === ids(g2));
+  for (let w = 0; w < 8; w++) { endWeek(g1); endWeek(g2); }
+  const shape = (g: typeof g1) => Object.values(g.people)
+    .sort((x, y) => x.id.localeCompare(y.id))
+    .map((p) => `${p.id}:${Math.round(p.bond.fear)}:${Math.round(p.bond.resentment)}:${p.health.health}:${p.womb.fetuses.length}`)
+    .join("|");
+  check("and eight weeks later they are still the same people", shape(g1) === shape(g2),
+    { a: shape(g1).slice(0, 90), b: shape(g2).slice(0, 90) });
 }
 
 /* ── conception ─────────────────────────────────────────────────────────────────────────────── */
