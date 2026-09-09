@@ -1,7 +1,8 @@
 /** The interface's vocabulary. Everything in Warp is built from these, so a number looks the same
  *  wherever it appears and a bounded value always reads as a meter rather than as a digit you have
  *  to know the range of. */
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 
 export function cx(...xs: (string | false | null | undefined)[]): string {
   return xs.filter(Boolean).join(" ");
@@ -104,8 +105,12 @@ export function Sheet({ open, onClose, title, children, wide }:
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ background: "rgba(0,0,0,.6)" }} onClick={onClose}>
-      <div className={cx("card w-full max-h-[88dvh] overflow-y-auto", wide ? "sm:max-w-3xl" : "sm:max-w-lg")}
-        style={{ borderRadius: "16px 16px 0 0" }} onClick={(e) => e.stopPropagation()}>
+      {/* The safe-area inset matters on every iPhone since the notch: without it the sheet's last
+          control sits under the home indicator and cannot be tapped. */}
+      <div className={cx("card w-full max-h-[86dvh] overflow-y-auto sheet-in", wide ? "sm:max-w-3xl" : "sm:max-w-lg")}
+        style={{ borderRadius: "16px 16px 0 0", paddingBottom: "env(safe-area-inset-bottom)" }}
+        onClick={(e) => e.stopPropagation()}>
+        <div className="grabber sm:hidden" />
         <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 hairline" style={{ background: "var(--ink-1)" }}>
           <h3 className="font-display text-[15px]">{title}</h3>
           <Button kind="ghost" size="sm" onClick={onClose}>close</Button>
@@ -113,5 +118,44 @@ export function Sheet({ open, onClose, title, children, wide }:
         <div className="p-4">{children}</div>
       </div>
     </div>
+  );
+}
+
+/**
+ * A SECTION THAT CLOSES, AND REMEMBERS.
+ *
+ * The screens in this app are one column of cards and on a phone that column never ended — the
+ * player scrolled past four things they were not looking at to reach the one they were. A fold
+ * costs one tap and saves a screenful, and it persists per section id, so the shape a player put
+ * their console into is the shape it is in next time.
+ *
+ * Open by default: a closed-by-default section is a section nobody discovers.
+ */
+export function Fold({ id, title, right, children, defaultOpen = true, count }: {
+  id: string; title: string; right?: ReactNode; children: ReactNode; defaultOpen?: boolean; count?: number;
+}) {
+  const key = `warp-fold-${id}`;
+  const [open, setOpen] = useState(() => {
+    try { const v = localStorage.getItem(key); return v === null ? defaultOpen : v === "1"; }
+    catch { return defaultOpen; }
+  });
+  const toggle = () => {
+    setOpen((o) => {
+      try { localStorage.setItem(key, o ? "0" : "1"); } catch { /* private mode; the fold just will not persist */ }
+      return !o;
+    });
+  };
+  return (
+    <section className="mb-4">
+      <div className="flex items-center gap-2">
+        <button className="foldhead flex-1" aria-expanded={open} onClick={toggle}>
+          {title}
+          {count !== undefined ? <span className="font-mono normal-case tracking-normal">{count}</span> : null}
+          <ChevronDown size={14} className="chev" />
+        </button>
+        {right}
+      </div>
+      {open ? children : null}
+    </section>
   );
 }

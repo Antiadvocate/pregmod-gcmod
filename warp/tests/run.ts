@@ -10,6 +10,7 @@ import "./intimacy.test.ts";
 import "./reversal.test.ts";
 import "./art.test.ts";
 import "./surgery.test.ts";
+import "./city.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);

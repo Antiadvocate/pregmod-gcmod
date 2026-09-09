@@ -193,3 +193,36 @@ input[type="range"]:focus { outline: none; }
 .acc { color: var(--accent); }
 .bad { color: var(--danger); }
 .good { color: var(--good); }
+
+/* ── the bottom sheet, which is the main control surface on a phone ────────────────────────── */
+
+/* A sheet that appears instantly reads as a page change; one that rises reads as a drawer over
+   the thing you were already looking at, which is what it is. 180ms is under the threshold where
+   an animation starts costing the user time. */
+.sheet-in { animation: sheet-rise .18s cubic-bezier(.2,.8,.3,1); }
+@keyframes sheet-rise { from { transform: translateY(14px); opacity: .4 } to { transform: none; opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .sheet-in { animation: none } }
+
+/* The handle. Nobody reads an affordance, but everybody recognises this one. */
+.grabber {
+  width: 34px; height: 4px; border-radius: 2px;
+  background: var(--rule); margin: 8px auto 0;
+}
+
+/* ── collapsible sections ──────────────────────────────────────────────────────────────────
+   The complaint that started this: every screen was one column of cards, forever, and a phone had
+   to scroll past all of it to reach anything. Sections close now, and remember. */
+.foldhead {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 9px 2px; text-align: left;
+  font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim);
+}
+.foldhead:hover { color: var(--text); }
+.foldhead .chev { transition: transform .16s ease; margin-left: auto; }
+.foldhead[aria-expanded="false"] .chev { transform: rotate(-90deg); }
+@media (prefers-reduced-motion: reduce) { .foldhead .chev { transition: none } }
+
+/* Give the scrolling column room past the tab bar on a phone, so the last card is reachable. */
+@media (max-width: 767px) {
+  main > div { padding-bottom: 28px; }
+}

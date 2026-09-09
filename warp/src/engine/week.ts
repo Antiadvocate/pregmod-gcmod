@@ -39,6 +39,7 @@ import { refreshPlayer, practise, skill } from "./player";
 import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf } from "./romance";
 import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
+import { tickCity, cityYield } from "./city";
 
 const alive = (s: SaveState): Person[] => Object.values(s.people).filter((p) => p.status === "owned" || p.status === "indentured");
 
@@ -75,6 +76,7 @@ export function endWeek(s: SaveState): WeekReport {
   lines.push(...runHeadGirl(s));
 
   /* ── 2. the work ────────────────────────────────────────────────────────────────────────── */
+  const schooling = cityYield(s).schooling;
   const dead: Person[] = [];
   for (const p of alive(s)) {
     p.economics.weeks_owned++;
@@ -133,7 +135,11 @@ export function endWeek(s: SaveState): WeekReport {
         if (Math.floor(before / 25) < Math.floor((p.skills[key] as number) / 25)) push(`${p.name} has got noticeably better at ${skill}.`, "good", 3, p.id);
       }
     }
-    if (p.assignment === "classes" || fac?.kind === "schoolroom") p.persona.education = clamp(p.persona.education + 2.5 * aptitude, 0, 100);
+    // The academy is a district, and this is where it is felt: every level in the city makes every
+    // woman in classes learn faster. A yield nobody can feel is a yield that should not exist.
+    if (p.assignment === "classes" || fac?.kind === "schoolroom") {
+      p.persona.education = clamp(p.persona.education + 2.5 * aptitude * (1 + schooling), 0, 100);
+    }
 
     // MANAGEMENT SKILL, for whoever is running something
     if (fac && fac.manager === p.id && facDef?.manager) {
@@ -233,6 +239,12 @@ export function endWeek(s: SaveState): WeekReport {
   const sec = tickSecurity(s);
   lines.push(...sec.lines);
   if (sec.cash) led.entry("security", "what it cost when it went wrong", sec.cash);
+
+  // THE CITY, first among the world passes: what it produces this week is what the arcology then
+  // spends, so it has to settle before the ledger closes.
+  const cityWeek = tickCity(s);
+  lines.push(...cityWeek.lines);
+  if (cityWeek.cash) led.entry("city", "districts and trade", cityWeek.cash);
 
   // The plot chain, which is a society pass of its own: it moves your standing with the trade, it
   // moves the arcology's adoption, and it is where the service fees come from once they are open.

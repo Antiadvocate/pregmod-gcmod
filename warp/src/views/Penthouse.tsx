@@ -7,7 +7,7 @@ import { useState } from "react";
 import { AlertTriangle, ChevronRight, Loader2 } from "lucide-react";
 import type { Route } from "../App";
 import { useGame } from "../lib/game";
-import { Button, Card, Empty, Meter, Money, Section, Stat } from "../lib/ui";
+import { Button, Card, Empty, Fold, Meter, Money, Section, Stat } from "../lib/ui";
 import { endWeek } from "../engine/week";
 import { writeWeekProse } from "../engine/forge";
 import { resolveEvent, EVENT_BY_ID } from "../engine/events";
@@ -202,7 +202,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
       ) : null}
 
       {save.notifications.filter((n) => !n.seen).length ? (
-        <Section title="Since you last looked" right={
+        <Fold id="notices" count={save.notifications.filter((n) => !n.seen).length} title="Since you last looked" right={
           <Button size="sm" kind="ghost" onClick={() => mutate((s) => { for (const n of s.notifications) n.seen = true; })}>mark read</Button>
         }>
           <div className="space-y-1.5">
@@ -216,7 +216,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
               </div>
             ))}
           </div>
-        </Section>
+        </Fold>
       ) : null}
 
       {!save.events.length ? (
@@ -242,7 +242,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
         </Section>
       ) : null}
 
-      <Section title="Who needs looking at" right={<Button size="sm" kind="ghost" onClick={() => go("people")}>all {people.length} <ChevronRight size={13} /></Button>}>
+      <Fold id="flags" count={flags.length} title="Who needs looking at" right={<Button size="sm" kind="ghost" onClick={() => go("people")}>all {people.length} <ChevronRight size={13} /></Button>}>
         {flags.length ? (
           <div className="space-y-2">
             {flags.slice(0, 6).map(({ p, r }) => (
@@ -263,7 +263,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             ))}
           </div>
         ) : <Empty>Nobody is in trouble. That is not the same as nobody having a problem.</Empty>}
-      </Section>
+      </Fold>
 
       <Section title="The week">
         <Card>

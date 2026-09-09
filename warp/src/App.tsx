@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import {
-  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, MoreHorizontal,
+  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, MoreHorizontal, Globe2,
 } from "lucide-react";
 import type { SaveState } from "./engine/types";
 import { GameProvider, useGame } from "./lib/game";
@@ -19,6 +19,7 @@ import Penthouse from "./views/Penthouse";
 import Roster from "./views/Roster";
 import Scene from "./views/Scene";
 import ArcologyView from "./views/Arcology";
+import City from "./views/City";
 import Doctrine from "./views/Doctrine";
 import Market from "./views/Market";
 import Orders from "./views/Orders";
@@ -27,12 +28,13 @@ import SettingsView from "./views/Settings";
 import You from "./views/You";
 import Cheats from "./views/Cheats";
 
-export type Route = "penthouse" | "people" | "scene" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
+export type Route = "penthouse" | "people" | "scene" | "city" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
 
 const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "penthouse", label: "Penthouse", icon: Building2 },
   { id: "people", label: "People", icon: Users },
   { id: "scene", label: "Scene", icon: Play },
+  { id: "city", label: "City", icon: Globe2 },
   { id: "arcology", label: "Arcology", icon: Landmark },
   { id: "doctrine", label: "Doctrine", icon: ScrollText },
   { id: "market", label: "Market", icon: ShoppingBag },
@@ -73,7 +75,7 @@ export default function App() {
 /** On a phone, five destinations fit. The other six lived off the right-hand edge of a bar that
  *  scrolled without saying so, which is the same as not existing — the Cheats screen was shipped
  *  and unreachable on the device it was asked for. */
-const PRIMARY: Route[] = ["penthouse", "people", "scene", "arcology", "market"];
+const PRIMARY: Route[] = ["penthouse", "people", "scene", "city", "market"];
 
 function Shell({ onSwitch }: { onSwitch: () => void }) {
   const { save, rev } = useGame();
@@ -116,6 +118,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
             {route === "penthouse" && <Penthouse go={setRoute} />}
             {route === "people" && <Roster />}
             {route === "scene" && <Scene />}
+            {route === "city" && <City />}
             {route === "arcology" && <ArcologyView />}
             {route === "doctrine" && <Doctrine />}
             {route === "market" && <Market />}

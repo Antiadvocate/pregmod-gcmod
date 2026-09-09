@@ -23,6 +23,7 @@ import { useEffect, useState, useMemo, useRef, type RefObject } from "react";
 import type { Person } from "../engine/types";
 import { ART_BASE, cropFor, layersFor, styleFor, heightScaleFor, type Crop, type Layer } from "../lib/vectorart";
 import { frameAt, jointFor, restingPose, transformFor, STILL, type Joint, type Pose } from "../lib/rig";
+import { subscribeClock, stillWanted } from "../lib/clock";
 
 /** file stem → inner SVG markup, or null when the file is not in the pack. */
 const cache = new Map<string, string | null>();
@@ -53,27 +54,8 @@ async function loadLayer(id: string): Promise<string | null> {
   return out;
 }
 
-/* ── one clock for everybody ───────────────────────────────────────────────────────────────── */
-
-type Ticker = (ms: number) => void;
-const tickers = new Set<Ticker>();
-let running = false;
-
-function pump(ms: number): void {
-  for (const t of tickers) t(ms);
-  if (tickers.size) requestAnimationFrame(pump);
-  else running = false;
-}
-
-function subscribe(t: Ticker): () => void {
-  tickers.add(t);
-  if (!running) { running = true; requestAnimationFrame(pump); }
-  return () => { tickers.delete(t); };
-}
-
-/** Anyone who would rather the page held still gets a page that holds still. */
-const stillWanted = () =>
-  typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* The animation clock lives in lib/clock.ts now, shared with the skyline — see the note there
+ * about why there is exactly one of them. */
 
 let scopeSeq = 0;
 
@@ -119,7 +101,7 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
     };
 
     if (!animate || stillWanted()) { paint(STILL); return; }
-    return subscribe((ms) => paint(frameAt(person, held, ms)));
+    return subscribeClock((ms) => paint(frameAt(person, held, ms)));
   }, [markup, person, held, animate]);
 
   const css = useMemo(() => styleFor(person, scope), [person, scope]);
