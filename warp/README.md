@@ -111,6 +111,40 @@ Penthouse becomes what she wants from you this week.
 Breaking a public promise at betrothed or wife is the single most expensive act in the game. Every
 other woman in the household files it, and their hope drops.
 
+## The simulation tells its own stories
+
+Every event in this game used to be a weighted die roll, and die rolls produce incidents. Incidents
+do not accumulate: the arcade event fires, you pick an option, and by Thursday the game has
+forgotten. Nothing was ever *about* the last six weeks.
+
+**Threads** are the other thing. A thread is not rolled — it is DETECTED, off signals the kernel had
+been producing since the beginning and nothing was reading:
+
+- two women whose resentment has been climbing together, who share a room, and who have warmed to
+  each other while it happened
+- one woman rising while another's hope falls, with cold blood between them
+- a rumour held by most of the household for a month, which has stopped being gossip
+- a body whose `capacity` has drifted from `capacity_born` — the one number in the game that does
+  not come back
+- somebody whose relaxation has been flat for six weeks with no discharge, who has stopped
+  flinching, which everybody keeps reading as progress
+- somebody frightened who has built a complete theory of you out of a state where every neutral
+  face reads as a threat, and who is acting on it daily
+
+Nine of them, and the trick that makes them work is a twelve-week trace of six scalars per person,
+so a detector can ask "has this been getting worse" rather than only "what is this now."
+
+**Three rules keep it emergent rather than scripted.** Nothing is rolled, so two identical saves
+produce identical threads — the variety comes from the sim. Beats are gated on *heat* rather than
+on weeks, so a situation that intensifies fast arrives fast and one that smoulders may never say
+anything. And a thread whose conditions stop holding **lapses** — fix the thing and the story goes
+away, usually without ever telling you it was there, which is what running a household well
+actually feels like.
+
+When a thread is live the narrator is handed the situation and the cast — never the mechanism, since
+a narrator that knows the numbers writes about the numbers — so a scene played while two women have
+been talking for six weeks is a scene that knows it.
+
 ## The story: Supplicationism
 
 The original had a seventy-two week plot chain — a name at week 4, an invasion at 43, a bombing at

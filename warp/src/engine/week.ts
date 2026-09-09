@@ -25,7 +25,7 @@ import { tickPregnancy, tickChild, tickAge, tryConception } from "./pregnancy";
 import { tickBond, refresh, applyTreatment, read } from "./obedience";
 import { clamp, shove, tickWeek, tickEmotions, tickDischarge, addState, wear } from "./psyche";
 import { decayMemory, reflect, remember } from "./memory";
-import { coRegulate, diffuseRumors, tickProximity, startRumor } from "./social";
+import { coRegulate, diffuseRumors, tickProximity, startRumor, gossip } from "./social";
 import { tickSociety } from "./society";
 import { runOrders } from "./rules";
 import { selectEvents } from "./events";
@@ -40,6 +40,8 @@ import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf } from "./romance"
 import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
 import { tickCity, cityYield } from "./city";
+import { tickThreads } from "./threads";
+import { THREAD_BY_KIND } from "../data/threads";
 
 const alive = (s: SaveState): Person[] => Object.values(s.people).filter((p) => p.status === "owned" || p.status === "indentured");
 
@@ -225,9 +227,22 @@ export function endWeek(s: SaveState): WeekReport {
   const pulled = coRegulate(s);
   const flips = pulled.filter((x) => Math.abs(x.pull) > 0.25).length;
   if (flips >= 3) push(`The mood moved through ${flips} of them together this week — whatever is in that room, they are all in it.`, "neutral", 4);
+  // Seed from the week that just happened, then let it spread. Seeding after diffusion would
+  // mean a new rumour is known by exactly one person for a week, which is not how a house works.
+  gossip(s, week);
   diffuseRumors(s);
   for (const rum of s.rumors) {
     if (rum.week === week - 1 && rum.knowers.length > 3) push(`Everybody has heard: ${rum.content}.`, "neutral", 3);
+  }
+
+  // THREADS. Last of the household passes, because a detector has to read the week that just
+  // happened rather than the one before it — and the trace it records is what next week's
+  // detectors will read a trend out of.
+  const threads = tickThreads(s);
+  lines.push(...threads.lines);
+  for (const t of threads.opened) {
+    const def = THREAD_BY_KIND[t.kind];
+    if (def) push(`Something is going on: ${def.blurb}`, "warning", 10);
   }
 
   // Whoever is running this place, if it is not you.

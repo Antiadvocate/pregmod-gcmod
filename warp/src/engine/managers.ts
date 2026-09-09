@@ -12,6 +12,7 @@
  * household where loyalty is decoration.
  */
 import type { Person, ReportLine, SaveState } from "./types";
+import { rng } from "./rng";
 import { FACILITY_BY_ID } from "../data/facilities";
 import { clamp, shove } from "./psyche";
 import { read, applyTreatment } from "./obedience";
@@ -63,7 +64,7 @@ export function runManager(s: SaveState, facilityId: string): ManagerEffect {
       text: `${m.name} is running ${def.name} at ${r.devotion} devotion, which is under what the post needs. The numbers are worse than they should be and it is not an accident.`,
     });
     // She is also skimming.
-    const skim = Math.round(400 + Math.random() * 900);
+    const skim = Math.round(400 + rng(`skim:${s.arcology.week}:${m.id}`)() * 900);
     s.arcology.cash -= skim;
     lines.push({ person: m.id, tone: "bad", weight: 6, text: `¤${skim} has gone missing from ${def.name}'s takings.` });
     return { income: 0.75, training: 0.9, care: -0.2, health: -0.5, lines };

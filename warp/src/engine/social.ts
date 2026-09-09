@@ -13,6 +13,7 @@
  */
 import type { Edge, Person, Rumor, SaveState } from "./types";
 import { clamp } from "./psyche";
+import { rng } from "./rng";
 
 export function edgeKey(a: string, b: string): string { return `${a}>${b}`; }
 
@@ -129,11 +130,53 @@ export function tickProximity(state: SaveState): void {
         if (a.id === b.id) continue;
         const e = ensureEdge(state.edges, a.id, b.id);
         e.weeks_known++;
-        // warmth accrues slowly with shared time, faster if both are settled
+
+        /**
+         * WHAT SHARED TIME ACTUALLY DOES.
+         *
+         * This used to be `0.3 + meanRelaxation * 0.08`, capped at 0.9 a week. Two consequences,
+         * both wrong and both invisible until something tried to read the result:
+         *
+         *   · A household where everybody was suffering produced NEGATIVE warmth. Mean relaxation
+         *     of −5 gave −0.1 a week, so nine months in a brothel under a cruel owner left six
+         *     women who had never met. Shared adversity is the oldest bond there is and the model
+         *     had it backwards.
+         *   · Even at its best it took a year to reach acquaintance, so no relationship in this
+         *     game ever got anywhere. The rivalry, romance and friendship layers the original has
+         *     could not have worked on top of it.
+         *
+         * Now: time together always counts for something, being in the same bad place together
+         * counts for more, and being settled together counts for most. Rivalry is separate and
+         * subtractive — two women competing for the same scarce thing get colder while getting
+         * more familiar, which is a real shape and one the old curve could not make.
+         */
         const both = (a.psyche.relaxation + b.psyche.relaxation) / 2;
-        moveEdge(state.edges, a.id, b.id, { warmth: clamp(0.3 + both * 0.08, -0.6, 0.9) });
-        // attraction is conditioned, not earned — seeded once, then near-static
+        const suffering = Math.min(-a.psyche.relaxation, -b.psyche.relaxation);
+        const foxhole = suffering > 2 ? Math.min(1.1, suffering * 0.22) : 0;
+        const ease = both > 1 ? Math.min(0.9, both * 0.14) : 0;
+        // Familiarity has diminishing returns: the fiftieth week together is worth less than the
+        // fifth, which is why a new arrival can become somebody's closest person in two months.
+        const fade = clamp(1.4 - e.weeks_known / 45, 0.35, 1.4);
+
+        // RIVALRY. Two women near each other on the ladder, both wanting the same scarce thing.
+        const rung = (p: Person) => p.romance?.dominion ?? -100;
+        const rivals = Math.abs(rung(a) - rung(b)) < 25 && Math.max(rung(a), rung(b)) > -60;
+        const spite = rivals ? -0.55 - (a.persona.conscience < 0.4 ? 0.3 : 0) : 0;
+
+        moveEdge(state.edges, a.id, b.id, {
+          // 1.4 a week of simple proximity: familiar in about four months, close in eight. The
+          // first pass at this used 0.55, which is forty weeks to bare acquaintance — still far
+          // too slow for any relationship to form inside a campaign, which is the thing that was
+          // wrong with the original curve in the first place.
+          warmth: clamp((1.4 + foxhole + ease) * fade + spite, -1.4, 3.4),
+        });
+
+        // Attraction is conditioned rather than earned, and is seeded once — but familiarity does
+        // move it, slowly, and only where there was something to move.
         if (e.attraction === 0 && e.weeks_known === 1) e.attraction = seedAttraction(a, b);
+        else if (e.attraction > 12 && e.warmth > 30) {
+          moveEdge(state.edges, a.id, b.id, { attraction: clamp(e.warmth / 220, 0, 0.5) });
+        }
       }
     }
   }
@@ -174,14 +217,32 @@ export function chargeOf(text: string): -1 | 0 | 1 {
   return 0;
 }
 
-export function startRumor(state: SaveState, content: string, opts?: { truth?: Rumor["truth"]; about?: string; from?: string; salience?: number }): Rumor {
+function firstKnowers(state: SaveState, about?: string): string[] {
+  const out = new Set<string>();
+  if (about && state.people[about]) out.add(about);
+  const talkers = Object.values(state.people)
+    .filter((p) => p.status === "owned" || p.status === "indentured")
+    .sort((a, b) => (b.persona.gregariousness ?? 0.5) - (a.persona.gregariousness ?? 0.5));
+  if (talkers[0]) out.add(talkers[0].id);
+  return [...out];
+}
+
+export function startRumor(state: SaveState, content: string, opts?: { truth?: Rumor["truth"]; about?: string; from?: string; salience?: number; charge?: -1 | 0 | 1 }): Rumor {
   const r: Rumor = {
     id: `r${state.arcology.week}-${state.rumors.length}`,
     content,
     truth: opts?.truth ?? "true",
     salience: opts?.salience ?? 5,
-    charge: chargeOf(content),
-    knowers: opts?.from ? [opts.from] : [],
+    charge: opts?.charge ?? chargeOf(content),
+    // A RUMOUR WITH NOBODY IN IT CANNOT SPREAD. `diffuseRumors` only carries a story out of a room
+    // that already contains somebody who knows it, so a rumour seeded with an empty knower list
+    // was inert from the first tick and decayed out three weeks later without ever being heard.
+    // Every household-wide call in this codebase omitted `from`, which is why seventy weeks of
+    // ordinary play produced no gossip at all.
+    //
+    // With no stated source: the person it is about knows it, and so does whoever in the house
+    // talks most. Both are true of real gossip and either is enough to start it moving.
+    knowers: opts?.from ? [opts.from] : firstKnowers(state, opts?.about),
     about: opts?.about,
     week: state.arcology.week,
   };
@@ -190,6 +251,11 @@ export function startRumor(state: SaveState, content: string, opts?: { truth?: R
 }
 
 export function diffuseRumors(state: SaveState): void {
+  // Seeded, not Math.random(). This file documented a deterministic engine and then rolled a live
+  // die in the one pass that decides what a household believes, so no two runs of the same save
+  // produced the same gossip — which also silently broke the rollback ring in state.ts, since a
+  // restored week diverged from the one it replaced.
+  const die = rng(`rumour:${state.arcology.week}`);
   const rooms = new Map<string, Person[]>();
   for (const p of Object.values(state.people)) {
     if (p.status !== "owned") continue;
@@ -211,7 +277,7 @@ export function diffuseRumors(state: SaveState): void {
       for (const p of group) {
         if (r.knowers.includes(p.id)) continue;
         // gregarious people hear things
-        if (Math.random() < rate * (0.5 + p.persona.gregariousness)) {
+        if (die() < rate * (0.5 + p.persona.gregariousness)) {
           r.knowers.push(p.id);
           spread = true;
         }
@@ -221,4 +287,67 @@ export function diffuseRumors(state: SaveState): void {
     if (spread && r.charge !== 0) r.salience += 0.6;   // the story grows in the telling
   }
   state.rumors = state.rumors.filter((r) => r.salience >= 1);
+}
+
+
+/**
+ * WHAT THE HOUSEHOLD TALKS ABOUT THIS WEEK.
+ *
+ * The rumour field is a decent little cellular automaton that was starved to death. Every call to
+ * `startRumor` sat inside an event, and events are rare, so seventy weeks of ordinary play produced
+ * ZERO rumours and the whole diffusion layer — along with everything meant to read it — never ran
+ * once.
+ *
+ * Gossip does not come from events. It comes from Tuesday: who got something, who lost something,
+ * who came back from the clinic different, who has not been seen. This reads the week that just
+ * happened and seeds from the largest actual changes, so the thing the house is talking about is
+ * the thing that actually occurred.
+ */
+export function gossip(state: SaveState, week: number): Rumor[] {
+  const out: Rumor[] = [];
+  const held = Object.values(state.people).filter((p) => p.status === "owned" || p.status === "indentured");
+  if (held.length < 2) return out;
+
+  const seed = (content: string, opts: Parameters<typeof startRumor>[2]) => {
+    // Do not restart something the house is already saying.
+    if (state.rumors.some((r) => r.content === content)) return;
+    out.push(startRumor(state, content, opts));
+  };
+
+  for (const p of held) {
+    const r = p.bond.read;
+    // Somebody is visibly not coping. `prev_relaxation` is a PER-TICK field, not a per-week one,
+    // so the first version of this tested a delta that had already been overwritten five times
+    // before it was read, and never fired. State, not deltas.
+    if (p.psyche.relaxation <= -5) {
+      seed(`something happened to ${p.name} and she will not say what`, { about: p.id, salience: 6, from: p.id, charge: -1 });
+    }
+    // Somebody is doing conspicuously well, which is its own kind of news.
+    if (r.devotion > 40 && p.psyche.relaxation > 2) {
+      seed(`${p.name} has it easier than the rest of us and everybody has noticed`, { about: p.id, salience: 5, charge: -1 });
+    }
+    // Somebody came back changed.
+    if (p.health.recovery_weeks > 0 && p.health.health < -15) {
+      seed(`${p.name} came back from the theatre and is not right`, { about: p.id, salience: 7, charge: -1 });
+    }
+    // Somebody is on the way out.
+    if (r.devotion < -35 && p.bond.resentment > 62) {
+      seed(`${p.name} is going to do something and everybody can see it coming`, { about: p.id, salience: 7, charge: -1 });
+    }
+  }
+
+  // And the house's opinion of the owner, which is what the belief thread is waiting for. Tuned to
+  // the range this engine actually produces: derived devotion sits near zero for most households
+  // and a mean of −25 is close to unreachable.
+  const mean = held.reduce((n, p) => n + p.bond.read.devotion, 0) / held.length;
+  const fear = held.reduce((n, p) => n + p.bond.fear, 0) / held.length;
+  const res = held.reduce((n, p) => n + p.bond.resentment, 0) / held.length;
+  if (res > 45 && week % 5 === 0) {
+    seed(`nothing anybody does in this house makes any difference to how he treats them`, { salience: 8, charge: -1 });
+  } else if (fear > 30 && week % 5 === 2) {
+    seed(`he decides who it is going to be that week before he comes down`, { salience: 8, charge: -1 });
+  } else if (mean > 30 && week % 7 === 0) {
+    seed(`he is not like the others and the ones who came from the others know it`, { salience: 6, charge: 1 });
+  }
+  return out;
 }

@@ -62,7 +62,7 @@ export function tryConception(state: SaveState, mother: Person, fatherId: string
   const fertileWindow = w.cycle_day >= 11 && w.cycle_day <= 17;
   const base = (w.fertility / 100) * (fertileWindow ? 0.35 : 0.04) * clamp(intensity, 0, 6);
   const health = clamp(1 + mother.health.health / 200, 0.5, 1.4);
-  if (Math.random() > base * health) return null;
+  if (rng(`conceive:${state.arcology.week}:${mother.id}`)() > base * health) return null;
 
   const father = fatherId ? state.people[fatherId] : null;
   const seed = `${mother.id}:${fatherId}:${state.arcology.week}`;
@@ -113,7 +113,7 @@ export function tickPregnancy(state: SaveState, p: Person): PregnancyWeek {
   if (w.weeks >= TERM_WEEKS) {
     const risk = clamp(0.06 + (p.health.health < 0 ? 0.15 : 0) + (w.fetuses.length - 1) * 0.06 - (state.arcology.facilities["clinic"]?.level ? 0.06 : 0), 0.01, 0.5);
     for (const f of w.fetuses) {
-      if (Math.random() < risk) { w.miscarriages++; out.notes.push("the birth went badly"); continue; }
+      if (rng(`birth:${state.arcology.week}:${p.id}:${f.id}`)() < risk) { w.miscarriages++; out.notes.push("the birth went badly"); continue; }
       w.births++;
       const child = birth(state, p, f);
       out.born.push(child);

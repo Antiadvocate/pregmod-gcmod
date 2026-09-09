@@ -8,10 +8,12 @@
  */
 import type { Person, SaveState } from "./types";
 import { clamp } from "./psyche";
+import { rng } from "./rng";
 
 export interface HealthWeek { delta: number; notes: string[]; died: boolean }
 
 export function tickHealth(state: SaveState, p: Person, load: { health: number; energy: number }): HealthWeek {
+  const die = rng(`health:${state.arcology.week}:${p.id}`);
   const h = p.health;
   const notes: string[] = [];
   const before = h.health;
@@ -48,9 +50,9 @@ export function tickHealth(state: SaveState, p: Person, load: { health: number; 
   if (h.illness) {
     const care = h.curatives > 0 || p.assignment === "get treatment in the clinic" || p.assignment === "rest in the spa";
     if (care || h.health > 40) { h.illness = Math.max(0, h.illness - 1) as 0 | 1 | 2 | 3 | 4 | 5; if (!h.illness) notes.push("over whatever it was"); }
-    else if (Math.random() < 0.25) { h.illness = Math.min(5, h.illness + 1) as 1 | 2 | 3 | 4 | 5; notes.push("getting sicker, and nobody is treating it"); }
+    else if (die() < 0.25) { h.illness = Math.min(5, h.illness + 1) as 1 | 2 | 3 | 4 | 5; notes.push("getting sicker, and nobody is treating it"); }
     h.health = clamp(h.health - h.illness * 2, -100, ceiling);
-  } else if (h.health < -20 && Math.random() < 0.12) {
+  } else if (h.health < -20 && die() < 0.12) {
     h.illness = 1; notes.push("come down with something");
   }
 

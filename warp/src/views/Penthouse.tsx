@@ -15,6 +15,8 @@ import { generateDynamicEvent, resolveDynamic, dynamicReadiness } from "../engin
 import { grantAsk, refuseAsk, voiceAsk } from "../engine/asks";
 import { theKeeper } from "../engine/romance";
 import { nextEvent as chainEvent, resolveChain, reversalOf, subjectOf, GESTURES, gestureAvailable, doGesture, type Reaction } from "../engine/reversal";
+import { liveThreads, answerThread, describeThread } from "../engine/threads";
+import { THREAD_BY_KIND } from "../data/threads";
 import { SlaveHead } from "./SlaveArt";
 import { read } from "../engine/obedience";
 import { band, wear } from "../engine/psyche";
@@ -34,6 +36,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
   const chain = chainEvent(save);
   const her = subjectOf(save);
   const canGesture = gestureAvailable(save);
+  const threads = liveThreads(save);
+  const waiting = threads.filter((t) => t.pending !== undefined);
 
   const flags = people
     .map((p) => ({ p, r: read(p, save.memory[p.id]) }))
@@ -74,6 +78,60 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             {keeper.name} runs {arc.name}. The week below is her report. What you get is a say, when she asks for one.
           </p>
         </Card>
+      ) : null}
+
+      {/* SITUATIONS FIRST. A thread is the game telling you something it worked out about the last
+          two months, which outranks anything that happened on Tuesday. */}
+      {waiting.length ? (
+        <Section title={waiting.length === 1 ? "Something has been going on" : "Things have been going on"}>
+          <div className="space-y-3">
+            {waiting.map((t) => {
+              const def = THREAD_BY_KIND[t.kind]!;
+              const beat = def.beats[t.pending!];
+              const c = {
+                s: save,
+                who: Object.fromEntries(Object.entries(t.cast).map(([r, id]) => [r, save.people[id]?.name ?? "she"])),
+                weeks: save.arcology.week - t.opened, heat: t.heat, facts: t.facts,
+              };
+              return (
+                <Card key={t.id} className="border-l-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[11px] uppercase tracking-wider warn">{def.name}</span>
+                    <span className="text-[11px] dim">· {c.weeks} weeks</span>
+                  </div>
+                  <div className="text-[13px] mb-2">{beat.title}</div>
+                  <p className="font-prose text-[15px] leading-relaxed whitespace-pre-line mb-3">{beat.text?.(c)}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {beat.options?.map((o) => (
+                      <Button key={o.id} size="sm" title={o.note} onClick={() => mutate((st) => {
+                        setAftermath({ line: answerThread(st, t.id, o.id).line, reactions: [] });
+                      })}>{o.label}</Button>
+                    ))}
+                  </div>
+                  {beat.options?.some((o) => o.note) ? (
+                    <div className="text-[11px] dim mt-2">{beat.options.filter((o) => o.note).map((o) => `${o.label}: ${o.note}`).join(" · ")}</div>
+                  ) : null}
+                </Card>
+              );
+            })}
+          </div>
+        </Section>
+      ) : null}
+
+      {threads.filter((t) => t.pending === undefined && t.heat > 18).length ? (
+        <Fold id="threads" title="Running" count={threads.filter((t) => t.pending === undefined && t.heat > 18).length}>
+          <div className="space-y-1.5">
+            {threads.filter((t) => t.pending === undefined && t.heat > 18).map((t) => {
+              const d = describeThread(save, t);
+              return (
+                <div key={t.id} className="card-2 px-3 py-2">
+                  <div className="text-[12.5px]">{d.name}{d.who.length ? <span className="dim"> · {d.who.join(" and ")}</span> : null}</div>
+                  <div className="text-[11.5px] dim">{d.blurb}</div>
+                </div>
+              );
+            })}
+          </div>
+        </Fold>
       ) : null}
 
       {chain ? (

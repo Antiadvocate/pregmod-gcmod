@@ -743,6 +743,10 @@ export interface SaveState {
   retcons: { text: string; week: number; kind: "veto" | "correction" }[];
   /** World-scale facts, always in context. */
   canon: string[];
+  /** THE THREADS — the situations the simulation has noticed about itself. See engine/threads.ts. */
+  threads?: import("./threads").Thread[];
+  /** Twelve weeks of six scalars per person, so a detector can see a trend rather than a value. */
+  traces?: Record<string, import("./trace").Trace>;
   /** THE CITY — districts, trade routes, and the whole expand/exploit half of the game.
    *  Absent on saves written before it existed; engine/city.ts builds one on demand. */
   city?: import("./city").CityState;

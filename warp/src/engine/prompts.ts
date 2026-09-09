@@ -18,6 +18,7 @@ import { aperture, band, perception, tensionCue, wear } from "./psyche";
 import { read, explain } from "./obedience";
 import { recall } from "./memory";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
+import { threadBrief } from "./threads";
 import { getEdge } from "./social";
 
 export const NARRATOR_SYSTEM = `You are the Narrator of an arcology — a private city-state where slavery is legal, ordinary, and administered. You render one moment at a time, in the second person, addressed to the owner. You do not generate quests. You respond to what the owner does, and you let the people in the room respond as themselves.
@@ -109,6 +110,12 @@ export function digest(s: SaveState, action = ""): string {
   if (s.retcons.length) out.push(`\n## STRUCK — these never happened; never refer to them\n${s.retcons.filter((x) => x.kind !== "correction").map((x) => `· ${x.text}`).join("\n")}`);
   const corrections = s.retcons.filter((x) => x.kind === "correction");
   if (corrections.length) out.push(`\n## STANDING CORRECTIONS (these ARE true and were being got wrong)\n${corrections.map((x) => `· ${x.text}`).join("\n")}`);
+
+  // The live situations. This is what makes a scene played during a thread a scene INSIDE it —
+  // the narrator is given the situation and the cast and never the mechanism, because a narrator
+  // that knows the numbers writes about the numbers.
+  const threads = threadBrief(s);
+  if (threads) out.push(`\n## ${threads}`);
 
   out.push(`\n## THE MOMENT`);
   out.push(`${s.scene.time}. ${s.scene.location}. ${s.scene.weather}.`);
