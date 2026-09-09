@@ -270,6 +270,17 @@ export interface Womb {
   abortions: number;
   /** Who fathered how many. The lineage view reads this. */
   sired_by: Record<string, number>;
+  /**
+   * How many times she has been exposed, ever. Not a stat anybody looks at — it is what makes the
+   * conception roll a ROLL. The seed for that roll is the week and her id, which is stable and
+   * reproducible and, if it were the whole seed, would give every exposure in a week an identical
+   * result: one scene on Tuesday and four more after it would all come out the same way, because
+   * they would all be the same number. Counting exposures moves the stream on by one each time,
+   * so a busy week is genuinely five chances rather than one answer repeated five times.
+   *
+   * Optional because saves written before it existed do not have it; every read defaults to 0.
+   */
+  exposures?: number;
 }
 
 /** What this person is FOR, in the arcology's terms. */
