@@ -1,5 +1,12 @@
 <!-- cSpell:ignore nwjs -->
 
+> **Warp** — a from-scratch rebuild of this game on Weft's engine lives in [`warp/`](warp/).
+> Same features (the arcology, the week, facilities, doctrines, the rules assistant, gestation and
+> genetics, the markets), none of the passage tree, and devotion and trust are *derived* from a
+> nervous system rather than stored on it. It is a separate static app; nothing in it touches the
+> SugarCube build below. See [`warp/README.md`](warp/README.md).
+
+
 # Free Cities - pregmod
 
 Pregmod is a modification of the original [Free Cities](https://freecitiesblog.blogspot.com/) created by FCdev.
