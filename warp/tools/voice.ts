@@ -78,6 +78,13 @@ function corpus(dir: string): Str[] {
         // or (before this line existed, and counted as prose for an embarrassing while) a
         // Tailwind class list.
         if (!/[.!?]$/.test(text)) continue;
+        // A CREED IS SUPPOSED TO BE A MAXIM. "One people, on top, permanently." is propaganda a
+        // fictional arcology prints on its walls, and the whole job of propaganda is to be short,
+        // closed and quotable. Same for a prompt's own ALL-CAPS directives, which are instructions
+        // to a model rather than prose anybody reads. Holding either to this budget would be the
+        // tool being wrong about what it is looking at.
+        if (/^\s*(?:creed|slogan|motto):/.test(ln)) continue;
+        if (/^[A-Z][A-Z ]{4,}:/.test(text)) continue;
         out.push({ file: f.replace(/^src\//, ""), line: i + 1, text });
       }
     });

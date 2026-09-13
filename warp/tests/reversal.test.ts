@@ -66,7 +66,10 @@ function world(seed: string, n = 3) {
   p.psyche.state = "broken";
   const out = reactTo(s, 10, true);
   check("a broken woman agreeing is reported as the failure it is",
-    out.length === 1 && out[0].tone === "bad" && /would have agreed with the opposite/.test(out[0].line), out[0]);
+    // Matched on the idea rather than the sentence: the line has been reworded once already and
+    // the thing under test is that a broken woman's agreement is reported as a failure, not that
+    // it is reported in any particular words.
+    out.length === 1 && out[0].tone === "bad" && /the opposite/.test(out[0].line), out[0]);
 }
 
 /* ── 2. the gates, and the way back in ──────────────────────────────────────────────────────── */

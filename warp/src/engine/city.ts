@@ -315,7 +315,7 @@ export function tickCity(s: SaveState): { lines: ReportLine[]; cash: number } {
 
   const failing = city.districts.filter((d) => d.level && d.condition < 25);
   if (failing.length >= 3) {
-    lines.push({ tone: "bad", weight: 8, text: `${failing.length} blocks are visibly going. You can see it from the residential ring.` });
+    lines.push({ tone: "bad", weight: 8, text: `${failing.length} blocks are visibly going, badly enough that you can see it from the residential ring.` });
   }
 
   // THE YIELDS, into the places they are actually read.
@@ -329,7 +329,7 @@ export function tickCity(s: SaveState): { lines: ReportLine[]; cash: number } {
   const ceiling = 400 + y.housing;
   if (s.arcology.population > ceiling) {
     s.arcology.population = Math.round(s.arcology.population - (s.arcology.population - ceiling) * 0.12);
-    lines.push({ tone: "warning", weight: 7, text: `There is nowhere for people to live. ${Math.round(s.arcology.population).toLocaleString()} against room for ${Math.round(ceiling).toLocaleString()}, and they are leaving.` });
+    lines.push({ tone: "warning", weight: 7, text: `There is nowhere left for people to live, with ${Math.round(s.arcology.population).toLocaleString()} of them against room for ${Math.round(ceiling).toLocaleString()}, so they are leaving.` });
   }
 
   // TRADE. Routes pay, and occasionally do not.
@@ -373,11 +373,11 @@ export function cityProblems(s: SaveState): string[] {
   const city = cityOf(s);
   const out: string[] = [];
   const ceiling = 400 + y.housing;
-  if (s.arcology.population > ceiling * 0.92) out.push(`Housing is nearly full — ${Math.round(s.arcology.population).toLocaleString()} of ${Math.round(ceiling).toLocaleString()}. Build residential or the city stops growing.`);
+  if (s.arcology.population > ceiling * 0.92) out.push(`Housing is nearly full at ${Math.round(s.arcology.population).toLocaleString()} of ${Math.round(ceiling).toLocaleString()}, so build residential or the city stops growing.`);
   if (y.security < 6 && s.arcology.crime > 40) out.push("Crime is eating the outer blocks and there is no civic presence to speak of.");
   if (!y.reach) out.push("No docks, so no trade routes, so the whole world outside the city is closed to you.");
   if (y.arms < 15 && s.arcology.neighbours.some((n) => n.attitude < -40)) out.push("Somebody out there dislikes you and you have nothing they respect.");
   const rotting = city.districts.filter((d) => d.level && d.condition < 35).length;
-  if (rotting) out.push(`${rotting} block${rotting === 1 ? " is" : "s are"} falling apart. Refurbishment is cheap next to rebuilding.`);
+  if (rotting) out.push(`${rotting} block${rotting === 1 ? " is" : "s are"} falling apart, and refurbishment is a great deal cheaper than rebuilding.`);
   return out;
 }

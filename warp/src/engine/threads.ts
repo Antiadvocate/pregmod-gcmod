@@ -214,7 +214,7 @@ const DETECTORS: Detector[] = [
       if (one.some((p) => other.includes(p))) return null;   // not actually two camps
       return {
         cast: { one: worst.a.id, other: worst.b.id },
-        fact: `${one.length + 1} on one side, ${other.length + 1} on the other, and nobody in the middle.`,
+        fact: `There are ${one.length + 1} on one side and ${other.length + 1} on the other, with nobody left in the middle.`,
       };
     },
   },
@@ -470,7 +470,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       const b = P("b");
       if (b) { b.facility = undefined; applyTreatment(b, { kind: "cruelty", size: 3, why: "moved off the rota away from her friend" }, week); }
       cool(45);
-      line = "Different rotas from Monday. They both worked out why before lunch.";
+      line = "Different rotas from Monday, and both of them had worked out why before lunch.";
       break;
     }
     case "talkers:sit": {
@@ -489,12 +489,12 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       if (a) applyTreatment(a, { kind: "kindness", size: 8, why: "given something, in front of the other one" }, week);
       if (b) { b.bond.resentment = clamp(b.bond.resentment + 12, 0, 100); shove(b.psyche, -0.7, { hard: true }); }
       cool(30);
-      line = "One of them got something. The other one watched you decide which.";
+      line = "One of them got something, and the other one stood there and watched you decide which of them it would be.";
       break;
     }
     case "talkers:leave":
       t.heat = clamp(t.heat + 12, 0, 100);
-      line = "Nothing was done. It is still going on and now it is going on with your knowledge.";
+      line = "You did nothing about it, so it is still going on, except that now it is going on with your knowledge.";
       break;
 
     /* the favourite */
@@ -503,7 +503,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       if (q) { applyTreatment(q, { kind: "recognition", size: 12, why: "raised as well, and not quietly" }, week); q.bond.hope = clamp(q.bond.hope + 22, 0, 100); }
       s.arcology.cash -= 6000;
       cool(70); closes = true;
-      line = "Both of them, then. ¤6,000 and the arithmetic stops being about who you prefer.";
+      line = "Both of them, then, at ¤6,000, which stops the whole thing being an argument about which of them you prefer.";
       break;
     }
     case "favourite:explain": {
@@ -512,8 +512,8 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
         const r = read(q, s.memory[q.id]);
         // Whether an explanation lands is not the player's call. A woman who trusts you can hear
         // it; one who does not hears a better-dressed version of the same answer.
-        if (r.trust > 20) { applyTreatment(q, { kind: "recognition", size: 7, why: "told the truth about why" }, week); cool(45); closes = true; line = "She took it. Not happily, but she took it, and she has stopped counting."; }
-        else { q.bond.resentment = clamp(q.bond.resentment + 10, 0, 100); cool(8); line = "She listened to the whole thing and did not believe a word of it."; }
+        if (r.trust > 20) { applyTreatment(q, { kind: "recognition", size: 7, why: "told the truth about why" }, week); cool(45); closes = true; line = "She took it, not happily, but she took it, and she has stopped keeping count of what the other one gets."; }
+        else { q.bond.resentment = clamp(q.bond.resentment + 10, 0, 100); cool(8); line = "She listened to the whole explanation without interrupting once, and she did not believe a word of it."; }
       }
       break;
     }
@@ -575,7 +575,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
     case "belief:deny":
       s.arcology.rep = Math.max(0, s.arcology.rep - 200);
       t.heat = clamp(t.heat + 14, 0, 100);
-      line = "You told all of them it was not true. By Friday two more people had heard it.";
+      line = "You told all of them it was not true, and by Friday two more people had heard it anyway.";
       break;
     case "belief:prove":
       s.arcology.cash -= 14000;
@@ -612,7 +612,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       for (const p of Object.values(s.people)) if (held(p)) { p.facility = undefined; shove(p.psyche, -0.5); }
       for (const f of Object.values(s.arcology.facilities)) f.workers = [];
       cool(75);
-      line = "Every rota broken up and rebuilt. Nobody is where they were, nobody is pleased, and the lines are gone.";
+      line = "You broke every rota up and rebuilt it, so nobody is where they were and nobody is pleased, but the lines are gone.";
       break;
     }
     case "fracture:third":
@@ -708,7 +708,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
         if (m) remember(m, { content: "the week she found out she had been right about him the whole time", week, importance: 9, charge: "sharp", core: true });
       }
       cool(100); closes = true;
-      line = "You were the man in her head. She stopped flinching at the wrong moments, because now she gets them right.";
+      line = "You were the man she had in her head all along, and she has stopped flinching at the wrong moments, because now she knows which moments to flinch at.";
       break;
     }
 
@@ -722,14 +722,14 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       }
       s.arcology.cash -= 4000;
       cool(85); closes = true;
-      line = "She got it. The account is closed and what she has instead is the fact that asking worked.";
+      line = "She got it, so the account is closed, and what she has now instead of the grievance is proof that asking works.";
       break;
     }
     case "debt:part": {
       const her = P("her");
       if (her) { applyTreatment(her, { kind: "kindness", size: 6, why: "given part of what she asked for, and told why" }, week); }
       cool(40);
-      line = "Half of it, and an honest account of why not the rest. She is counting the half.";
+      line = "Half of it, and an honest account of why not the rest, and she is counting the half she got rather than the half she did not.";
       break;
     }
     case "debt:refuse": {

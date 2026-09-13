@@ -296,7 +296,7 @@ export function endWeek(s: SaveState): WeekReport {
     if (week >= loan.due_week) {
       const owed = Math.round(loan.principal * (1 + loan.apr / 4));
       if (arc.cash >= owed) { arc.cash -= owed; arc.loans = arc.loans.filter((l) => l !== loan); push(`Repaid the ${loan.lender}: ${owed}.`, "neutral", 6); }
-      else { problems.push(`The ${loan.lender} wants ${owed} and you do not have it.`); if (loan.lender === "shark") { arc.security = clamp(arc.security - 15, 0, 100); push(`The shark's people came to the residential level. Security is down fifteen.`, "bad", 10); } }
+      else { problems.push(`The ${loan.lender} wants ${owed} and you do not have it.`); if (loan.lender === "shark") { arc.security = clamp(arc.security - 15, 0, 100); push(`The shark's people came up to the residential level, and security is down fifteen after it.`, "bad", 10); } }
     }
   }
 

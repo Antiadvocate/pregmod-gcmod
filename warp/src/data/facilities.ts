@@ -135,7 +135,7 @@ export const FACILITIES: FacilityDef[] = [
   },
   {
     id: "arcade", name: "The Arcade",
-    blurb: "A wall of holes. Cheap, constant, and the fastest way to break somebody.",
+    blurb: "A wall of holes, which is cheap and constant and the fastest way there is to break somebody.",
     look: "a dim corridor of booths, coin slots on the outside, nothing on the inside",
     build_cost: 8000, capacity_per_level: 10, level_cost: 6000, upkeep_per_slot: 40,
     work: "be confined in the arcade", income: "customers",

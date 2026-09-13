@@ -60,7 +60,7 @@ export interface DistrictDef {
 
 export const DISTRICTS: DistrictDef[] = [
   {
-    kind: "spire", name: "The Spire", blurb: "Your arcology. Everything above the ninetieth floor is yours and everyone knows it.",
+    kind: "spire", name: "The Spire", blurb: "Your arcology, where everything above the ninetieth floor is yours and everyone knows it.",
     found: 0, step: 40000, bulk: 1, hue: "#8f7a52", cap: 8,
     yields: { rep: 40, prosperity: 2, cash: 900 },
     household: "Every level adds four beds' worth of room in the facilities below you.",
@@ -84,7 +84,7 @@ export const DISTRICTS: DistrictDef[] = [
     favoured_by: ["cummunism"],
   },
   {
-    kind: "civic", name: "Civic hall", blurb: "Courts, the registry, the watch. The paperwork that makes any of the rest of it real.",
+    kind: "civic", name: "Civic hall", blurb: "Courts, the registry and the watch, which between them are the paperwork that makes the rest of it real.",
     found: 16000, step: 13000, bulk: 0.38, hue: "#7d8578", cap: 5,
     yields: { security: 7, rep: 18, prosperity: 1 },
     favoured_by: ["paternalist", "chattel_religion"],
@@ -158,7 +158,7 @@ export const REGIONS: Region[] = [
   { id: "cape", name: "The Cape", reach: 1, open: 12000, cash: 1400, risk: 0.04,
     note: "Bulk staples and the shipping paper everything else is written on." },
   { id: "delta", name: "The Delta", reach: 1, open: 18000, cash: 900, risk: 0.10, supply: 0.5,
-    note: "Debt bondage, mostly. The paperwork is clean and nobody looks at it twice." },
+    note: "Debt bondage, mostly, where the paperwork is clean enough that nobody looks at it twice." },
   { id: "steppe", name: "The Steppe", reach: 2, open: 26000, cash: 1900, risk: 0.14, supply: 0.35,
     note: "Metals, horses, and women whose families were paid in advance." },
   { id: "archipelago", name: "The Archipelago", reach: 2, open: 31000, cash: 2600, risk: 0.09,

@@ -177,13 +177,13 @@ export function resolveDynamic(s: SaveState, e: PendingEvent, optionId: string):
  *  Surfaced in the UI rather than left as a surprise: a cloud model in the narrator slot produces
  *  refusals and half-written scenes, and the player should be told that before they wonder why. */
 export function dynamicReadiness(s: SaveState): { ready: boolean; local: boolean; note: string } {
-  if (!modelsAvailable()) return { ready: false, local: false, note: "No model configured. The hand-written events still fire; the generated ones need a model." };
+  if (!modelsAvailable()) return { ready: false, local: false, note: "No model configured, so the hand-written events still fire while the generated ones stay off." };
   const local = isLocalModel(s.models.narrator_model);
   return {
     ready: true,
     local,
     note: local
-      ? "Pointed at your own machine. Nothing about what it writes goes anywhere."
+      ? "Pointed at your own machine, so nothing it writes leaves this computer."
       : "Pointed at a hosted model. It will decline or soften a good share of what this game asks for — put a local model in the narrator slot for this part.",
   };
 }

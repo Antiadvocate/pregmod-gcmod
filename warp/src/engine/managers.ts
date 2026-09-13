@@ -113,7 +113,7 @@ export function runManager(s: SaveState, facilityId: string): ManagerEffect {
         moveEdge(s.edges, id, m.id, { warmth: 4, trust: 3 });
         if (w.psyche.state !== "intact" && q > 1) {
           w.psyche.relaxation = clamp(w.psyche.relaxation + 1.2, -10, 10);
-          lines.push({ person: id, tone: "good", weight: 7, text: `${m.name} got ${w.name} to eat, and to sleep. It is the first week that has happened.` });
+          lines.push({ person: id, tone: "good", weight: 7, text: `${m.name} got ${w.name} to eat and to sleep, which is the first week either of those has happened.` });
         }
       }
       break;
@@ -162,7 +162,7 @@ export function runHeadGirl(s: SaveState): ReportLine[] {
   const lines: ReportLine[] = [];
 
   if (r.devotion < 70) {
-    lines.push({ person: hg.id, tone: "warning", weight: 8, text: `${hg.name} is your Head Girl at ${r.devotion} devotion. She is running your household and she is not yours.` });
+    lines.push({ person: hg.id, tone: "warning", weight: 8, text: `${hg.name} is your Head Girl at ${r.devotion} devotion, which means she is running your household without being especially yours.` });
     return lines;
   }
 
@@ -186,7 +186,7 @@ export function runHeadGirl(s: SaveState): ReportLine[] {
       applyTreatment(p, { kind: "coercion", size: 2, why: `${hg.name} made the position clear` }, s.arcology.week);
       shove(p.psyche, -0.3);
       moveEdge(s.edges, p.id, hg.id, { warmth: -5, trust: -3 });
-      lines.push({ person: p.id, tone: "neutral", weight: 4, text: `${hg.name} had a word with ${p.name}. ${p.name} has been very compliant since.` });
+      lines.push({ person: p.id, tone: "neutral", weight: 4, text: `${hg.name} had a word with ${p.name}, and ${p.name} has been very compliant ever since.` });
     }
     p.skills.oral = clamp(p.skills.oral + q, 0, 100);
     p.skills.entertainment = clamp(p.skills.entertainment + q * 0.6, 0, 100);

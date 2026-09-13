@@ -26,6 +26,8 @@ function corpus(dir) {
         const text = raw.replace(/\$\{[^}]*\}/g, "Nadia").trim();
         if (text.split(/\s+/).length < 5) continue;
         if (!/[.!?]$/.test(text)) continue;
+        if (/^\s*(?:creed|slogan|motto):/.test(ln)) continue;
+        if (/^[A-Z][A-Z ]{4,}:/.test(text)) continue;
         out.push({ file: f.replace(/^src\//, ""), line: i + 1, text });
       }
     });

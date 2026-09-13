@@ -77,7 +77,7 @@ export const THREADS: ThreadDef[] = [
     build: 14, cool: 22, roles: ["a", "b"],
     beats: [
       { at: 20, line: (c) => `${c.who.a} and ${c.who.b} stop talking when you come in, and start again about a foot after you have gone past.` },
-      { at: 45, line: (c) => `${c.who.a} and ${c.who.b} have started eating at the far end. Not hiding. Just far enough that you would have to walk over.` },
+      { at: 45, line: (c) => `${c.who.a} and ${c.who.b} have started eating at the far end of the room, not hiding exactly, but far enough that you would have to get up and walk over.` },
       {
         at: 68,
         line: (c) => `${c.who.b} said something to ${c.who.a} in the corridor and both of them looked at you.`,
@@ -109,7 +109,7 @@ ${c.who.a} does the thinking. ${c.who.b} does the deciding, which she would not 
     build: 12, cool: 18, roles: ["risen", "passed"],
     beats: [
       { at: 22, line: (c) => `${c.who.passed} has started doing the thing where she agrees with ${c.who.risen} a half-second too fast.` },
-      { at: 48, line: (c) => `Something of ${c.who.risen}'s went missing this week. It turned up. That is worse.` },
+      { at: 48, line: (c) => `Something of ${c.who.risen}'s went missing this week and then turned up again, which is worse than if it had stayed missing.` },
       {
         at: 70,
         line: (c) => `${c.who.passed} is not managing it any more.`,
@@ -138,7 +138,7 @@ She is not going to do anything to ${c.who.risen}. She is going to stop being us
     build: 11, cool: 9, roles: ["a", "b"],
     beats: [
       { at: 25, line: (c) => `${c.who.a} and ${c.who.b} have worked out how to be in the same room without it looking like anything.` },
-      { at: 52, line: (c) => `The household knows about ${c.who.a} and ${c.who.b}. Nobody has said so.` },
+      { at: 52, line: (c) => `The household knows about ${c.who.a} and ${c.who.b}, though nobody has said so out loud yet.` },
       {
         at: 74,
         line: (c) => `${c.who.a} asked you for something, and it was not for herself.`,
@@ -171,7 +171,7 @@ This is the one thing in the building that happened without you. What you do abo
       { at: 50, line: () => `A woman who arrived three weeks ago repeated it back to you as though it were the weather.` },
       {
         at: 72,
-        line: () => `It is not gossip any more. It is what this household knows about you.`,
+        line: () => `It has stopped being gossip and become the thing this household simply knows about you.`,
         title: "What they know about you",
         text: (c) => `${c.facts[0] ?? "Something got out."}
 
@@ -185,7 +185,7 @@ Everybody in the building believes it. Two of them believe it about things you d
           { id: "hunt", label: "Find out who started it", note: "and everybody watches you look" },
         ],
       },
-      { at: 90, line: () => `It is settled. Nobody in the building will be talked out of it now.` },
+      { at: 90, line: () => `It is settled now, and nobody in the building is going to be talked out of it.` },
     ],
     fallout: () => `The household settled on a version of you and stopped revising it.`,
   },
@@ -214,7 +214,7 @@ The work is getting done. That is the part that will keep you from acting until 
           { id: "watch", label: "Let it run" },
         ],
       },
-      { at: 92, line: () => `Two households. The pretence has been dropped.` },
+      { at: 92, line: () => `There are two households in this building now, and nobody is pretending otherwise.` },
     ],
     fallout: () => `The household split in two and stayed that way.`,
   },
@@ -226,7 +226,7 @@ The work is getting done. That is the part that will keep you from acting until 
     blurb: "Somebody has stopped being in the room she is standing in.",
     build: 15, cool: 26, roles: ["her"],
     beats: [
-      { at: 22, line: (c) => `${c.who.her} has stopped asking for things. Not refused — stopped.` },
+      { at: 22, line: (c) => `${c.who.her} has stopped asking you for things altogether, which is not the same as having been refused.` },
       { at: 48, line: (c) => `${c.who.her} has stopped flinching, which everybody keeps reading as progress.` },
       {
         at: 70,
@@ -253,7 +253,7 @@ This does not get better on its own, and the point where it stops being reversib
   {
     kind: "remodelled",
     name: "She is not who arrived",
-    blurb: "Her resting point has moved. That does not come back.",
+    blurb: "Her resting point has moved, and that is not something that comes back on its own.",
     build: 9, cool: 6, roles: ["her"],
     beats: [
       { at: 30, line: (c) => `${c.who.her} was startled by something this week and got over it in about a second, which she could not do in her first month.` },
