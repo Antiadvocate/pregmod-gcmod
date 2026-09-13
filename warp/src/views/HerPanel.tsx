@@ -62,11 +62,11 @@ export default function HerPanel({ id }: { id: string }) {
           <Meter value={rom.dominion} range={[-100, 100]} label="who is deciding — you ← → her" />
           <div className="text-[11px] dim mt-1">
             {rom.dominion <= -60 ? "You decide everything and she knows it."
-              : rom.dominion < 0 ? "She has opinions. You have not had to hear many of them."
+              : rom.dominion < 0 ? "She has opinions, and so far you have not had to hear many of them."
               : rom.dominion < 40 ? "She says things now, and sometimes you do them."
               : rom.dominion < 70 ? "She moves people around the household and tells you afterwards."
-              : rom.dominion < 85 ? "She is running this. You are being kept informed."
-              : "She decides. You are asked."}
+              : rom.dominion < 85 ? "She is running this, and you are being kept informed about it."
+              : "She decides, and you get asked."}
           </div>
           <div className="flex flex-wrap gap-1.5 mt-2">
             <Chip on={reach.assignments}>assignments</Chip>

@@ -205,7 +205,7 @@ export function endWeek(s: SaveState): WeekReport {
         p.status = "free";
         p.exit_week = week;
         p.exit_note = "indenture expired";
-        push(`${p.name}'s indenture is up. She is a citizen as of Monday.`, "warning", 9, p.id);
+        push(`${p.name}'s indenture is up, and she is a citizen as of Monday morning.`, "warning", 9, p.id);
       }
     }
   }
@@ -305,7 +305,7 @@ export function endWeek(s: SaveState): WeekReport {
     const found = recruitResult(s, recruiter);
     if (found) {
       s.market.offers["recruit"] = [found];
-      push(`${recruiter.name} found somebody. She is waiting in reception.`, "good", 8, recruiter.id);
+      push(`${recruiter.name} found somebody, and she has been waiting in reception since about four.`, "good", 8, recruiter.id);
     }
   }
 
@@ -334,13 +334,13 @@ export function endWeek(s: SaveState): WeekReport {
   const wornOut = alive(s).filter((p) => wear(p.psyche) > 0.7);
   if (wornOut.length) problems.push(`${wornOut.length} have been braced so long their resting point has moved.`);
   const u = unrest(s);
-  if (u > 50) problems.push(`Household unrest is at ${Math.round(u)}. No amount of security touches this number.`);
+  if (u > 50) problems.push(`Household unrest is at ${Math.round(u)}, and no amount of security will move that number, because it is not about security.`);
 
   // You get better at this by doing it: a week of running a household is a week of practice.
   practise(s, "slaving", 0.5 + alive(s).length * 0.05);
   practise(s, "trading", 0.15);
   const keeper = theKeeper(s);
-  if (keeper) push(`${keeper.name} closed the week. This is her report; you are reading it because she let you.`, "warning", 11, keeper.id);
+  if (keeper) push(`${keeper.name} closed the week herself, so what follows is her report, and you are reading it because she passed it along.`, "warning", 11, keeper.id);
   refreshPlayer(s);
 
   const report: WeekReport = {

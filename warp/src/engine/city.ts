@@ -186,7 +186,7 @@ export function raise(s: SaveState, id: string, kind?: DistrictKind): { ok: bool
   return {
     ok: true,
     line: founding
-      ? `${def.name} founded on ${RINGS[d.ring].name}. ¤${price.toLocaleString()}, and there is scaffolding up by Thursday.`
+      ? `${def.name} founded out on ${RINGS[d.ring].name} for ¤${price.toLocaleString()}, and there was scaffolding up by Thursday.`
       : `${def.name} raised to level ${d.level}. ¤${price.toLocaleString()}.`,
   };
 }
@@ -280,13 +280,13 @@ export function annex(s: SaveState, neighbourId: string, how: "buy" | "force"): 
   s.arcology.population += Math.round(n.prosperity * 22);
   s.canon.push(how === "buy"
     ? `${n.name} was bought outright and folded into ${s.arcology.name}.`
-    : `${n.name} was taken. The other arcologies have not forgotten it.`);
+    : `${n.name} was taken by force, and the other arcologies have not forgotten that you did it that way.`);
   startRumor(s, how === "buy" ? `${n.name} belongs to us now` : `he took ${n.name} and did not pretend otherwise`, { salience: 10 });
 
   return {
     ok: true,
     line: how === "buy"
-      ? `${n.name} is yours. Three of its blocks are on your books by Friday and nobody has to be told anything.`
+      ? `${n.name} is yours, and three of its blocks were on your books by Friday without anybody having to be told anything.`
       : `${n.name} is yours. It took a night, it cost you your standing with everyone who watched, and the blocks you took are in a state.`,
   };
 }

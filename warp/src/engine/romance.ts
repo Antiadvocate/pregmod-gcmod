@@ -65,35 +65,35 @@ export interface Rung {
 
 export const RUNGS: Rung[] = [
   {
-    id: "property", name: "Property", what: "She is yours. That is the whole of it.",
-    gate: {}, effect: "Nothing. This is where everybody starts.",
+    id: "property", name: "Property", what: "She is yours, and that is the whole of the arrangement.",
+    gate: {}, effect: "Nothing at all, because this is where everybody starts.",
   },
   {
     id: "favourite", name: "Favourite", what: "You keep coming back to her, and the household has noticed.",
     rite: "notice",
     gate: { devotion: 25, weeks: 3 },
-    effect: "She stops being interchangeable. Small bond gain every week you actually see her; the others notice, and some of them mind.",
+    effect: "She stops being interchangeable, and she gains a little bond every week you actually see her. The others notice that, and some of them mind.",
   },
   {
     id: "kept", name: "Kept", what: "She has a room in the suite and she does not work the floors any more.",
     rite: "move_her_up",
     gate: { devotion: 45, trust: 20, fragility: 0.55, weeks: 6 },
-    effect: "She is off the roster. Her upkeep goes up and she settles considerably.",
+    effect: "She comes off the roster, so her upkeep goes up and she settles considerably.",
   },
   {
     id: "courted", name: "Courted", what: "You are courting her, in front of everybody, like she is somebody who could say no.",
     rite: "court",
     gate: { devotion: 60, trust: 45, fragility: 0.35, bond: 40, hope: 35, weeks: 8, tilt: 0.1 },
-    effect: "The household reads it. Her hope climbs weekly. Doctrines that think she is livestock start costing you standing.",
+    effect: "The household reads it and her hope climbs every week, while any doctrine you hold that thinks she is livestock starts costing you standing.",
   },
   {
     id: "betrothed", name: "Betrothed", what: "You have said it out loud, in public, and it is on the registry.",
     rite: "promise",
     gate: { devotion: 75, trust: 65, fragility: 0.22, bond: 60, hope: 55, weeks: 8, tilt: 0.25 },
-    effect: "A promise on the ledger. Breaking it now is the most expensive thing you can do to a person in this game.",
+    effect: "A promise on the ledger, which means breaking it is now the most expensive thing you can do to anybody in this game.",
   },
   {
-    id: "wife", name: "Wife", what: "Married. Witnessed. The arcology has an opinion and so does every doctrine you hold.",
+    id: "wife", name: "Wife", what: "Married and witnessed, which the arcology has an opinion about, and so does every doctrine you hold.",
     rite: "wedding",
     gate: { devotion: 85, trust: 80, fragility: 0.15, bond: 75, hope: 65, weeks: 10, tilt: 0.35 },
     effect: "She stops being a slave on the registry and becomes your wife on it. She gains a say — dominion starts moving.",
@@ -102,7 +102,7 @@ export const RUNGS: Rung[] = [
     id: "keeper", name: "She has the collar", what: "You did what she asked, and then you kept doing it, and at some point it stopped being a game.",
     rite: "reversal",
     gate: { devotion: 90, trust: 85, fragility: 0.1, bond: 85, dominion: 85, weeks: 12, tilt: 0.4 },
-    effect: "The arcology is hers. The week is reported to her. She decides, and you are asked.",
+    effect: "The arcology is hers, the week gets reported to her rather than to you, and she decides while you get asked.",
   },
 ];
 
@@ -142,7 +142,7 @@ export function nextRung(s: SaveState, p: Person): { rung: Rung; ready: boolean;
       : `what she remembers is only ${tilt.toFixed(2)} good, and this needs ${g.tilt}`);
   }
   if (g.fragility !== undefined && r.fragility > g.fragility) {
-    blocked.push(`${Math.round(r.fragility * 100)}% of her obedience is fear, and this rung allows ${Math.round(g.fragility * 100)}%. She would say yes to anything you asked. That is the problem.`);
+    blocked.push(`${Math.round(r.fragility * 100)}% of her obedience is fear, and this rung allows ${Math.round(g.fragility * 100)}%. She would say yes to anything you asked her, which is exactly why this rung is closed to her.`);
   }
   if (p.age < 18) blocked.push("she is a child");
   if (p.status !== "owned" && p.status !== "indentured" && rom.standing === "property") blocked.push("she is not yours");
@@ -191,7 +191,7 @@ export const RITES: Record<string, Rite> = {
       const mem = s.memory[p.id];
       if (mem) remember(mem, { content: "the day she stopped working the floors and was given a room upstairs", week: s.arcology.week, importance: 9, charge: "bright", core: true });
       startRumor(s, `${p.name} lives upstairs now`, { about: p.id, salience: 6 });
-      return [line(`${p.name} sleeps in the suite. Every other woman in this arcology has done that arithmetic by lunchtime.`, "good", 8, p.id)];
+      return [line(`${p.name} sleeps in the suite now, and every other woman in the arcology had done the arithmetic on that by lunchtime.`, "good", 8, p.id)];
     },
   },
   court: {
@@ -204,7 +204,7 @@ export const RITES: Record<string, Rite> = {
       const mem = s.memory[p.id];
       if (mem) remember(mem, { content: "he courted her in front of the whole arcology, as if she could have refused", week: s.arcology.week, importance: 10, charge: "bright", core: true });
       startRumor(s, `he is courting ${p.name} in public`, { about: p.id, salience: 8 });
-      return [line(`You are courting ${p.name} in public. Every doctrine you hold has now been asked a question.`, "good", 9, p.id)];
+      return [line(`You are courting ${p.name} where people can see, which puts a question to every doctrine you hold.`, "good", 9, p.id)];
     },
   },
   promise: {
@@ -248,7 +248,7 @@ export const RITES: Record<string, Rite> = {
           moveEdge(s.edges, other.id, p.id, { warmth: -20 });
         }
       }
-      out.push(line(`Every woman in the household watched an owner marry a slave. Their hope is up, and two of them cannot look at her.`, "neutral", 8));
+      out.push(line(`Every woman in the household watched an owner marry a slave, so their hope is up across the board, though two of them still cannot look at her.`, "neutral", 8));
       return out;
     },
   },
@@ -347,7 +347,7 @@ export function renounce(s: SaveState, p: Person, why: string): ReportLine[] {
       line(`Every woman in this household watched a promise get taken back, and they have all filed it.`, "bad", 9),
     ];
   }
-  return [line(`${p.name} is back to being property. She has understood the lesson.`, "bad", 8, p.id)];
+  return [line(`${p.name} is back to being property, and she has taken the obvious lesson from how quickly that happened.`, "bad", 8, p.id)];
 }
 
 /* ── DOMINION ─────────────────────────────────────────────────────────────────────────────────
@@ -423,7 +423,7 @@ export function keeperRunsTheWeek(s: SaveState): KeeperWeek {
         target.assignment = "rest in the spa";
         target.facility = "spa";
         applyTreatment(target, { kind: "kindness", size: 3, why: `${her.name} pulled her out` }, s.arcology.week);
-        lines.push(line(`${her.name} took ${target.name} off the floors without asking you. She was right to.`, "good", 6, target.id));
+        lines.push(line(`${her.name} took ${target.name} off the floors without asking you first, and she was right to, which is the annoying part.`, "good", 6, target.id));
       }
     } else if (cold) {
       const worst = household.sort((a, b) => a.bond.read.devotion - b.bond.read.devotion)[0];

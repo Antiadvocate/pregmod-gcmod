@@ -303,13 +303,13 @@ export const SUPPLICATIONISM: Doctrine = {
   id: "supplication",
   noun: "Supplicationism",
   adj: "Supplicationist",
-  creed: "You bought her. She owns you. Both are on the register and neither cancels the other.",
+  creed: "You bought her and she owns you, and both instruments are on the register, where neither one cancels the other out.",
   // It wants women who can carry the thing: grown, educated, and not wrecked. It is indifferent to
   // bodies, which is the part that offends the trade more than any of the rest of it.
   wants: { quality: 0.8, intelligence: 0.7, age: 0.3 },
   excludes: ["degradationist", "supremacist", "subjugationist"],
   rep: 30, cash: -1400, research: 16000,
-  earned: "Not something you announce. It is adopted at the rate the arcology has actually watched you live.",
+  earned: "Not something you announce, because it gets adopted at whatever rate the arcology has actually watched you live.",
   look: "no dais anywhere, seating at one height, and the good rooms given over to people who used to clean them",
   policies: [
     { id: "service_fees", name: "Service arrangements", note: "citizens pay for the privilege of serving; the list is longer than the places", cost: 10000 },

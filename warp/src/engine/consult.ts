@@ -30,12 +30,12 @@ One or two short paragraphs of plain speech, first person. What she says, and wh
 /** How much she will actually give you, in one line for the prompt. */
 function openness(s: SaveState, p: Person): string {
   const r = read(p, s.memory[p.id]);
-  if (p.psyche.state === "broken") return "She is broken. She agrees with whatever she thinks you want and there is nobody behind it.";
-  if (r.trust < -30) return "She is frightened of you. She says the safe thing, and only the safe thing.";
-  if (r.trust < 10) return "She does not trust you. She answers narrowly and gives nothing away that was not asked for.";
+  if (p.psyche.state === "broken") return "She is broken, so she agrees with whatever she thinks you want, and there is nobody behind any of it.";
+  if (r.trust < -30) return "She is frightened of you, so she says the safe thing and stops there.";
+  if (r.trust < 10) return "She does not trust you, so she answers narrowly and gives away nothing that was not asked for.";
   if (r.fragility > 0.6) return "Most of what keeps her civil to you is fear, and it shows: she is agreeing more than she means.";
   if (r.trust > 60) return "She will actually tell you things, including ones that do not flatter her.";
-  return "Ordinary guardedness. She answers the question and not much around it.";
+  return "She is ordinarily guarded, so she answers the question and not much around it.";
 }
 
 export async function askHer(s: SaveState, personId: string, question: string): Promise<{ ok: boolean; says: string }> {

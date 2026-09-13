@@ -68,12 +68,12 @@ export function tickSecurity(s: SaveState): SecurityWeek {
           worst.p.status = "free";
           worst.p.exit_week = arc.week;
           worst.p.exit_note = "escaped";
-          lines.push({ person: worst.p.id, tone: "bad", weight: 10, text: `${worst.p.name} is gone. Nobody in the household is saying anything about it, which is its own kind of answer.` });
+          lines.push({ person: worst.p.id, tone: "bad", weight: 10, text: `${worst.p.name} is gone, and nobody in the household will say a word about it, which is how you know some of them helped.` });
           startRumor(s, `${worst.p.name} got out`, { salience: 9 });
           for (const p of household) if (p.id !== worst.p.id) p.bond.hope = clamp(p.bond.hope + 8, 0, 100);
         }
       } else {
-        lines.push({ person: worst.p.id, tone: "warning", weight: 8, text: `${worst.p.name} refused an instruction in front of four other people. What happens next is not really about her.` });
+        lines.push({ person: worst.p.id, tone: "warning", weight: 8, text: `${worst.p.name} refused an instruction in front of four other people, so whatever you do next is going to be read by all four of them.` });
         for (const p of household) p.bond.hope = clamp(p.bond.hope + 3, 0, 100);
       }
     }
@@ -88,7 +88,7 @@ export function tickSecurity(s: SaveState): SecurityWeek {
         switch (n.scheme.kind) {
           case "embargo":
             arc.prosperity = clamp(arc.prosperity - 12, 0, 200);
-            lines.push({ tone: "bad", weight: 10, text: `${n.name}'s embargo landed. Prosperity down twelve, and your suppliers are somebody else's now.` });
+            lines.push({ tone: "bad", weight: 10, text: `${n.name}'s embargo landed this week. Prosperity is down twelve, and the suppliers you had are somebody else's suppliers now.` });
             break;
           case "influence":
             arc.ownership = clamp(arc.ownership - 4, 0, 100);
@@ -96,11 +96,11 @@ export function tickSecurity(s: SaveState): SecurityWeek {
             break;
           case "cyber":
             cash -= 14000;
-            lines.push({ tone: "bad", weight: 9, text: `${n.name} got into your systems. ¤14,000, and you will not get it back.` });
+            lines.push({ tone: "bad", weight: 9, text: `${n.name} got into your systems and took ¤14,000, and none of it is coming back.` });
             break;
           case "raid": {
             const held = defence > 1.4;
-            if (held) lines.push({ tone: "good", weight: 10, text: `${n.name} sent people in. Your security held them at the freight doors.` });
+            if (held) lines.push({ tone: "good", weight: 10, text: `${n.name} sent people in, and your security held them at the freight doors without much trouble.` });
             else {
               arc.security = clamp(arc.security - 20, 0, 100);
               cash -= 22000;
@@ -128,7 +128,7 @@ export function tickSecurity(s: SaveState): SecurityWeek {
       if (arc.mercenaries.loyalty <= 0) {
         arc.mercenaries.hired = false;
         arc.security = clamp(arc.security - 25, 0, 100);
-        lines.push({ tone: "bad", weight: 10, text: `The company has left, and taken the armoury with them.` });
+        lines.push({ tone: "bad", weight: 10, text: `The company has left, and they took the armoury with them on the way out.` });
       }
     }
   }

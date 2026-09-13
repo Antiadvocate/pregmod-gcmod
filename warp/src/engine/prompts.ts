@@ -87,7 +87,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (edge?.roles.length) lines.push(`ROLES: ${edge.roles.join(", ")}`);
   if (p.persona.texture.length) lines.push(`SMALL TRUE THINGS: ${p.persona.texture.join("; ")}`);
   if (memories.length) lines.push(`REMEMBERS (relevant): ${memories.map((m) => `${m.content} (wk ${m.week})`).join(" | ")}`);
-  if (wear(p.psyche) > 0.5) lines.push(`WORN: ordinary friction has stopped landing on her. A real blow still does.`);
+  if (wear(p.psyche) > 0.5) lines.push(`WORN: ordinary friction has stopped landing on her, though a real blow still lands in full.`);
   if (p.psyche.state !== "intact") lines.push(`STATE: ${p.psyche.state}${p.psyche.break_mode ? ` (${p.psyche.break_mode})` : ""} — render accordingly and do not write her as fine.`);
   return lines.join("\n");
 }
@@ -104,7 +104,7 @@ export function digest(s: SaveState, action = ""): string {
   out.push(`${arc.name}, in ${arc.region}. Week ${arc.week}. Population ${arc.population}, prosperity ${Math.round(arc.prosperity)}, crime ${Math.round(arc.crime)}.`);
   out.push(`You own ${Math.round(arc.ownership)}% of it outright and hold ${arc.sectors.filter((x) => x.owner === "you").length} sectors.`);
   if (doctrines.length) out.push(`DOCTRINE — what your citizens have decided is normal:\n${doctrines.map((d) => `· ${d}`).join("\n")}`);
-  else out.push(`DOCTRINE: none adopted. The arcology has no culture of its own yet and it shows.`);
+  else out.push(`DOCTRINE: none adopted, so the arcology has no culture of its own yet and it shows.`);
 
   if (s.canon.length) out.push(`\n## WORLD FACTS (always true)\n${s.canon.map((c) => `· ${c}`).join("\n")}`);
   if (s.retcons.length) out.push(`\n## STRUCK — these never happened; never refer to them\n${s.retcons.filter((x) => x.kind !== "correction").map((x) => `· ${x.text}`).join("\n")}`);

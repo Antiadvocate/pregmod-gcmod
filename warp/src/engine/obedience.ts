@@ -238,26 +238,26 @@ export function explain(p: Person, mem?: PersonMemory): string[] {
   const b = p.bond;
   const out: string[] = [];
 
-  if (r.fragility > 0.65) out.push(`Most of what holds her here is fear — ${Math.round(r.fragility * 100)}% of her compliance. Stop maintaining it and it is gone in a month.`);
+  if (r.fragility > 0.65) out.push(`Most of what holds her here is fear, about ${Math.round(r.fragility * 100)}% of her compliance, and if you stop maintaining it you will have about a month before it goes.`);
   else if (r.fragility < 0.25 && b.bond > 20) out.push(`She is here on the bond rather than the fear; it would survive you being away.`);
 
   if (b.resentment > 55) out.push(`She has not forgiven ${Math.round(b.resentment)} points' worth of what has been done to her, and it is eating the top off everything else.`);
-  if (b.hope < 12) out.push(`She has stopped expecting anything to improve. Promises are worth nothing to her until one is kept.`);
+  if (b.hope < 12) out.push(`She has stopped expecting anything to improve, so a promise is worth nothing to her until you have actually kept one.`);
   else if (b.hope > 60) out.push(`She believes her situation can get better, which is most of why she is trying.`);
 
   const tilt = memoryTilt(mem);
   if (tilt < -0.35) out.push(`What she actually remembers about being here is mostly bad, and that outweighs this week.`);
   if (tilt > 0.35) out.push(`What she remembers about being here is mostly good, and it is carrying her through worse weeks than this one.`);
 
-  if (p.psyche.state === "broken") out.push(`She is broken. She will comply with anything, and none of the compliance means what it looks like.`);
+  if (p.psyche.state === "broken") out.push(`She is broken, so she will comply with anything you ask, and none of that compliance means what it looks like it means.`);
   else if (p.psyche.state === "fracturing") out.push(`She is coming apart — four straight weeks at the bottom will do it.`);
 
   const w = wear(p.psyche);
-  if (w > 0.55) out.push(`Her resting point has moved ${(p.psyche.capacity_born - p.psyche.capacity).toFixed(1)} below what she arrived with. Ordinary friction stops landing on her; a real blow still lands in full.`);
+  if (w > 0.55) out.push(`Her resting point has moved ${(p.psyche.capacity_born - p.psyche.capacity).toFixed(1)} below what she arrived with, which means ordinary friction has stopped landing on her, though a real blow still lands in full.`);
 
   if (b.weeks_since_kindness > 8) out.push(`Nothing she counts as good has come from you in ${b.weeks_since_kindness} weeks.`);
-  if (r.flight_risk > 0.35) out.push(`Flight risk: ${Math.round(r.flight_risk * 100)}%. She is looking for the door.`);
+  if (r.flight_risk > 0.35) out.push(`Flight risk is ${Math.round(r.flight_risk * 100)}%, which is high enough that she is actively looking for the door.`);
 
-  if (!out.length) out.push(`Nothing unusual is holding her either way. She is doing the work and thinking about something else.`);
+  if (!out.length) out.push(`Nothing unusual is holding her in either direction, so she does the work and thinks about something else while she does it.`);
   return out;
 }

@@ -43,14 +43,14 @@ export interface FetishDef {
 }
 
 export const FETISHES: FetishDef[] = [
-  { id: "none", name: "no particular thing", note: "Nothing in particular gets her. She is not broken; some people simply are not wired to a single thing.", acts: [] },
-  { id: "boobs", name: "boobs", note: "Her tits are the whole event for her. Attention there is worth more than anything else you could do.", acts: ["mammary", "tit worship", "oral"], becomes: "breast growth" },
+  { id: "none", name: "no particular thing", note: "Nothing in particular gets her, which is not the same as being broken, because plenty of people are simply not wired to one thing.", acts: [] },
+  { id: "boobs", name: "boobs", note: "Her tits are the whole event for her, and attention there is worth more to her than anything else you could be doing instead.", acts: ["mammary", "tit worship", "oral"], becomes: "breast growth" },
   { id: "buttslut", name: "buttslut", note: "She wants it in the ass and she has stopped pretending otherwise.", acts: ["anal", "anal toys", "rimming"], becomes: "anal addict" },
   { id: "cumslut", name: "cumslut", note: "She wants to be finished in the mouth, on the face, anywhere she can taste it.", acts: ["oral", "facial", "swallow", "feet"], becomes: "cum addict" },
-  { id: "humiliation", name: "humiliation", note: "Being seen is the point. Being used where people are watching is better than the using.", acts: ["public use", "exposure", "degradation"], becomes: "attention whore" },
+  { id: "humiliation", name: "humiliation", note: "Being seen is the point for her, so being used where people can watch does more than the using does.", acts: ["public use", "exposure", "degradation"], becomes: "attention whore" },
   { id: "submissive", name: "submissive", note: "Being told, being held down, being given no say — that is where she goes quiet and easy.", acts: ["restraint", "discipline", "orders"], becomes: "self hating" },
   { id: "dom", name: "dom", note: "She wants to be the one running it, and she is good at it when she is let.", acts: ["penetrative", "domination", "using another", "feet", "hers"], becomes: "abusive" },
-  { id: "masochist", name: "masochist", note: "It has to hurt to land. Gentleness reads as nothing at all to her.", acts: ["pain", "discipline", "painal"], becomes: "self hating" },
+  { id: "masochist", name: "masochist", note: "It has to hurt before it lands at all, because gentleness barely registers with her as something happening.", acts: ["pain", "discipline", "painal"], becomes: "self hating" },
   { id: "sadist", name: "sadist", note: "She wants somebody else's bad afternoon, and she is entirely honest about it.", acts: ["domination", "punishing another", "pain on another", "feet"], becomes: "malicious" },
   { id: "pregnancy", name: "pregnancy", note: "Being bred, being full, being obviously so in front of people.", acts: ["breeding", "belly worship", "vaginal", "pregnancy"], becomes: "breeder" },
 ];
@@ -74,8 +74,8 @@ export const QUIRKS: QuirkDef[] = [
   { id: "romantic", note: "It only really works for her if it means something, and she needs to hear that it does.", acts: ["kissing", "slow", "sleeping together", "worship"] },
   { id: "perverted", note: "Nothing is off the table and she gets bored of the ordinary faster than you do.", acts: ["group", "public use", "unusual", "feet", "watersports", "nipples"] },
   { id: "caring", note: "She is more interested in getting somebody else there than in getting there.", acts: ["oral", "servicing", "aftercare", "feet"] },
-  { id: "unflinching", note: "Nothing shocks her. Whatever it is, she has already decided it is fine.", acts: ["anything"] },
-  { id: "size queen", note: "Small does not register. She wants to feel it the next day.", acts: ["vaginal", "anal", "toys"] },
+  { id: "unflinching", note: "Nothing shocks her, because whatever it turns out to be, she has generally decided it is fine before you have finished saying it.", acts: ["anything"] },
+  { id: "size queen", note: "Small does not register with her at all, and what she is after is still feeling it the next day.", acts: ["vaginal", "anal", "toys"] },
 ];
 
 export interface FlawDef { id: FlawId; note: string; hates: string[]; /** what it becomes if she is worked past it */ softens_to?: QuirkId }
@@ -85,8 +85,8 @@ export const FLAWS: FlawDef[] = [
   { id: "hates penetration", note: "Anything inside her is a thing she is enduring.", hates: ["vaginal", "anal"], softens_to: "strugglefuck queen" },
   { id: "repressed", note: "She was raised to think all of it is filthy and none of that has gone anywhere.", hates: ["public use", "exposure", "group", "watersports", "feet"], softens_to: "perverted" },
   { id: "idealistic", note: "She still believes sex is supposed to mean something, which makes the arcade a special horror.", hates: ["public use", "group", "degradation", "watersports"], softens_to: "romantic" },
-  { id: "shamefast", note: "She cannot be looked at. Being watched is worse than anything being done.", hates: ["exposure", "public use"], softens_to: "tease" },
-  { id: "apathetic", note: "She is not there for any of it. You could be anyone.", hates: [], softens_to: "caring" },
+  { id: "shamefast", note: "She cannot stand being looked at, and being watched is worse for her than anything that is actually being done.", hates: ["exposure", "public use"], softens_to: "tease" },
+  { id: "apathetic", note: "She is not really there for any of it, and as far as she is concerned you could be anyone.", hates: [], softens_to: "caring" },
   { id: "crude", note: "She says the ugliest possible thing at the worst possible moment and it kills the room.", hates: [], softens_to: "perverted" },
   { id: "judgemental", note: "She has opinions about what you are into and she does not keep them to herself.", hates: ["unusual", "group"], softens_to: "unflinching" },
 ];

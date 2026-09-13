@@ -32,7 +32,7 @@ export interface AssignmentDef {
 }
 
 export const ASSIGNMENTS: AssignmentDef[] = [
-  { id: "rest", label: "Rest", group: "household", blurb: "Nothing. Which is sometimes the whole treatment.",
+  { id: "rest", label: "Rest", group: "household", blurb: "Nothing at all, which is sometimes the entire treatment.",
     base_income: 0, rep: 0, psyche: { relaxation: 0.8, wear: 0.8, health: 3, energy: -40 }, trains: {} },
   { id: "please you", label: "Please you", group: "household", blurb: "Yours, at hand, all week.",
     base_income: 0, rep: 4, psyche: { relaxation: 0.3, wear: 0.2, health: 0, energy: 25 },
@@ -46,7 +46,7 @@ export const ASSIGNMENTS: AssignmentDef[] = [
   { id: "whore", label: "Whore on the streets", group: "public", blurb: "The promenade, without a room to take them to.",
     base_income: 900, rep: 3, psyche: { relaxation: -1.2, wear: -1.4, health: -4, energy: 50 },
     trains: { whoring: 1.8, oral: 1.2, vaginal: 1.2, anal: 0.8 }, demands: ["walk", "speak"] },
-  { id: "public servant", label: "Serve the public", group: "public", blurb: "Free, to any citizen who asks. It buys goodwill.",
+  { id: "public servant", label: "Serve the public", group: "public", blurb: "Free to any citizen who asks, which buys a surprising amount of goodwill.",
     base_income: 0, rep: 14, psyche: { relaxation: -1.0, wear: -1.2, health: -3, energy: 50 },
     trains: { oral: 1.0, vaginal: 1.0, anal: 1.0 }, demands: ["walk"] },
   { id: "classes", label: "Take classes", group: "care", blurb: "Learning, at your expense.",
