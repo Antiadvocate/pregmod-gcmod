@@ -106,8 +106,8 @@ export function generateAsk(s: SaveState, p: Person): Ask | null {
     candidates.push({
       kind: "intimate",
       text: instruction
-        ? `She tells you what she wants tonight, and it is ${ACT_BY_ID[actId]?.name.toLowerCase() ?? "what she is into"}. It is not phrased as a question.`
-        : `She has worked up to asking for something specific: ${ACT_BY_ID[actId]?.name.toLowerCase() ?? "what she is into"}.`,
+        ? `"Tonight I want ${ACT_BY_ID[actId]?.name.toLowerCase() ?? "what she is into"}," she says, and then waits, because she is not asking you and you both know it.`
+        : `She has been working up to this for days. She asks for ${ACT_BY_ID[actId]?.name.toLowerCase() ?? "what she is into"}, specifically, and then tells you twice that it is fine if not.`,
       payload: { kind: "act", value: actId },
       gain: 6, loss: 5,
     });
@@ -115,7 +115,7 @@ export function generateAsk(s: SaveState, p: Person): Ask | null {
   if (p.psyche.arousal > 70 && r.trust > 25) {
     candidates.push({
       kind: "intimate",
-      text: instruction ? `She has been wound up for days and she is done waiting for you to notice.` : `She asks, badly and indirectly, to be got off.`,
+      text: instruction ? `"I have been walking round like this for three days," she says. "You could have said something."` : `She asks badly and sideways, talking about how warm the room is until you work out what she is actually after.`,
       payload: { kind: "act", value: "getoff" },
       gain: 5, loss: 6,
     });
@@ -123,7 +123,7 @@ export function generateAsk(s: SaveState, p: Person): Ask | null {
   if (p.persona.quirk?.id === "romantic" && r.devotion > 40) {
     candidates.push({
       kind: "intimate",
-      text: `She asks to stay the night. Not for anything — to stay.`,
+      text: `"Can I stay," she says. "Not for anything. I just don't want to walk back down tonight."`,
       payload: { kind: "act", value: "sleeping together" },
       gain: 8, loss: 8,
     });
@@ -133,7 +133,7 @@ export function generateAsk(s: SaveState, p: Person): Ask | null {
   if (p.health.energy < 30 || p.health.health < -20) {
     candidates.push({
       kind: "comfort",
-      text: instruction ? `She is taking the week off and is informing you rather than asking.` : `She asks for a week off. She is careful about how she puts it.`,
+      text: instruction ? `"I'm taking the week," she says on her way past, and she does not put a question mark on the end of it.` : `She asks for a week off, and she has clearly rehearsed it, because she gets all the way through without stopping once.`,
       payload: { kind: p.health.health < -30 ? "spa" : "rest" },
       gain: 5, loss: 7,
     });
@@ -141,23 +141,23 @@ export function generateAsk(s: SaveState, p: Person): Ask | null {
   if (p.health.aphrodisiacs > 0 && p.health.addiction > 25) {
     candidates.push({
       kind: "comfort",
-      text: `She wants off the aphrodisiacs. She says she cannot tell any more which parts of it are her.`,
+      text: `"I can't tell which parts of it are me any more," she says, and she wants off the aphrodisiacs, and she has been sitting on this for a while.`,
       payload: { kind: "off_drugs" },
       gain: 7, loss: 9,
     });
   }
   if (p.chastity.vagina || p.chastity.anus) {
-    candidates.push({ kind: "comfort", text: `She asks to be unlocked.`, payload: { kind: "unlock" }, gain: 5, loss: 5 });
+    candidates.push({ kind: "comfort", text: `She asks to be unlocked, plainly, without building up to it first.`, payload: { kind: "unlock" }, gain: 5, loss: 5 });
   }
   if (p.clothes === "no clothing" && r.trust > 20) {
     const want = rng_.pick(NAMED_CLOTHES);
-    candidates.push({ kind: "comfort", text: `She asks for something to wear. She has been specific about it: ${want}.`, payload: { kind: "clothes", value: want }, cash: 1200, gain: 4, loss: 4 });
+    candidates.push({ kind: "comfort", text: `She asks for something to wear, and she has thought about it properly, because what she asks for is ${want} and nothing else.`, payload: { kind: "clothes", value: want }, cash: 1200, gain: 4, loss: 4 });
   }
   if (p.womb.fertility > 40 && !p.womb.sterile) {
     const wantsIt = p.persona.fetishes.some((f) => f.name === "pregnancy" && f.strength > 50);
     candidates.push({
       kind: "personal",
-      text: wantsIt ? `She wants you to stop her contraceptives. She has thought about it and she is not being coy.` : `She asks to be put on contraceptives, and watches your face while she does it.`,
+      text: wantsIt ? `"I want to come off the contraceptives," she says, and she has thought about it long enough that she has an answer ready for every objection you make.` : `She asks to be put on contraceptives, and she watches your face the whole way through, because what you do with your face matters more to her than the answer.`,
       payload: { kind: "contraceptives", value: wantsIt ? "off" : "on" },
       gain: 9, loss: 9,
     });
@@ -172,8 +172,8 @@ export function generateAsk(s: SaveState, p: Person): Ask | null {
     candidates.push({
       kind: "household",
       text: instruction
-        ? `She is taking ${friend.name} off the arcade rota. She mentions it on the way past.`
-        : `She asks — for ${friend.name}, not for herself — that she be taken off what she is on.`,
+        ? `"${friend.name} is coming off the arcade rota," she says on her way past, and does not stop walking to say it.`
+        : `She asks you to take ${friend.name} off what she is on. It takes her a while to get to the point, because she is worried you will think she is asking for herself.`,
       payload: { kind: "spare", target: friend.id },
       gain: 10, loss: 8,
     });
@@ -181,21 +181,21 @@ export function generateAsk(s: SaveState, p: Person): Ask | null {
 
   // ── what she wants from you ──────────────────────────────────────────────────────────────
   if (p.slave_name && p.slave_name !== p.name) {
-    candidates.push({ kind: "personal", text: `She asks to be called ${p.name} again. It is the first thing she has asked you for.`, payload: { kind: "name", value: p.name }, gain: 9, loss: 10 });
+    candidates.push({ kind: "personal", text: `She asks, carefully, whether you would call her ${p.name} again. It is the first thing she has ever asked you for, and she gets most of the way through it before her voice goes.`, payload: { kind: "name", value: p.name }, gain: 9, loss: 10 });
   }
   if (r.devotion > 55 && rom.standing !== "property" && !rom.exclusive) {
     candidates.push({
       kind: "personal",
-      text: instruction ? `She has decided she is the only one you touch, and she says so flatly.` : `She asks whether she is the only one. She already knows the answer; she is asking whether it could be true.`,
+      text: instruction ? `"You don't touch anyone else," she says, flatly, and then goes back to what she was doing, because as far as she is concerned that is settled.` : `She asks whether she is the only one. She knows what the answer is, so what she is really asking is whether it could stop being the answer.`,
       payload: { kind: "exclusive" },
       gain: 12, loss: 12,
     });
   }
   if (p.bond.hope < 25 && r.trust > 20) {
-    candidates.push({ kind: "personal", text: `She asks what happens to her. Not rhetorically — she wants the actual answer.`, payload: { kind: "answer" }, gain: 8, loss: 10 });
+    candidates.push({ kind: "personal", text: `"What happens to me," she says, and she means it as a real question, and she waits long enough to make it awkward.`, payload: { kind: "answer" }, gain: 8, loss: 10 });
   }
   if (reach.purchases && rng_.chance(0.4)) {
-    candidates.push({ kind: "instruction", text: `She wants money spent on something that is not an investment, and she is not justifying it.`, payload: { kind: "money", value: 3000 }, cash: 3000, gain: 5, loss: 8 });
+    candidates.push({ kind: "instruction", text: `She wants money spent on something that will never earn a thing back, and she does not offer you a justification, because she has decided she does not owe you one.`, payload: { kind: "money", value: 3000 }, cash: 3000, gain: 5, loss: 8 });
   }
 
   if (!candidates.length) return null;

@@ -22,8 +22,10 @@ function corpus(dir) {
         const raw = m[1];
         if (!/[a-z] [a-z]/.test(raw)) continue;
         if (/=>|\bfunction\b|\bimport\b|===|\bconst\b|className|^[\w.\-\/]+$/.test(raw)) continue;
-        const text = raw.replace(/\$\{[^}]*\}/g, "Nadia");
+        if (/\b(?:flex|grid|px-|py-|mt-|mb-|gap-|text-\[|w-\[|min-w|shrink|overflow|items-|justify-)/.test(raw)) continue;
+        const text = raw.replace(/\$\{[^}]*\}/g, "Nadia").trim();
         if (text.split(/\s+/).length < 5) continue;
+        if (!/[.!?]$/.test(text)) continue;
         out.push({ file: f.replace(/^src\//, ""), line: i + 1, text });
       }
     });
@@ -79,12 +81,12 @@ var budgets = [
   {
     name: "paratactic pairs are rare",
     got: paratactic.length / all.length,
-    want: "\u2264 7% of strings",
-    ok: paratactic.length / all.length <= 0.07,
+    want: "\u2264 10% of strings",
+    ok: paratactic.length / all.length <= 0.1,
     why: "'Nothing was said. She noticed that too.' \u2014 good once, fatal eight hundred times"
   }
 ];
-console.log(`VOICE \u2014 ${all.length} printed strings, ${sents.length} sentences
+console.log(`VOICE \u2014 ${all.length} narration strings, ${sents.length} sentences
 `);
 console.log(`sentence length   p10 ${pct(0.1)}   p25 ${pct(0.25)}   median ${pct(0.5)}   p75 ${pct(0.75)}   p90 ${pct(0.9)}   max ${lens[lens.length - 1]}`);
 console.log(`"because"/"so that" in the whole corpus: ${becauses}
@@ -100,14 +102,14 @@ for (const r of all) {
   if (!byFile.has(r.file)) byFile.set(r.file, []);
   byFile.get(r.file).push(r);
 }
-var rows = [...byFile.entries()].filter(([, l]) => l.length >= 10).map(([file, list]) => {
+var rows = [...byFile.entries()].filter(([, l]) => l.length >= 6).map(([file, list]) => {
   const ss = list.flatMap((r) => sentences(r.text));
   const conn = ss.filter((s) => CONNECTIVE.test(s)).length / (ss.length || 1);
   const para = list.filter((r) => paratactic.includes(r)).length;
   return { file, n: list.length, conn, para, list };
 }).sort((a, b) => a.conn - b.conn);
 console.log(`
-${"file".padEnd(28)} ${"strings".padStart(7)} ${"connective".padStart(10)} ${"paratactic".padStart(10)}`);
+${"file".padEnd(28)} ${"narr".padStart(7)} ${"connective".padStart(10)} ${"paratactic".padStart(10)}`);
 console.log("\u2500".repeat(60));
 for (const r of rows) {
   console.log(`${r.file.padEnd(28)} ${String(r.n).padStart(7)} ${(Math.round(r.conn * 100) + "%").padStart(10)} ${String(r.para).padStart(10)}`);

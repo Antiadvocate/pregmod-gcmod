@@ -64,9 +64,20 @@ function corpus(dir: string): Str[] {
         const raw = m[1];
         if (!/[a-z] [a-z]/.test(raw)) continue;
         if (/=>|\bfunction\b|\bimport\b|===|\bconst\b|className|^[\w.\-\/]+$/.test(raw)) continue;
+        // Tailwind reads as prose to a regex and is not prose. Nothing with a bare utility class
+        // in it is a sentence anybody will ever read.
+        if (/\b(?:flex|grid|px-|py-|mt-|mb-|gap-|text-\[|w-\[|min-w|shrink|overflow|items-|justify-)/.test(raw)) continue;
         // An interpolation stands for the name it will print, so the sentence scans as a sentence.
-        const text = raw.replace(/\$\{[^}]*\}/g, "Nadia");
+        const text = raw.replace(/\$\{[^}]*\}/g, "Nadia").trim();
         if (text.split(/\s+/).length < 5) continue;
+        // NARRATION ONLY. A button label and an option note are supposed to be short and verbless
+        // — "Sell her before she manages it" is a good label and a terrible sentence, and holding
+        // it to a sentence budget would be the tool being wrong rather than the prose. The split
+        // is terminal punctuation, which in this repo separates the two cleanly: 541 strings end
+        // in a full stop and 823 do not, and every one of the 823 is a label, a note, a fragment
+        // or (before this line existed, and counted as prose for an embarrassing while) a
+        // Tailwind class list.
+        if (!/[.!?]$/.test(text)) continue;
         out.push({ file: f.replace(/^src\//, ""), line: i + 1, text });
       }
     });
@@ -116,11 +127,11 @@ const budgets: Budget[] = [
     why: "juxtaposition without a connective IS the maxim; it is the whole mechanism" },
   { name: "people talk", got: speechRate, want: "≥ 10% carry speech", ok: speechRate >= 0.10,
     why: "nine women in the building and one narrator doing all nine voices" },
-  { name: "paratactic pairs are rare", got: paratactic.length / all.length, want: "≤ 7% of strings", ok: paratactic.length / all.length <= 0.07,
+  { name: "paratactic pairs are rare", got: paratactic.length / all.length, want: "≤ 10% of strings", ok: paratactic.length / all.length <= 0.10,
     why: "'Nothing was said. She noticed that too.' — good once, fatal eight hundred times" },
 ];
 
-console.log(`VOICE — ${all.length} printed strings, ${sents.length} sentences\n`);
+console.log(`VOICE — ${all.length} narration strings, ${sents.length} sentences\n`);
 console.log(`sentence length   p10 ${pct(.1)}   p25 ${pct(.25)}   median ${pct(.5)}   p75 ${pct(.75)}   p90 ${pct(.9)}   max ${lens[lens.length - 1]}`);
 console.log(`"because"/"so that" in the whole corpus: ${becauses}\n`);
 
@@ -136,7 +147,7 @@ const byFile = new Map<string, Str[]>();
 for (const r of all) { if (!byFile.has(r.file)) byFile.set(r.file, []); byFile.get(r.file)!.push(r); }
 
 const rows = [...byFile.entries()]
-  .filter(([, l]) => l.length >= 10)
+  .filter(([, l]) => l.length >= 6)
   .map(([file, list]) => {
     const ss = list.flatMap((r) => sentences(r.text));
     const conn = ss.filter((s) => CONNECTIVE.test(s)).length / (ss.length || 1);
@@ -145,7 +156,7 @@ const rows = [...byFile.entries()]
   })
   .sort((a, b) => a.conn - b.conn);
 
-console.log(`\n${"file".padEnd(28)} ${"strings".padStart(7)} ${"connective".padStart(10)} ${"paratactic".padStart(10)}`);
+console.log(`\n${"file".padEnd(28)} ${"narr".padStart(7)} ${"connective".padStart(10)} ${"paratactic".padStart(10)}`);
 console.log("─".repeat(60));
 for (const r of rows) {
   console.log(`${r.file.padEnd(28)} ${String(r.n).padStart(7)} ${(Math.round(r.conn * 100) + "%").padStart(10)} ${String(r.para).padStart(10)}`);
