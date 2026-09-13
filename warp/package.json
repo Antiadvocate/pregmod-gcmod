@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
+    "voice": "esbuild tools/voice.ts --bundle --platform=node --format=esm --outfile=.voice.mjs --log-level=warning && node .voice.mjs",
     "balance": "esbuild tools/balance.ts --bundle --platform=node --format=esm --outfile=.balance.mjs --log-level=warning && node .balance.mjs",
     "test": "esbuild tests/run.ts --bundle --platform=node --format=esm --outfile=.test-bundle.mjs --log-level=warning && node .test-bundle.mjs"
   },
