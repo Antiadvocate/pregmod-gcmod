@@ -794,7 +794,7 @@ export interface SaveState {
   telemetry: { turn: number; ms: number; tokens_in: number; tokens_out: number; cost: number; ts: number }[];
   /** The last thing the tic detector, the maxim detector and friends caught, quoted back at the
    *  narrator next turn. Weft's single most effective correction channel. */
-  corrections: { leak?: string; maxim?: string; echo?: string; reprint?: string };
+  corrections: { leak?: string; filler?: string; maxim?: string; echo?: string; reprint?: string };
 }
 
 export interface Player {

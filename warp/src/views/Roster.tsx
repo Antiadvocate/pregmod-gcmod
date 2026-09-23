@@ -116,7 +116,7 @@ function AskHer({ id }: { id: string }) {
 
   return (
     <Card>
-      <div className="text-[11px] uppercase tracking-wider dim mb-2">ask her something · leaves no trace</div>
+      <div className="text-[11px] uppercase tracking-wider dim mb-2">ask her a question in private (doesn't affect anything)</div>
       <div className="flex gap-2">
         <input value={q} placeholder={`ask ${p.name} anything`} onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") void ask(); }} />
@@ -170,7 +170,7 @@ function RosterCard({ p, onOpen, onWith }: { p: Person; onOpen: () => void; onWi
       </div>
       {r.fragility > 0.6 || r.flight_risk > 0.3 ? (
         <div className="flex gap-1.5 mt-2.5">
-          {r.fragility > 0.6 ? <Chip tone="bad" title="how much of her compliance is bought with fear">fear-held {Math.round(r.fragility * 100)}%</Chip> : null}
+          {r.fragility > 0.6 ? <Chip tone="bad" title="how much of her obedience is fear">fear-held {Math.round(r.fragility * 100)}%</Chip> : null}
           {r.flight_risk > 0.3 ? <Chip tone="bad">flight {Math.round(r.flight_risk * 100)}%</Chip> : null}
         </div>
       ) : null}
@@ -279,7 +279,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
             <Meter value={p.health.health} range={[-100, 100]} label="health" />
           </div>
 
-          <Section title="Why she is like this">
+          <Section title="Background">
             <Card>
               <ul className="space-y-2 text-[13px] leading-relaxed">
                 {explain(p, mem).map((line, i) => <li key={i} className="flex gap-2"><span className="acc">·</span><span>{line}</span></li>)}
@@ -287,7 +287,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
             </Card>
           </Section>
 
-          <Section title="What keeps her here">
+          <Section title="Why she obeys">
             <Card>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Meter value={p.bond.bond} range={[-100, 100]} label="bond (slow, sticky)" />
@@ -299,7 +299,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
             </Card>
           </Section>
 
-          <Section title="Her nervous system">
+          <Section title="Mental state">
             <Card>
               <div className="text-[12.5px] space-y-1.5 mid">
                 <div>Resting point <span className="font-mono hi">{p.psyche.capacity.toFixed(1)}</span> (born {p.psyche.capacity_born.toFixed(1)}) · recovery <span className="font-mono">{p.psyche.recovery.toFixed(2)}</span>/tick</div>
@@ -313,11 +313,11 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
             </Card>
           </Section>
 
-          <Section title="How your doctrine reads her">
+          <Section title="What your future societies think of her">
             <Card>
               {explainFor(save, p).length
                 ? <ul className="text-[12.5px] space-y-1 mid">{explainFor(save, p).map((l, i) => <li key={i}>{l}</li>)}</ul>
-                : <span className="text-[12.5px] dim">No doctrine has an opinion about her yet.</span>}
+                : <span className="text-[12.5px] dim">No future society has an opinion about her yet.</span>}
             </Card>
           </Section>
         </div>
@@ -527,7 +527,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
               <Card><ul className="font-prose text-[14px] space-y-1.5">{p.persona.voice.example_lines.map((l, i) => <li key={i}>&ldquo;{l}&rdquo;</li>)}</ul></Card>
             </Section>
           ) : null}
-          <Section title="What she carries">
+          <Section title="Memories">
             {mem?.episodic.length ? (
               <div className="space-y-1.5">
                 {[...mem.episodic].sort((a, b) => b.week - a.week).slice(0, 14).map((m) => (
@@ -541,7 +541,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
             ) : <Empty>Nothing yet.</Empty>}
           </Section>
           {mem?.beliefs.length ? (
-            <Section title="What she has concluded">
+            <Section title="Beliefs">
               <Card><ul className="font-prose text-[14px] space-y-1.5">{mem.beliefs.map((b, i) => <li key={i}>&ldquo;{b.text}&rdquo; <span className="dim text-[11px] font-sans">({b.strength})</span></li>)}</ul></Card>
             </Section>
           ) : null}
@@ -556,7 +556,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
                   </div>
                 ))}
               </div>
-            ) : <Empty>She has not got to know anybody yet.</Empty>}
+            ) : <Empty>She hasn't got to know anyone yet.</Empty>}
           </Section>
         </div>
       )}

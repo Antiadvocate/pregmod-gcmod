@@ -98,7 +98,7 @@ export default function Market() {
                     ? found[open.id].length
                       ? <ul className="space-y-1">{found[open.id].map((f, i) => <li key={i} className="bad">· {f}</li>)}</ul>
                       : <span className="dim">Turned up nothing.</span>
-                    : <span className="dim">An hour and a doctor, 3% of asking.</span>}
+                    : <span className="dim">A doctor's inspection, for 3% of the price.</span>}
                 </div>
                 {!found[open.id] ? (
                   <Button size="sm" onClick={() => {

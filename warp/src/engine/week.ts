@@ -121,10 +121,10 @@ export function endWeek(s: SaveState): WeekReport {
     if (facDef?.id === "spa" && p.psyche.relaxation > 2) addState(p.psyche, "relief", week);
 
     const emo = tickEmotions(p.psyche, week);
-    if (emo.liberated.length) push(`${p.name} let go of ${emo.liberated[0]} — what is left is ${emo.residue[0]}.`, "good", 4, p.id);
-    if (emo.fed) push(`${p.name} is still telling herself about ${emo.fed}, and it is costing her.`, "bad", 4, p.id);
+    if (emo.liberated.length) push(`${p.name} has come to terms with ${emo.liberated[0]}.`, "good", 4, p.id);
+    if (emo.fed) push(`${p.name} keeps dwelling on ${emo.fed}, and it's wearing her down.`, "bad", 4, p.id);
     const dis = tickDischarge(p.psyche);
-    if (dis.fired) push(`${p.name} finally came apart and then came back — ${dis.released ? `${dis.released} is gone` : "something went"}.`, "good", 7, p.id);
+    if (dis.fired) push(`${p.name} had a breakdown this week, and came out the other side${dis.released ? `; she's no longer ${dis.released}` : ""}.`, "good", 7, p.id);
 
     // TRAINING
     const trains = { ...(facDef?.trains ?? {}), ...(asgDef?.trains ?? {}) };
@@ -137,7 +137,7 @@ export function endWeek(s: SaveState): WeekReport {
       if (typeof p.skills[key] === "number") {
         const before = p.skills[key] as number;
         (p.skills[key] as number) = clamp(before + gain, 0, 100);
-        if (Math.floor(before / 25) < Math.floor((p.skills[key] as number) / 25)) push(`${p.name} has got noticeably better at ${skill}.`, "good", 3, p.id);
+        if (Math.floor(before / 25) < Math.floor((p.skills[key] as number) / 25)) push(`${p.name}'s ${skill} skill has improved.`, "good", 3, p.id);
       }
     }
     // The academy is a district, and this is where it is felt: every level in the city makes every
@@ -186,7 +186,7 @@ export function endWeek(s: SaveState): WeekReport {
       decayMemory(mem, week);
       if (week % 8 === 0) {
         const belief = reflect(mem, week, p.psyche.relaxation < -2);
-        if (belief) push(`${p.name} has come to a conclusion: "${belief}"`, "neutral", 6, p.id);
+        if (belief) push(`${p.name} has decided: "${belief}"`, "neutral", 6, p.id);
       }
     }
 
@@ -207,7 +207,7 @@ export function endWeek(s: SaveState): WeekReport {
         p.status = "free";
         p.exit_week = week;
         p.exit_note = "indenture expired";
-        push(`${p.name}'s indenture is up. She is a citizen as of Monday.`, "warning", 9, p.id);
+        push(`${p.name}'s indenture is over. She's a free citizen as of Monday.`, "warning", 9, p.id);
       }
     }
   }
@@ -228,13 +228,13 @@ export function endWeek(s: SaveState): WeekReport {
   tickProximity(s);
   const pulled = coRegulate(s);
   const flips = pulled.filter((x) => Math.abs(x.pull) > 0.25).length;
-  if (flips >= 3) push(`The mood moved through ${flips} of them together this week — whatever's in that room, they're all feeling it.`, "neutral", 4);
+  if (flips >= 3) push(`The mood of ${flips} of your slaves shifted together this week.`, "neutral", 4);
   // Seed from the week that just happened, then let it spread. Seeding after diffusion would
   // mean a new rumour is known by exactly one person for a week, which is not how a house works.
   gossip(s, week);
   diffuseRumors(s);
   for (const rum of s.rumors) {
-    if (rum.week === week - 1 && rum.knowers.length > 3) push(`Everybody has heard: ${rum.content}.`, "neutral", 3);
+    if (rum.week === week - 1 && rum.knowers.length > 3) push(`Everyone has heard the rumor: ${rum.content}.`, "neutral", 3);
   }
 
   // THREADS. Last of the household passes, because a detector has to read the week that just
@@ -244,7 +244,7 @@ export function endWeek(s: SaveState): WeekReport {
   lines.push(...threads.lines);
   for (const t of threads.opened) {
     const def = THREAD_BY_KIND[t.kind];
-    if (def) push(`Something is going on: ${def.blurb}`, "warning", 10);
+    if (def) push(`${def.blurb}`, "warning", 10);
   }
 
   // Whoever is running this place, if it is not you.
@@ -255,7 +255,7 @@ export function endWeek(s: SaveState): WeekReport {
 
   const sec = tickSecurity(s);
   lines.push(...sec.lines);
-  if (sec.cash) led.entry("security", "what it cost when it went wrong", sec.cash);
+  if (sec.cash) led.entry("security", "security losses", sec.cash);
 
   // THE CITY, first among the world passes: what it produces this week is what the arcology then
   // spends, so it has to settle before the ledger closes.
@@ -300,7 +300,7 @@ export function endWeek(s: SaveState): WeekReport {
     if (week >= loan.due_week) {
       const owed = Math.round(loan.principal * (1 + loan.apr / 4));
       if (arc.cash >= owed) { arc.cash -= owed; arc.loans = arc.loans.filter((l) => l !== loan); push(`Repaid the ${loan.lender}: ${owed}.`, "neutral", 6); }
-      else { problems.push(`The ${loan.lender} wants ${owed} and you do not have it.`); if (loan.lender === "shark") { arc.security = clamp(arc.security - 15, 0, 100); push(`The shark's people came to the residential level. Security is down fifteen.`, "bad", 10); } }
+      else { problems.push(`The ${loan.lender} wants ${owed}, and you can't pay.`); if (loan.lender === "shark") { arc.security = clamp(arc.security - 15, 0, 100); push(`The loan shark's thugs came to the residential level. Security is down fifteen.`, "bad", 10); } }
     }
   }
 
@@ -309,7 +309,7 @@ export function endWeek(s: SaveState): WeekReport {
     const found = recruitResult(s, recruiter);
     if (found) {
       s.market.offers["recruit"] = [found];
-      push(`${recruiter.name} found somebody. She is waiting in reception.`, "good", 8, recruiter.id);
+      push(`${recruiter.name} has recruited a new slave. She's waiting in reception.`, "good", 8, recruiter.id);
     }
   }
 
@@ -335,17 +335,17 @@ export function endWeek(s: SaveState): WeekReport {
   if (arc.cash < 0) problems.push(`You are ${Math.abs(arc.cash)} in the red.`);
   if (arc.food.stores < 100 && arc.food.consumption > 0) problems.push("Food stores are nearly out.");
   const overworked = alive(s).filter((p) => p.health.energy < 12);
-  if (overworked.length) problems.push(`${overworked.length} of them have nothing left in the tank.`);
+  if (overworked.length) problems.push(`${overworked.length} of your slaves are exhausted.`);
   const wornOut = alive(s).filter((p) => wear(p.psyche) > 0.7);
-  if (wornOut.length) problems.push(`${wornOut.length} have been braced so long their resting point has moved.`);
+  if (wornOut.length) problems.push(`${wornOut.length} of your slaves have been stressed for so long it's permanently affected them.`);
   const u = unrest(s);
-  if (u > 50) problems.push(`Household unrest is at ${Math.round(u)}. Guards won't fix it.`);
+  if (u > 50) problems.push(`Household unrest is at ${Math.round(u)}. Guards won't fix it; better treatment will.`);
 
   // You get better at this by doing it: a week of running a household is a week of practice.
   practise(s, "slaving", 0.5 + alive(s).length * 0.05);
   practise(s, "trading", 0.15);
   const keeper = theKeeper(s);
-  if (keeper) push(`${keeper.name} closed the week. This is her report; you are reading it because she let you.`, "warning", 11, keeper.id);
+  if (keeper) push(`${keeper.name} did this week's report. You're reading it because she allows you to.`, "warning", 11, keeper.id);
   refreshPlayer(s);
 
   const report: WeekReport = {
@@ -382,9 +382,9 @@ function sexualExposure(p: Person, s: SaveState): number {
 }
 
 function weekMemory(p: Person, where: string, money: { customers: number; note: string }): string {
-  if (money.customers > 60) return `a week of ${money.customers} of them in ${where}`;
+  if (money.customers > 60) return `${money.customers} customers in ${where}`;
   if (money.customers > 0) return `${money.customers} customers in ${where}`;
-  if (p.assignment === "rest" || p.assignment === "rest in the spa") return `a week where nothing was asked of her, in ${where}`;
+  if (p.assignment === "rest" || p.assignment === "rest in the spa") return `a week of rest in ${where}`;
   return `a week working in ${where}`;
 }
 

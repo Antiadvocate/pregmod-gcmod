@@ -37,12 +37,12 @@ export default function ArcologyView() {
               {arc.mercenaries.hired ? (
                 <>
                   <Meter value={arc.mercenaries.loyalty} label="their loyalty" />
-                  <div className="text-[11.5px] dim mt-1.5">Strength {arc.mercenaries.strength} · <Money n={-arc.mercenaries.upkeep} />/wk. Miss a payment and they say so where people can hear.</div>
+                  <div className="text-[11.5px] dim mt-1.5">Strength {arc.mercenaries.strength} · <Money n={-arc.mercenaries.upkeep} />/wk. Miss a payment and they'll complain openly.</div>
                   <Button size="sm" kind="ghost" className="mt-2" onClick={() => mutate((s) => dismissMercenaries(s))}>dismiss them</Button>
                 </>
               ) : (
                 <>
-                  <div className="text-[11.5px] dim mb-2">¤30,000 up front, ¤3,500 a week. They are the difference between a raid and a break-in.</div>
+                  <div className="text-[11.5px] dim mb-2">¤30,000 up front, ¤3,500 a week. They make raids much less damaging.</div>
                   <Button size="sm" disabled={arc.cash < 30000} onClick={() => mutate((s) => { hireMercenaries(s); })}>hire a company</Button>
                 </>
               )}
@@ -119,7 +119,7 @@ export default function ArcologyView() {
                       })}
                     </div>
                     <div className="text-[11px] dim mt-2">
-                      {def.psyche.relaxation < -1 ? "This place takes something out of the people in it." : def.psyche.relaxation > 0.5 ? "People come out of here better than they went in." : ""}
+                      {def.psyche.relaxation < -1 ? "This facility is hard on the slaves in it." : def.psyche.relaxation > 0.5 ? "This facility is good for the slaves in it." : ""}
                     </div>
                   </>
                 ) : (
@@ -163,7 +163,7 @@ export default function ArcologyView() {
                 }} />
             ))}
           </div>
-          <div className="text-[11.5px] dim">Click a sector you do not own to buy it. Cost scales with condition; owning more raises your rents and your say.</div>
+          <div className="text-[11.5px] dim">Click a sector you do not own to buy it. Cost depends on condition; owning more raises your income and control.</div>
         </Card>
       </Section>
 

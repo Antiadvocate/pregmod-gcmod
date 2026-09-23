@@ -108,7 +108,7 @@ export function tickPregnancy(state: SaveState, p: Person): PregnancyWeek {
   const wanted = p.persona.fetishes.some((f) => f.name === "pregnancy") || p.bond.read.devotion > 50;
   p.psyche.relaxation = clamp(p.psyche.relaxation + (wanted ? 0.25 : -0.35), -10, 10);
 
-  if (w.weeks === 12) out.notes.push("far enough along that it is obvious");
+  if (w.weeks === 12) out.notes.push("now visibly pregnant");
   if (w.weeks === 30) out.notes.push("heavily pregnant and slowing down");
 
   if (w.weeks >= TERM_WEEKS) {
@@ -218,7 +218,7 @@ export function tickChild(state: SaveState, p: Person): string[] {
       p.persona.education = clamp(p.persona.education - 2, 0, 100);
       p.psyche.capacity_born = +clamp(p.psyche.capacity_born - 0.08, -6, 6).toFixed(2);
     }
-    if (p.age === 18) notes.push(`${p.name} is eighteen. ${raised ? "Raised in your nursery, and it shows." : "Raised in the corridors, and that shows too."}`);
+    if (p.age === 18) notes.push(`${p.name} is eighteen. ${raised ? "She was raised in your nursery." : "She grew up without proper care."}`);
   }
   return notes;
 }

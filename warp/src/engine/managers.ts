@@ -61,12 +61,12 @@ export function runManager(s: SaveState, facilityId: string): ManagerEffect {
   if (disloyal) {
     lines.push({
       person: m.id, facility: facilityId, tone: "bad", weight: 8,
-      text: `${m.name} is running ${def.name} at ${r.devotion} devotion, which is under what the post needs. The numbers are worse than they should be and it is not an accident.`,
+      text: `${m.name} isn't devoted enough to manage ${def.name} properly (devotion ${r.devotion}). She's doing a bad job on purpose.`,
     });
     // She is also skimming.
     const skim = Math.round(400 + rng(`skim:${s.arcology.week}:${m.id}`)() * 900);
     s.arcology.cash -= skim;
-    lines.push({ person: m.id, tone: "bad", weight: 6, text: `¤${skim} has gone missing from ${def.name}'s takings.` });
+    lines.push({ person: m.id, tone: "bad", weight: 6, text: `She's also skimming: ¤${skim} is missing from ${def.name}'s takings.` });
     return { income: 0.75, training: 0.9, care: -0.2, health: -0.5, lines };
   }
 
@@ -82,7 +82,7 @@ export function runManager(s: SaveState, facilityId: string): ManagerEffect {
       eff.income = 1 + q * 0.3;
       eff.care = q * 0.25;
       s.arcology.rep += Math.round(q * 30);
-      lines.push({ person: m.id, tone: "good", weight: 3, text: `${m.name} kept the room warm all week; the arcology noticed.` });
+      lines.push({ person: m.id, tone: "good", weight: 3, text: `${m.name} kept the club lively all week, which helped your reputation.` });
       break;
     case "dairy":
       eff.income = 1 + q * 0.4;
@@ -113,7 +113,7 @@ export function runManager(s: SaveState, facilityId: string): ManagerEffect {
         moveEdge(s.edges, id, m.id, { warmth: 4, trust: 3 });
         if (w.psyche.state !== "intact" && q > 1) {
           w.psyche.relaxation = clamp(w.psyche.relaxation + 1.2, -10, 10);
-          lines.push({ person: id, tone: "good", weight: 7, text: `${m.name} got ${w.name} to eat, and to sleep. It is the first week that has happened.` });
+          lines.push({ person: id, tone: "good", weight: 7, text: `${m.name} helped ${w.name} start eating and sleeping properly again.` });
         }
       }
       break;
@@ -148,7 +148,7 @@ export function runManager(s: SaveState, facilityId: string): ManagerEffect {
       break;
   }
 
-  if (q > 1.5) lines.push({ person: m.id, tone: "good", weight: 5, text: `${m.name} is very good at being ${def.manager.title}. It shows in ${def.name}'s numbers.` });
+  if (q > 1.5) lines.push({ person: m.id, tone: "good", weight: 5, text: `${m.name} is an excellent ${def.manager.title}, and ${def.name}'s numbers show it.` });
   return eff;
 }
 
@@ -162,7 +162,7 @@ export function runHeadGirl(s: SaveState): ReportLine[] {
   const lines: ReportLine[] = [];
 
   if (r.devotion < 70) {
-    lines.push({ person: hg.id, tone: "warning", weight: 8, text: `${hg.name} is your Head Girl at ${r.devotion} devotion. She is running your household and she is not yours.` });
+    lines.push({ person: hg.id, tone: "warning", weight: 8, text: `${hg.name} isn't devoted enough to be a good Head Girl (devotion ${r.devotion}). She's running your household, but she isn't loyal to you.` });
     return lines;
   }
 
@@ -181,12 +181,12 @@ export function runHeadGirl(s: SaveState): ReportLine[] {
       applyTreatment(p, { kind: "kindness", size: 2, why: `${hg.name} spent time with her` }, s.arcology.week);
       shove(p.psyche, 0.4);
       moveEdge(s.edges, p.id, hg.id, { warmth: 6, trust: 4 });
-      lines.push({ person: p.id, tone: "good", weight: 4, text: `${hg.name} got somewhere with ${p.name} this week.` });
+      lines.push({ person: p.id, tone: "good", weight: 4, text: `${hg.name} helped ${p.name} settle in this week.` });
     } else {
-      applyTreatment(p, { kind: "coercion", size: 2, why: `${hg.name} made the position clear` }, s.arcology.week);
+      applyTreatment(p, { kind: "coercion", size: 2, why: `${hg.name} put her in her place` }, s.arcology.week);
       shove(p.psyche, -0.3);
       moveEdge(s.edges, p.id, hg.id, { warmth: -5, trust: -3 });
-      lines.push({ person: p.id, tone: "neutral", weight: 4, text: `${hg.name} had a word with ${p.name}. ${p.name} has been very compliant since.` });
+      lines.push({ person: p.id, tone: "neutral", weight: 4, text: `${hg.name} disciplined ${p.name}, and she's been very obedient since.` });
     }
     p.skills.oral = clamp(p.skills.oral + q, 0, 100);
     p.skills.entertainment = clamp(p.skills.entertainment + q * 0.6, 0, 100);

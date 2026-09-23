@@ -10,9 +10,9 @@ import { optionsFor, operate } from "../engine/surgery";
 import type { Procedure } from "../data/surgery";
 
 const GROUPS: { id: Procedure["group"]; label: string; note: string }[] = [
-  { id: "genitals", label: "What she is", note: "A cock, a cunt, both, or neither. None of it grows back on its own." },
-  { id: "fertility", label: "What she can do", note: "Whether any of it comes to anything." },
-  { id: "body", label: "The body", note: "The rest of the work the theatre does." },
+  { id: "genitals", label: "Genitals", note: "Add or remove a cock or pussy. Nothing removed grows back." },
+  { id: "fertility", label: "Fertility", note: "Fertility and sterilization." },
+  { id: "body", label: "The body", note: "Other procedures." },
 ];
 
 export default function Surgery({ id }: { id: string }) {

@@ -41,10 +41,10 @@ function ownedGarments(s: SaveState): Set<string> {
 function reaction(p: Person, g: Garment): string {
   const r = rng(`dress:${p.id}:${g.id}`);
   const reg = registerOf(p);
-  if (g.relaxation <= -0.4) return r.pick([`${p.name} goes still while it's fastened and doesn't look at the mirror.`, `${p.name} tests it once, finds out exactly how little give there is, and stops testing.`]);
-  if (g.relaxation >= 0.2) return reg === "sullen" ? `${p.name} doesn't thank you. She does keep touching the fabric.` : r.pick([`${p.name} smooths it down with both hands and almost smiles.`, `${p.name} turns once in front of the mirror, checking.`]);
-  if (g.appeal >= 1.2) return reg === "eager" || reg === "bratty" ? `${p.name} looks at herself in it and then at you. "Well?"` : `${p.name} looks down at herself like she's working out who it's for.`;
-  if (g.id === "none") return `${p.name} stands there with her arms at her sides, because there's nothing to do with them.`;
+  if (g.relaxation <= -0.4) return r.pick([`${p.name} hates it, and won't look in the mirror.`, `${p.name} tries to move in it, and finds she can barely move at all.`]);
+  if (g.relaxation >= 0.2) return reg === "sullen" ? `${p.name} doesn't thank you, but she obviously likes it.` : r.pick([`${p.name} likes it, and smiles.`, `${p.name} admires herself in the mirror.`]);
+  if (g.appeal >= 1.2) return reg === "eager" || reg === "bratty" ? `${p.name} looks at herself in it and then at you. "Well?"` : `${p.name} is a little embarrassed by how sexy it is.`;
+  if (g.id === "none") return `${p.name} strips naked.`;
   return `${p.name} puts it on without comment.`;
 }
 
@@ -171,7 +171,7 @@ export default function Dressing({ id, onClose }: { id: string; onClose: () => v
             <label className="block mb-1">Length — {p.body.hair_length}cm {p.body.hair_length < 3 ? "(shaved)" : ""}</label>
             <input type="range" min={0} max={Math.max(120, p.body.hair_length)} value={p.body.hair_length}
               onChange={(e) => { const n = Number(e.target.value); if (n <= p.body.hair_length) body({ hair_length: n }); }} />
-            <div className="text-[11px] dim mb-4">You can cut it. Growing it back takes time.</div>
+            <div className="text-[11px] dim mb-4">Cutting is instant. Growing it back takes time.</div>
             <div className="text-[11px] uppercase tracking-wider dim mb-1.5">lipstick</div>
             <div className="flex flex-wrap gap-1.5 mb-4">
               {LIPS.map((l) => (

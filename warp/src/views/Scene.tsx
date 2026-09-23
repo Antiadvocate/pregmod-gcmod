@@ -102,7 +102,7 @@ export default function Scene() {
                 title={`${pl.look} — ${pl.privacy === "public" ? "in front of the arcology" : pl.privacy === "household" ? "the others are here" : "private"}`}
                 onClick={() => mutate((s) => {
                   const { arrivals } = goTo(s, pl.id);
-                  setArrivalNotes(arrivals.map((a) => `${s.people[a.id]?.name}: ${a.shove < 0 ? "walking in here costs her something" : "she is easier in this room"} — ${a.about}`));
+                  setArrivalNotes(arrivals.map((a) => `${s.people[a.id]?.name}: ${a.shove < 0 ? "she's uncomfortable here" : "she's comfortable here"} — ${a.about}`));
                   setPlacesOpen(false);
                 })}>
                 {pl.name}{pl.privacy === "public" ? " · public" : ""}
@@ -126,8 +126,7 @@ export default function Scene() {
             </Chip>
           ))}
           <span className="w-full text-[11px] dim mt-1">
-            Adding somebody marks them as arriving, so the narrator writes them coming in rather than having them
-            already there.
+            Adding someone makes the narrator write them arriving.
           </span>
         </div>
       ) : null}
@@ -135,7 +134,7 @@ export default function Scene() {
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5">
         {!turns.length ? (
           <p className="dim text-[13px] font-prose">
-            Nothing has happened yet. Type what you do. {modelsAvailable() ? "" : "No model is configured, so you will get a stage direction instead of prose — everything else still runs."}
+            Nothing has happened yet. Type what you do. {modelsAvailable() ? "" : "No model is configured, so turns are recorded as plain summaries. Everything else still works."}
           </p>
         ) : null}
         {turns.map((t) => (
@@ -155,7 +154,7 @@ export default function Scene() {
               </span>
               <button className="text-[10.5px] dim hover:bad flex items-center gap-1"
                 onClick={() => {
-                  const why = prompt("Strike this turn. What was never true?", t.summary);
+                  const why = prompt("Retcon this turn. What didn't happen?", t.summary);
                   if (!why) return;
                   const restored = rollback(save);
                   if (restored) {

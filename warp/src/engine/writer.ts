@@ -46,21 +46,21 @@ const LEAD: Record<Register, string[]> = {
   hollow: [
     "{name} is where you left her. She looks up when you come in and waits to be told.",
     "{name} gets up before you've said anything and stands with her hands at her sides.",
-    "{name} is kneeling by the bed already. Nobody told her to; somebody did once, and it stuck.",
+    "{name} is already kneeling by the bed, waiting for orders.",
   ],
   timid: [
     "{name} is on her feet the second the door opens, hands knotted in front of her.",
-    "{name} watches your hands, not your face, all the way across the room.",
+    "{name} flinches when you come in and watches you nervously as you cross the room.",
     "{name} has pulled her knees up on the edge of the bed. She puts her feet down when she sees you.",
   ],
   sullen: [
-    "{name} doesn't get up. She looks at you over her shoulder and goes back to looking at the wall.",
+    "{name} doesn't get up. She glances at you and goes back to ignoring you.",
     "{name} is sitting cross-legged on the floor and makes you wait before she stands.",
     "{name} sighs loud enough that you hear it from the door.",
   ],
   proper: [
     "{name} stands when you come in and smooths her {hair} back from her face.",
-    "{name} sets down what she was reading, squared to the edge of the table, and turns to you.",
+    "{name} puts down what she was reading and turns to face you.",
     "{name} is waiting by the window, posture straight, and nods when you come in.",
   ],
   warm: [
@@ -70,7 +70,7 @@ const LEAD: Record<Register, string[]> = {
   ],
   eager: [
     "{name} is on you before the door has closed, mouth on your neck.",
-    "{name} has been waiting, and it shows: flushed, restless, already half out of what she's wearing.",
+    "{name} has been waiting for you, flushed and horny, already half out of her clothes.",
     "{name} crosses the room fast and presses {tits} against you.",
   ],
   bratty: [
@@ -84,9 +84,9 @@ const LEAD: Record<Register, string[]> = {
     "{name} kicks the door shut behind you with one bare foot.",
   ],
   commanding: [
-    "{name} is in your chair. She doesn't get up, and she doesn't expect you to ask her to.",
+    "{name} is sitting in your chair, and she doesn't get up.",
     "{name} points at the floor in front of her.",
-    "{name} looks up from your desk, where she has been going through your papers, and puts them down.",
+    "{name} is going through the papers on your desk, and doesn't stop when you come in.",
   ],
 };
 
@@ -153,13 +153,13 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   anal: {
     core: [
-      "You work lube into her and push into her ass slowly. She breathes out through her teeth and takes the rest.",
+      "You work lube into her and push into her ass slowly. She grunts, then takes the rest of it.",
       "You put her on her knees, face in the pillow, and fuck her ass with long, steady strokes.",
     ],
     yours: ["You finish deep in her ass.", "You come inside her and hold still until you soften."],
     nocock: {
       core: [
-        "You buckle the strap-on on, work lube into her and push into her ass slowly. She breathes out through her teeth and takes the rest.",
+        "You buckle the strap-on on, work lube into her and push into her ass slowly. She grunts, then takes the rest of it.",
         "You put her on her knees, face in the pillow, and fuck her ass with the strap-on in long, steady strokes.",
       ],
       yours: ["The strap grinds against you with every stroke and you come like that, deep in her ass."],
@@ -167,16 +167,16 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   painal: {
     core: [
-      "You don't bother warming her up. You push into her ass dry and she makes a sound you'll remember.",
+      "You don't bother warming her up. You push into her ass dry and she screams.",
       "You pin her face-down and force your way into her ass. She claws at the sheet.",
     ],
-    yours: ["You finish inside her and pull out. She doesn't move for a while."],
+    yours: ["You finish inside her and pull out. She lies there sobbing."],
     nocock: {
       core: [
-        "You don't bother warming her up. You push the strap-on into her ass dry and she makes a sound you'll remember.",
+        "You don't bother warming her up. You push the strap-on into her ass dry and she screams.",
         "You pin her face-down and force the strap-on into her ass. She claws at the sheet.",
       ],
-      yours: ["You pull out when you're done with her. She doesn't move for a while."],
+      yours: ["You pull out when you're done with her. She lies there sobbing."],
     },
   },
   mammary: {
@@ -200,14 +200,14 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   penetrative: {
     core: [
-      "You lie back and let her take you. {Her} cock is hard and she pushes into you slowly, watching your face for permission, then stops watching.",
+      "You lie back and let her take you. {Her} cock is hard and she pushes into you slowly, asks if you're ready, then fucks you properly.",
       "She fucks you on your back with your knees over her shoulders, and she's better at it than you expected.",
     ],
     yours: ["You come with her still inside you."],
   },
   group: {
     core: [
-      "You bring in a second girl and put them both to work. They have to share you, and they bump heads, and neither of them laughs.",
+      "You bring in a second girl and put them both to work. They have to take turns on you, and keep bumping heads.",
       "You take two of them at once, one riding you while the other's mouth is busy lower down. {name} keeps glancing at the other one.",
     ],
     yours: ["You finish in {name}, and the other girl cleans you off."],
@@ -315,13 +315,13 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   "suck her": {
     core: [
-      "You kneel between her thighs and take {cock} in your mouth. She makes a sound like she's surprised you meant it.",
+      "You kneel between her thighs and take {cock} in your mouth. She moans, surprised that her owner is doing this for her.",
       "You go down on her properly, your hand on {cock}'s base, until her fingers are knotted in your hair.",
     ],
   },
   "stroke her": {
     core: [
-      "You take {cock} in your hand and work her slowly, watching her face change.",
+      "You take {cock} in your hand and jerk her off slowly.",
       "You wrap your fist around her and stroke her off while she lies back with an arm over her eyes.",
     ],
   },
@@ -340,7 +340,7 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   "eat her": {
     core: [
-      "You push her thighs apart and put your mouth on her cunt. She tries to say something and gives up.",
+      "You push her thighs apart and put your mouth on her cunt. She starts to say something and ends up moaning instead.",
       "You eat her slowly, tongue and lips, one arm across her hips to hold her down.",
     ],
   },
@@ -359,7 +359,7 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   "worship feet": {
     core: [
-      "You take her foot in both hands and kiss the arch, then her toes, one at a time. She watches you do it.",
+      "You take her foot in both hands and kiss the arch, then suck her toes one at a time.",
       "You kneel and rub her feet, then put your mouth to them. She props herself on her elbows to see.",
     ],
   },
@@ -378,7 +378,7 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   suckle: {
     core: [
-      "You take her nipple in your mouth and drink. Neither of you says anything. Her hand comes to rest on your head.",
+      "You take her nipple in your mouth and suck. Her milk comes warm and sweet, and she strokes your head while you drink.",
       "You lie against her and nurse. Her milk comes warm and sweet and she strokes your hair.",
     ],
   },
@@ -422,7 +422,7 @@ const ACT_TEXT: Record<string, ActText> = {
   kissing: {
     core: [
       "You tip her chin up and kiss her, slow, and don't take it any further than that.",
-      "You kiss her like you mean it. She holds still for a moment before she kisses back.",
+      "You pull her close and kiss her properly. She's surprised, then kisses you back.",
     ],
   },
   slow: {
@@ -441,8 +441,9 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   "sleeping together": {
     core: [
-      "You pull back the covers and tell her to get in. She does. You sleep. That's all.",
-      "She sleeps in your bed tonight, curled against your back, and nothing is asked of her.",
+      "You tell her she's sleeping in your bed tonight. She strips and climbs in beside you, and you pull her against you under the covers. You don't fuck her; you just go to sleep with your arm around her. In the morning she's still there, warm and pressed against your side.",
+      "At the end of the night you take her to your bed and tell her to get in. She lies down next to you stiffly, expecting to be used. When nothing happens she slowly relaxes, and falls asleep with her head on your shoulder. She wakes before you and stays where she is until you get up.",
+      "You let her sleep in your bed tonight. She curls up against your back under the covers. You talk for a little while in the dark, and then you both fall asleep. You don't touch her except to hold her.",
     ],
   },
   aftercare: {
@@ -453,8 +454,8 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   talk: {
     core: [
-      "You sit down across from her and ask her about herself. Then you listen.",
-      "You pour two drinks and ask her how she's doing, and wait for the real answer.",
+      "You sit down with her and ask about her life before she was enslaved: her family, her job, what she misses. She talks for a while, and you listen.",
+      "You pour two drinks and ask her how she's finding life in the arcology. It takes her a while to give you an honest answer.",
     ],
   },
 };
@@ -469,24 +470,24 @@ const LANDED: Record<ActOutcome["landing"], string[]> = {
     "Her eyes close and her whole body goes loose under you.",
   ],
   willing: [
-    "She goes along with it easily, not transported, just there with you.",
-    "She keeps up, relaxed, and sighs once when you get it right.",
-    "She's comfortable, and it shows in her shoulders.",
+    "She goes along with it happily enough.",
+    "She's relaxed, and sighs happily when you get it right.",
+    "She's comfortable with it, and enjoys it a little.",
   ],
   endured: [
-    "She does it well and her eyes are on the ceiling the whole time.",
-    "She goes through the motions. Nothing about her face moves.",
-    "She counts something under her breath — ceiling tiles, maybe, or seconds.",
+    "She does what's expected, staring at the ceiling the whole time.",
+    "She goes through the motions without any enthusiasm.",
+    "She just waits for it to be over.",
   ],
   hated: [
-    "She does it, and her whole body fights her the entire time. Her jaw is locked when you're done.",
-    "She goes rigid. Her hands are fists. She doesn't cry, quite.",
-    "You feel her flinch every time. By the end she's shaking, and not the good kind.",
+    "She does it, but she hates every second, and it shows.",
+    "She goes rigid and clenches her fists, close to tears.",
+    "She flinches every time. By the end she's shaking with misery.",
   ],
   nothing: [
-    "She's there, technically. Somewhere else in every way that counts.",
-    "She makes the right noises at the right times and none of them are real.",
-    "It doesn't seem to reach her either way.",
+    "She lies there and lets it happen, and doesn't seem to feel much of anything.",
+    "She makes the right noises, but she's obviously faking.",
+    "It doesn't do anything for her either way.",
   ],
 };
 
@@ -494,27 +495,27 @@ const LANDED: Record<ActOutcome["landing"], string[]> = {
 const PAIN_LANDED: Record<ActOutcome["landing"], string[]> = {
   wanted: ["She arches into every stroke and makes a sound that isn't a complaint.", "By halfway she's pushing back for the next one.", "She's flushed and wet by the end of it, and not from crying."],
   willing: ["She takes it without fuss, breathing through each one.", "She holds position. She doesn't make you tell her twice."],
-  endured: ["She takes it with her jaw set and doesn't give you a sound.", "She counts out loud, voice flat, and doesn't lose count."],
-  hated: ["She cries by the end, quietly, and hates that you can see it.", "She flinches at every one and her hands keep trying to cover herself.", "She goes somewhere behind her eyes about halfway through."],
-  nothing: ["She takes it like weather.", "She doesn't react much. It's hard to tell if it's landing."],
+  endured: ["She takes it in silence, refusing to give you the satisfaction.", "She counts out loud, voice flat, and doesn't lose count."],
+  hated: ["She cries by the end, quietly, and hates that you can see it.", "She flinches at every one and her hands keep trying to cover herself.", "About halfway through she stops reacting and just shakes."],
+  nothing: ["She takes it without much reaction.", "She doesn't react much. It's hard to tell whether she feels it."],
 };
 const SHOWN_LANDED: Record<ActOutcome["landing"], string[]> = {
   wanted: ["She's wet by the time the first stranger stops to look, and she doesn't hide it.", "The more of them look, the brighter her eyes get."],
   willing: ["She holds her head up and lets them look.", "She's steadier about it than you expected."],
-  endured: ["She fixes her eyes on a point on the far wall and keeps them there.", "Her face goes smooth and blank, like a shop window."],
+  endured: ["She fixes her eyes on a point on the far wall and keeps them there.", "She keeps her face carefully blank."],
   hated: ["She can't stop her face going red and her eyes going wet. Somebody laughs.", "She tries to hide behind her own hands and you don't let her."],
   nothing: ["She doesn't seem to notice the crowd much either way."],
 };
 
 const TENDER_LANDED: string[] = [
-  "She doesn't know what to do with her hands at first. Then she does.",
-  "Something in her shoulders lets go.",
-  "She goes quiet, and stays quiet, and leans into you a little.",
+  "She's surprised by the affection, and a little suspicious, but she enjoys it.",
+  "She relaxes and leans into you.",
+  "She's grateful, and it shows.",
 ];
 
 const SERVED_LANDED: string[] = [
   "She lies back and lets you. Her hand ends up in your hair.",
-  "She watches you do it with an expression you haven't seen on her before.",
+  "She watches you do it, amazed that her owner is serving her.",
   "Her thighs tremble against your head.",
 ];
 
@@ -525,8 +526,8 @@ function comeLine(p: Person, o: ActOutcome, r: Rng): string {
   const hasCock = !!w.cock;
   if (o.landing === "hated") {
     return fill(r.pick([
-      "Her body goes anyway, which is the worst part of it for her. She turns her face into the sheet.",
-      "She comes, and hates that she does. She won't look at you after.",
+      "Her body betrays her and she comes anyway. She's humiliated, and turns her face into the sheet.",
+      "She comes, and hates herself for it.",
     ]), w);
   }
   const pool = hasCock ? [
@@ -534,17 +535,17 @@ function comeLine(p: Person, o: ActOutcome, r: Rng): string {
     "She comes hard, {cock} pulsing, and her back comes off the bed.",
     "She spills over your hand with a groan, hips bucking.",
   ] : [
-    "Her thighs clamp and she comes with a sound she didn't plan to make, then lies there breathing through her mouth.",
+    "Her thighs clamp around you and she comes with a loud moan, then lies there panting.",
     "She comes, shuddering, fingers digging into your arm, and it goes on longer than she expected.",
     "Her back arches and she comes, soaking the sheet, and laughs once, breathless, at herself.",
-    "She comes with her face screwed up and her mouth open, silent, until she isn't.",
+    "She comes hard, crying out.",
   ];
   return fill(r.pick(pool), w);
 }
 
 function leftLine(p: Person, r: Rng): string {
   return fill(r.pick([
-    "She doesn't come. She's close, and she stays close, hips still moving after you've stopped.",
+    "She doesn't come. She's close, and her hips keep moving after you've stopped.",
     "She's left wound tight and flushed, and she presses her thighs together when you pull away.",
     "She's right on the edge when you stop. She makes a small, frustrated sound.",
   ]), bodyWords(p));
@@ -555,36 +556,36 @@ function leftLine(p: Person, r: Rng): string {
 /** The first time you do a given thing with her. Not a claim about her whole life — about the
  *  two of you. */
 const FIRST: string[] = [
-  "It's the first time you've done this with her. She stops halfway through to find her bearings.",
-  "It's the first time with you. She'll remember it.",
-  "That's new between the two of you. She looks at you afterwards like she's filing it somewhere.",
+  "It's the first time you've done this with her, and she's a little unsure of herself.",
+  "It's the first time she's done this with you.",
+  "It's new for her, and she's still thinking about it afterwards.",
 ];
 const FIRST_TENDER: string[] = [
-  "You haven't been like this with her before. She keeps checking your face.",
-  "It's the first time you've done this for her. She doesn't know what to make of it yet.",
+  "You haven't treated her like this before, and she's not sure what to make of it.",
+  "It's the first time you've done this for her, and it surprises her.",
 ];
 
 function discoveryLine(p: Person, o: ActOutcome, r: Rng): string {
   const f = p.persona.fetishes.find((x) => x.known && o.discovered?.includes(FETISH_BY_ID[x.name]?.name ?? "§"));
   if (f) {
     const lines: Record<string, string[]> = {
-      boobs: ["When you get your hands on {tits} she stops breathing for a second. That's the spot. That's always going to be the spot."],
-      buttslut: ["The moment you're in her ass she stops pretending. She pushes back onto you and says please. That's what she's been waiting for."],
-      cumslut: ["When you finish she chases it with her tongue. She wanted that more than anything else you did."],
-      humiliation: ["It's the watching that does it. The more people look, the wetter she gets, and she knows you've seen it."],
-      submissive: ["Once she's got no say, something in her goes quiet and easy. She wants to be told. Now you know."],
-      dom: ["Given an inch of control she takes the whole thing and her eyes light up. She wants to be the one in charge."],
-      masochist: ["It's the hurting that gets her there. Gentle does nothing for her. Pain does."],
-      sadist: ["She likes it when it's somebody else hurting. You saw her smile."],
+      boobs: ["When you get your hands on {tits} she moans. She has a thing for her breasts, and now you know it."],
+      buttslut: ["The moment you're in her ass she stops pretending. She pushes back onto you and begs for more. She's a buttslut."],
+      cumslut: ["When you finish she chases it with her tongue. She's a cumslut, and that was her favorite part."],
+      humiliation: ["It's the watching that does it. The more people look, the wetter she gets. She gets off on humiliation."],
+      submissive: ["Once she's got no say, she relaxes completely. She's submissive, and now you know it."],
+      dom: ["Given an inch of control she takes the whole thing and her eyes light up. She's a dom at heart."],
+      masochist: ["It's the hurting that gets her there. She's a masochist."],
+      sadist: ["She enjoys seeing someone else hurt. She's a sadist."],
       pregnancy: ["When you finish inside her she puts a hand on her stomach and keeps it there. She wants to be bred."],
     };
     return fill(r.pick(lines[f.name] ?? [`She's a ${FETISH_BY_ID[f.name]?.name}. It was obvious once you saw it.`]), bodyWords(p));
   }
   if (o.discovered?.includes("quirk") || (p.persona.quirk?.known && o.discovered?.includes(p.persona.quirk.id))) {
-    return `There's something about how she took that. She's a ${p.persona.quirk?.id}, and you won't forget it.`;
+    return `From how she took that, it's clear she's a ${p.persona.quirk?.id}.`;
   }
   if (p.persona.flaw?.known && o.discovered?.includes(p.persona.flaw.id)) {
-    return `She ${p.persona.flaw.id}. It was all over her face, and she knows you saw.`;
+    return `She ${p.persona.flaw.id}; it was obvious from her face.`;
   }
   return o.discovered ? cap(o.discovered) + "." : "";
 }
@@ -592,8 +593,8 @@ function discoveryLine(p: Person, o: ActOutcome, r: Rng): string {
 function convertedLine(p: Person, o: ActOutcome): string {
   if (!o.converted) return "";
   const [from, to] = o.converted.split(" → ");
-  if (p.persona.paraphilia === to) return `She's past wanting it now. She needs it. What was ${from} is ${to}.`;
-  return `Whatever she used to be about it, she isn't any more. She was ${from}. Now she's a ${to}.`;
+  if (p.persona.paraphilia === to) return `She doesn't just like it any more; she needs it. Her ${from} fetish has become ${to}.`;
+  return `She used to be ${from}. Now she's a ${to}.`;
 }
 
 /* ── putting it together ────────────────────────────────────────────────────────────────────── */
@@ -638,7 +639,9 @@ export function writeAct(s: SaveState, p: Person, o: ActOutcome, opts?: { lead?:
     : pain ? r.pick(PAIN_LANDED[o.landing])
     : shown ? r.pick(SHOWN_LANDED[o.landing])
     : r.pick(LANDED[o.landing]);
-  paras.push(`${fill(core, w)} ${fill(react, w)}`);
+  // Scenes that already carry her reaction to the end of the night do not get a second one.
+  const selfContained = o.act === "sleeping together";
+  paras.push(selfContained ? fill(core, w) : `${fill(core, w)} ${fill(react, w)}`);
 
   // The end of it.
   const end: string[] = [];
@@ -670,6 +673,6 @@ export function writeAct(s: SaveState, p: Person, o: ActOutcome, opts?: { lead?:
 /** The one-line version, for the log and the report. */
 export function summarise(p: Person, o: ActOutcome): string {
   const act = ACT_BY_ID[o.act];
-  const how = { wanted: "she loved it", willing: "she was into it", endured: "she put up with it", hated: "she hated it", nothing: "it didn't reach her" }[o.landing];
+  const how = { wanted: "she loved it", willing: "she was into it", endured: "she put up with it", hated: "she hated it", nothing: "it did nothing for her" }[o.landing];
   return `${act.name} — ${how}${o.finished ? ", and she came" : ""}.`;
 }

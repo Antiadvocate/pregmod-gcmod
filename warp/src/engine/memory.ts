@@ -129,8 +129,8 @@ export function reflect(mem: PersonMemory, week: number, braced: boolean): strin
   if (Math.abs(warm - cold) < 3) return null;
 
   const text = warm > cold
-    ? braced ? "It has been good, and that is exactly when it turns." : "This is survivable, and some of it is more than that."
-    : braced ? "Nothing here will ever be safe, and pretending otherwise is how people get hurt." : "This is worse than I let myself say out loud.";
+    ? braced ? "Things have been good lately, but I don't trust it to last." : "It's not so bad here. Some of it is even nice."
+    : braced ? "I'm never safe here." : "I hate it here.";
 
   const existing = mem.beliefs.find((b) => b.text === text);
   if (existing) { existing.strength = clamp(existing.strength + 1, 0, 10); existing.week = week; return null; }

@@ -38,7 +38,7 @@ const clothes = (xs: G[]): Garment[] => xs.map((x) => ({ ...x, slot: "clothes" }
 
 export const WARDROBE: Garment[] = [
   ...clothes([
-    { id: "none", name: "no clothing", kind: "bare", cost: 0, appeal: 1.0, relaxation: -0.25, rep: 0, wants: ["degradationist"], note: "the default, and it is a statement" },
+    { id: "none", name: "no clothing", kind: "bare", cost: 0, appeal: 1.0, relaxation: -0.25, rep: 0, wants: ["degradationist"], note: "naked, for all to see" },
     { id: "oil", name: "body oil", art: "BodyOil", kind: "bare", shine: true, cost: 150, appeal: 1.12, relaxation: -0.2, rep: 1, wants: ["hedonist"] },
     { id: "jewelry", name: "slutty jewelry", art: "SluttyJewelry", kind: "bare", cost: 2400, appeal: 1.2, relaxation: -0.15, rep: 2, wants: ["arabian", "hedonist"] },
 
@@ -50,8 +50,8 @@ export const WARDROBE: Garment[] = [
     { id: "hijab", name: "a hijab and blouse", art: "HijabAndBlouse", kind: "modest", covers: true, cost: 900, appeal: 0.95, relaxation: 0.25, rep: 1, wants: ["arabian"] },
     { id: "abaya", name: "a hijab and abaya", art: "HijabAndAbaya", kind: "modest", covers: true, cost: 1100, appeal: 0.9, relaxation: 0.2, rep: 1, wants: ["arabian"] },
 
-    { id: "practical", name: "work clothes", art: "CutoffsAndATshirt", kind: "work", covers: true, cost: 400, appeal: 0.9, relaxation: 0.25, rep: 0, note: "for anybody whose job is actually a job" },
-    { id: "uniform", name: "household uniform", art: "NiceMaid", kind: "work", covers: true, cost: 600, appeal: 1.05, relaxation: 0.15, rep: 1, note: "visibly yours, and visibly somebody" },
+    { id: "practical", name: "work clothes", art: "CutoffsAndATshirt", kind: "work", covers: true, cost: 400, appeal: 0.9, relaxation: 0.25, rep: 0, note: "practical clothes for physical work" },
+    { id: "uniform", name: "household uniform", art: "NiceMaid", kind: "work", covers: true, cost: 600, appeal: 1.05, relaxation: 0.15, rep: 1, note: "a neat uniform that marks her as your servant" },
     { id: "slutmaid", name: "a slutty maid outfit", art: "SluttyMaid", kind: "work", covers: true, cost: 900, appeal: 1.2, relaxation: 0, rep: 1 },
     { id: "nurse", name: "a nice nurse outfit", art: "NiceNurse", kind: "work", covers: true, cost: 800, appeal: 1.05, relaxation: 0.15, rep: 1 },
     { id: "slutnurse", name: "a slutty nurse outfit", art: "SluttyNurse", kind: "work", covers: true, cost: 900, appeal: 1.2, relaxation: 0, rep: 1 },
@@ -96,8 +96,8 @@ export const WARDROBE: Garment[] = [
     { id: "military", name: "a military uniform", art: "MilitaryUniform", kind: "uniform", covers: true, cost: 1800, appeal: 1.05, relaxation: 0.2, rep: 2, wants: ["neo_imperial"] },
     { id: "police", name: "a police uniform", art: "PoliceUniform", kind: "uniform", covers: true, cost: 1500, appeal: 1.1, relaxation: 0.15, rep: 1 },
     { id: "mounty", name: "a mounty outfit", art: "Mounty", kind: "uniform", covers: true, cost: 1600, appeal: 1.1, relaxation: 0.15, rep: 1 },
-    { id: "battledress", name: "battledress", art: "Battledress", kind: "uniform", covers: true, cost: 1200, appeal: 0.95, relaxation: 0.25, rep: 1, note: "for somebody who guards you" },
-    { id: "armor", name: "battlearmor", art: "Battlearmor", kind: "uniform", covers: true, cost: 6500, appeal: 1.0, relaxation: 0.3, rep: 3, wants: ["neo_imperial"], note: "real plate, for a bodyguard or a pit fighter" },
+    { id: "battledress", name: "battledress", art: "Battledress", kind: "uniform", covers: true, cost: 1200, appeal: 0.95, relaxation: 0.25, rep: 1, note: "military fatigues" },
+    { id: "armor", name: "battlearmor", art: "Battlearmor", kind: "uniform", covers: true, cost: 6500, appeal: 1.0, relaxation: 0.3, rep: 3, wants: ["neo_imperial"], note: "real armor, for a bodyguard or pit fighter" },
     { id: "bodysuit", name: "a comfortable bodysuit", art: "ComfortableBodysuit", kind: "uniform", covers: true, skin: "#464646", cost: 1600, appeal: 1.15, relaxation: 0.15, rep: 1, wants: ["transformation"] },
 
     { id: "latex", name: "a latex suit", art: "Latex", kind: "bondage", covers: true, skin: "#515351", shine: true, cost: 2800, appeal: 1.2, relaxation: -0.15, rep: 1, wants: ["transformation"] },
@@ -128,16 +128,16 @@ export const WARDROBE: Garment[] = [
   { id: "collar_egypt", name: "an ancient Egyptian collar", art: "Collar_Ancientegyptian", slot: "collar", cost: 3000, appeal: 1.15, relaxation: 0, rep: 3, wants: ["egyptian"] },
   { id: "collar_heavy", name: "a heavy steel collar", art: "Collar_Tight_Steel", slot: "collar", cost: 500, appeal: 0.95, relaxation: -0.45, rep: 1, wants: ["degradationist"] },
   { id: "collar_cruel", name: "a cruel leather collar", art: "Collar_Leather_Cruel", slot: "collar", cost: 400, appeal: 0.95, relaxation: -0.5, rep: 0, wants: ["degradationist"] },
-  { id: "collar_shock", name: "a shock collar", art: "Collar_Shock_Punishment", slot: "collar", cost: 1200, appeal: 0.9, relaxation: -0.8, rep: 0, wants: ["degradationist"], note: "she flinches when you reach for your pocket" },
+  { id: "collar_shock", name: "a shock collar", art: "Collar_Shock_Punishment", slot: "collar", cost: 1200, appeal: 0.9, relaxation: -0.8, rep: 0, wants: ["degradationist"], note: "lets you shock her whenever she misbehaves" },
   { id: "collar_cowbell", name: "a cowbell collar", art: "Collar_Cowbell", slot: "collar", cost: 200, appeal: 1.02, relaxation: -0.2, rep: 0, wants: ["pastoralist"] },
   { id: "collar_corset", name: "a neck corset", art: "Collar_Neck_Corset", slot: "collar", cost: 900, appeal: 1.1, relaxation: -0.3, rep: 1 },
-  { id: "collar_name", name: "a collar with your name on it", art: "Collar_Retirement_Nice", slot: "collar", cost: 900, appeal: 1.05, relaxation: -0.05, rep: 2, note: "she reads it every time she passes a mirror" },
+  { id: "collar_name", name: "a collar with your name on it", art: "Collar_Retirement_Nice", slot: "collar", cost: 900, appeal: 1.05, relaxation: -0.05, rep: 2, note: "shows everyone who owns her" },
 
   { id: "shoes_none", name: "barefoot", slot: "shoes", cost: 0, appeal: 1.0, relaxation: 0, rep: 0 },
   { id: "shoes_flat", name: "flats", art: "Shoes_Flat", slot: "shoes", cost: 200, appeal: 1.0, relaxation: 0.05, rep: 0 },
   { id: "shoes_pumps", name: "pumps", art: "Shoes_Pump", slot: "shoes", cost: 500, appeal: 1.08, relaxation: -0.05, rep: 0 },
   { id: "shoes_heels", name: "heels", art: "Shoes_Heel", slot: "shoes", cost: 800, appeal: 1.12, relaxation: -0.15, rep: 1 },
-  { id: "shoes_extreme", name: "extreme heels", art: "Shoes_Extreme_Heel", slot: "shoes", cost: 1200, appeal: 1.18, relaxation: -0.45, rep: 1, note: "she can stand in them, just" },
+  { id: "shoes_extreme", name: "extreme heels", art: "Shoes_Extreme_Heel", slot: "shoes", cost: 1200, appeal: 1.18, relaxation: -0.45, rep: 1, note: "so high she can barely walk" },
   { id: "shoes_boots", name: "boots", art: "Shoes_Boot", slot: "shoes", cost: 600, appeal: 1.05, relaxation: 0.05, rep: 0 },
 
   { id: "legs_none", name: "bare legs", slot: "legwear", cost: 0, appeal: 1.0, relaxation: 0, rep: 0 },

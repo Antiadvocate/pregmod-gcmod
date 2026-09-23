@@ -53,7 +53,7 @@ export default function City() {
           sub={`${Math.round(save.arcology.population).toLocaleString()} living here`}
           bad={save.arcology.population > 400 + y.housing} />
         <Fig label="reach" value={Math.floor(y.reach)} sub={`${city.routes.length} routes`} />
-        <Fig label="arms" value={Math.round(militaryStrength(save))} sub="what they read" />
+        <Fig label="arms" value={Math.round(militaryStrength(save))} sub="military strength" />
         <Fig label="build cost" value={`−${Math.round(buildDiscount(save) * 100)}%`} sub="from your works" />
         <Fig label="schooling" value={`+${Math.round(y.schooling * 100)}%`} sub="classes" />
       </div>
@@ -226,7 +226,7 @@ function Trade({ reach, say }: { reach: number; say: (r: { ok: boolean; why?: st
     <div className="space-y-1.5">
       {!reach ? (
         <Card className="text-[13px] dim mb-2">
-          Nothing leaves this city without docks. Build one on the outer ring and the map opens.
+          You need docks to trade. Build them on the outer ring to open the map.
         </Card>
       ) : null}
       {REGIONS.map((r) => {
@@ -264,7 +264,7 @@ function Neighbours({ say }: { say: (r: { ok: boolean; why?: string; line?: stri
   const { save, mutate } = useGame();
   const mine = militaryStrength(save);
   if (!save.arcology.neighbours.length) {
-    return <Card className="text-[13px]">There is nobody left on this stretch of coast but you.</Card>;
+    return <Card className="text-[13px]">You've taken every neighboring arcology.</Card>;
   }
   return (
     <div className="space-y-2">

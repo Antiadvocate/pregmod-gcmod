@@ -179,17 +179,17 @@ export function addState(p: Psyche, label: string, week: number): void {
  *  view of what was wrong; fear leaves alertness; grief leaves plain love. The charge goes, the
  *  knowledge stays. */
 const RESIDUE: [RegExp, string][] = [
-  [/anger|rage|fury|resent/i, "a clear view of exactly what was wrong"],
-  [/fear|dread|terror|afraid/i, "alertness to what actually matters here"],
-  [/grief|loss|mourn/i, "plain love for what is gone"],
-  [/shame|humiliat/i, "a colder read on who was actually watching"],
-  [/envy|jealous/i, "the plain energy to go and get it"],
-  [/contempt|disgust/i, "seeing the other person standing on the same floor"],
+  [/anger|rage|fury|resent/i, "she's no longer angry about it"],
+  [/fear|dread|terror|afraid/i, "she's no longer afraid of it"],
+  [/grief|loss|mourn/i, "she's done grieving"],
+  [/shame|humiliat/i, "she's no longer ashamed"],
+  [/envy|jealous/i, "she's no longer jealous"],
+  [/contempt|disgust/i, "she's no longer disgusted"],
 ];
 
 export function residueFor(label: string): string {
   for (const [re, out] of RESIDUE) if (re.test(label)) return out;
-  return "a settled sense of what happened";
+  return "she's made peace with it";
 }
 
 export interface EmotionOutcome { liberated: string[]; residue: string[]; fed: string | null; drain: number }
@@ -241,7 +241,7 @@ export function tickDischarge(p: Psyche): { fired: boolean; released?: string; r
     p.active_states = p.active_states.filter((s) => s !== oldest);
     delete p.state_ages[oldest];
   }
-  p.mood = "wrung out";
+  p.mood = "exhausted";
   p.discharge_lift = 1.5;
   p.consecutive_clenched = 0;
   return { fired: true, released: oldest, residue: oldest ? residueFor(oldest) : undefined };
@@ -257,11 +257,11 @@ export function perception(p: Psyche, conscience: number): { accuracy: number; n
   const accuracy = clamp((p.relaxation + 10) / 20, 0, 1);
   if (accuracy < 0.3)
     return { accuracy, note: conscience <= 0.35
-      ? "reads the room fast and meanly — every neutral face is an opponent, and she is not frightened of any of them"
-      : "misreads people badly and is certain: a neutral face looks like a threat" };
-  if (accuracy < 0.5) return { accuracy, note: "watching for the catch in everything said to her" };
-  if (accuracy > 0.75) return { accuracy, note: "sees people roughly as they actually are" };
-  return { accuracy, note: "reads people at about the accuracy anyone manages" };
+      ? "hostile and suspicious of everyone"
+      : "paranoid; sees threats everywhere" };
+  if (accuracy < 0.5) return { accuracy, note: "suspicious of everything said to her" };
+  if (accuracy > 0.75) return { accuracy, note: "sees people clearly" };
+  return { accuracy, note: "reads people normally" };
 }
 
 /** THE APERTURE — how much of the world reaches what a person SAYS. A braced body narrows onto
@@ -270,10 +270,10 @@ export function perception(p: Psyche, conscience: number): { accuracy: number; n
  *  filter. This decides how much of it is load-bearing this turn. */
 export function aperture(p: Psyche): { width: number; note: string } {
   if (p.relaxation <= T.NARROW)
-    return { width: 0.15, note: "narrowed to the one thing that matters; short, concentrated, very little else gets in" };
+    return { width: 0.15, note: "talks in short, tense sentences" };
   if (p.relaxation >= T.OPEN)
-    return { width: 0.9, note: "open — says things for no reason, notices what is actually in the room, does not end every sentence on what happens next" };
-  return { width: 0.5, note: "ordinary width: mostly on her own business, occasionally caught by something else" };
+    return { width: 0.9, note: "chatty and relaxed" };
+  return { width: 0.5, note: "talks normally" };
 }
 
 /** The one-word band a player sees. */
@@ -291,9 +291,9 @@ export function band(p: Psyche): string {
 /** The visible cue the narrator is allowed to describe — body only, never interior. */
 export function tensionCue(p: Psyche): string {
   const r = p.relaxation;
-  if (r <= T.DEEP) return "shoulders up, jaw locked, breathing high in the chest";
-  if (r <= T.BRACED) return "holding herself still in a way that costs something";
-  if (r >= 5) return "loose through the shoulders; breathing all the way down";
+  if (r <= T.DEEP) return "visibly terrified";
+  if (r <= T.BRACED) return "visibly tense";
+  if (r >= 5) return "relaxed";
   return "";
 }
 

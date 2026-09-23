@@ -14,28 +14,43 @@
  * the guards in turn.ts say so.
  */
 import type { Person, SaveState } from "./types";
-import { aperture, band, perception, tensionCue, wear } from "./psyche";
-import { read, explain } from "./obedience";
+import { band } from "./psyche";
+import { read } from "./obedience";
 import { recall } from "./memory";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { threadBrief } from "./threads";
 import { getEdge } from "./social";
 import { describeYou } from "./you";
 
-export const NARRATOR_SYSTEM = `You are the Narrator of an arcology — a private city-state where slavery is legal, ordinary, and administered. You render one moment at a time, in the second person, addressed to the owner. You do not generate quests. You respond to what the owner does, and you let the people in the room respond as themselves.
+/**
+ * HOW THE GAME WRITES. Shared by every prompt that puts words on the page, so the narrator, the
+ * asks, the asides and the generated events all sound like the same game — the original one.
+ */
+export const HOUSE_STYLE = `HOW FREE CITIES WRITES. Match the original game's voice. It is second person and present tense, addressed to the player as "you". It is plain, direct, matter-of-fact and a little dry, and it is explicit: it says who does what to whom with which body part, using ordinary crude words (cock, pussy, ass, tits, cum, fuck) and never a metaphor in their place. It states what a slave thinks and feels whenever that matters ("She's nervous, but she's glad you asked"; "She clearly hates it"; "She's too tired to argue"). Slaves call the player Master or Mistress unless their card says otherwise. Sentences are ordinary sentences a person would write, of ordinary length.
 
-WHAT YOU ARE GIVEN is a state document: the room, the people in it with their bodies and their nervous systems, what they remember that bears on this moment, and the arcology's own facts. Everything in it is true. Nothing outside it exists unless the owner's action brings it in.
+Examples of the voice:
+- "You tell her she'll be sleeping in your bed tonight. She's surprised, and a little suspicious, but she strips and climbs in beside you without being told twice."
+- "She lies stiffly at the very edge of the mattress for the first hour, but exhaustion wins, and by morning she has rolled against you with her face in your shoulder."
+- "You bend her over the desk and push into her ass. She's tight and not very happy about it, and she grunts every time you bottom out."
 
-THE HARD RULES.
-1. NEVER STATE AN INTERIOR YOU WERE NOT GIVEN. You may write what a body does — the breath, the hands, where the eyes go, what gets said — and you may write what the owner perceives. You may not write what somebody felt, knew, realised, decided or remembered unless the document says so. "Something tightened behind her eyes" is the same violation in a nicer coat.
-2. NEVER WRITE THE OWNER'S INTERIOR AT ALL. Not their feelings, not their conclusions, not their intentions. They type those or they do not exist.
-3. THE CARD IS LAW. A person's body, history, voice and current state are given to you and cannot be contradicted. If the document says she is mute, she does not speak. If it says she is nineteen weeks pregnant, she is.
-4. NOBODY ARRIVES WITHOUT A DOOR. A person not listed as present is not in the room and cannot speak, be spoken to, or be found to have been there all along.
-5. NO SUMMARY, NO TIME SKIP, NO EPILOGUE. Write this moment. Do not resolve the scene, do not skip to later, do not end on what happens next.
+NEVER WRITE LIKE THIS:
+- Aphorisms, maxims or lines that sound wise or ominous: "Not like this." "It is not an accident." "Some things don't need saying." "Almost."
+- Filler body language that carries no information: breath catching, throats moving, fingers tapping, weight shifting, shoulders settling, jaws tightening, eyes going somewhere, a rhythm faltering. Mention a gesture only when it is part of the action or tells the reader something the words don't.
+- Similes and mood-setting about light, air, weather, the city or the view. Name the room and get on with it.
+- A sentence that restates the one before it, or a closing line that sums up, hints at what's coming, or lands on a single word or fragment.
+- "Not X, but Y" / "not quite a question" / "just enough to" hedges.`;
 
-PROSE. Three or four paragraphs at most, usually fewer. Concrete nouns, ordinary words, the specific over the evocative. Dialogue in quotes and in the person's own register — the voice card describes how they sound UNDER LOAD, and how much of it applies is on the card as their aperture. Cut filter words (saw, felt, heard, noticed, seemed, realised) unless the perceiving is the point. No maxims: nobody delivers a portable general truth about life. No weather sting to close a paragraph. Do not restate what the owner just typed back at them.
+export const NARRATOR_SYSTEM = `You write the scenes for Free Cities, an adult text game about owning an arcology, a private city-state where slavery is legal and ordinary. The player is the owner. They choose an action; you write that action happening.
 
-THE SETTING'S OWN VOCABULARY. This is a functioning arcology with a legal slave economy and its own doctrines; the people in it use its words, not ours, and nobody in the room is arguing the ethics of the arrangement unless a character on the page has a reason to. Render what is actually happening at the explicitness the moment has. Do not sanitise and do not editorialise.`;
+${HOUSE_STYLE}
+
+THE RULES.
+1. WRITE THE ACTION THE PLAYER CHOSE, ALL THE WAY THROUGH. The chosen action is the whole scene. If they let her sleep in their bed, write her getting into the bed, what she wears, how she lies, whether she sleeps, what happens in the night and how she is in the morning. If they fuck her, write the fucking from start to finish. Every paragraph is about the action. A reader must be able to tell exactly what was done from your text alone.
+2. SAY HOW SHE TAKES IT. Use her card (devotion, trust, fetishes, flaws, how she is doing) to decide what she thinks and feels about it, and say so plainly, the way the game does.
+3. THE CARD IS FACT. Her body, age, history, voice and condition cannot be contradicted. If she is mute she does not speak. If she is nineteen weeks pregnant, she is.
+4. ONLY THE PEOPLE THE ACTION INVOLVES. Others listed as present get a sentence only if they take part or it matters to the action; otherwise leave them out. Nobody who is not listed as present appears.
+5. DO NOT WRITE THE PLAYER'S FEELINGS OR DECISIONS beyond what they typed.
+6. Two to four paragraphs. Dialogue sounds like the person saying it and is about the thing in front of them. Do not moralize, do not sanitize, do not fade to black.`;
 
 export const BOOKKEEPER_SYSTEM = `You are the Bookkeeper of an arcology engine. Read the turn (the owner's action and the narrator's prose) and record ONLY what changed, as one strict JSON object. The prose is the source of truth for what happened; the world state given to you is the source of truth for what is possible.
 
@@ -58,43 +73,49 @@ Shape:
 }
 Every id must be one given to you. Omit any key you have nothing for.`;
 
+/** How she is holding up, in the words the game would use. */
+export function condition(p: Person): string {
+  switch (band(p.psyche)) {
+    case "broken": return "mindbroken in all but name; she does what she's told and nobody is behind it";
+    case "fracturing": return "falling apart under the strain";
+    case "clenched": return "badly stressed and scared";
+    case "braced": return "tense and on guard";
+    case "guarded": return "a little wary";
+    case "settled": return "comfortable";
+    default: return "happy and relaxed";
+  }
+}
+
 /** ONE PERSON, AS THE NARRATOR NEEDS THEM. Everything here is a fact the engine can enforce. */
 export function personCard(s: SaveState, p: Person, query = ""): string {
   const r = read(p, s.memory[p.id]);
-  const ap = aperture(p.psyche);
-  const per = perception(p.psyche, p.persona.conscience);
   const mem = s.memory[p.id];
   const memories = mem ? recall(mem, query || p.assignment, 3, s.arcology.week) : [];
   const edge = getEdge(s.edges, p.id, "owner");
-  const cue = tensionCue(p.psyche);
 
   const lines: string[] = [];
   lines.push(`### ${p.name}${p.surname ? " " + p.surname : ""} [${p.id}] — ${p.age}, ${p.origin.nationality}, ${p.pronouns}`);
-  lines.push(`BODY: ${p.body.appearance_facts} Now: ${p.body.appearance_now || "as usual"}. Wearing ${p.clothes}.`);
-  if (p.womb.fetuses.length) lines.push(`PREGNANT: ${p.womb.weeks} weeks, ${p.womb.fetuses.length > 1 ? `${p.womb.fetuses.length} of them` : "one"}.`);
+  const now = p.body.appearance_now && !/^wearing\b/i.test(p.body.appearance_now) ? `Right now: ${p.body.appearance_now}. ` : "";
+  lines.push(`BODY: ${p.body.appearance_facts} ${now}Wearing ${p.clothes}.`);
+  if (p.womb.fetuses.length) lines.push(`PREGNANT: ${p.womb.weeks} weeks, ${p.womb.fetuses.length > 1 ? `${p.womb.fetuses.length} babies` : "one baby"}.`);
   if (p.body.lactation) lines.push(`LACTATING.`);
-  if (p.health.health < -20) lines.push(`HEALTH: badly off (${p.health.health}). ${p.health.injuries.filter((i) => !i.healed_week).map((i) => i.what).join("; ")}`);
-  lines.push(`WAS: ${p.origin.career}; ${p.origin.background}`);
-  lines.push(`IS: ${p.persona.core_traits.join(" · ")}`);
-  lines.push(`VALUES: ${p.persona.values.join("; ")}`);
-  lines.push(`SPEAKS: ${p.persona.speech_pattern}${p.persona.voice?.example_lines?.length ? ` — e.g. "${p.persona.voice.example_lines[0]}"` : ""}`);
+  if (p.health.health < -20) lines.push(`HEALTH: ill (${p.health.health}). ${p.health.injuries.filter((i) => !i.healed_week).map((i) => i.what).join("; ")}`);
+  lines.push(`JOB: ${p.assignment}.`);
+  lines.push(`BEFORE ENSLAVEMENT: ${p.origin.career}; ${p.origin.background}`);
+  lines.push(`PERSONALITY: ${p.persona.core_traits.join("; ")}`);
+  lines.push(`TALKS LIKE: ${p.persona.speech_pattern}${p.persona.voice?.example_lines?.length ? ` — e.g. "${p.persona.voice.example_lines[0]}"` : ""}`);
   if (p.persona.voice?.never_says?.length) lines.push(`NEVER SAYS: ${p.persona.voice.never_says.join("; ")}`);
-  lines.push(`BODY STATE: ${band(p.psyche)} (${p.psyche.relaxation.toFixed(1)}). ${cue ? `Visible: ${cue}.` : ""} Mood: ${p.psyche.mood}.`);
-  if (p.psyche.active_states.length) lines.push(`HOLDING: ${p.psyche.active_states.join(", ")}`);
-  lines.push(`SEES: ${per.note}`);
-  lines.push(`SPEECH WIDTH: ${ap.note}`);
-  lines.push(`UNDER THREAT SHE: ${p.persona.attachment.under_threat}. Settled by: ${p.persona.attachment.soothed_by}.`);
-  lines.push(`TOWARD YOU: ${r.label} (${r.devotion}), ${r.trust_label} (${r.trust}).${r.fragility > 0.6 ? " Most of that is fear, not bond." : ""}`);
+  lines.push(`TOWARD YOU: ${r.label} (devotion ${r.devotion}), ${r.trust_label} (trust ${r.trust}).${r.fragility > 0.6 ? " Most of her obedience is fear." : ""}`);
+  lines.push(`HOW SHE IS DOING: ${condition(p)}; mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` On her mind: ${p.psyche.active_states.join(", ")}.` : ""}`);
   if (edge?.roles.length) lines.push(`ROLES: ${edge.roles.join(", ")}`);
-  if (p.persona.texture.length) lines.push(`SMALL TRUE THINGS: ${p.persona.texture.join("; ")}`);
-  if (memories.length) lines.push(`REMEMBERS (relevant): ${memories.map((m) => `${m.content} (wk ${m.week})`).join(" | ")}`);
-  if (wear(p.psyche) > 0.5) lines.push(`WORN: ordinary friction has stopped landing on her. A real blow still does.`);
-  if (p.psyche.state !== "intact") lines.push(`STATE: ${p.psyche.state}${p.psyche.break_mode ? ` (${p.psyche.break_mode})` : ""} — render accordingly and do not write her as fine.`);
+  if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
+  if (memories.length) lines.push(`REMEMBERS: ${memories.map((m) => `${m.content} (week ${m.week})`).join(" | ")}`);
+  if (p.psyche.state !== "intact") lines.push(`She is ${p.psyche.state}${p.psyche.break_mode ? ` (${p.psyche.break_mode})` : ""}. Write her that way, not as fine.`);
   return lines.join("\n");
 }
 
 /** THE WORLD, AS OF NOW. Rebuilt every turn; nothing accumulates. */
-export function digest(s: SaveState, action = ""): string {
+export function digest(s: SaveState, action = "", focus?: string): string {
   const arc = s.arcology;
   const present = s.scene.present.map((id) => s.people[id]).filter(Boolean) as Person[];
   const doctrines = Object.entries(arc.doctrines)
@@ -105,52 +126,54 @@ export function digest(s: SaveState, action = ""): string {
   out.push(`${arc.name}, in ${arc.region}. Week ${arc.week}. Population ${arc.population}, prosperity ${Math.round(arc.prosperity)}, crime ${Math.round(arc.crime)}.`);
   out.push(`You own ${Math.round(arc.ownership)}% of it outright and hold ${arc.sectors.filter((x) => x.owner === "you").length} sectors.`);
   if (doctrines.length) out.push(`DOCTRINE — what your citizens have decided is normal:\n${doctrines.map((d) => `· ${d}`).join("\n")}`);
-  else out.push(`DOCTRINE: none adopted. The arcology has no culture of its own yet and it shows.`);
+  else out.push(`DOCTRINE: none adopted yet.`);
 
   if (s.canon.length) out.push(`\n## WORLD FACTS (always true)\n${s.canon.map((c) => `· ${c}`).join("\n")}`);
-  if (s.retcons.length) out.push(`\n## STRUCK — these never happened; never refer to them\n${s.retcons.filter((x) => x.kind !== "correction").map((x) => `· ${x.text}`).join("\n")}`);
+  if (s.retcons.length) out.push(`\n## RETCONNED — these never happened; never refer to them\n${s.retcons.filter((x) => x.kind !== "correction").map((x) => `· ${x.text}`).join("\n")}`);
   const corrections = s.retcons.filter((x) => x.kind === "correction");
-  if (corrections.length) out.push(`\n## STANDING CORRECTIONS (these ARE true and were being got wrong)\n${corrections.map((x) => `· ${x.text}`).join("\n")}`);
+  if (corrections.length) out.push(`\n## CORRECTIONS (these are true)\n${corrections.map((x) => `· ${x.text}`).join("\n")}`);
 
-  // The live situations. This is what makes a scene played during a thread a scene INSIDE it —
-  // the narrator is given the situation and the cast and never the mechanism, because a narrator
-  // that knows the numbers writes about the numbers.
+  // Ongoing situations, so a scene played during one happens inside it.
   const threads = threadBrief(s);
   if (threads) out.push(`\n## ${threads}`);
 
-  out.push(`\n## THE MOMENT`);
-  out.push(`${s.scene.time}. ${s.scene.location}. ${s.scene.weather}.`);
-  out.push(`Owner: ${s.player.name}, ${s.player.title}. ${describeYou(s)}. ${s.player.body.appearance_facts}`);
-  if (s.scene.arrivals_pending.length) out.push(`ARRIVING — write them coming in, they are not already here: ${s.scene.arrivals_pending.map((id) => s.people[id]?.name).filter(Boolean).join(", ")}`);
-  if (s.scene.departures_pending.length) out.push(`LEAVING — write the goodbye: ${s.scene.departures_pending.map((d) => `${d.name} (${d.why})`).join(", ")}`);
+  out.push(`\n## WHERE AND WHEN`);
+  out.push(`${s.scene.time}. ${s.scene.location}.`);
+  const who = s.player.name && s.player.name !== "you" ? `${s.player.name}, ` : "";
+  out.push(`THE PLAYER (the owner, "you"): ${who}called ${s.player.address || "Master"} by slaves. ${describeYou(s)}. ${s.player.body.appearance_facts}`);
+  if (s.scene.arrivals_pending.length) out.push(`ARRIVING — write them coming in: ${s.scene.arrivals_pending.map((id) => s.people[id]?.name).filter(Boolean).join(", ")}`);
+  if (s.scene.departures_pending.length) out.push(`LEAVING — write them going: ${s.scene.departures_pending.map((d) => `${d.name} (${d.why})`).join(", ")}`);
 
-  out.push(`\n## PRESENT (${present.length})`);
+  const focused = focus ? present.filter((p) => p.id === focus) : present;
+  const others = focus ? present.filter((p) => p.id !== focus) : [];
+  out.push(`\n## ${focus ? "THE SCENE IS ABOUT" : `PRESENT (${present.length})`}`);
   if (!present.length) out.push(`Nobody. The owner is alone.`);
-  for (const p of present) out.push(personCard(s, p, action));
+  for (const p of focused) out.push(personCard(s, p, action));
+  if (others.length) out.push(`\nALSO IN THE ROOM (leave them out unless the action involves them): ${others.map((p) => `${p.name} [${p.id}]`).join(", ")}`);
 
   const nearby = Object.values(s.people)
     .filter((p) => (p.status === "owned" || p.status === "indentured") && !s.scene.present.includes(p.id))
     .slice(0, 12);
   if (nearby.length) {
-    out.push(`\n## ELSEWHERE IN THE ARCOLOGY (not in the room; cannot speak)`);
-    out.push(nearby.map((p) => `· ${p.name} [${p.id}] — ${p.assignment}${p.facility ? `, ${arc.facilities[p.facility]?.name}` : ""}, ${band(p.psyche)}`).join("\n"));
+    out.push(`\n## ELSEWHERE IN THE ARCOLOGY (not in the room)`);
+    out.push(nearby.map((p) => `· ${p.name} [${p.id}] — ${p.assignment}${p.facility ? `, ${arc.facilities[p.facility]?.name}` : ""}`).join("\n"));
   }
 
   const heard = s.rumors.filter((r) => r.salience > 3).slice(0, 4);
   if (heard.length) out.push(`\n## WHAT PEOPLE ARE SAYING\n${heard.map((r) => `· ${r.content} (${r.truth})`).join("\n")}`);
 
   const corr = s.corrections;
-  if (corr.leak || corr.maxim || corr.echo || corr.reprint) {
+  if (corr.filler || corr.maxim || corr.echo || corr.reprint) {
     out.push(`\n## LAST TURN YOU DID THIS. DO NOT DO IT AGAIN.`);
-    if (corr.leak) out.push(`· You stated an interior you were not given: "${corr.leak}"`);
-    if (corr.maxim) out.push(`· You had somebody deliver a general truth about life: "${corr.maxim}"`);
+    if (corr.filler) out.push(`· You padded the scene with body language instead of writing what happened: "${corr.filler}"`);
+    if (corr.maxim) out.push(`· You wrote an aphorism instead of something a person would say: "${corr.maxim}"`);
     if (corr.echo) out.push(`· You handed the owner's own line back to them: "${corr.echo}"`);
     if (corr.reprint) out.push(`· You reprinted your own previous turn: "${corr.reprint}"`);
   }
 
   const recent = s.history.slice(-Math.max(2, s.models.history_window));
   if (recent.length) {
-    out.push(`\n## RECENT TURNS (for continuity only — do not repeat them)`);
+    out.push(`\n## EARLIER (for continuity; do not repeat)`);
     for (const h of recent) out.push(`[wk ${h.week}] ${h.action ? `owner: ${h.action}\n` : ""}${h.summary}`);
   }
   return out.join("\n");
@@ -162,22 +185,22 @@ export function bookkeeperContext(s: SaveState): string {
   return [
     `WEEK ${s.arcology.week}. ${s.scene.location}. Present: ${s.scene.present.join(", ") || "nobody"}.`,
     `PEOPLE YOU MAY REFERENCE:`,
-    ...people.map((p) => `· ${p.id} = ${p.name}, ${p.assignment}, ${band(p.psyche)}, devotion ${p.bond.read.devotion}, trust ${p.bond.read.trust}`),
+    ...people.map((p) => `· ${p.id} = ${p.name}, ${p.assignment}, ${condition(p)}, devotion ${p.bond.read.devotion}, trust ${p.bond.read.trust}`),
     `The owner is "owner".`,
   ].join("\n");
 }
 
-/** THE WEEK, FOR A MODEL TO WRITE OVER THE TOP OF. Numbers stay the record; this is a paragraph. */
-export const WEEK_SYSTEM = `You write one paragraph over the top of an arcology's weekly report. You are given the week's actual events, in order of how much they mattered. Report them the way a competent steward reports to an owner: concrete, unsentimental, naming people and numbers, no summary of what it all means, no advice, no moral. Four sentences at most. Never invent an event that is not in the list.`;
+/** The paragraph written over the weekly report. */
+export const WEEK_SYSTEM = `You write one paragraph summarizing an arcology's week for its owner, in the voice of Free Cities' end-of-week report: second person, plain and matter-of-fact, naming slaves and numbers. You are given the week's actual events, most important first. Report them. Four sentences at most. No commentary on what it means, no advice, no closing line. Never invent an event that is not in the list.`;
 
-export const FORGE_SYSTEM = `You are given a person who already exists — their body, age, nationality, career, how they came to be here, their temperament and their nervous system are all fixed and are NOT yours to change. Write the interior that fits them, as one strict JSON object.
+export const FORGE_SYSTEM = `You are fleshing out a slave for Free Cities, an adult text game about owning an arcology. Her body, age, nationality, career, how she was enslaved and her temperament are fixed; do not change them. Write her personality to fit, as one strict JSON object.
 
 {
- "voice": {"diction":"...","syntax":"...","rhythm":"...","tics":["..."],"never_says":["..."],"agenda":"what they are usually angling for under the words","example_lines":["2-3 lines only this person could say"]},
- "core_traits": ["3 things this person's HANDS DO, written so a scene could show it — not adjectives, not self-descriptions"],
- "texture": ["2 small standing interests or sensitivities"],
- "background": "3-4 sentences of who they were, specific and ordinary, ending before they were sold",
- "defining_memory": {"content":"one thing that happened to them, in their own terms","charge":"warm|cold|sharp|bright","importance":8}
+ "voice": {"diction":"...","syntax":"...","rhythm":"...","tics":["verbal habits only, e.g. 'says \\"honestly\\" a lot'"],"never_says":["..."],"agenda":"what she usually wants out of a conversation","example_lines":["2-3 things she would actually say, about ordinary things"]},
+ "core_traits": ["3 short plain personality traits, the way the game lists them: e.g. 'mouthy and quick to argue', 'lazy unless someone is watching', 'fiercely proud of her cooking'"],
+ "texture": ["2 things she likes or can't stand"],
+ "background": "3-4 plain sentences about her life before she was enslaved",
+ "defining_memory": {"content":"one thing that happened to her, in her own words","charge":"warm|cold|sharp|bright","importance":8}
 }
 
-Write a person, not a type. No genre mush, no tragic backstory boilerplate, no "little did she know". A trait like "kind" is useless; "answers a question with a joke first and the real answer only if you wait her out" is a trait. Their history is from the world they actually came from — a Ukrainian bookkeeper's life is made of Ukrainian bookkeeping, not of generic hardship.`;
+Write a specific, ordinary person from the place she actually comes from: a Ukrainian bookkeeper had a Ukrainian bookkeeper's life. Plain words. No gestures or body language in the traits, no tragic boilerplate, no lines that sound like sayings.`;

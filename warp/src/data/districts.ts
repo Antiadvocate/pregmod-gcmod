@@ -60,62 +60,62 @@ export interface DistrictDef {
 
 export const DISTRICTS: DistrictDef[] = [
   {
-    kind: "spire", name: "The Spire", blurb: "Your arcology. Everything above the ninetieth floor is yours and everyone knows it.",
+    kind: "spire", name: "The Spire", blurb: "Your arcology. You own everything above the ninetieth floor.",
     found: 0, step: 40000, bulk: 1, hue: "#8f7a52", cap: 8,
     yields: { rep: 40, prosperity: 2, cash: 900 },
-    household: "Every level adds four beds' worth of room in the facilities below you.",
+    household: "Each level adds four slots to your facilities.",
   },
   {
-    kind: "residential", name: "Housing block", blurb: "Where the people who make the arcology work go at night.",
+    kind: "residential", name: "Housing block", blurb: "Housing for the arcology's workers.",
     found: 9000, step: 7000, bulk: 0.34, hue: "#6b7a8f", cap: 6,
     yields: { housing: 900, cash: 340, prosperity: 1 },
     favoured_by: ["paternalist", "repopulation"],
   },
   {
-    kind: "commercial", name: "Commercial row", blurb: "Frontage, footfall, and rents that go up whether or not anything is selling.",
+    kind: "commercial", name: "Commercial row", blurb: "Shops and storefronts. Rents go up every year.",
     found: 14000, step: 11000, bulk: 0.42, hue: "#8f7d5e", cap: 6,
     yields: { cash: 1400, prosperity: 3 },
     favoured_by: ["hedonist", "professionalism"],
   },
   {
-    kind: "industrial", name: "Works", blurb: "Fabrication, recycling, and the smell on a south wind.",
+    kind: "industrial", name: "Works", blurb: "Factories and recycling plants.",
     found: 12000, step: 9000, bulk: 0.5, hue: "#7a6b60", cap: 6,
     yields: { industry: 6, cash: 700, prosperity: -1 },
     favoured_by: ["cummunism"],
   },
   {
-    kind: "civic", name: "Civic hall", blurb: "Courts, the registry, the watch. The paperwork that makes any of the rest of it real.",
+    kind: "civic", name: "Civic hall", blurb: "Courts, the slave registry and the police.",
     found: 16000, step: 13000, bulk: 0.38, hue: "#7d8578", cap: 5,
     yields: { security: 7, rep: 18, prosperity: 1 },
     favoured_by: ["paternalist", "chattel_religion"],
-    household: "Standing orders run cleaner — the watch does the flagging you would otherwise do yourself.",
+    household: "Standing orders work better; the police flag problems for you.",
   },
   {
-    kind: "docks", name: "Docks", blurb: "Where everything arrives and where an embargo is felt first.",
+    kind: "docks", name: "Docks", blurb: "The docks, where all imports arrive. Embargoes hit here first.",
     found: 20000, step: 15000, bulk: 0.3, hue: "#5f7a7d", cap: 5,
     yields: { reach: 1, cash: 1100, industry: 2 },
-    household: "New arrivals land here, so the market shows you more of them.",
+    household: "More slaves come through the market.",
   },
   {
-    kind: "academy", name: "Academy", blurb: "Instructors, examination halls, and a great deal of expensive silence.",
+    kind: "academy", name: "Academy", blurb: "Schools and training halls.",
     found: 22000, step: 17000, bulk: 0.36, hue: "#7a7290", cap: 4,
     yields: { schooling: 0.35, rep: 22, prosperity: 1 },
     favoured_by: ["professionalism", "chinese", "paternalist"],
-    household: "Every woman in classes learns faster, and the schoolroom's ceiling goes up with it.",
+    household: "Slaves in classes learn faster, and the schoolroom can teach more.",
   },
   {
-    kind: "barracks", name: "Barracks", blurb: "The only argument the other arcologies have ever found persuasive.",
+    kind: "barracks", name: "Barracks", blurb: "Military bases and armories.",
     found: 24000, step: 19000, bulk: 0.28, hue: "#8a6a5e", cap: 5,
     yields: { arms: 12, security: 5 },
     favoured_by: ["roman", "neo_imperial"],
-    household: "Raids on your building stop reaching the residential ring.",
+    household: "Raids no longer reach the residential ring.",
   },
   {
-    kind: "pleasure", name: "Pleasure quarter", blurb: "The reason people come here rather than to Kestrel, and everybody's second-favourite export.",
+    kind: "pleasure", name: "Pleasure quarter", blurb: "Brothels, clubs and entertainment. The main reason visitors come here.",
     found: 18000, step: 14000, bulk: 0.32, hue: "#8f6478", cap: 6,
     yields: { cash: 2100, rep: 12, prosperity: 2, security: -3 },
     favoured_by: ["hedonist", "degradationist", "supplication"],
-    household: "Whores and public servants earn more, and the arcology notices what they are worth.",
+    household: "Whores and public servants earn more.",
   },
 ];
 
@@ -156,17 +156,17 @@ export interface Region {
 
 export const REGIONS: Region[] = [
   { id: "cape", name: "The Cape", reach: 1, open: 12000, cash: 1400, risk: 0.04,
-    note: "Bulk staples and the shipping paper everything else is written on." },
+    note: "Bulk goods and shipping." },
   { id: "delta", name: "The Delta", reach: 1, open: 18000, cash: 900, risk: 0.10, supply: 0.5,
-    note: "Debt bondage, mostly. The paperwork is clean and nobody looks at it twice." },
+    note: "Mostly debt slaves, with clean paperwork." },
   { id: "steppe", name: "The Steppe", reach: 2, open: 26000, cash: 1900, risk: 0.14, supply: 0.35,
-    note: "Metals, horses, and women whose families were paid in advance." },
+    note: "Metals, horses, and girls sold by their families." },
   { id: "archipelago", name: "The Archipelago", reach: 2, open: 31000, cash: 2600, risk: 0.09,
-    note: "Fuel, and a bank that does not ask what the collateral is." },
+    note: "Fuel, and a bank that doesn't ask questions." },
   { id: "interior", name: "The Interior", reach: 3, open: 44000, cash: 3400, risk: 0.22, supply: 0.8,
-    note: "Whatever is left of a country that stopped being one about four years ago." },
+    note: "A failed state, and a steady supply of refugees." },
   { id: "north", name: "The Northern Cities", reach: 4, open: 60000, cash: 5200, risk: 0.06,
-    note: "Old money, old machines, and buyers who pay what a trained woman is actually worth." },
+    note: "Old money, and buyers who pay full price for trained slaves." },
 ];
 
 export const REGION_BY_ID: Record<string, Region> = Object.fromEntries(REGIONS.map((r) => [r.id, r]));

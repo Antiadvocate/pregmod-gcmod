@@ -63,7 +63,7 @@ export function tickHealth(state: SaveState, p: Person, load: { health: number; 
     h.addiction = clamp(h.addiction + h.aphrodisiacs * 2.5, 0, 100);
   } else if (h.addiction > 0) {
     h.addiction = clamp(h.addiction - 3, 0, 100);
-    if (h.addiction > 30) { p.psyche.relaxation = clamp(p.psyche.relaxation - 0.8, -10, 10); notes.push("in withdrawal, and it shows"); }
+    if (h.addiction > 30) { p.psyche.relaxation = clamp(p.psyche.relaxation - 0.8, -10, 10); notes.push("in withdrawal"); }
   }
 
   // Injuries heal, or they do not.

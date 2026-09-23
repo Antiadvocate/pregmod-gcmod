@@ -140,7 +140,7 @@ function house(seed: string, n = 6) {
     check("answering it does something to real state", a.bond.resentment < resBefore, { before: resBefore, after: a.bond.resentment });
     check("and it says what happened", out.line.length > 20, out.line);
     check("and the thread closes", !!t.ended && t.ended.how === "sit", t.ended);
-    check("and it goes in canon", s.canon.some((c) => c.includes("They have been talking")), s.canon.slice(-2));
+    check("and it goes in canon", s.canon.some((c) => c.includes("Two slaves are plotting")), s.canon.slice(-2));
 
     // The same situation must not immediately reopen on the same two people.
     for (const p of [a, b]) { p.bond.resentment = 85; refresh(p, s.memory[p.id]); }

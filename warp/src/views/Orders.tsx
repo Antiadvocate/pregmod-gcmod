@@ -56,7 +56,7 @@ export default function Orders() {
               );
             })}
           </div>
-        ) : <Empty>No standing orders. The week will do exactly what you set by hand, and nothing else.</Empty>}
+        ) : <Empty>No standing orders. Only your manual assignments apply.</Empty>}
       </Section>
 
       <Card className="text-[11.5px] dim">

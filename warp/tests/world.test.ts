@@ -9,7 +9,7 @@ import { check } from "./harness.ts";
 import { newGame } from "../src/engine/state.ts";
 import { endWeek } from "../src/engine/week.ts";
 import { generatePerson } from "../src/engine/generate.ts";
-import { applyDiff, showsDeparture, findInteriorLeak, findMaxim, findEcho } from "../src/engine/turn.ts";
+import { applyDiff, showsDeparture, findFiller, findMaxim, findEcho } from "../src/engine/turn.ts";
 import { preview, runOrders, describe, assignToFacility, isMinor, setAssignment, allowedAssignments } from "../src/engine/rules.ts";
 import { scoreFor, axesOf, explainFor, adoptDoctrine } from "../src/engine/society.ts";
 import { DOCTRINE_BY_ID } from "../src/data/doctrines.ts";
@@ -111,12 +111,13 @@ import { practise, skill } from "../src/engine/player.ts";
 {
   const s = newGame({ seed: "test-detect", starting_slaves: 1 });
   const name = s.people[Object.keys(s.people)[0]].name;
-  check("an interior the narrator was not given is caught",
-    !!findInteriorLeak(`${name} felt the whole thing settle into place.`, s));
+  check("filler body language is caught",
+    !!findFiller(`${name} stands by the window. Her breath catches when you move.`));
   check("and its nicer coat is caught too",
-    !!findInteriorLeak("Something tightened behind her eyes.", s));
-  check("dialogue is not a violation",
-    !findInteriorLeak(`"I knew you would say that," she said.`, s));
+    !!findFiller("Something tightened behind her eyes."));
+  check("a stated feeling is allowed",
+    !findFiller(`${name} is nervous, but she's glad you asked.`));
+  check("a dramatic fragment is caught", !!findMaxim(`She reaches for the sheet.\n\nShe could be asleep. Almost.`));
   check("a maxim is caught", !!findMaxim(`She shrugged. "People always want what they cannot have."`));
   check("an ordinary line is not", !findMaxim(`She shrugged. "I told you already, I am not doing it."`));
   check("the narrator handing your own line back is caught",

@@ -65,44 +65,44 @@ export interface Rung {
 
 export const RUNGS: Rung[] = [
   {
-    id: "property", name: "Property", what: "She's yours, on paper and nowhere else.",
-    gate: {}, effect: "Where everyone starts.",
+    id: "property", name: "Property", what: "She's your slave, and nothing more.",
+    gate: {}, effect: "Every slave starts here.",
   },
   {
-    id: "favourite", name: "Favourite", what: "You keep coming back to her, and the household has noticed.",
+    id: "favourite", name: "Favourite", what: "You pay her more attention than the others, and everyone knows it.",
     rite: "notice",
     gate: { devotion: 25, weeks: 3 },
-    effect: "She stops being interchangeable. Small bond gain every week you actually see her; the others notice, and some of them mind.",
+    effect: "Small bond gain every week you spend time with her. Some of the other slaves will be jealous.",
   },
   {
-    id: "kept", name: "Kept", what: "She has a room in the suite and she does not work the floors any more.",
+    id: "kept", name: "Kept", what: "She lives in your suite and doesn't work any more.",
     rite: "move_her_up",
     gate: { devotion: 45, trust: 20, fragility: 0.55, weeks: 6 },
-    effect: "She is off the roster. Her upkeep goes up and she settles considerably.",
+    effect: "She no longer works. Her upkeep goes up, and she becomes much happier.",
   },
   {
-    id: "courted", name: "Courted", what: "You are courting her, in front of everybody, like she is somebody who could say no.",
+    id: "courted", name: "Courted", what: "You're openly courting her, as if she were a free woman.",
     rite: "court",
     gate: { devotion: 60, trust: 45, fragility: 0.35, bond: 40, hope: 35, weeks: 8, tilt: 0.1 },
-    effect: "The household sees it. Her hope climbs every week. Doctrines that think she's livestock start costing you standing.",
+    effect: "Her hope rises every week. Future societies that see slaves as property will cost you reputation.",
   },
   {
-    id: "betrothed", name: "Betrothed", what: "You have said it out loud, in public, and it is on the registry.",
+    id: "betrothed", name: "Betrothed", what: "You've publicly promised to marry her, and it's on the registry.",
     rite: "promise",
     gate: { devotion: 75, trust: 65, fragility: 0.22, bond: 60, hope: 55, weeks: 8, tilt: 0.25 },
-    effect: "It's on the registry. Breaking it costs you every woman in the house.",
+    effect: "Breaking the engagement will turn all your slaves against you.",
   },
   {
-    id: "wife", name: "Wife", what: "Married. Witnessed. The arcology has an opinion and so does every doctrine you hold.",
+    id: "wife", name: "Wife", what: "You're married to her. Your citizens and your future societies all have opinions about that.",
     rite: "wedding",
     gate: { devotion: 85, trust: 80, fragility: 0.15, bond: 75, hope: 65, weeks: 10, tilt: 0.35 },
-    effect: "She stops being a slave on the registry and becomes your wife on it. She gains a say — dominion starts moving.",
+    effect: "She's legally your wife now, not a slave, and she starts getting a say in how things are run.",
   },
   {
-    id: "keeper", name: "She has the collar", what: "You did what she asked, then kept doing it, until the registry said it too.",
+    id: "keeper", name: "She has the collar", what: "She owns you now, legally.",
     rite: "reversal",
     gate: { devotion: 90, trust: 85, fragility: 0.1, bond: 85, dominion: 85, weeks: 12, tilt: 0.4 },
-    effect: "The arcology is hers. The week is reported to her. She decides, and you are asked.",
+    effect: "She runs the arcology. The weekly report goes to her, and she makes the decisions.",
   },
 ];
 
@@ -138,11 +138,11 @@ export function nextRung(s: SaveState, p: Person): { rung: Rung; ready: boolean;
   if (g.dominion !== undefined && rom.dominion < g.dominion) blocked.push(`she decides ${Math.round(rom.dominion)} of ${g.dominion}`);
   if (g.tilt !== undefined && tilt < g.tilt) {
     blocked.push(tilt < 0
-      ? `what she remembers about being here is net bad (${tilt.toFixed(2)}). No week you can have from here fixes that; only a long run of different ones does.`
-      : `what she remembers is only ${tilt.toFixed(2)} good, and this needs ${g.tilt}`);
+      ? `her memories of this place are mostly bad (${tilt.toFixed(2)}); it'll take a long run of good weeks to change that`
+      : `her memories of this place are only ${tilt.toFixed(2)} good, and this needs ${g.tilt}`);
   }
   if (g.fragility !== undefined && r.fragility > g.fragility) {
-    blocked.push(`${Math.round(r.fragility * 100)}% of her obedience is fear, and this rung allows ${Math.round(g.fragility * 100)}%. She would say yes to anything right now, because she is afraid to say no.`);
+    blocked.push(`${Math.round(r.fragility * 100)}% of her obedience is fear, and this rung allows ${Math.round(g.fragility * 100)}%. She'd say yes to anything right now because she's afraid to say no.`);
   }
   if (p.age < 18) blocked.push("she is a child");
   if (p.status !== "owned" && p.status !== "indentured" && rom.standing === "property") blocked.push("she is not yours");
@@ -173,16 +173,16 @@ const line = (text: string, tone: ReportLine["tone"], weight: number, person?: s
 export const RITES: Record<string, Rite> = {
   notice: {
     id: "notice", name: "Single her out", cash: 0, rep: 0,
-    seed: (_s, p) => `You send for ${p.name} again, for the third time this week, and the girl who fetches her does not bother to hide what she thinks of it.`,
+    seed: (_s, p) => `You send for ${p.name} for the third time this week. The other slaves are starting to notice.`,
     apply: (s, p) => {
       applyTreatment(p, { kind: "recognition", size: 4, why: "singled out in front of the household" }, s.arcology.week);
-      startRumor(s, `${p.name} is the one he keeps sending for`, { about: p.id, salience: 5 });
-      return [line(`${p.name} is your favourite, and the household knows before she does.`, "good", 6, p.id)];
+      startRumor(s, `${p.name} is the owner's favorite`, { about: p.id, salience: 5 });
+      return [line(`${p.name} is your favorite now, and all your slaves know it.`, "good", 6, p.id)];
     },
   },
   move_her_up: {
     id: "move_her_up", name: "Move her into the suite", cash: 4000, rep: 60,
-    seed: (_s, p) => `${p.name}'s things — there are not many — are being carried up to the suite by somebody who is not being told why.`,
+    seed: (_s, p) => `You have ${p.name}'s few belongings moved up to your suite.`,
     apply: (s, p) => {
       applyTreatment(p, { kind: "recognition", size: 7, why: "taken off the floors and moved upstairs" }, s.arcology.week);
       p.assignment = "please you";
@@ -191,37 +191,37 @@ export const RITES: Record<string, Rite> = {
       const mem = s.memory[p.id];
       if (mem) remember(mem, { content: "the day she stopped working the floors and was given a room upstairs", week: s.arcology.week, importance: 9, charge: "bright", core: true });
       startRumor(s, `${p.name} lives upstairs now`, { about: p.id, salience: 6 });
-      return [line(`${p.name} sleeps in the suite. Every other woman in this arcology has done that arithmetic by lunchtime.`, "good", 8, p.id)];
+      return [line(`${p.name} lives in your suite now. By lunchtime every slave in the arcology knows.`, "good", 8, p.id)];
     },
   },
   court: {
     id: "court", name: "Court her, publicly", cash: 9000, rep: 200,
-    seed: (_s, p) => `You have started courting ${p.name} where people can see it . People stop you on the concourse to ask if it's true.`,
+    seed: (_s, p) => `You've started courting ${p.name} in public. People stop you on the concourse to ask if it's true.`,
     apply: (s, p) => {
-      applyTreatment(p, { kind: "promise_kept", size: 6, why: "courted in public, like somebody who could say no" }, s.arcology.week);
+      applyTreatment(p, { kind: "promise_kept", size: 6, why: "courted in public like a free woman" }, s.arcology.week);
       p.bond.hope = clamp(p.bond.hope + 25, 0, 100);
       shove(p.psyche, 2, { hard: true });
       const mem = s.memory[p.id];
-      if (mem) remember(mem, { content: "you courted her in front of the whole arcology, as if she could have refused", week: s.arcology.week, importance: 10, charge: "bright", core: true });
+      if (mem) remember(mem, { content: "you courted her in front of the whole arcology, like a free woman", week: s.arcology.week, importance: 10, charge: "bright", core: true });
       startRumor(s, `the owner is courting ${p.name} in public`, { about: p.id, salience: 8 });
       return [line(`You are courting ${p.name} in public. The concourse is talking about nothing else.`, "good", 9, p.id)];
     },
   },
   promise: {
     id: "promise", name: "Promise yourself to her", cash: 6000, rep: 300,
-    seed: (_s, p) => `It goes on the registry: an intent to marry, filed by an arcology owner, naming a slave. The clerk reads it twice.`,
+    seed: (_s, p) => `You file an intent to marry ${p.name} with the registry. The clerk can't believe it.`,
     apply: (s, p) => {
       applyTreatment(p, { kind: "promise_kept", size: 9, why: "betrothed, on the registry, in writing" }, s.arcology.week);
       p.bond.hope = clamp(p.bond.hope + 30, 0, 100);
-      addState(p.psyche, "waiting for it to be taken back", s.arcology.week);
+      addState(p.psyche, "afraid you'll break off the engagement", s.arcology.week);
       const mem = s.memory[p.id];
-      if (mem) remember(mem, { content: "you put it in writing, on the registry, where other people could read it", week: s.arcology.week, importance: 10, charge: "bright", core: true });
-      return [line(`${p.name} is betrothed to you and it is on the registry. She is waiting for you to take it back — that is what she has learned people do.`, "good", 9, p.id)];
+      if (mem) remember(mem, { content: "you made your engagement official on the registry", week: s.arcology.week, importance: 10, charge: "bright", core: true });
+      return [line(`${p.name} is engaged to you, officially. She's afraid you'll change your mind.`, "good", 9, p.id)];
     },
   },
   wedding: {
     id: "wedding", name: "Marry her", cash: 25000, rep: 900,
-    seed: (s, p) => `The concourse is full. ${p.name} is at the front of it in something that cost more than she did, and half of ${s.arcology.name} has come to watch an owner do this.`,
+    seed: (s, p) => `The concourse is packed. ${p.name} stands at the front in a wedding dress that cost more than she did, and half of ${s.arcology.name} has come to watch an owner marry a slave.`,
     apply: (s, p) => {
       const rom = romanceOf(p);
       applyTreatment(p, { kind: "promise_kept", size: 10, why: "married, witnessed, on the registry" }, s.arcology.week);
@@ -234,7 +234,7 @@ export const RITES: Record<string, Rite> = {
       p.psyche.capacity_born = +clamp(p.psyche.capacity_born + 0.4, -6, 6).toFixed(2);
       const mem = s.memory[p.id];
       if (mem) remember(mem, { content: "the wedding — the concourse full, and the registry changed afterwards", week: s.arcology.week, importance: 10, charge: "bright", core: true });
-      startRumor(s, `he married ${p.name}`, { about: p.id, salience: 10 });
+      startRumor(s, `the owner married ${p.name}`, { about: p.id, salience: 10 });
       s.canon.push(`${p.name} is married to the owner of ${s.arcology.name}, witnessed, on the registry.`);
       // The rest of the household is not neutral about this.
       const out = [line(`You married ${p.name}.`, "good", 10, p.id)];
@@ -243,32 +243,32 @@ export const RITES: Record<string, Rite> = {
         other.bond.hope = clamp(other.bond.hope + 12, 0, 100);
         const jealous = (s.edges.find((e) => e.from === other.id && e.to === "owner")?.attraction ?? 0) > 50;
         if (jealous) {
-          addState(other.psyche, `watching him marry ${p.name}`, s.arcology.week);
+          addState(other.psyche, `watching the owner marry ${p.name}`, s.arcology.week);
           shove(other.psyche, -1.2);
           moveEdge(s.edges, other.id, p.id, { warmth: -20 });
         }
       }
-      out.push(line(`Every woman in the household watched an owner marry a slave. Their hope is up, and two of them cannot look at her.`, "neutral", 8));
+      out.push(line(`All your slaves watched you marry one of them. They're more hopeful now, and a couple of them are jealous.`, "neutral", 8));
       return out;
     },
   },
   reversal: {
     id: "reversal", name: "Give her the collar", cash: 0, rep: -1200,
-    seed: (_s, p) => `${p.name} is holding the collar. Not wearing it — holding it, and looking at you, and waiting to see whether you are going to do the thing you both know is about to happen.`,
+    seed: (_s, p) => `${p.name} is holding a collar, and waiting for you to kneel so she can put it on you.`,
     apply: (s, p) => {
       const rom = romanceOf(p);
       rom.dominion = 100;
       rom.standing = "keeper";
       p.status = "free";
       s.player.owned_by = p.id;
-      s.canon.push(`${p.name} runs ${s.arcology.name}. The registry says the arcology's former owner belongs to her, and the registry is not a joke here.`);
-      startRumor(s, `the owner gave ${p.name} the collar and meant it`, { about: p.id, salience: 10 });
+      s.canon.push(`${p.name} runs ${s.arcology.name}. The registry says the arcology's former owner belongs to her.`);
+      startRumor(s, `the owner is ${p.name}'s slave now`, { about: p.id, salience: 10 });
       const mem = s.memory[p.id];
       if (mem) remember(mem, { content: "the night you handed her the collar and put your own neck in it", week: s.arcology.week, importance: 10, charge: "bright", core: true });
       shove(p.psyche, 3, { hard: true });
       return [
-        line(`${p.name} has the arcology. The registry has been changed and the change is real.`, "good", 10, p.id),
-        line(`The week will be reported to her from now on. She will tell you what she wants, and you will be the one deciding whether to do it.`, "warning", 10, p.id),
+        line(`${p.name} owns the arcology now, and you.`, "good", 10, p.id),
+        line(`The weekly report goes to her from now on. She'll tell you what she wants, and you decide whether to obey.`, "warning", 10, p.id),
       ];
     },
   },
@@ -280,7 +280,7 @@ export function ascend(s: SaveState, p: Person): { ok: boolean; why?: string; li
   if (!next) return { ok: false, why: "there is nowhere further to go", lines: [] };
   if (!next.ready) return { ok: false, why: next.blocked[0], lines: [] };
   const rite = next.rung.rite ? RITES[next.rung.rite] : undefined;
-  if (rite && s.arcology.cash < rite.cash) return { ok: false, why: `it costs ¤${rite.cash.toLocaleString()} and you do not have it`, lines: [] };
+  if (rite && s.arcology.cash < rite.cash) return { ok: false, why: `it costs ¤${rite.cash.toLocaleString()}, which you don't have`, lines: [] };
 
   const rom = romanceOf(p);
   const lines: ReportLine[] = [];
@@ -307,7 +307,7 @@ export function ascend(s: SaveState, p: Person): { ok: boolean; why?: string; li
     if (hostile && rungIndex(rom.standing) >= 3) {
       const cost = Math.round(st.adoption * 6);
       s.arcology.rep -= cost;
-      lines.push(line(`${d.noun} does not recognise what you just did. −${cost} standing.`, "bad", 7));
+      lines.push(line(`${d.noun} disapproves. −${cost} standing.`, "bad", 7));
     } else if (pleased && rungIndex(rom.standing) >= 4) {
       const gain = Math.round(st.adoption * 4);
       s.arcology.rep += gain;
@@ -344,10 +344,10 @@ export function renounce(s: SaveState, p: Person, why: string): ReportLine[] {
     }
     return [
       line(`You broke a public promise to ${p.name}.`, "bad", 10, p.id),
-      line(`Every woman in this household watched a promise get taken back, and they have all filed it.`, "bad", 9),
+      line(`All your slaves saw you break a promise, and they won't forget it.`, "bad", 9),
     ];
   }
-  return [line(`${p.name} is back to being property. She has understood the lesson.`, "bad", 8, p.id)];
+  return [line(`${p.name} is just a slave again, and she's crushed.`, "bad", 8, p.id)];
 }
 
 /* ── DOMINION ─────────────────────────────────────────────────────────────────────────────────
@@ -372,7 +372,7 @@ export function shiftDominion(s: SaveState, p: Person, amount: number, why: stri
   }
   const mem = s.memory[p.id];
   if (mem && Math.abs(amount) >= 8) {
-    remember(mem, { content: amount > 0 ? `he did what she asked — ${why}` : `he said no — ${why}`, week: s.arcology.week, importance: 6, charge: amount > 0 ? "warm" : "cold" });
+    remember(mem, { content: amount > 0 ? `the owner did what she asked — ${why}` : `the owner said no — ${why}`, week: s.arcology.week, importance: 6, charge: amount > 0 ? "warm" : "cold" });
   }
 }
 
@@ -423,7 +423,7 @@ export function keeperRunsTheWeek(s: SaveState): KeeperWeek {
         target.assignment = "rest in the spa";
         target.facility = "spa";
         applyTreatment(target, { kind: "kindness", size: 3, why: `${her.name} pulled her out` }, s.arcology.week);
-        lines.push(line(`${her.name} took ${target.name} off the floors without asking you. She was right to.`, "good", 6, target.id));
+        lines.push(line(`${her.name} took ${target.name} off work without asking you.`, "good", 6, target.id));
       }
     } else if (cold) {
       const worst = household.sort((a, b) => a.bond.read.devotion - b.bond.read.devotion)[0];
@@ -431,7 +431,7 @@ export function keeperRunsTheWeek(s: SaveState): KeeperWeek {
         worst.assignment = "be confined in the cellblock";
         worst.facility = "cellblock";
         applyTreatment(worst, { kind: "coercion", size: 5, why: `${her.name} put her there` }, s.arcology.week);
-        lines.push(line(`${her.name} put ${worst.name} in the cellblock. She did not consult you and she did not enjoy having to explain it either.`, "warning", 7, worst.id));
+        lines.push(line(`${her.name} put ${worst.name} in the cellblock without consulting you.`, "warning", 7, worst.id));
       }
     }
   }
@@ -442,13 +442,13 @@ export function keeperRunsTheWeek(s: SaveState): KeeperWeek {
     const st = s.arcology.doctrines[wants];
     if (st) {
       st.adoption = clamp(st.adoption + 4, 0, 100);
-      lines.push(line(`${her.name} has been pushing ${DOCTRINE_BY_ID[wants]?.noun ?? wants} all week, and it has moved.`, "neutral", 5, her.id));
+      lines.push(line(`${her.name} has been pushing ${DOCTRINE_BY_ID[wants]?.noun ?? wants} all week, and it's gaining ground.`, "neutral", 5, her.id));
     }
   }
 
   if (reach.everything) {
     // The report is hers now, and so is the money.
-    lines.push(line(`${her.name} closed the week's books herself. You saw the numbers when she was finished with them.`, "neutral", 4, her.id));
+    lines.push(line(`${her.name} did the week's accounts herself. You only saw the numbers once she was done.`, "neutral", 4, her.id));
   }
 
   return { lines };
@@ -465,9 +465,9 @@ export function tickRomance(s: SaveState, p: Person): ReportLine[] {
   if (p.bond.weeks_since_kindness > 4) {
     const bite = idx * 0.6;
     p.bond.hope = clamp(p.bond.hope - bite, 0, 100);
-    shiftDominion(s, p, -1, "he has not come near her in a month");
+    shiftDominion(s, p, -1, "you haven't been near her in a month");
     if (p.bond.weeks_since_kindness === 8) {
-      lines.push(line(`${p.name} is your ${RUNG_BY_ID[rom.standing].name.toLowerCase()} and you have not been near her in two months. She has started drawing conclusions.`, "warning", 7, p.id));
+      lines.push(line(`${p.name} is your ${RUNG_BY_ID[rom.standing].name.toLowerCase()} and you haven't been near her in two months. She thinks you've lost interest.`, "warning", 7, p.id));
     }
   } else if (idx >= 3) {
     p.bond.hope = clamp(p.bond.hope + 1.5, 0, 100);
@@ -475,7 +475,7 @@ export function tickRomance(s: SaveState, p: Person): ReportLine[] {
   }
 
   // A wife earns dominion simply by being one — the standing is real and it accumulates.
-  if (idx >= 5) shiftDominion(s, p, 0.8, "time, and the registry");
+  if (idx >= 5) shiftDominion(s, p, 0.8, "being your wife");
 
   return lines;
 }

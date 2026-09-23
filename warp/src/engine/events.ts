@@ -58,44 +58,44 @@ export const EVENTS: EventDef[] = [
     id: "flight", severity: "major", endogenous: true,
     candidates: (s) => owned(s).filter((p) => read(p).flight_risk > 0.3).map((person) => ({ person })),
     weight: (_s, c) => read(c.person!).flight_risk * 14,
-    seed: (_s, c) => `${c.person!.name} has been found at a service door on the industrial level, three floors from anywhere she is supposed to be, at four in the morning.`,
+    seed: (_s, c) => `Security caught ${c.person!.name} at a service door on the industrial level at four in the morning. She was trying to escape.`,
     options: [
-      { id: "cell", label: "The cellblock", note: "fast obedience, and she will never forget it",
+      { id: "cell", label: "The cellblock", note: "she'll obey out of fear, and never forget it",
         resolve: (s, _e, p) => { applyTreatment(p!, { kind: "coercion", size: 7, why: "caught at the door" }, s.arcology.week); p!.psyche.relaxation = clamp(p!.psyche.relaxation - 3, -10, 10); startRumor(s, `${p!.name} tried to run and went to the cells`, { about: p!.id, salience: 7 }); return `${p!.name} is in the cellblock.`; } },
-      { id: "ask", label: "Ask her what she was doing", note: "costs you nothing but the hour",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 4, why: "asked instead of punished" }, s.arcology.week); p!.bond.hope = clamp(p!.bond.hope + 10, 0, 100); return `She told you most of it. You believed about half.`; } },
+      { id: "ask", label: "Ask her what she was doing", note: "costs nothing but your time",
+        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 4, why: "asked instead of punished" }, s.arcology.week); p!.bond.hope = clamp(p!.bond.hope + 10, 0, 100); return `She told you most of it. You believe about half.`; } },
       { id: "sell", label: "Sell her before she manages it",
-        resolve: (s, _e, p) => { p!.status = "sold"; p!.exit_week = s.arcology.week; p!.exit_note = "sold after an escape attempt"; s.arcology.cash += 800; startRumor(s, `${p!.name} was sold the same week she tried to run`, { salience: 8 }); return `Gone by Thursday.`; } },
+        resolve: (s, _e, p) => { p!.status = "sold"; p!.exit_week = s.arcology.week; p!.exit_note = "sold after an escape attempt"; s.arcology.cash += 800; startRumor(s, `${p!.name} was sold the same week she tried to run`, { salience: 8 }); return `She's sold by Thursday.`; } },
       { id: "ignore", label: "Do nothing and see what she does next",
-        resolve: (s, _e, p) => { p!.bond.hope = clamp(p!.bond.hope + 4, 0, 100); p!.bond.resentment = clamp(p!.bond.resentment - 3, 0, 100); return `Nothing was said. She noticed that too.`; } },
+        resolve: (s, _e, p) => { p!.bond.hope = clamp(p!.bond.hope + 4, 0, 100); p!.bond.resentment = clamp(p!.bond.resentment - 3, 0, 100); return `You say nothing. She's surprised she wasn't punished.`; } },
     ],
   },
   {
     id: "breaking", severity: "notable", endogenous: true,
     candidates: (s) => owned(s).filter((p) => p.psyche.state === "fracturing").map((person) => ({ person })),
     weight: () => 9,
-    seed: (_s, c) => `${c.person!.name} has stopped answering to her name. She does what she is told, immediately, and there is nobody behind it.`,
+    seed: (_s, c) => `${c.person!.name} is on the verge of breaking. She obeys every order instantly, but she barely responds to her own name.`,
     options: [
       { id: "spa", label: "Spa, and take her off everything",
-        resolve: (s, _e, p) => { p!.assignment = "rest in the spa"; p!.health.aphrodisiacs = 0; applyTreatment(p!, { kind: "kindness", size: 6, why: "pulled out before she broke" }, s.arcology.week); return `Pulled out. It will take weeks.`; } },
+        resolve: (s, _e, p) => { p!.assignment = "rest in the spa"; p!.health.aphrodisiacs = 0; applyTreatment(p!, { kind: "kindness", size: 6, why: "pulled out before she broke" }, s.arcology.week); return `She's in the spa now. It'll take weeks for her to recover.`; } },
       { id: "push", label: "Push her the rest of the way", note: "a broken slave is obedient and nothing else",
-        resolve: (s, _e, p) => { p!.psyche.relaxation = -9.5; p!.psyche.state = "broken"; p!.psyche.break_mode = "dissociative"; applyTreatment(p!, { kind: "cruelty", size: 9, why: "finished her" }, s.arcology.week); return `She broke on the Tuesday. She has been perfectly obedient since.`; } },
+        resolve: (s, _e, p) => { p!.psyche.relaxation = -9.5; p!.psyche.state = "broken"; p!.psyche.break_mode = "dissociative"; applyTreatment(p!, { kind: "cruelty", size: 9, why: "finished her" }, s.arcology.week); return `She broke on Tuesday. She's been perfectly obedient ever since, and there's nothing left of who she was.`; } },
       { id: "ignore", label: "Leave her in place",
-        resolve: () => `You left her where she was. Nothing changed.` },
+        resolve: () => `You leave her where she is.` },
     ],
   },
   {
     id: "devoted_request", severity: "minor", endogenous: true,
     candidates: (s) => owned(s).filter((p) => read(p).devotion > 55 && p.bond.hope > 30).map((person) => ({ person })),
     weight: (_s, c) => 3 + c.person!.bond.hope / 25,
-    seed: (_s, c) => `${c.person!.name} has asked to speak to you. She has clearly been working up to it for days.`,
+    seed: (_s, c) => `${c.person!.name} has asked to speak to you. She's clearly nervous, and has been working up the courage for days.`,
     options: [
       { id: "grant", label: "Give her what she asks for",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "promise_kept", size: 6, why: "she asked and you said yes" }, s.arcology.week); s.arcology.cash -= 500; return `You said yes. It cost about five hundred. She thanked you three times on the way out.`; } },
+        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "promise_kept", size: 6, why: "she asked and you said yes" }, s.arcology.week); s.arcology.cash -= 500; return `You say yes. It costs about five hundred, and she thanks you three times on the way out.`; } },
       { id: "later", label: "Tell her later",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "neglect", size: 3, why: "asked and got 'later'" }, s.arcology.week); return `She said of course. She has stopped asking things.`; } },
+        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "neglect", size: 3, why: "asked and got 'later'" }, s.arcology.week); return `"Of course," she says. She stops asking for things after that.`; } },
       { id: "refuse", label: "Refuse, and say why",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "kindness", size: 1, why: "refused, but honestly" }, s.arcology.week); p!.bond.hope = clamp(p!.bond.hope - 8, 0, 100); return `No, and the reason. She took the reason better than the no.`; } },
+        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "kindness", size: 1, why: "refused, but honestly" }, s.arcology.week); p!.bond.hope = clamp(p!.bond.hope - 8, 0, 100); return `You say no, and explain why. She's disappointed, but she appreciates the honesty.`; } },
     ],
   },
   {
@@ -113,13 +113,13 @@ export const EVENTS: EventDef[] = [
     seed: (s, c) => {
       const enemy = s.edges.find((e) => e.from === c.person!.id && e.warmth < -35);
       const other = enemy ? s.people[enemy.to] : undefined;
-      return `${c.person!.name} and ${other?.name ?? "another of yours"} have had whatever this is for weeks, and last night it came apart in front of the others.`;
+      return `${c.person!.name} and ${other?.name ?? "another of yours"} have been feuding for weeks, and last night it turned into a fight in front of the others.`;
     },
     options: [
-      { id: "separate", label: "Separate them", resolve: () => `They are on different floors now.` },
+      { id: "separate", label: "Separate them", resolve: () => `You move them to different floors.` },
       { id: "pick", label: "Back one of them publicly",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 5, why: "backed in public" }, s.arcology.week); return `You backed ${p!.name}. Everyone saw.` } },
-      { id: "both", label: "Punish both", resolve: (s, _e, p) => { applyTreatment(p!, { kind: "coercion", size: 4, why: "punished for fighting" }, s.arcology.week); return `Both punished. They still aren't speaking to each other, and now they aren't speaking to you either.` } },
+        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 5, why: "backed in public" }, s.arcology.week); return `You side with ${p!.name}, publicly.` } },
+      { id: "both", label: "Punish both", resolve: (s, _e, p) => { applyTreatment(p!, { kind: "coercion", size: 4, why: "punished for fighting" }, s.arcology.week); return `You punish them both. They still hate each other, and now they resent you too.` } },
     ],
   },
   {
@@ -132,48 +132,48 @@ export const EVENTS: EventDef[] = [
     },
     options: [
       { id: "buy", label: "Outbid them", note: "expensive, and it works",
-        resolve: (s) => { s.arcology.cash -= 12000; const n = s.arcology.neighbours.find((x) => x.attitude < 0); if (n) n.attitude = clamp(n.attitude - 10, -100, 100); return `Twelve thousand, and the suppliers stayed.`; } },
+        resolve: (s) => { s.arcology.cash -= 12000; const n = s.arcology.neighbours.find((x) => x.attitude < 0); if (n) n.attitude = clamp(n.attitude - 10, -100, 100); return `It costs twelve thousand, but your suppliers stay.`; } },
       { id: "diplomacy", label: "Go and talk to them",
-        resolve: (s) => { const n = s.arcology.neighbours.find((x) => x.attitude < 0); if (n) n.attitude = clamp(n.attitude + 25, -100, 100); s.arcology.rep -= 200; return `You went in person. It cost you some standing and bought a year.`; } },
+        resolve: (s) => { const n = s.arcology.neighbours.find((x) => x.attitude < 0); if (n) n.attitude = clamp(n.attitude + 25, -100, 100); s.arcology.rep -= 200; return `You go in person. It costs you some reputation, but buys you a year of peace.`; } },
       { id: "ignore", label: "Let it happen",
-        resolve: (s) => { s.arcology.prosperity = clamp(s.arcology.prosperity - 8, 0, 200); return `Prosperity down eight. It will not stop there.`; } },
+        resolve: (s) => { s.arcology.prosperity = clamp(s.arcology.prosperity - 8, 0, 200); return `Prosperity drops by eight, and it'll keep dropping.`; } },
     ],
   },
   {
     id: "citizens_unhappy", severity: "notable", endogenous: false,
     candidates: (s) => (s.arcology.crime > 40 || s.arcology.prosperity < 45 ? [{}] : []),
     weight: (s) => 3 + s.arcology.crime / 12,
-    seed: (s) => `There was a crowd on the commercial level tonight. Not a riot. The kind of thing that happens before one, in an arcology with ${s.arcology.crime | 0} points of crime and not enough watch.`,
+    seed: (s) => `An angry crowd gathered on the commercial level tonight. It isn't a riot yet, but with crime at ${s.arcology.crime | 0} and not enough security, it could become one.`,
     options: [
-      { id: "security", label: "Put more watch on the floor", resolve: (s) => { s.arcology.cash -= 6000; s.arcology.security = clamp(s.arcology.security + 12, 0, 100); s.arcology.crime = clamp(s.arcology.crime - 10, 0, 100); return `Six thousand of overtime, and it went quiet.`; } },
-      { id: "spend", label: "Buy them off", resolve: (s) => { s.arcology.cash -= 10000; s.arcology.rep += 400; s.arcology.crime = clamp(s.arcology.crime - 6, 0, 100); return `Free food and a festival. Cheap at ten thousand.`; } },
-      { id: "hard", label: "Make an example", resolve: (s) => { s.arcology.crime = clamp(s.arcology.crime - 18, 0, 100); s.arcology.rep -= 300; s.arcology.public_standing = clamp(s.arcology.public_standing - 2, -10, 10); return `It went very quiet indeed.`; } },
+      { id: "security", label: "Put more watch on the floor", resolve: (s) => { s.arcology.cash -= 6000; s.arcology.security = clamp(s.arcology.security + 12, 0, 100); s.arcology.crime = clamp(s.arcology.crime - 10, 0, 100); return `Six thousand in security overtime, and things calm down.`; } },
+      { id: "spend", label: "Buy them off", resolve: (s) => { s.arcology.cash -= 10000; s.arcology.rep += 400; s.arcology.crime = clamp(s.arcology.crime - 6, 0, 100); return `You throw a festival with free food, for ten thousand. It works.`; } },
+      { id: "hard", label: "Make an example", resolve: (s) => { s.arcology.crime = clamp(s.arcology.crime - 18, 0, 100); s.arcology.rep -= 300; s.arcology.public_standing = clamp(s.arcology.public_standing - 2, -10, 10); return `You have the ringleaders publicly punished. The arcology goes very quiet.`; } },
     ],
   },
   {
     id: "pregnancy_found", severity: "minor", endogenous: true,
     candidates: (s) => owned(s).filter((p) => p.womb.fetuses.length && p.womb.weeks >= 8 && p.womb.weeks <= 10).map((person) => ({ person })),
     weight: () => 6,
-    seed: (_s, c) => `${c.person!.name} is nine weeks pregnant. The clinic flagged it; she has known for at least a fortnight and did not say.`,
+    seed: (_s, c) => `${c.person!.name} is nine weeks pregnant. The clinic found out; she's known for at least two weeks and didn't tell anyone.`,
     options: [
       { id: "keep", label: "She carries it",
         resolve: (s, _e, p) => { applyTreatment(p!, { kind: "kindness", size: 3, why: "allowed to carry" }, s.arcology.week); return `She is carrying it.`; } },
       { id: "end", label: "End it",
-        resolve: (s, _e, p) => { p!.womb.fetuses = []; p!.womb.abortions++; p!.womb.weeks = 0; applyTreatment(p!, { kind: "cruelty", size: 6, why: "the pregnancy ended without her say" }, s.arcology.week); const mem = s.memory[p!.id]; if (mem) remember(mem, { content: "the pregnancy was ended, and nobody asked her", week: s.arcology.week, importance: 9, charge: "sharp", core: true }); return `Done on the Wednesday.`; } },
+        resolve: (s, _e, p) => { p!.womb.fetuses = []; p!.womb.abortions++; p!.womb.weeks = 0; applyTreatment(p!, { kind: "cruelty", size: 6, why: "the pregnancy ended without her say" }, s.arcology.week); const mem = s.memory[p!.id]; if (mem) remember(mem, { content: "the pregnancy was ended, and nobody asked her", week: s.arcology.week, importance: 9, charge: "sharp", core: true }); return `The pregnancy is terminated on Wednesday.`; } },
       { id: "ask", label: "Ask her what she wants",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 7, why: "asked about her own body" }, s.arcology.week); return `You asked her what she wanted. She had to think about it; nobody had asked her before.`; } },
+        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 7, why: "asked about her own body" }, s.arcology.week); return `You ask her what she wants. She has to think about it; nobody has ever asked her before.`; } },
     ],
   },
   {
     id: "shark", severity: "major", endogenous: false,
     candidates: (s) => (s.arcology.cash < 4000 ? [{}] : []),
     weight: (s) => (s.arcology.cash < 0 ? 12 : 5),
-    seed: () => `A man who does not give a surname has left a card with your steward. The back of it says exactly how much you're short by.`,
+    seed: () => `A loan shark has left his card with your steward. He knows exactly how much money you're short.`,
     options: [
       { id: "take", label: "Take the money", note: "40% APR, and he collects",
-        resolve: (s) => { s.arcology.cash += 20000; s.arcology.loans.push({ lender: "shark", principal: 20000, apr: 0.4, due_week: s.arcology.week + 20, installments: 4 }); return `Twenty thousand in hand and a man who knows where you live.`; } },
+        resolve: (s) => { s.arcology.cash += 20000; s.arcology.loans.push({ lender: "shark", principal: 20000, apr: 0.4, due_week: s.arcology.week + 20, installments: 4 }); return `You have twenty thousand, and a loan shark who knows where you live.`; } },
       { id: "bank", label: "Go to the bank instead", note: "12% APR, and they want collateral",
-        resolve: (s) => { s.arcology.cash += 12000; s.arcology.loans.push({ lender: "bank", principal: 12000, apr: 0.12, due_week: s.arcology.week + 40, installments: 8 }); return `Twelve thousand, at bank rates, against the residential sectors.`; } },
+        resolve: (s) => { s.arcology.cash += 12000; s.arcology.loans.push({ lender: "bank", principal: 12000, apr: 0.12, due_week: s.arcology.week + 40, installments: 8 }); return `Twelve thousand at bank rates, with the residential sectors as collateral.`; } },
       { id: "refuse", label: "Send him away", resolve: () => `He left the card anyway.` },
     ],
   },
@@ -181,21 +181,21 @@ export const EVENTS: EventDef[] = [
     id: "outbreak", severity: "notable", endogenous: true,
     candidates: (s) => (owned(s).filter((p) => p.health.illness >= 2).length >= 2 ? [{}] : []),
     weight: (s) => 4 + owned(s).filter((p) => p.health.illness >= 2).length,
-    seed: (s) => `Four of them have the same thing, and it started in ${Object.values(s.arcology.facilities).find((f) => f.workers.length > 2)?.name ?? "the servants' quarters"}.`,
+    seed: (s) => `Four of your slaves are sick with the same thing. It started in ${Object.values(s.arcology.facilities).find((f) => f.workers.length > 2)?.name ?? "the servants' quarters"}.`,
     options: [
-      { id: "treat", label: "Treat everybody", resolve: (s) => { s.arcology.cash -= 8000; for (const p of owned(s)) { p.health.illness = 0; p.health.health = clamp(p.health.health + 8, -100, 100); } return `Eight thousand of medicine and it stopped.`; } },
-      { id: "isolate", label: "Isolate the sick", resolve: (s) => { for (const p of owned(s).filter((x) => x.health.illness)) { p.assignment = "get treatment in the clinic"; p.psyche.relaxation = clamp(p.psyche.relaxation - 0.6, -10, 10); } return `The sick are in the clinic and the rest are working.`; } },
-      { id: "nothing", label: "Ride it out", resolve: (s) => { for (const p of owned(s)) if (p.health.illness) p.health.health = clamp(p.health.health - 12, -100, 100); return `It ran its course. Two of them are much worse.`; } },
+      { id: "treat", label: "Treat everybody", resolve: (s) => { s.arcology.cash -= 8000; for (const p of owned(s)) { p.health.illness = 0; p.health.health = clamp(p.health.health + 8, -100, 100); } return `Eight thousand in medicine, and the illness is gone.`; } },
+      { id: "isolate", label: "Isolate the sick", resolve: (s) => { for (const p of owned(s).filter((x) => x.health.illness)) { p.assignment = "get treatment in the clinic"; p.psyche.relaxation = clamp(p.psyche.relaxation - 0.6, -10, 10); } return `The sick are in the clinic, and everyone else keeps working.`; } },
+      { id: "nothing", label: "Ride it out", resolve: (s) => { for (const p of owned(s)) if (p.health.illness) p.health.health = clamp(p.health.health - 12, -100, 100); return `It runs its course. Two of them are much worse for it.`; } },
     ],
   },
   {
     id: "prestige_offer", severity: "minor", endogenous: false,
     candidates: (s) => (s.arcology.rep > 2000 ? owned(s).filter((p) => p.body.face > 70).map((person) => ({ person })) : []),
     weight: () => 3,
-    seed: (_s, c) => `A promoter wants to put ${c.person!.name} in front of an audience. He has numbers, and the numbers are good.`,
+    seed: (_s, c) => `A promoter wants to put ${c.person!.name} in front of an audience. He's offering good money.`,
     options: [
-      { id: "yes", label: "Let him", resolve: (s, _e, p) => { p!.fame.prestige = Math.min(3, p!.fame.prestige + 1) as 0 | 1 | 2 | 3; p!.fame.why = "shown, and remembered"; s.arcology.rep += 600; return `${p!.name} is a name now, in a small way.`; } },
-      { id: "no", label: "Decline", resolve: () => `Declined. He will ask again.` },
+      { id: "yes", label: "Let him", resolve: (s, _e, p) => { p!.fame.prestige = Math.min(3, p!.fame.prestige + 1) as 0 | 1 | 2 | 3; p!.fame.why = "a local celebrity"; s.arcology.rep += 600; return `${p!.name} is a minor celebrity now.`; } },
+      { id: "no", label: "Decline", resolve: () => `You decline. He'll be back.` },
     ],
   },
   {
@@ -216,7 +216,7 @@ export const EVENTS: EventDef[] = [
     seed: (s, c) => {
       const e = s.edges.filter((x) => x.from === c.person!.id).sort((a, b) => b.warmth - a.warmth)[0];
       const other = e ? s.people[e.to] : undefined;
-      return `${c.person!.name} and ${other?.name ?? "one of the others"} have become something. They stop touching when you walk in.`;
+      return `${c.person!.name} and ${other?.name ?? "one of the others"} are secretly lovers. They pull apart whenever you walk in.`;
     },
     options: [
       { id: "allow", label: "Leave them alone",
@@ -228,24 +228,24 @@ export const EVENTS: EventDef[] = [
             person.psyche.relaxation = clamp(person.psyche.relaxation + 1, -10, 10);
           }
           if (edge) { edge.roles.push("lover"); }
-          return `You didn't say anything. They noticed you didn't.`;
+          return `You say nothing, and they're grateful.`;
         } },
       { id: "separate", label: "Separate them",
         resolve: (s, _e, p) => {
           const edge = s.edges.filter((x) => x.from === p!.id).sort((a, b) => b.warmth - a.warmth)[0];
           const other = edge ? s.people[edge.to] : undefined;
           for (const person of [p!, other].filter(Boolean) as Person[]) {
-            applyTreatment(person, { kind: "cruelty", size: 5, why: "separated from the one person who was helping" }, s.arcology.week);
+            applyTreatment(person, { kind: "cruelty", size: 5, why: "separated from her lover" }, s.arcology.week);
             const mem = s.memory[person.id];
-            if (mem) remember(mem, { content: "the one good thing here was taken away on purpose", week: s.arcology.week, importance: 8, charge: "sharp", core: true });
+            if (mem) remember(mem, { content: "the owner separated her from her lover", week: s.arcology.week, importance: 8, charge: "sharp", core: true });
           }
-          return `Different floors, different shifts. They still find ways.`;
+          return `You put them on different floors and different shifts. They still sneak off together.`;
         } },
-      { id: "use", label: "Put them to work together", note: "they perform better; they also become one thing rather than two",
+      { id: "use", label: "Put them to work together", note: "they perform better together, but become inseparable",
         resolve: (s, _e, p) => {
           applyTreatment(p!, { kind: "kindness", size: 2, why: "kept with her person" }, s.arcology.week);
           p!.skills.entertainment = clamp(p!.skills.entertainment + 6, 0, 100);
-          return `Booked as a pair. The takings say it was the right call and neither of them will look at you.`;
+          return `You book them as a pair. They earn more, but they resent being used this way.`;
         } },
     ],
   },
@@ -259,25 +259,25 @@ export const EVENTS: EventDef[] = [
     weight: () => 5,
     seed: (s, c) => {
       const strong = Object.entries(s.arcology.doctrines).sort((a, b) => b[1].adoption - a[1].adoption)[0];
-      return `Somebody wrote about ${c.person!.name} on the public boards. Your arcology believes what it believes about bodies now — ${Math.round(strong?.[1].adoption ?? 0)}% of it does — and somebody has written that she doesn't belong in it.`;
+      return `Someone posted about ${c.person!.name} on the public boards. ${Math.round(strong?.[1].adoption ?? 0)}% of your citizens have adopted your society's views on bodies, and she doesn't fit them.`;
     },
     options: [
-      { id: "change", label: "Change her to fit", note: "expensive, and she is the one who pays it",
-        resolve: (s, _e, p) => { s.arcology.cash -= 9000; applyTreatment(p!, { kind: "cruelty", size: 5, why: "remade to suit the doctrine" }, s.arcology.week); p!.health.recovery_weeks += 2; return `Nine thousand and two weeks in the clinic.`; } },
+      { id: "change", label: "Change her to fit", note: "expensive, and hard on her",
+        resolve: (s, _e, p) => { s.arcology.cash -= 9000; applyTreatment(p!, { kind: "cruelty", size: 5, why: "remade to suit the doctrine" }, s.arcology.week); p!.health.recovery_weeks += 2; return `Surgery costs nine thousand, and she spends two weeks in the clinic.`; } },
       { id: "hide", label: "Keep her out of sight",
-        resolve: (s, _e, p) => { p!.assignment = "house servant"; applyTreatment(p!, { kind: "neglect", size: 3, why: "hidden away" }, s.arcology.week); return `She works the back corridors now.`; } },
-      { id: "defend", label: "Say publicly that she stays as she is", note: "costs standing; buys something else",
-        resolve: (s, _e, p) => { s.arcology.rep -= 800; applyTreatment(p!, { kind: "recognition", size: 8, why: "defended in public, at cost" }, s.arcology.week); const mem = s.memory[p!.id]; if (mem) remember(mem, { content: "you stood up in front of the whole arcology and said she stays as she is", week: s.arcology.week, importance: 10, charge: "bright", core: true }); return `It cost eight hundred reputation. She heard about it within the hour.`; } },
+        resolve: (s, _e, p) => { p!.assignment = "house servant"; applyTreatment(p!, { kind: "neglect", size: 3, why: "hidden away" }, s.arcology.week); return `She works in the back corridors now, where nobody sees her.`; } },
+      { id: "defend", label: "Say publicly that she stays as she is", note: "costs reputation, but she'll be grateful",
+        resolve: (s, _e, p) => { s.arcology.rep -= 800; applyTreatment(p!, { kind: "recognition", size: 8, why: "defended in public, at cost" }, s.arcology.week); const mem = s.memory[p!.id]; if (mem) remember(mem, { content: "you stood up in front of the whole arcology and said she stays as she is", week: s.arcology.week, importance: 10, charge: "bright", core: true }); return `It costs you eight hundred reputation. She hears about it within the hour, and she's deeply grateful.`; } },
     ],
   },
   {
     id: "mercenary_offer", severity: "minor", endogenous: false,
     candidates: (s) => (!s.arcology.mercenaries.hired && s.arcology.cash > 25000 ? [{}] : []),
     weight: (s) => (s.arcology.security < 40 ? 5 : 2),
-    seed: () => `A company that has just finished somewhere else is looking for a retainer. Their captain is direct about the price and evasive about the last contract.`,
+    seed: () => `A mercenary company is looking for work. Their captain is upfront about the price and cagey about their last job.`,
     options: [
       { id: "hire", label: "Take them on", note: "¤22,000 up front — under the usual rate",
-        resolve: (s) => { s.arcology.cash -= 22000; s.arcology.mercenaries = { hired: true, strength: 50, loyalty: 55, upkeep: 3500 }; s.arcology.security = clamp(s.arcology.security + 18, 0, 100); return `Hired. They moved into the freight level the same day.`; } },
+        resolve: (s) => { s.arcology.cash -= 22000; s.arcology.mercenaries = { hired: true, strength: 50, loyalty: 55, upkeep: 3500 }; s.arcology.security = clamp(s.arcology.security + 18, 0, 100); return `You hire them. They move into the freight level the same day.`; } },
       { id: "pass", label: "Pass", resolve: () => `They went east.` },
     ],
   },
@@ -287,7 +287,7 @@ export const EVENTS: EventDef[] = [
     weight: () => 6,
     seed: (s) => {
       const gone = Object.values(s.people).find((p) => p.status === "free" && p.exit_note === "escaped");
-      return `${gone?.name ?? "Somebody who used to be yours"} is at the residential doors. She came back on her own, and she is not explaining why yet.`;
+      return `${gone?.name ?? "Somebody who used to be yours"} is at the residential doors. She's come back on her own, and won't say why.`;
     },
     options: [
       { id: "take", label: "Take her back in",
@@ -300,14 +300,14 @@ export const EVENTS: EventDef[] = [
           applyTreatment(gone, { kind: "recognition", size: 6, why: "came back and was let in" }, s.arcology.week);
           gone.bond.hope = clamp(gone.bond.hope + 20, 0, 100);
           startRumor(s, `${gone.name} came back on her own`, { salience: 8, about: gone.id });
-          return `${gone.name} is upstairs. Whatever happened out there, she is not saying.`;
+          return `${gone.name} is back in the household. She won't talk about what happened while she was gone.`;
         } },
       { id: "refuse", label: "Leave her at the door",
         resolve: (s) => {
           const gone = Object.values(s.people).find((p) => p.status === "free" && p.exit_note === "escaped");
-          startRumor(s, `he left ${gone?.name ?? "her"} standing at the door`, { salience: 7 });
+          startRumor(s, `the owner left ${gone?.name ?? "her"} standing at the door`, { salience: 7 });
           for (const p of owned(s)) p.bond.hope = clamp(p.bond.hope - 6, 0, 100);
-          return `She stood there a while. The household watched from four floors up.`;
+          return `She stands there for a while before leaving. Your slaves watch from the windows.`;
         } },
     ],
   },

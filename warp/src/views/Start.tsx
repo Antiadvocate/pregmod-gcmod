@@ -78,7 +78,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
               ))}
             </div>
           </Field>
-          <Field label="The arcology"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="leave blank and it names itself" /></Field>
+          <Field label="The arcology"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="leave blank for a random name" /></Field>
           <Field label="How hard" hint="Money only. Your origin sets the rest.">
             <div className="flex gap-2">
               {(["generous", "standard", "hard"] as const).map((d) => (
@@ -86,7 +86,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
               ))}
             </div>
           </Field>
-          <Field label="Twists" hint={twists.length ? twists.map((t) => TWIST_BY_ID[t].what).join(" ") : "Up to two. Each one bends the world a little."}>
+          <Field label="Twists" hint={twists.length ? twists.map((t) => TWIST_BY_ID[t].what).join(" ") : "Pick up to two."}>
             <div className="flex flex-wrap gap-1.5">
               {TWISTS.map((t) => (
                 <button key={t.id} className={cx("chip !text-[12px] !py-1 !px-3", twists.includes(t.id) && "on")}
@@ -100,7 +100,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
           </Field>
           <label className="flex items-start gap-2.5 mt-1 cursor-pointer">
             <input type="checkbox" className="!w-auto mt-0.5" checked={supplication} onChange={(e) => setSupplication(e.target.checked)} />
-            <span className="text-[12.5px] mid">Also run <span className="hi">Supplicationism</span>: a long storyline where one of the women you own slowly comes to own you.</span>
+            <span className="text-[12.5px] mid">Also run <span className="hi">Supplicationism</span>: a long storyline where one of your slaves gradually comes to own you.</span>
           </label>
           <Button kind="primary" onClick={begin} disabled={busy || !kit} className="w-full mt-4">Begin</Button>
           {!modelsAvailable() ? (

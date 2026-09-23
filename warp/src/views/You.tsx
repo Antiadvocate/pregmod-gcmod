@@ -7,7 +7,7 @@ import { unrest } from "../engine/security";
 import { read } from "../engine/obedience";
 import YourBody from "./YourBody";
 
-const TIGHTNESS = ["not holding anything", "a little wound up", "tight", "very tight", "clenched", "nothing is getting through"];
+const TIGHTNESS = ["relaxed", "a little tense", "tense", "very tense", "guarded", "completely closed off"];
 
 export default function You() {
   const { save, mutate } = useGame();
@@ -21,10 +21,10 @@ export default function You() {
         <Stat label="household" value={household.length} sub={`${household.filter((p) => p.facility).length} in facilities`} />
         <Stat label="feared" value={Math.round(r.feared)} tone={r.feared > 60 ? "warn" : undefined} />
         <Stat label="trusted" value={Math.round(r.trusted)} tone={r.trusted > 50 ? "good" : undefined} />
-        <Stat label="unrest" value={Math.round(u)} tone={u > 50 ? "bad" : undefined} sub="watch does not touch this" />
+        <Stat label="unrest" value={Math.round(u)} tone={u > 50 ? "bad" : undefined} sub="security doesn't reduce this" />
       </div>
 
-      <Section title="What they would say about you if you were not in the room">
+      <Section title="What your slaves think of you">
         <Card>
           <p className="font-prose text-[15.5px] mb-3">You are {r.label}.</p>
           <ul className="space-y-2 text-[13px]">
@@ -39,7 +39,7 @@ export default function You() {
             <Field label="Name"><input value={save.player.name} onChange={(e) => mutate((s) => { s.player.name = e.target.value; })} /></Field>
             <Field label="What they call you"><input value={save.player.title} onChange={(e) => mutate((s) => { s.player.title = e.target.value; })} /></Field>
           </div>
-          <Field label="How you look, to somebody meeting you" hint="The narrator uses this verbatim. Nothing else writes it.">
+          <Field label="Your appearance" hint="The narrator uses this exactly as written.">
             <textarea rows={2} value={save.player.body.appearance_facts}
               onChange={(e) => mutate((s) => { s.player.body.appearance_facts = e.target.value; })} />
           </Field>
@@ -63,16 +63,16 @@ export default function You() {
         </Card>
       </Section>
 
-      <Section title="How tightly you are holding yourself">
+      <Section title="How reserved you are">
         <Card>
-          <div className="text-[12px] dim mb-3">Caps how open the narrator may write you. Never lifts it.</div>
+          <div className="text-[12px] dim mb-3">Limits how emotionally open the narrator writes you.</div>
           <input type="range" min={0} max={5} value={save.player.tightness ?? 0}
             onChange={(e) => mutate((s) => { s.player.tightness = Number(e.target.value); })} />
           <div className="text-[12px] mid mt-1">{TIGHTNESS[save.player.tightness ?? 0]}</div>
         </Card>
       </Section>
 
-      <Section title="The ones who would notice if you stopped">
+      <Section title="Your most attached slaves">
         <div className="space-y-1.5">
           {household
             .map((p) => ({ p, r: read(p, save.memory[p.id]) }))

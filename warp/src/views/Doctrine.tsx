@@ -29,7 +29,7 @@ export default function Doctrine() {
                   <div className="flex items-start gap-2">
                     <div className="flex-1">
                       <div className="text-[14px]">{d.noun}</div>
-                      <div className="font-prose text-[13px] dim mt-0.5">&ldquo;{d.creed}&rdquo;</div>
+                      <div className="font-prose text-[13px] dim mt-0.5">{d.creed}</div>
                     </div>
                     <Button size="sm" kind="ghost" onClick={() => mutate((s) => abandonDoctrine(s, id))}>drop</Button>
                   </div>
@@ -75,7 +75,7 @@ export default function Doctrine() {
                 <div className="flex items-start gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="text-[13.5px]">{d.noun}</div>
-                    <div className="font-prose text-[12.5px] dim">&ldquo;{d.creed}&rdquo;</div>
+                    <div className="font-prose text-[12.5px] dim">{d.creed}</div>
                     {wants.length ? <div className="flex flex-wrap gap-1 mt-1.5">{wants.map((w) => <Chip key={w}>{w}</Chip>)}</div> : null}
                     {clash.length ? <div className="text-[11px] bad mt-1.5">conflicts with {clash.map((c) => DOCTRINES.find((x) => x.id === c)?.noun).join(", ")}</div> : null}
                   </div>

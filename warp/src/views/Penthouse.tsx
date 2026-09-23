@@ -76,7 +76,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
 
       {keeper ? (
         <Card className="mb-6" >
-          <div className="text-[11px] uppercase tracking-wider dim mb-1">this is her arcology now</div>
+          <div className="text-[11px] uppercase tracking-wider dim mb-1">she owns the arcology now</div>
           <p className="font-prose text-[15px]">
             {keeper.name} runs {arc.name}. The week below is her report. What you get is a say, when she asks for one.
           </p>
