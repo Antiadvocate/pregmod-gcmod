@@ -22,6 +22,8 @@ import { writeLead } from "../engine/writer";
 import { POSE_BY_ID, poseForAct, restingPose, type Pose } from "../lib/rig";
 import { modelsAvailable } from "../config";
 import SlaveArt from "./SlaveArt";
+import type { Moment } from "../lib/expression";
+import { RoomBackdrop } from "../lib/rooms";
 
 type Entry =
   | { k: "you"; text: string }
@@ -79,6 +81,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
   const [showBlocked, setShowBlocked] = useState(false);
   const [ended, setEnded] = useState(false);
   const [tray, setTray] = useState(true);
+  const [moment, setMoment] = useState<Moment | undefined>(undefined);
   const logRef = useRef<HTMLDivElement>(null);
 
   // Keep the newest thing in view. This is the whole reason the screen exists.
@@ -118,6 +121,8 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     setStream("");
     setLog((l) => [...l, { k: "you", text: act.name }]);
     setPose(poseForAct(p, act.tags));
+    // While it is happening, her body keeps time with it.
+    if (["use", "service", "hers", "play", "feet"].includes(act.group)) play("rx-rhythm");
     const res = await runActTurn(save, id, actId, {
       public: pub,
       lead: false,
@@ -142,6 +147,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     if (res.written?.tags.length) entries.push({ k: "tags", tags: res.written.tags, tone: o.landing });
     setLog((l) => [...l, ...entries]);
     setPose(poseAfter(o, restingPose(p)));
+    setMoment({ landing: o.landing, finished: o.finished, act: o.act });
     play(reactionFor(o));
     setLastAct(actId);
     setNext(followupsFor(o));
@@ -159,7 +165,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     if (b.said) entries.push({ k: "said", text: b.said });
     if (b.learned) entries.push({ k: "learned", text: b.learned });
     setLog((l) => [...l, ...entries]);
-    if (f.id === "hold" || f.id === "comfort") { setPose(POSE_BY_ID.easy); play("rx-glow"); }
+    if (f.id === "hold" || f.id === "comfort") { setPose(POSE_BY_ID.easy); play("rx-glow"); setMoment((m) => (m ? { ...m, landing: m.landing === "hated" ? "endured" : m.landing } : m)); }
     if (f.id === "mock" || f.id === "thank") { setPose(POSE_BY_ID.braced); play("rx-flinch"); }
     setNext((n) => n.filter((x) => x.id !== f.id && x.id !== "again"));
     if (b.ends) setEnded(true);
@@ -196,8 +202,9 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
 
       {/* her */}
       <div className="stage-room shrink-0 relative flex justify-center" style={{ height: tray ? "24dvh" : "34dvh", transition: "height .25s ease" }}>
-        <div className={cx("h-full", rx)} onAnimationEnd={() => setRx("")}>
-          <SlaveArt person={p} height="100%" pose={pose} />
+        <RoomBackdrop place={place.id} />
+        <div className={cx("h-full relative", rx)} onAnimationEnd={() => setRx("")}>
+          <SlaveArt person={p} height="100%" pose={pose} moment={moment} />
         </div>
         {knownFetish.length || p.persona.flaw?.known ? (
           <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 justify-center pointer-events-none">

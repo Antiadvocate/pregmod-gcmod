@@ -14,6 +14,7 @@ import "./city.test.ts";
 import "./threads.test.ts";
 import "./loop.test.ts";
 import "./story.test.ts";
+import "./wardrobe.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);

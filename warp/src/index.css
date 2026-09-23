@@ -281,8 +281,10 @@ input[type="range"]:focus { outline: none; }
 }
 .rx-breathe { animation: rx-breathe 1s ease-in-out; transform-origin: 50% 40%; }
 @keyframes rx-breathe { 0%, 100% { transform: none } 50% { transform: scale(1.008) } }
+.rx-rhythm { animation: rx-rhythm .62s ease-in-out 4; transform-origin: 50% 100%; }
+@keyframes rx-rhythm { 0%, 100% { transform: none } 45% { transform: translateY(3px) scaleY(.992) } }
 @media (prefers-reduced-motion: reduce) {
-  .rx-flinch, .rx-shudder, .rx-glow, .rx-breathe, .fade-in { animation: none }
+  .rx-flinch, .rx-shudder, .rx-glow, .rx-breathe, .rx-rhythm, .fade-in { animation: none }
 }
 
 /* ── story choices ───────────────────────────────────────────────────────────────────────── */
@@ -296,3 +298,37 @@ input[type="range"]:focus { outline: none; }
 .choice:active { transform: scale(.99); }
 .choice.on { border-color: var(--accent-glow); background: var(--accent-soft); }
 .choice.locked { opacity: .55; pointer-events: none; }
+
+/* ── her face ────────────────────────────────────────────────────────────────────────────── */
+.expr-blush { animation: expr-blush 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes expr-blush { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.06) } }
+.expr-tear { animation: expr-tear 2.6s ease-in infinite; transform-box: fill-box; }
+.expr-drip { animation: expr-drip 4.2s ease-in infinite; transform-box: fill-box; }
+.expr-late { animation-delay: 1.3s; }
+@keyframes expr-tear { 0% { transform: translateY(-6px); opacity: 0 } 25% { opacity: 1 } 100% { transform: translateY(10px); opacity: 0 } }
+@keyframes expr-drip { 0%, 40% { transform: translateY(0); opacity: 0 } 55% { opacity: 1 } 100% { transform: translateY(12px); opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .expr-blush, .expr-tear, .expr-drip { animation: none } }
+
+/* ── rooms ───────────────────────────────────────────────────────────────────────────────── */
+.room { position: absolute; inset: 0; width: 100%; height: 100%; }
+.room-twinkle { animation: room-twinkle 5s ease-in-out infinite; }
+@keyframes room-twinkle { 0%, 100% { opacity: .7 } 45% { opacity: .05 } 55% { opacity: .05 } }
+.room-sway { animation: room-sway 6s ease-in-out infinite; }
+@keyframes room-sway { 0%, 100% { transform: rotate(-3deg) } 50% { transform: rotate(3deg) } }
+.room-neon { animation: room-neon 7s steps(1) infinite; }
+@keyframes room-neon { 0%, 100% { opacity: .75 } 91% { opacity: .75 } 92% { opacity: .15 } 93% { opacity: .75 } 95% { opacity: .2 } 96% { opacity: .75 } }
+.room-walk { animation: room-walk 26s linear infinite; }
+@keyframes room-walk { from { transform: translateX(-40px) } to { transform: translateX(40px) } }
+.room-pulse { animation: room-pulse 3.4s ease-in-out infinite; }
+@keyframes room-pulse { 0%, 100% { opacity: .05 } 50% { opacity: .16 } }
+.room-spot { animation: room-spot 9s ease-in-out infinite; }
+@keyframes room-spot { 0%, 100% { transform: rotate(-16deg) } 50% { transform: rotate(16deg) } }
+.room-steam { animation: room-steam 7s ease-in-out infinite; }
+@keyframes room-steam { 0% { transform: translateY(20px); opacity: 0 } 40% { opacity: .08 } 100% { transform: translateY(-40px); opacity: 0 } }
+.room-trace { stroke-dasharray: 90; animation: room-trace 1.6s linear infinite; }
+@keyframes room-trace { from { stroke-dashoffset: 90 } to { stroke-dashoffset: 0 } }
+.room-bulb { animation: room-bulb 2.8s ease-in-out infinite; }
+@keyframes room-bulb { 0%, 100% { opacity: .95 } 50% { opacity: .6 } }
+@media (prefers-reduced-motion: reduce) {
+  .room-twinkle, .room-sway, .room-neon, .room-walk, .room-pulse, .room-spot, .room-steam, .room-trace, .room-bulb { animation: none }
+}

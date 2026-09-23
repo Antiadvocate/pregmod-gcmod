@@ -28,6 +28,9 @@
  */
 import type { Person } from "../engine/types";
 import { restingPose, type ArmPos, type Pose } from "./rig";
+import { garment } from "../data/wardrobe";
+
+const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
 
 export const ART_BASE = "art/vector";
 
@@ -67,6 +70,8 @@ export interface Layer {
   id: string;
   /** SVG transform applied to this layer alone. */
   transform?: string;
+  /** Hue rotation in degrees, for clothing she has had recoloured. */
+  tint?: number;
 }
 
 /* ── palettes ────────────────────────────────────────────────────────────────────────────────
@@ -75,6 +80,9 @@ export interface Layer {
  * falls through to a sane middle rather than to black. */
 
 const SKIN: [RegExp, string][] = [
+  [/dyed pink/i, "#fe62b0"], [/dyed blue/i, "#5b8eb7"], [/dyed green/i, "#a6c373"], [/dyed purple/i, "#7a2391"],
+  [/dyed red/i, "#bc4949"], [/dyed gray|dyed grey/i, "#bdbdbd"], [/dyed white/i, "#ffffff"], [/dyed black/i, "#1c1c1c"],
+  [/tiger/i, "#e2d75d"],
   [/pale|porcelain/i, "#f5ded3"],
   [/fair|light(?! brown)/i, "#f0d5c0"],
   [/olive/i, "#d9b48f"],
@@ -85,6 +93,8 @@ const SKIN: [RegExp, string][] = [
 ];
 
 const HAIR: [RegExp, string][] = [
+  [/platinum/i, "#eee7d2"], [/pink/i, "#f08bbd"], [/blue/i, "#3f6fd1"], [/green/i, "#3f9e5a"],
+  [/purple|violet/i, "#7b3fb8"], [/silver/i, "#c7ccd3"], [/white/i, "#f2f0ea"], [/strawberry/i, "#d9885a"],
   [/blonde|blond/i, "#e6c66a"],
   [/auburn/i, "#8c3b1e"],
   [/red|ginger/i, "#b33a1a"],
@@ -119,19 +129,23 @@ function shade(hex: string, factor: number): string {
 }
 
 export function paletteFor(p: Person): Record<string, string> {
-  const skin = match(SKIN, p.body.skin, "#d9b48f");
+  // A full-body suit is her skin, as far as the art is concerned — that is how the original draws
+  // latex, and it is why the suit covers her arms and legs without separate layers for them.
+  const suit = garment(p.clothes)?.skin;
+  const skin = suit ?? match(SKIN, p.body.skin, "#d9b48f");
   const hair = match(HAIR, p.body.hair_color, "#5a3a22");
   const eye = match(EYE, p.body.eye_color, "#6b4423");
   return {
     skin,
     shadow: "#010101",
-    head: skin,
+    // A suit stops at the neck: her face stays her own.
+    head: suit ? match(SKIN, p.body.skin, "#d9b48f") : skin,
     torso: skin,
     penis: shade(skin, 0.97),
     scrotum: shade(skin, 0.95),
     bellybutton: shade(skin, 0.8),
     areola: shade(skin, 0.78),
-    lip: shade(skin, 0.82),
+    lip: p.look?.lips ?? (suit ? shade(skin, 0.82) : shade(match(SKIN, p.body.skin, "#d9b48f"), 0.82)),
     hair,
     eyebrow_hair: hair,
     pubic_hair: hair,
@@ -147,6 +161,7 @@ export function paletteFor(p: Person): Record<string, string> {
     glasses: "#8fb3c9",
     eart: hair,
     tail: hair,
+    outfit_base: suit ?? "#4a4a4a",
   };
 }
 
@@ -190,6 +205,11 @@ function buttLayer(p: Person): string {
 /** Hair: the art pack's styles, chosen from the free-text style the forge wrote. */
 function hairStyle(p: Person): string {
   const s = (p.body.hair_style || "").toLowerCase();
+  if (/pigtail|twin tail/.test(s)) return "Tails";
+  if (/luxur|wave/.test(s)) return "Luxurious";
+  if (/perm/.test(s)) return "Permed";
+  if (/ninja|topknot/.test(s)) return "Ninja";
+  if (/behind her ears|bob/.test(s)) return "Eary";
   if (/braid/.test(s)) return "Braided";
   if (/bun|pinned/.test(s)) return "Bun";
   if (/tail|pony/.test(s)) return "Ponytail";
@@ -463,6 +483,22 @@ function faceLayers(p: Person): Layer[] {
   ];
 }
 
+/* ── what she is wearing ─────────────────────────────────────────────────────────────────────
+ * The pack's clothing is cut per body part — arms per position, torso per build, butt per size,
+ * legs per width, breasts and belly on their own transforms — and each piece goes in at the same
+ * point in the stack the original puts it, so a sleeve sits over an arm and under the hair. */
+
+function torsoSize(p: Person): string { return torsoLayer(p).replace("Torso_", ""); }
+function legSize(p: Person): string { return legLayer(p).replace("Leg_", ""); }
+function buttIndex(p: Person): number { return Math.max(0, Math.min(6, Math.round(p.body.butt))); }
+const ARM_OUTFIT_POS: Record<string, string> = { High: "High", Mid: "Mid", Low: "Low", Rebel: "Rebel", Thumb_Down: "Thumb", None: "None" };
+
+/** The hue shift for her clothes, carried on each clothing layer so the skin under it is untouched. */
+function worn(id: string, p: Person, transform?: string): Layer {
+  const hue = p.look?.clothes_hue ?? 0;
+  return { id, transform, tint: hue ? hue : undefined };
+}
+
 /**
  * THE STACK. Back to front, and every entry optional at render time.
  */
@@ -483,11 +519,34 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
 
   const limb = armFamily(p);
   out.push({ id: armLayer(limb, "Left", pose.armL) }, { id: armLayer(limb, "Right", pose.armR) });
+  const g = garment(p.clothes);
+  const fit = g?.art;
+  if (fit) {
+    out.push(worn(`Arm_Outfit_${fit}_Right_${ARM_OUTFIT_POS[pose.armR] ?? "Mid"}`, p));
+    out.push(worn(`Arm_Outfit_${fit}_Left_${ARM_OUTFIT_POS[pose.armL] ?? "Mid"}`, p));
+  }
+  if (g?.shine && ["High", "Mid", "Low"].includes(pose.armL)) out.push({ id: `Arm_Outfit_Shine_Left_${pose.armL}` });
+  if (p.look?.tail) out.push({ id: `${cap(p.look.tail)}_Tail` });
 
   out.push({ id: buttLayer(p) });
   out.push({ id: legLayer(p) });
+
+  // FEET, OR WHAT IS ON THEM, then stockings, then the lower half of the outfit.
+  const shoe = garment(p.shoes)?.art;
+  if (shoe === "Shoes_Boot" || shoe === "Shoes_Extreme_Heel") out.push({ id: `${shoe}_${legSize(p)}` });
+  else if (shoe) out.push({ id: shoe });
+  else out.push({ id: "Feet" });
+  const hose = garment(p.legwear)?.art;
+  if (hose) {
+    const base = shoe === "Shoes_Heel" ? "Shoes_Heel" : shoe === "Shoes_Pump" ? "Shoes_Pump" : shoe === "Shoes_Flat" ? "Shoes_Flat" : !shoe ? "Shoes_Stockings" : "";
+    if (base) out.push({ id: `${base}_${hose}_${legSize(p)}` });
+  }
+  if (fit) {
+    out.push(worn(`Butt_Outfit_${fit}_${buttIndex(p)}`, p));
+    out.push(worn(`Leg_Outfit_${fit}_${legSize(p)}`, p));
+  } else if (g?.shine) out.push({ id: `Leg_Outfit_Shine_${legSize(p)}` });
+
   out.push({ id: torsoLayer(p) });
-  out.push({ id: "Feet" });
 
   // the front of the body
   if (p.body.vagina !== null) {
@@ -498,17 +557,29 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
       out.push({ id: heavyset(p) ? "Pussy_TattooFat" : "Pussy_Tattoo" });
   }
   out.push({ id: pubicLayer(p) });
-  out.push(...cockLayers(p));
   if (p.chastity.vagina && p.body.vagina !== null) out.push({ id: heavyset(p) ? "Chastity_Vagina_Fat" : "Chastity_Vagina" });
+  if (fit) out.push(worn(`Torso_Outfit_${fit}_${torsoSize(p)}`, p));
+  if (g?.shine) out.push({ id: `Torso_Outfit_Shine_${torsoSize(p)}` }, { id: "Torso_Outfit_Shine_Shoulder" });
+  // Under clothes a cock is a shape in the fabric, which the pack draws as its own layer.
+  if (g?.covers && p.body.dick) {
+    const size = Math.min(10, Math.max(0, Math.round(p.body.dick) - 1));
+    out.push({ id: !p.chastity.penis && p.psyche.relaxation > -2 && p.psyche.arousal > 50 ? `Bulge_Outfit_Hard_${size}` : `Bulge_Outfit_${size}` });
+  } else out.push(...cockLayers(p));
 
   const belly = bellyTransform(p);
-  if (belly) out.push({ id: "Belly", transform: belly });
+  if (belly) {
+    out.push({ id: "Belly", transform: belly });
+    if (fit) out.push(worn(`Belly_Outfit_${fit}`, p, belly));
+    if (g?.shine) out.push({ id: "Belly_Outfit_Shine", transform: belly });
+  }
 
   const boob = boobTransform(p, heightScale);
   if (boob) {
     out.push({ id: "Boob_Alt", transform: boob });
     out.push({ id: areolaLayer(p), transform: boob });
     out.push({ id: nippleLayer(p), transform: boob });
+    if (fit && p.body.boobs >= 300) out.push(worn(`Boob_Outfit_${fit}`, p, boob));
+    if (g?.shine) out.push({ id: "Boob_Outfit_Shine", transform: boob });
   }
 
   // the face
@@ -520,10 +591,19 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
   if (lips) out.push({ id: lips > 1 ? "Lip_Heavy" : "Lip_Light" });
   const nose = pierced(/nose|septum/i);
   if (nose) out.push({ id: nose > 1 ? "Nose_Heavy" : "Nose_Light" });
+  if (p.look?.glasses) out.push({ id: "Glasses" });
+  if (fit) out.push(worn(`Head_Outfit_${fit}`, p));
+  if (g?.shine) out.push({ id: "Head_Outfit_Shine" });
+
+  // The collar goes under the fore hair, the way the original draws it.
+  const collar = garment(p.collar)?.art;
+  if (collar) out.push({ id: collar });
 
   // in front
+  const ears = p.look?.ears ?? (g?.id === "kitty" ? "cat" : undefined);
+  if (ears) out.push({ id: `${cap(ears)}_Ear_Back` });
   if (len) out.push({ id: `Hair_Fore_${style}_${len}` }, { id: `Hair_Fore_${style}` });
-  if (p.collar && p.collar !== "none") out.push({ id: "Collar" });
+  if (ears) out.push({ id: `${cap(ears)}_Ear_Fore` });
 
   return out;
 }

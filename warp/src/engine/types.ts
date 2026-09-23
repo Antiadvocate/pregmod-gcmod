@@ -103,6 +103,18 @@ export interface Body {
   portrait_seed?: number;
 }
 
+/** The cosmetic layer: what the salon and the wardrobe can change without surgery. */
+export interface Look {
+  /** Hue shift applied to everything she wears, in degrees. 0 keeps the garment's own colours. */
+  clothes_hue?: number;
+  /** Lipstick colour as a hex, or undefined for her own. */
+  lips?: string;
+  glasses?: boolean;
+  /** Animal ears, as a costume piece. */
+  ears?: "cat" | "fox" | "cow" | "elf";
+  tail?: "cat" | "fox" | "cow";
+}
+
 /** The nervous system. Ported wholesale from Weft's kernel — see KERNEL.md §2.
  *  One scalar, `relaxation`, and the entourage that shapes how it moves. */
 export interface Psyche {
@@ -387,6 +399,10 @@ export interface Person {
   clothes: string;
   collar: string;
   shoes: string;
+  /** Stockings, if any: "short stockings" or "long stockings". */
+  legwear?: string;
+  /** How she is made up and dressed beyond the garments themselves. */
+  look?: Look;
   chastity: { vagina: boolean; anus: boolean; penis: boolean };
   /** Money. Per-person accounting is what makes the ledger legible. */
   economics: {

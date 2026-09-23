@@ -17,11 +17,12 @@ import { assignToFacility, allowedAssignments, isMinor, setAssignment, MINOR_FAC
 import { ASSIGNMENTS } from "../data/assignments";
 import { FACILITIES, FACILITY_BY_ID } from "../data/facilities";
 import { PROCEDURES } from "../engine/health";
-import { WARDROBE, MODIFICATIONS, GARMENT_BY_NAME } from "../data/wardrobe";
+import { MODIFICATIONS, GARMENT_BY_NAME } from "../data/wardrobe";
 import { sell } from "../engine/market";
 import { enrichPerson } from "../engine/forge";
 import { getEdge } from "../engine/social";
 import Interact from "./Interact";
+import Dressing from "./Dressing";
 import Surgery from "./Surgery";
 import HerPanel from "./HerPanel";
 import { romanceOf, RUNG_BY_ID } from "../engine/romance";
@@ -41,6 +42,7 @@ export default function Roster() {
   const [sort, setSort] = useState<Sort>("trouble");
   const [openId, setOpenId] = useState<string | null>(null);
   const [withId, setWithId] = useState<string | null>(null);
+  const [dressId, setDressId] = useState<string | null>(null);
 
   const people = useMemo(() => {
     const list = Object.values(save.people).filter((p) => p.status === "owned" || p.status === "indentured");
@@ -83,9 +85,10 @@ export default function Roster() {
       ) : <Empty>Nobody yet. Buy someone at the Market.</Empty>}
 
       <Sheet open={!!openId} onClose={() => setOpenId(null)} title={openId ? save.people[openId]?.name ?? "" : ""} wide>
-        {openId && save.people[openId] ? <PersonPanel id={openId} onClose={() => setOpenId(null)} onWith={() => setWithId(openId)} /> : null}
+        {openId && save.people[openId] ? <PersonPanel id={openId} onClose={() => setOpenId(null)} onWith={() => setWithId(openId)} onDress={() => setDressId(openId)} /> : null}
       </Sheet>
       {withId && save.people[withId] ? <Interact id={withId} onClose={() => setWithId(null)} /> : null}
+      {dressId && save.people[dressId] ? <Dressing id={dressId} onClose={() => setDressId(null)} /> : null}
     </>
   );
 }
@@ -174,7 +177,7 @@ function RosterCard({ p, onOpen, onWith }: { p: Person; onOpen: () => void; onWi
   );
 }
 
-function PersonPanel({ id, onClose, onWith }: { id: string; onClose: () => void; onWith: () => void }) {
+function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: () => void; onWith: () => void; onDress: () => void }) {
   const { save, mutate } = useGame();
   const [tab, setTab] = useState<"her" | "read" | "body" | "theatre" | "work" | "history">("read");
   const [painting, setPainting] = useState(false);
@@ -251,9 +254,10 @@ function PersonPanel({ id, onClose, onWith }: { id: string; onClose: () => void;
 
       {note ? <Card className="mb-4 text-[12.5px] acc">{note}</Card> : null}
 
-      {p.age >= 18 ? (
-        <Button kind="primary" className="w-full mb-4" onClick={onWith}>Be with her</Button>
-      ) : null}
+      <div className="flex gap-2 mb-4">
+        {p.age >= 18 ? <Button kind="primary" className="flex-1" onClick={onWith}>Be with her</Button> : null}
+        <Button className="flex-1" onClick={onDress}>Dress her</Button>
+      </div>
 
       <div className="flex flex-wrap gap-1 mb-4">
         {([["read", "how she is"], ["her", "you and her"], ["body", "body"], ["theatre", "surgery"], ["work", "work"], ["history", "history"]] as const).map(([t, label]) => (
@@ -338,28 +342,15 @@ function PersonPanel({ id, onClose, onWith }: { id: string; onClose: () => void;
           {p.body.marks.length ? (
             <Section title="Marks"><Card><ul className="text-[12.5px] mid space-y-1">{p.body.marks.map((m, i) => <li key={i}>{m.what} — {m.where} (wk {m.week})</li>)}</ul></Card></Section>
           ) : null}
-          <Section title="What she is wearing" >
+          <Section title="What she is wearing">
             <Card>
-              <div className="grid sm:grid-cols-3 gap-3">
-                {(["clothes", "collar", "shoes"] as const).map((slot) => (
-                  <Field key={slot} label={slot}>
-                    <select value={p[slot]} onChange={(e) => mutate((s) => {
-                      const g = GARMENT_BY_NAME[e.target.value];
-                      if (g && g.cost && !ownedGarments(save).has(g.name)) s.arcology.cash -= g.cost;
-                      s.people[id][slot] = e.target.value;
-                    })}>
-                      {WARDROBE.filter((g) => g.slot === slot).map((g) => (
-                        <option key={g.id} value={g.name}>{g.name}{g.cost ? ` — ¤${g.cost}` : ""}</option>
-                      ))}
-                    </select>
-                  </Field>
-                ))}
-              </div>
-              <div className="text-[11.5px] dim">
+              <div className="text-[13px]">{p.clothes}{p.collar && p.collar !== "none" && p.collar !== "no collar" ? `, ${p.collar}` : ""}{p.shoes && p.shoes !== "none" && p.shoes !== "barefoot" ? `, ${p.shoes}` : ""}{p.legwear && p.legwear !== "bare legs" ? `, ${p.legwear}` : ""}</div>
+              <div className="text-[11.5px] dim mt-1">
                 {[p.clothes, p.collar, p.shoes].map((n) => GARMENT_BY_NAME[n]).filter(Boolean).map((g) => (
-                  `${g!.name}: ×${g!.appeal.toFixed(2)} on what she earns${g!.relaxation ? `, ${g!.relaxation > 0 ? "+" : ""}${g!.relaxation.toFixed(2)} a week to her` : ""}${g!.note ? ` — ${g!.note}` : ""}`
+                  `${g!.name}: ×${g!.appeal.toFixed(2)} on what she earns${g!.relaxation ? `, ${g!.relaxation > 0 ? "easier" : "harder"} on her` : ""}`
                 )).join(" · ")}
               </div>
+              <Button size="sm" className="mt-3" onClick={onDress}>Open the dressing room</Button>
             </Card>
           </Section>
 
