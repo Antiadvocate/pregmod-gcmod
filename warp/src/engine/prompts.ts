@@ -95,7 +95,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
 
   const lines: string[] = [];
   lines.push(`### ${p.name}${p.surname ? " " + p.surname : ""} [${p.id}] — ${p.age}, ${p.origin.nationality}, ${p.pronouns}`);
-  lines.push(`BODY: ${p.body.appearance_facts} ${p.body.appearance_now ? `Right now: ${p.body.appearance_now}. ` : ""}Wearing ${p.clothes}.`);
+  const now = p.body.appearance_now && !/^wearing\b/i.test(p.body.appearance_now) ? `Right now: ${p.body.appearance_now}. ` : "";
+  lines.push(`BODY: ${p.body.appearance_facts} ${now}Wearing ${p.clothes}.`);
   if (p.womb.fetuses.length) lines.push(`PREGNANT: ${p.womb.weeks} weeks, ${p.womb.fetuses.length > 1 ? `${p.womb.fetuses.length} babies` : "one baby"}.`);
   if (p.body.lactation) lines.push(`LACTATING.`);
   if (p.health.health < -20) lines.push(`HEALTH: ill (${p.health.health}). ${p.health.injuries.filter((i) => !i.healed_week).map((i) => i.what).join("; ")}`);
@@ -138,7 +139,8 @@ export function digest(s: SaveState, action = "", focus?: string): string {
 
   out.push(`\n## WHERE AND WHEN`);
   out.push(`${s.scene.time}. ${s.scene.location}.`);
-  out.push(`Owner: ${s.player.name}, ${s.player.title}. ${describeYou(s)}. ${s.player.body.appearance_facts}`);
+  const who = s.player.name && s.player.name !== "you" ? `${s.player.name}, ` : "";
+  out.push(`THE PLAYER (the owner, "you"): ${who}called ${s.player.address || "Master"} by slaves. ${describeYou(s)}. ${s.player.body.appearance_facts}`);
   if (s.scene.arrivals_pending.length) out.push(`ARRIVING — write them coming in: ${s.scene.arrivals_pending.map((id) => s.people[id]?.name).filter(Boolean).join(", ")}`);
   if (s.scene.departures_pending.length) out.push(`LEAVING — write them going: ${s.scene.departures_pending.map((d) => `${d.name} (${d.why})`).join(", ")}`);
 

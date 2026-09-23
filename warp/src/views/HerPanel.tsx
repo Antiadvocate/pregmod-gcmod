@@ -96,7 +96,7 @@ export default function HerPanel({ id }: { id: string }) {
           {busy ? <Loader2 size={13} className="animate-spin" /> : "ask her what she wants"}
         </Button>
       )}
-      {quiet && !ask ? <p className="text-[12.5px] dim">She doesn't ask for anything. {read(p, save.memory[id]).trust < 10 ? "She doesn't trust you enough to." : "Nothing she wants right now is something she thinks you'd give."}</p> : null}
+      {quiet && !ask ? <p className="text-[12.5px] dim">She doesn't ask for anything. {read(p, save.memory[id]).trust < 10 ? "She doesn't trust you enough to." : "She doesn't think you'd give her anything she wants right now."}</p> : null}
 
       <Section title="The ladder">
         <div className="space-y-2">

@@ -448,7 +448,7 @@ It's at sixty thousand in a minute. Then it's you and ${c.n("rival_owner")}. ${c
             return { text: `Eighty-five thousand. ${c.n("rival_owner")} puts ${c.his("rival_owner")} paddle down and gives you a slow, sarcastic round of applause.`, end: "you won the ballerina at auction" }; } },
         { id: "drive", label: "Drive the price up and drop out", need: skill("trading", 35),
           run: (c) => { c.like("rival_owner", -20);
-            return { text: `You take it to ninety and stop dead. ${c.n("rival_owner")} pays ninety-five for her, and you see ${c.him("rival_owner")} doing the arithmetic afterwards. ${c.He("rival_owner")} knows exactly what you did.`, end: "you made your rival overpay" }; } },
+            return { text: `You take it to ninety and stop dead. ${c.n("rival_owner")} pays ninety-five for her, and ${c.he("rival_owner")} knows exactly what you did.`, end: "you made your rival overpay" }; } },
         { id: "let", label: "Let them have her",
           run: (c) => { c.like("rival_owner", 5);
             return { text: `${c.n("rival_owner")} wins at seventy. ${c.He("rival_owner")} smugly raises a glass to you across the room.`, end: "your rival bought the ballerina" }; } },

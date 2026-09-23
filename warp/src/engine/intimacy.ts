@@ -278,11 +278,14 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
     case "hated": lines.push(`She hates it. ${out.because}. She obeys because she's a slave, and it's obvious how much she hates it.`); break;
     default: lines.push(`It does nothing for her either way.`); break;
   }
-  lines.push(`Arousal: ${p.psyche.arousal >= 70 ? "she's very turned on" : p.psyche.arousal >= 35 ? "she's getting turned on" : "she isn't turned on"}. ${out.finished ? "She orgasms." : "She doesn't orgasm."}`);
+  const sexual = act.group !== "tenderness" || act.base.release > 0 || out.finished;
+  if (sexual) lines.push(`Arousal: ${p.psyche.arousal >= 70 ? "she's very turned on" : p.psyche.arousal >= 35 ? "she's getting turned on" : "she isn't turned on"}. ${out.finished ? "She orgasms." : "She doesn't orgasm."}`);
   if (out.discovered) lines.push(`You find out that ${out.discovered}. Write the moment it becomes obvious.`);
   if (out.converted) lines.push(`This changes her for good: ${out.converted}.`);
   lines.push(``);
-  lines.push(`Write it explicitly, in the game's own words. No fade to black, no cutting away, no moralizing.`);
+  lines.push(sexual
+    ? `Write it explicitly, in the game's own words. No fade to black, no cutting away, no moralizing.`
+    : `Write it plainly and concretely: what you do, what she does, what is said.`);
   return lines.join("\n");
 }
 

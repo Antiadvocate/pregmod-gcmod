@@ -167,8 +167,7 @@ export default function Cheats() {
             </Button>
           </div>
           <div className="text-[11px] dim">
-            Backfill only fills what is missing. A save made before fetishes existed has none, which is why an old
-            household looks empty.
+            Backfill only adds missing data, such as fetishes for slaves from saves made before fetishes existed.
           </div>
         </Card>
       </Section>

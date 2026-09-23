@@ -34,21 +34,21 @@ import { condition } from "./prompts";
 
 /** THE CLOSED TABLE. A generated option may name one of these and nothing else. */
 export const DYNAMIC_EFFECTS: Record<string, { note: string; run: (s: SaveState, p: Person, value?: string | number) => string }> = {
-  kindness: { note: "you are good to her about it", run: (s, p, v) => { applyTreatment(p, { kind: "kindness", size: Number(v) || 4, why: "the way you handled it" }, s.arcology.week); shove(p.psyche, 0.8); return "she was not expecting that"; } },
-  cruelty: { note: "you make it worse for her, deliberately", run: (s, p, v) => { applyTreatment(p, { kind: "cruelty", size: Number(v) || 5, why: "the way you handled it" }, s.arcology.week); shove(p.psyche, -1.5, { hard: true }); return "she took it and filed it"; } },
-  coercion: { note: "you make the rule clear at her expense", run: (s, p, v) => { applyTreatment(p, { kind: "coercion", size: Number(v) || 4, why: "the position was made clear" }, s.arcology.week); return "she understood the position"; } },
-  recognition: { note: "you treat her as somebody", run: (s, p, v) => { applyTreatment(p, { kind: "recognition", size: Number(v) || 5, why: "you treated her as somebody" }, s.arcology.week); return "she has not been looked at like that in a while"; } },
-  promise_kept: { note: "you do the thing you said you would", run: (s, p, v) => { applyTreatment(p, { kind: "promise_kept", size: Number(v) || 6, why: "you kept your word" }, s.arcology.week); return "you kept your word, and she noticed the fact of it more than the thing"; } },
-  promise_broken: { note: "you go back on it", run: (s, p, v) => { applyTreatment(p, { kind: "promise_broken", size: Number(v) || 6, why: "you went back on it" }, s.arcology.week); return "she has stopped expecting things"; } },
+  kindness: { note: "you're kind to her", run: (s, p, v) => { applyTreatment(p, { kind: "kindness", size: Number(v) || 4, why: "how you handled it" }, s.arcology.week); shove(p.psyche, 0.8); return "she's surprised and grateful"; } },
+  cruelty: { note: "you're cruel to her", run: (s, p, v) => { applyTreatment(p, { kind: "cruelty", size: Number(v) || 5, why: "how you handled it" }, s.arcology.week); shove(p.psyche, -1.5, { hard: true }); return "she takes it, and resents you for it"; } },
+  coercion: { note: "you punish her to enforce the rules", run: (s, p, v) => { applyTreatment(p, { kind: "coercion", size: Number(v) || 4, why: "punished to enforce the rules" }, s.arcology.week); return "she gets the message"; } },
+  recognition: { note: "you treat her like a person", run: (s, p, v) => { applyTreatment(p, { kind: "recognition", size: Number(v) || 5, why: "you treated her like a person" }, s.arcology.week); return "she appreciates being treated like a person"; } },
+  promise_kept: { note: "you do the thing you said you would", run: (s, p, v) => { applyTreatment(p, { kind: "promise_kept", size: Number(v) || 6, why: "you kept your word" }, s.arcology.week); return "you kept your word, and she appreciates it"; } },
+  promise_broken: { note: "you go back on it", run: (s, p, v) => { applyTreatment(p, { kind: "promise_broken", size: Number(v) || 6, why: "you went back on it" }, s.arcology.week); return "she's lost faith in your promises"; } },
   act: { note: "it becomes a scene — name an act id", run: (s, p, v) => { const out = resolveAct(s, p, String(v)); return "error" in out ? "nothing came of it" : `${ACT_BY_ID[String(v)]?.what ?? "it happened"} — she ${out.landing} it`; } },
-  arouse: { note: "she is wound up by it", run: (_s, p, v) => { p.psyche.arousal = clamp(p.psyche.arousal + (Number(v) || 20), 0, 100); return "she is wound up and doing a bad job of hiding it"; } },
-  dominion_up: { note: "she gets her way", run: (s, p, v) => { shiftDominion(s, p, Number(v) || 6, "she got her way"); return "she got her way, and she has noticed that she can"; } },
-  dominion_down: { note: "she is put back in her place", run: (s, p, v) => { shiftDominion(s, p, -(Number(v) || 6), "she was put back in her place"); return "she has been reminded where she stands"; } },
+  arouse: { note: "she is wound up by it", run: (_s, p, v) => { p.psyche.arousal = clamp(p.psyche.arousal + (Number(v) || 20), 0, 100); return "she's very turned on"; } },
+  dominion_up: { note: "she gets her way", run: (s, p, v) => { shiftDominion(s, p, Number(v) || 6, "she got her way"); return "she got her way"; } },
+  dominion_down: { note: "she is put back in her place", run: (s, p, v) => { shiftDominion(s, p, -(Number(v) || 6), "she was put back in her place"); return "she's been put back in her place"; } },
   cash: { note: "it costs or makes money — value is the amount, negative to spend", run: (s, _p, v) => { const n = Number(v) || -2000; s.arcology.cash += n; return `¤${Math.abs(n).toLocaleString()} ${n < 0 ? "spent" : "made"}`; } },
   rep: { note: "the arcology's opinion moves", run: (s, _p, v) => { const n = Number(v) || -200; s.arcology.rep = Math.max(0, s.arcology.rep + n); return `standing ${n >= 0 ? "+" : ""}${n}`; } },
-  rumor: { note: "it gets around — value is what people say", run: (s, p, v) => { startRumor(s, String(v ?? `something about ${p.name}`), { about: p.id, salience: 7 }); return "it is around the building by the morning"; } },
-  scar: { note: "she carries it permanently — value is the memory in her terms", run: (s, p, v) => { const mem = s.memory[p.id]; if (mem) remember(mem, { content: String(v ?? "the thing that happened"), week: s.arcology.week, importance: 9, charge: "sharp", core: true }); addState(p.psyche, "what happened", s.arcology.week); return "she will be carrying that one"; } },
-  nothing: { note: "you do not engage", run: () => "nothing was done about it" },
+  rumor: { note: "it gets around — value is what people say", run: (s, p, v) => { startRumor(s, String(v ?? `something about ${p.name}`), { about: p.id, salience: 7 }); return "everyone's heard about it by morning"; } },
+  scar: { note: "she carries it permanently — value is the memory in her terms", run: (s, p, v) => { const mem = s.memory[p.id]; if (mem) remember(mem, { content: String(v ?? "the thing that happened"), week: s.arcology.week, importance: 9, charge: "sharp", core: true }); addState(p.psyche, "what happened", s.arcology.week); return "she'll never forget it"; } },
+  nothing: { note: "you do not engage", run: () => "you did nothing" },
 };
 
 interface GeneratedEvent {

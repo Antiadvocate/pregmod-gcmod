@@ -40,8 +40,8 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
       <Section title="Start over">
         <Card>
           <div className="text-[12.5px] mid mb-3">
-            A new game generates a fresh arcology and a fresh household. This save is kept — it is in the list on the
-            way in, and nothing here deletes it.
+            A new game generates a fresh arcology and a fresh household. This save is kept, and
+            stays in the save list.
           </div>
           <div className="flex flex-wrap gap-2">
             <Button kind="primary" onClick={onSwitch}>new game, or load another save</Button>
@@ -52,7 +52,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
 
       <Section title="Models">
         <Card>
-          <Field label="OpenRouter key" hint="Stored in this browser only, sent to OpenRouter and nowhere else. Warp works without one — you get stage directions instead of prose.">
+          <Field label="OpenRouter key" hint="Stored in this browser only, sent to OpenRouter and nowhere else. Warp works without one, using the built-in written scenes.">
             <input type="password" value={key} placeholder="sk-or-…" onChange={(e) => { setKey(e.target.value); setApiKey(e.target.value); }} />
           </Field>
           <Field label="Local server (optional)" hint="An OpenAI-compatible base URL — KoboldCpp http://localhost:5001/v1, LM Studio http://localhost:1234/v1. Then prefix a model id with local/ to route it there.">
@@ -73,10 +73,9 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
       <Section title="Pictures">
         <Card>
           <div className="text-[11.5px] dim mb-3">
-            Point this at ComfyUI or an A1111-style WebUI on your own machine and the game draws itself: a portrait
-            per person that holds still across a campaign, and a picture of the moment after every scene.
-            It has to be local — a hosted image API refuses most of what this game needs to draw, and bills for the
-            rest at a few cents a frame. On your own GPU it is free, which is what makes a picture a turn reasonable.
+            Point this at ComfyUI or an A1111-style WebUI on your own machine to generate a portrait for each slave
+            (kept consistent across the game) and a picture after every scene. It has to be local: hosted image APIs
+            refuse most of this game's content and charge per image.
           </div>
           <div className="grid sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
@@ -140,21 +139,20 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
           <div className="text-[12.5px] mid mb-2">{dyn.note}</div>
           <div className="text-[11.5px] dim">
             The scenes, the generated events and the wording of what she asks for all go through the narrator slot.
-            This game asks for explicit material as a matter of course, and a hosted model will decline a fair share
-            of it, soften the rest, and give you the half-written scenes the genre's players recognise immediately.
+            This game asks for explicit material, and hosted models often refuse it or tone it down.
             Put a local model behind the narrator — KoboldCpp, llama-server, LM Studio, Ollama — and prefix the id
-            with <span className="font-mono">local/</span>. The bookkeeper can stay hosted: it only ever emits JSON,
-            which is the thing small models are worst at.
+            with <span className="font-mono">local/</span>. The bookkeeper can stay hosted; it only outputs JSON,
+            which small local models are bad at.
           </div>
         </Card>
       </Section>
 
       <Section title="How much the world does on its own">
         <Card>
-          <Field label={`Tension — ${save.models.tension}`} hint="0 means the engine originates nothing: every event that fires comes out of your own household. Higher means the world outside reaches in more often and escalates faster.">
+          <Field label={`Tension — ${save.models.tension}`} hint="0 means only your own household causes events. Higher means outside events happen more often and escalate faster.">
             <input type="range" min={0} max={10} value={save.models.tension} onChange={(e) => mutate((s) => { s.models.tension = Number(e.target.value); })} />
           </Field>
-          <Field label={`Scene history kept in context — ${save.models.history_window} turns`} hint="The prompt is a compiled state document, not a transcript, so this is for continuity of phrasing only. Lower is cheaper and loses very little.">
+          <Field label={`Scene history kept in context — ${save.models.history_window} turns`} hint="How many recent turns the narrator sees for continuity. Lower is cheaper.">
             <input type="range" min={2} max={12} value={save.models.history_window} onChange={(e) => mutate((s) => { s.models.history_window = Number(e.target.value); })} />
           </Field>
         </Card>
@@ -179,11 +177,10 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
       </Section>
 
       {save.integrity.fires.length ? (
-        <Section title="What the guards caught">
+        <Section title="Model mistakes caught">
           <Card>
             <div className="text-[11.5px] dim mb-2">
-              Every contradiction the engine caught and corrected, counted rather than forgotten. A story can come apart
-              while the engine notices each individual crack.
+              Every mistake in the model's writing that the game caught and corrected.
             </div>
             <ul className="text-[12px] mid space-y-1 max-h-52 overflow-y-auto">
               {[...save.integrity.fires].reverse().slice(0, 30).map((f, i) => (

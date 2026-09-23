@@ -70,7 +70,7 @@ const LEAD: Record<Register, string[]> = {
   ],
   eager: [
     "{name} is on you before the door has closed, mouth on your neck.",
-    "{name} has been waiting, and it shows: flushed, restless, already half out of what she's wearing.",
+    "{name} has been waiting for you, flushed and horny, already half out of her clothes.",
     "{name} crosses the room fast and presses {tits} against you.",
   ],
   bratty: [
@@ -561,8 +561,8 @@ const FIRST: string[] = [
   "It's new for her, and she's still thinking about it afterwards.",
 ];
 const FIRST_TENDER: string[] = [
-  "You haven't been like this with her before. She keeps checking your face.",
-  "It's the first time you've done this for her. She doesn't know what to make of it yet.",
+  "You haven't treated her like this before, and she's not sure what to make of it.",
+  "It's the first time you've done this for her, and it surprises her.",
 ];
 
 function discoveryLine(p: Person, o: ActOutcome, r: Rng): string {
@@ -639,7 +639,9 @@ export function writeAct(s: SaveState, p: Person, o: ActOutcome, opts?: { lead?:
     : pain ? r.pick(PAIN_LANDED[o.landing])
     : shown ? r.pick(SHOWN_LANDED[o.landing])
     : r.pick(LANDED[o.landing]);
-  paras.push(`${fill(core, w)} ${fill(react, w)}`);
+  // Scenes that already carry her reaction to the end of the night do not get a second one.
+  const selfContained = o.act === "sleeping together";
+  paras.push(selfContained ? fill(core, w) : `${fill(core, w)} ${fill(react, w)}`);
 
   // The end of it.
   const end: string[] = [];
