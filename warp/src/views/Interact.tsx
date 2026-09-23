@@ -99,7 +99,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
 
   const acts = useMemo(() => {
     if (!p) return [];
-    return ACTS.filter((a) => a.group === group).map((a) => ({ a, blocked: canDo(p, a), aff: affinity(p, a).score }));
+    return ACTS.filter((a) => a.group === group).map((a) => ({ a, blocked: canDo(p, a, save), aff: affinity(p, a).score }));
   }, [p, group, save.turn]);
 
   if (!p) return null;
@@ -201,7 +201,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
       </header>
 
       {/* her */}
-      <div className="stage-room shrink-0 relative flex justify-center" style={{ height: tray ? "24dvh" : "34dvh", transition: "height .25s ease" }}>
+      <div className="stage-room shrink-0 relative flex justify-center" style={{ height: tray ? "28dvh" : "36dvh", transition: "height .25s ease" }}>
         <RoomBackdrop place={place.id} />
         <div className={cx("h-full relative", rx)} onAnimationEnd={() => setRx("")}>
           <SlaveArt person={p} height="100%" pose={pose} moment={moment} />

@@ -57,7 +57,7 @@ const PAYLOADS: Record<string, (s: SaveState, p: Person, value?: string | number
     const act = ACT_BY_ID[String(value)];
     // Granting it means doing it: the act resolves for real, so it lands on her the way any other
     // time would, and she gets the extra for having asked and been heard.
-    if (act && !canDo(p, act)) resolveAct(s, p, act.id);
+    if (act && !canDo(p, act, s)) resolveAct(s, p, act.id);
     else p.psyche.arousal = clamp(p.psyche.arousal + 15, 0, 100);
     applyTreatment(p, { kind: "recognition", size: 4, why: `she asked for ${act?.name.toLowerCase() ?? "it"} and got it` }, s.arcology.week);
     return act ? `You did what she asked: ${act.what}.` : "You gave her what she asked for.";
@@ -227,7 +227,7 @@ export function generateAsk(s: SaveState, p: Person): Ask | null {
   const topFetish = [...p.persona.fetishes].sort((a, b) => b.strength - a.strength)[0];
   if (topFetish && topFetish.name !== "none" && topFetish.strength >= 40 && r.trust > 30) {
     const def = FETISH_BY_ID[topFetish.name];
-    const acts = (def?.acts ?? []).filter((a) => ACT_BY_ID[a] && !canDo(p, ACT_BY_ID[a]));
+    const acts = (def?.acts ?? []).filter((a) => ACT_BY_ID[a] && !canDo(p, ACT_BY_ID[a], s));
     const actId = acts.length ? rng_.pick(acts) : "slow";
     push({ kind: "intimate", key: "act", payload: { kind: "act", value: actId }, vars: { act: IN_HER_WORDS[actId] ?? "that" }, gain: 6, loss: 5, weight: 3 });
   }
@@ -239,7 +239,7 @@ export function generateAsk(s: SaveState, p: Person): Ask | null {
   }
   // Past forty she stops asking to be used and starts telling you to serve her.
   if (rom.dominion >= 40) {
-    const serve = ["worship her", "eat her", "suck her", "worship feet"].filter((a) => ACT_BY_ID[a] && !canDo(p, ACT_BY_ID[a]));
+    const serve = ["worship her", "eat her", "suck her", "worship feet"].filter((a) => ACT_BY_ID[a] && !canDo(p, ACT_BY_ID[a], s));
     if (serve.length) {
       const actId = rng_.pick(serve);
       push({ kind: "instruction", key: "serve", payload: { kind: "act", value: actId }, vars: { act: { "worship her": "worship me", "eat her": "go down on me", "suck her": "suck my cock", "worship feet": "worship my feet" }[actId] ?? "serve me" }, gain: 7, loss: 7, weight: 4 });
@@ -365,7 +365,8 @@ export function refuseAsk(s: SaveState, ask: Ask, harshly = false): AskReply {
 export function collectAsks(s: SaveState): Ask[] {
   const out: Ask[] = [];
   const people = Object.values(s.people)
-    .filter((p) => (p.status === "owned" || p.status === "indentured" || p.status === "free") && p.age >= 18)
+    // A free woman asks only if she is still here: the keeper, not somebody who went home.
+    .filter((p) => (p.status === "owned" || p.status === "indentured" || (p.status === "free" && (p.exit_week === undefined || s.player.owned_by === p.id))) && p.age >= 18)
     .sort((a, b) => (b.romance?.dominion ?? -100) - (a.romance?.dominion ?? -100));
   for (const p of people) {
     if (out.length >= 2) break;

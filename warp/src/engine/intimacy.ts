@@ -27,6 +27,7 @@ import { clamp, shove, addState } from "./psyche";
 import { applyTreatment, read } from "./obedience";
 import { remember } from "./memory";
 import { moveEdge } from "./social";
+import { canSire, hasCock } from "./you";
 
 export interface ActOutcome {
   act: string;
@@ -54,7 +55,7 @@ export interface ActOutcome {
 }
 
 /** Can this even be done to this body? Returns the reason it cannot, or null. */
-export function canDo(p: Person, act: ActDef): string | null {
+export function canDo(p: Person, act: ActDef, s?: SaveState): string | null {
   for (const need of act.needs ?? []) {
     switch (need) {
       case "mouth": if (p.body.voice === 0 && p.body.teeth === "removable") break; break;
@@ -72,6 +73,8 @@ export function canDo(p: Person, act: ActDef): string | null {
     }
   }
   if (p.health.recovery_weeks > 0 && act.group !== "tenderness") return "she is still in recovery";
+  if (s && act.you === "cock" && !hasCock(s)) return "you have no cock";
+  if (s && act.you === "sire" && !canSire(s)) return hasCock(s) ? "you can't get anyone pregnant" : "you have no cock";
   if (p.age < 18) return "she is a child";
   return null;
 }
@@ -118,7 +121,7 @@ export function affinity(p: Person, act: ActDef): { score: number; why: string }
 export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { public?: boolean; withId?: string }): ActOutcome | { error: string } {
   const act = ACT_BY_ID[actId];
   if (!act) return { error: "no such act" };
-  const blocked = canDo(p, act);
+  const blocked = canDo(p, act, s);
   if (blocked) return { error: blocked };
 
   const week = s.arcology.week;
@@ -287,10 +290,10 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
 }
 
 /** Everything you could do to her right now, with the reason each blocked one is blocked. */
-export function availableActs(p: Person): { act: ActDef; blocked: string | null; affinity: number }[] {
+export function availableActs(p: Person, s?: SaveState): { act: ActDef; blocked: string | null; affinity: number }[] {
   return Object.values(ACT_BY_ID).map((act) => ({
     act,
-    blocked: canDo(p, act),
+    blocked: canDo(p, act, s),
     affinity: affinity(p, act).score,
   }));
 }

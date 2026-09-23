@@ -21,7 +21,7 @@
  */
 import { useEffect, useState, useMemo, useRef, type RefObject } from "react";
 import type { Person } from "../engine/types";
-import { ART_BASE, cropFor, layersFor, styleFor, heightScaleFor, type Crop, type Layer } from "../lib/vectorart";
+import { ART_BASE, cropFor, layersFor, styleFor, heightTransform, type Crop, type Layer } from "../lib/vectorart";
 import { frameAt, jointFor, restingPose, transformFor, STILL, type Joint, type Pose } from "../lib/rig";
 import { subscribeClock, stillWanted } from "../lib/clock";
 import { expressionOf, ExpressionLayer, type Moment } from "../lib/expression";
@@ -131,12 +131,11 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
 
   const css = styleFor(person, scope);
   const tints = useMemo(() => [...new Set(markup.map((m) => m.layer.tint).filter((t): t is number => !!t))], [markup]);
-  const scale = heightScaleFor(person);
 
   return (
     <div className={className} style={{ height, display: "flex", alignItems: "flex-end", justifyContent: "center", overflow: "hidden" }}>
-      <svg ref={svg} viewBox={cropFor(crop, held)} className={scope} preserveAspectRatio="xMidYMax meet"
-        style={{ height: "100%", transform: crop === "full" ? `scale(${scale})` : undefined, transformOrigin: "bottom center" }}
+      <svg ref={svg} viewBox={cropFor(crop, held, person)} className={scope} preserveAspectRatio="xMidYMax meet"
+        style={{ height: "100%" }}
         role="img" aria-label={`${person.name} — ${held.reads}`}>
         <style>{css}</style>
         {tints.length ? (
@@ -144,6 +143,7 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
             {tints.map((t) => <filter key={t} id={`${scope}-hue${t}`}><feColorMatrix type="hueRotate" values={String(t)} /></filter>)}
           </defs>
         ) : null}
+        <g transform={crop === "full" ? heightTransform(person) : undefined}>
         {markup.map(({ layer, inner }, i) => (
           <g key={`${layer.id}-${i}`}
             data-joint={jointFor(layer.id)}
@@ -153,6 +153,7 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
             dangerouslySetInnerHTML={{ __html: inner }} />
         )).flatMap((el, i) => (i === foreAt && expr ? [<ExpressionLayer key="expr" e={expr} scope={scope} />, el] : [el]))}
         {expr && foreAt < 0 && markup.length ? <ExpressionLayer e={expr} scope={scope} /> : null}
+        </g>
       </svg>
     </div>
   );

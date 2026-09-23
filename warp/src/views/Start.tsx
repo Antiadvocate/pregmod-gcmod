@@ -9,6 +9,7 @@ import { Dice5 } from "lucide-react";
 import { ORIGINS } from "../data/story";
 import { TWISTS, TWIST_BY_ID } from "../engine/run";
 import { modelsAvailable } from "../config";
+import { KITS, type Kit } from "../engine/you";
 
 const ADDRESSES = ["Master", "Mistress", "Sir", "Ma'am", "Owner"];
 
@@ -20,6 +21,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
   const [custom, setCustom] = useState("");
   const [origin, setOrigin] = useState<string>(() => ORIGINS[Math.floor(Math.random() * ORIGINS.length)].id);
   const [supplication, setSupplication] = useState(false);
+  const [kit, setKit] = useState<Kit | null>(null);
   const [twists, setTwists] = useState<string[]>([]);
   const [difficulty, setDifficulty] = useState<"generous" | "standard" | "hard">("standard");
   const [busy, setBusy] = useState(false);
@@ -30,7 +32,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
     setBusy(true);
     const s = newGame({
       arcology_name: name || undefined, player_name: player || undefined, difficulty, origin,
-      address: address === "custom" ? custom.trim() || "Master" : address, supplication, twists,
+      address: address === "custom" ? custom.trim() || "Master" : address, supplication, twists, kit: kit ?? undefined,
     });
     await putSave(s);
     localStorage.setItem("warp-last", s.id);
@@ -69,6 +71,13 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
             </div>
             {address === "custom" ? <input className="mt-2" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="e.g. Madam, Boss, your name" /> : null}
           </Field>
+          <Field label="Between your legs" hint={kit ? "Height, build, chest and the rest are yours to shape on the You screen." : "The scenes follow this. Pick one to begin."}>
+            <div className="flex flex-wrap gap-1.5">
+              {(Object.keys(KITS) as Kit[]).map((k) => (
+                <button key={k} className={cx("chip !text-[12px] !py-1 !px-3", kit === k && "on")} onClick={() => setKit(k)}>{KITS[k].label}</button>
+              ))}
+            </div>
+          </Field>
           <Field label="The arcology"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="leave blank and it names itself" /></Field>
           <Field label="How hard" hint="Money only. Your origin sets the rest.">
             <div className="flex gap-2">
@@ -93,7 +102,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
             <input type="checkbox" className="!w-auto mt-0.5" checked={supplication} onChange={(e) => setSupplication(e.target.checked)} />
             <span className="text-[12.5px] mid">Also run <span className="hi">Supplicationism</span>: a long storyline where one of the women you own slowly comes to own you.</span>
           </label>
-          <Button kind="primary" onClick={begin} disabled={busy} className="w-full mt-4">Begin</Button>
+          <Button kind="primary" onClick={begin} disabled={busy || !kit} className="w-full mt-4">Begin</Button>
           {!modelsAvailable() ? (
             <p className="text-[11.5px] dim mt-3">
               No AI model set up. Everything works without one, including every story, scene and conversation. A model

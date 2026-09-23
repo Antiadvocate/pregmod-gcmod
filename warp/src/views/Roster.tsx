@@ -33,6 +33,7 @@ import { renderDoll } from "../lib/dollrender";
 import { askHer } from "../engine/consult";
 import SlaveArt, { SlaveHead } from "./SlaveArt";
 import { practise, skill } from "../engine/player";
+import { buildOf } from "../engine/build";
 
 type Sort = "name" | "devotion" | "trust" | "health" | "income" | "trouble";
 
@@ -330,7 +331,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
             <p className="text-[12.5px] dim mt-2">{p.body.appearance_now}</p>
           </Card>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {[["height", `${p.body.height_cm}cm`], ["weight", `${p.body.weight_kg}kg`], ["build", p.body.weight > 20 ? "soft" : p.body.muscle > 25 ? "strong" : "average"],
+            {[["height", `${p.body.height_cm}cm`], ["weight", `${p.body.weight_kg}kg`], ["build", buildOf(p.body.weight) === "slim" && p.body.muscle > 25 ? "strong" : buildOf(p.body.weight)],
               ["face", `${p.body.face}/100`], ["breasts", `${p.body.boobs}cc${p.body.boob_implant ? " (implants)" : ""}`], ["butt", `${p.body.butt}/10`],
               ["hair", `${p.body.hair_color}, ${p.body.hair_length}cm`], ["eyes", p.body.eye_color], ["skin", p.body.skin]].map(([k, v]) => (
               <div key={k} className="card-2 px-3 py-2">

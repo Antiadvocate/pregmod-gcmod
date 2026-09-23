@@ -17,8 +17,8 @@ import { POSE_BY_ID } from "../lib/rig";
 import SlaveArt from "./SlaveArt";
 import { RoomBackdrop } from "../lib/rooms";
 
-const HAIR_COLORS = ["black", "dark brown", "brown", "light brown", "auburn", "red", "strawberry blonde", "blonde", "platinum blonde", "silver", "white", "pink", "blue", "green", "purple"];
-const HAIR_STYLES: { label: string; value: string }[] = [
+export const HAIR_COLORS = ["black", "dark brown", "brown", "light brown", "auburn", "red", "strawberry blonde", "blonde", "platinum blonde", "silver", "white", "pink", "blue", "green", "purple"];
+export const HAIR_STYLES: { label: string; value: string }[] = [
   { label: "Loose", value: "loose" }, { label: "Neat", value: "neat" }, { label: "Ponytail", value: "in a ponytail" },
   { label: "Pigtails", value: "in pigtails" }, { label: "Bun", value: "pinned up in a bun" }, { label: "Braid", value: "in a braid" },
   { label: "Up", value: "tied back" }, { label: "Curls", value: "curled" }, { label: "Waves", value: "in luxurious waves" },

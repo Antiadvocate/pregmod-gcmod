@@ -20,6 +20,7 @@ import { recall } from "./memory";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { threadBrief } from "./threads";
 import { getEdge } from "./social";
+import { describeYou } from "./you";
 
 export const NARRATOR_SYSTEM = `You are the Narrator of an arcology — a private city-state where slavery is legal, ordinary, and administered. You render one moment at a time, in the second person, addressed to the owner. You do not generate quests. You respond to what the owner does, and you let the people in the room respond as themselves.
 
@@ -119,7 +120,7 @@ export function digest(s: SaveState, action = ""): string {
 
   out.push(`\n## THE MOMENT`);
   out.push(`${s.scene.time}. ${s.scene.location}. ${s.scene.weather}.`);
-  out.push(`Owner: ${s.player.name}, ${s.player.title}. ${s.player.body.appearance_facts}`);
+  out.push(`Owner: ${s.player.name}, ${s.player.title}. ${describeYou(s)}. ${s.player.body.appearance_facts}`);
   if (s.scene.arrivals_pending.length) out.push(`ARRIVING — write them coming in, they are not already here: ${s.scene.arrivals_pending.map((id) => s.people[id]?.name).filter(Boolean).join(", ")}`);
   if (s.scene.departures_pending.length) out.push(`LEAVING — write the goodbye: ${s.scene.departures_pending.map((d) => `${d.name} (${d.why})`).join(", ")}`);
 

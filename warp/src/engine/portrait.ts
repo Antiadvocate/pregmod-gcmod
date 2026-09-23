@@ -15,12 +15,15 @@ import type { Person, SaveState } from "./types";
 import { getLocalImage } from "../config";
 import { ACT_BY_ID } from "../data/intimacy";
 import { hash } from "./rng";
+import { buildOf } from "./build";
 
 /** The bedrock clause. Written once, stored on the person, never regenerated. */
 export function visualSignature(p: Person, style: "natural" | "tags"): string {
   if (p.body.visual_signature) return p.body.visual_signature;
   const b = p.body;
-  const build = b.weight > 30 ? "heavy, soft" : b.weight > 10 ? "curvy" : b.weight < -25 ? "very thin" : b.muscle > 30 ? "athletic, toned" : "average build";
+  const w = buildOf(b.weight);
+  const build = w === "slim" ? (b.muscle > 30 ? "athletic, toned" : "average build")
+    : { skinny: "very thin, bony", thin: "thin", plump: "curvy, soft", chubby: "chubby", fat: "fat, heavy", obese: "obese" }[w];
   const chest = b.boobs > 1400 ? "enormous breasts" : b.boobs > 800 ? "huge breasts" : b.boobs > 450 ? "large breasts" : b.boobs > 200 ? "medium breasts" : "small breasts";
   const hair = `${b.hair_length > 60 ? "long" : b.hair_length > 20 ? "shoulder-length" : "short"} ${b.hair_color} hair`;
   const age = `${p.physical_age} years old`;

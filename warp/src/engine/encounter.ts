@@ -68,7 +68,7 @@ function whatSheLiked(p: Person): { liked?: string; learned?: string } {
   const phrases: Record<string, string> = {
     boobs: "your hands on my tits", buttslut: "when you're in my ass", cumslut: "tasting you",
     humiliation: "when people watch", submissive: "being told", dom: "being the one on top",
-    masochist: "when it hurts a bit", sadist: "being mean to you", pregnancy: "when you finish inside me",
+    masochist: "when it hurts a bit", sadist: "being mean to you", pregnancy: "thinking about being bred",
   };
   if (top && top.strength >= 30) {
     const learned = top.known ? undefined : `${p.name} is a ${FETISH_BY_ID[top.name]?.name ?? top.name}.`;

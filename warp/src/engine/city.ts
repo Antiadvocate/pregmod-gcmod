@@ -60,18 +60,23 @@ export interface CityState {
 
 /** The city you inherit: your spire, a few citizen-held plots paying rent, and a lot of empty
  *  ground. The emptiness is the point — the first thing a new player should see is room. */
-export function newCity(week = 1): CityState {
+export function newCity(week = 1, seedText = "city"): CityState {
   const districts: District[] = [{ id: "d-core", kind: "spire", ring: 0, slot: 0, level: 1, condition: 78, owner: "you" }];
-  const seed = rng("city");
+  // Seeded per run. It used to be one fixed seed, so every run inherited the same three plots.
+  const seed = rng(seedText);
+  // Somebody has to live somewhere: the first tenanted plot is always flats.
+  let housed = false;
   for (const ring of RINGS) {
     if (ring.id === 0) continue;
     for (let slot = 0; slot < ring.slots; slot++) {
       // The inner ring came with the purchase, half of it already tenanted. Everything further out
       // is ground nobody has bothered with.
-      const tenanted = ring.id === 1 && seed.chance(0.5);
+      const tenanted = ring.id === 1 && (seed.chance(0.5) || (!housed && slot === ring.slots - 1));
+      const kind = !tenanted ? "vacant" : housed ? seed.pick(["residential", "commercial", "industrial"] as const) : "residential";
+      if (kind === "residential") housed = true;
       districts.push({
         id: `d-${ring.id}-${slot}`,
-        kind: tenanted ? seed.pick(["residential", "commercial", "industrial"] as const) : "vacant",
+        kind,
         ring: ring.id, slot,
         level: tenanted ? 1 : 0,
         condition: tenanted ? Math.round(clamp(seed.normal(52, 14), 20, 90)) : 0,
@@ -83,7 +88,7 @@ export function newCity(week = 1): CityState {
 }
 
 export function cityOf(s: SaveState): CityState {
-  if (!s.city) s.city = newCity(s.arcology.week);
+  if (!s.city) s.city = newCity(s.arcology.week, `city:${s.story?.seed ?? s.id}`);
   return s.city;
 }
 
@@ -114,9 +119,10 @@ export function cityYield(s: SaveState): CityYield {
     const keep = clamp(0.35 + d.condition / 130, 0.35, 1.15);
     // Citizen-held plots pay you a third — the rent, not the business.
     const share = d.owner === "you" ? 1 : 0.33;
-    const scale = d.level * ring * keep * share;
+    const scale = d.level * ring * keep;
     for (const [k, v] of Object.entries(def.yields) as [keyof CityYield, number][]) {
-      out[k] += v * scale;
+      // People live in a flat whoever holds the deed; only the money and the standing are shared.
+      out[k] += v * scale * (k === "housing" ? 1 : share);
     }
   }
   // Trade routes on top, and a disrupted route pays nothing while it is disrupted.

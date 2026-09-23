@@ -14,6 +14,8 @@ import type { ActOutcome } from "./intimacy";
 import { ACT_BY_ID, FETISH_BY_ID } from "../data/intimacy";
 import { rng, type Rng } from "./rng";
 import { registerOf, say, fill, type Register } from "./voice";
+import { buildOf } from "./build";
+import { hasCock } from "./you";
 
 /* ── her body, in words ─────────────────────────────────────────────────────────────────────── */
 
@@ -25,7 +27,7 @@ export function bodyWords(p: Person): Record<string, string> {
   const hairLen = b.hair_length < 8 ? "cropped" : b.hair_length < 25 ? "short" : b.hair_length < 55 ? "" : "long";
   const hair = `${hairLen ? hairLen + " " : ""}${b.hair_color} hair`;
   const cock = b.dick === null || b.dick === 0 ? "" : b.dick <= 2 ? "her small cock" : b.dick <= 4 ? "her cock" : "her thick cock";
-  const build = b.height_cm < 155 ? "small" : b.height_cm > 178 ? "tall" : b.weight > 30 ? "soft" : b.muscle > 30 ? "hard-bodied" : "slim";
+  const build = b.height_cm < 155 ? "small" : b.height_cm > 178 ? "tall" : ["fat", "obese"].includes(buildOf(b.weight)) ? "fat" : buildOf(b.weight) === "chubby" ? "soft" : b.muscle > 30 ? "hard-bodied" : "slim";
   const belly = p.womb.weeks > 20 ? "her swollen belly" : b.belly > 4000 ? "her round belly" : "her stomach";
   const she = p.pronouns === "he/him" ? "he" : p.pronouns === "they/them" ? "they" : "she";
   const her = p.pronouns === "he/him" ? "his" : p.pronouns === "they/them" ? "their" : "her";
@@ -100,6 +102,8 @@ interface ActText {
   core: string[];
   /** How you finish, when you do. Omitted where the core already says. */
   yours?: string[];
+  /** The same act when you have no cock: your mouth and cunt, or the strap-on from the drawer. */
+  nocock?: { core: string[]; yours?: string[] };
 }
 
 const ACT_TEXT: Record<string, ActText> = {
@@ -109,6 +113,13 @@ const ACT_TEXT: Record<string, ActText> = {
       "She kneels between your knees and takes you in her mouth, one hand steadying herself on your thigh.",
     ],
     yours: ["You finish in her mouth.", "You pull out at the last moment and finish across her lips and chin."],
+    nocock: {
+      core: [
+        "You sit on the edge of the bed and she kneels between your thighs and puts her mouth on you. She starts slow, eyes on your face.",
+        "You push her down onto her back and straddle her face. Her tongue finds you and she keeps at it.",
+      ],
+      yours: ["You come against her mouth, thighs tight around her head.", "You come with your fingers in her {hair}, holding her where she is."],
+    },
   },
   throat: {
     core: [
@@ -116,6 +127,13 @@ const ACT_TEXT: Record<string, ActText> = {
       "You hold her head still and fuck her throat. Her hands come up to your hips and stay there, not pushing, just holding on.",
     ],
     yours: ["You hold her there while you come, and let go. She drags in air.", "You finish deep in her throat and she swallows around you because there's nowhere else for it to go."],
+    nocock: {
+      core: [
+        "You buckle the strap-on on and take a handful of her {hair}. She gags on it the first time, then opens her throat and takes it, spit running down her chin.",
+        "You hold her head still and fuck her throat with the strap-on. Her hands come up to your hips and stay there.",
+      ],
+      yours: ["You hold her there until she taps your thigh, and let go. She drags in air."],
+    },
   },
   vaginal: {
     core: [
@@ -124,6 +142,14 @@ const ACT_TEXT: Record<string, ActText> = {
       "She climbs on and sinks down onto you, hands flat on your chest, and you take her hips and set the pace.",
     ],
     yours: ["You come inside her.", "You pull out and finish on {her} stomach."],
+    nocock: {
+      core: [
+        "You buckle the strap-on on, put her on her back and push into her. Her heels hook behind your thighs.",
+        "You bend her over the edge of the bed and fuck her from behind with the strap-on, one hand on the small of her back.",
+        "You lie back with her between your legs and grind against her until you're both wet, her thigh between yours.",
+      ],
+      yours: ["The base of the strap grinds against you with every stroke and you come like that, buried in her.", "You come grinding against her, and keep going after."],
+    },
   },
   anal: {
     core: [
@@ -131,6 +157,13 @@ const ACT_TEXT: Record<string, ActText> = {
       "You put her on her knees, face in the pillow, and fuck her ass with long, steady strokes.",
     ],
     yours: ["You finish deep in her ass.", "You come inside her and hold still until you soften."],
+    nocock: {
+      core: [
+        "You buckle the strap-on on, work lube into her and push into her ass slowly. She breathes out through her teeth and takes the rest.",
+        "You put her on her knees, face in the pillow, and fuck her ass with the strap-on in long, steady strokes.",
+      ],
+      yours: ["The strap grinds against you with every stroke and you come like that, deep in her ass."],
+    },
   },
   painal: {
     core: [
@@ -138,6 +171,13 @@ const ACT_TEXT: Record<string, ActText> = {
       "You pin her face-down and force your way into her ass. She claws at the sheet.",
     ],
     yours: ["You finish inside her and pull out. She doesn't move for a while."],
+    nocock: {
+      core: [
+        "You don't bother warming her up. You push the strap-on into her ass dry and she makes a sound you'll remember.",
+        "You pin her face-down and force the strap-on into her ass. She claws at the sheet.",
+      ],
+      yours: ["You pull out when you're done with her. She doesn't move for a while."],
+    },
   },
   mammary: {
     core: [
@@ -171,6 +211,13 @@ const ACT_TEXT: Record<string, ActText> = {
       "You take two of them at once, one riding you while the other's mouth is busy lower down. {name} keeps glancing at the other one.",
     ],
     yours: ["You finish in {name}, and the other girl cleans you off."],
+    nocock: {
+      core: [
+        "You bring in a second girl and put them both to work. One mouth on you, one on your tits, and they keep bumping heads.",
+        "You take two of them at once: {name} between your legs, the other one kissing up your neck. {name} keeps glancing at the other one.",
+      ],
+      yours: ["You come on {name}'s tongue while the other girl holds your thighs apart."],
+    },
   },
   servicing: {
     core: [
@@ -220,6 +267,13 @@ const ACT_TEXT: Record<string, ActText> = {
       "You take her against a pillar outside the shops. People slow down to watch; a few stop.",
     ],
     yours: ["You finish inside her and leave her there, legs shaking, for whoever's still looking."],
+    nocock: {
+      core: [
+        "You bend her over a rail on the concourse and fuck her with the strap-on in front of the evening crowd. Somebody films it. Somebody claps.",
+        "You sit on a bench outside the shops and make her kneel and eat you out where people walk past. A few stop.",
+      ],
+      yours: ["You finish and leave her there, face wet, for whoever's still looking."],
+    },
   },
   exposure: {
     core: [
@@ -239,6 +293,13 @@ const ACT_TEXT: Record<string, ActText> = {
       "You cuff her hands behind her and push her down on the bed. She can't do anything now but take what comes next.",
     ],
     yours: ["You fuck her tied up and leave her tied a while longer after you finish."],
+    nocock: {
+      core: [
+        "You tie her wrists to the headboard and her ankles apart. She tests the knots once and then lies still.",
+        "You cuff her hands behind her and push her down on the bed. She can't do anything now but take what comes next.",
+      ],
+      yours: ["You fuck her tied up with the strap-on and leave her tied a while longer after you finish.", "You sit on her face while she's tied and she can't do anything but work."],
+    },
   },
   discipline: {
     core: [
@@ -370,6 +431,13 @@ const ACT_TEXT: Record<string, ActText> = {
       "You undress her slowly and take your time with every part of her, and when you finally fuck her it's unhurried.",
     ],
     yours: ["You come inside her, holding her close."],
+    nocock: {
+      core: [
+        "You take the whole night over her. No hurry, no instructions, just hands and mouths and her body against yours.",
+        "You undress her slowly and take your time with every part of her, and she takes her time with you.",
+      ],
+      yours: ["You come with her fingers inside you, holding her close."],
+    },
   },
   "sleeping together": {
     core: [
@@ -547,7 +615,8 @@ function seedFor(s: SaveState, p: Person, act: string): string {
 export function writeAct(s: SaveState, p: Person, o: ActOutcome, opts?: { lead?: boolean }): Written {
   const r = rng(seedFor(s, p, o.act));
   const act = ACT_BY_ID[o.act];
-  const text = ACT_TEXT[o.act];
+  const found = ACT_TEXT[o.act];
+  const text: ActText | undefined = found?.nocock && !hasCock(s) ? found.nocock : found;
   const w = bodyWords(p);
   const reg = registerOf(p);
   const tags: string[] = [];

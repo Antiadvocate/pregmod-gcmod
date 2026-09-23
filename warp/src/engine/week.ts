@@ -44,6 +44,7 @@ import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
 import { tickThreads } from "./threads";
 import { THREAD_BY_KIND } from "../data/threads";
+import { canSire } from "./you";
 
 const alive = (s: SaveState): Person[] => Object.values(s.people).filter((p) => p.status === "owned" || p.status === "indentured");
 
@@ -157,10 +158,9 @@ export function endWeek(s: SaveState): WeekReport {
     if (hw.died) { dead.push(p); continue; }
 
     // SEX, AND WHAT COMES OF IT
-    const exposure = sexualExposure(p);
+    const exposure = sexualExposure(p, s);
     if (exposure > 0 && !p.womb.contraceptives) {
-      const father = exposure > 3 ? null : s.player.name ? null : null;
-      const f = tryConception(s, p, father, exposure);
+      const f = tryConception(s, p, null, exposure);
       if (f) push(`${p.name} is pregnant.`, "neutral", 6, p.id);
     }
     const preg = tickPregnancy(s, p);
@@ -326,8 +326,9 @@ export function endWeek(s: SaveState): WeekReport {
     const who = s.people[ask.person];
     if (who) push(`${who.name} wants something.`, "neutral", 7, who.id);
   }
-  s.events = [...s.events.filter((e) => week - e.week < 2), ...selectEvents(s)];
-  for (const e of s.events.filter((x) => x.week === arc.week - 1 || x.week === arc.week)) {
+  const fresh = selectEvents(s);
+  s.events = [...s.events.filter((e) => week - e.week < 2), ...fresh];
+  for (const e of fresh) {
     push(e.seed, e.severity === "major" ? "warning" : "neutral", 10, e.person);
   }
 
@@ -364,7 +365,9 @@ export function endWeek(s: SaveState): WeekReport {
 
 /** Roughly how much sex a week of this assignment is. Feeds conception, and nothing else — the
  *  income model already counts customers separately. */
-function sexualExposure(p: Person): number {
+function sexualExposure(p: Person, s: SaveState): number {
+  // The two jobs that are only you: nothing to conceive from if you can't sire.
+  if ((p.assignment === "please you" || p.assignment === "be your Concubine") && !canSire(s)) return 0;
   switch (p.assignment) {
     case "work in the brothel": return 5;
     case "be confined in the arcade": return 6;

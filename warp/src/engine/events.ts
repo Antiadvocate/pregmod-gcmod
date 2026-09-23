@@ -207,6 +207,7 @@ export const EVENTS: EventDef[] = [
         const back = s.edges.find((x) => x.from === e.to && x.to === e.from);
         if (!back || back.warmth < 55) continue;
         const p = s.people[e.from];
+        if (e.roles.includes("lover")) continue;
         if (p && (p.status === "owned" || p.status === "indentured")) out.push({ person: p });
       }
       return out;
@@ -266,7 +267,7 @@ export const EVENTS: EventDef[] = [
       { id: "hide", label: "Keep her out of sight",
         resolve: (s, _e, p) => { p!.assignment = "house servant"; applyTreatment(p!, { kind: "neglect", size: 3, why: "hidden away" }, s.arcology.week); return `She works the back corridors now.`; } },
       { id: "defend", label: "Say publicly that she stays as she is", note: "costs standing; buys something else",
-        resolve: (s, _e, p) => { s.arcology.rep -= 800; applyTreatment(p!, { kind: "recognition", size: 8, why: "defended in public, at cost" }, s.arcology.week); const mem = s.memory[p!.id]; if (mem) remember(mem, { content: "he stood up in front of the whole arcology and said she stays as she is", week: s.arcology.week, importance: 10, charge: "bright", core: true }); return `It cost eight hundred reputation. She heard about it within the hour.`; } },
+        resolve: (s, _e, p) => { s.arcology.rep -= 800; applyTreatment(p!, { kind: "recognition", size: 8, why: "defended in public, at cost" }, s.arcology.week); const mem = s.memory[p!.id]; if (mem) remember(mem, { content: "you stood up in front of the whole arcology and said she stays as she is", week: s.arcology.week, importance: 10, charge: "bright", core: true }); return `It cost eight hundred reputation. She heard about it within the hour.`; } },
     ],
   },
   {
@@ -332,9 +333,16 @@ export function selectEvents(s: SaveState): PendingEvent[] {
   const r = rng(`events:${s.arcology.week}`);
   const pool: { def: EventDef; c: { person?: Person; facility?: string }; w: number }[] = [];
 
+  // The same thing does not happen twice in a row. A kind that is still waiting on you, or fired in
+  // the last six weeks, sits out; a person-specific one sits out only for that person.
+  const recent = (s.event_log ??= {});
+  const waiting = new Set(s.events.map((e) => e.kind));
   for (const def of EVENTS) {
     if (!def.endogenous && s.models.tension === 0) continue;
+    if (waiting.has(def.id)) continue;
     for (const c of def.candidates(s)) {
+      const key = c.person ? `${def.id}:${c.person.id}` : def.id;
+      if (s.arcology.week - (recent[key] ?? -99) < 6) continue;
       const w = def.weight(s, c);
       if (w > 0) pool.push({ def, c, w });
     }
@@ -349,6 +357,7 @@ export function selectEvents(s: SaveState): PendingEvent[] {
     if (!pickFrom.length) break;
     const choice = r.weighted(pickFrom, (x) => x.w);
     used.add(choice.def.id);
+    recent[choice.c.person ? `${choice.def.id}:${choice.c.person.id}` : choice.def.id] = s.arcology.week;
     out.push({
       id: `e${s.arcology.week}-${choice.def.id}`,
       kind: choice.def.id,

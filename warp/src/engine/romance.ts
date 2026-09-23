@@ -202,8 +202,8 @@ export const RITES: Record<string, Rite> = {
       p.bond.hope = clamp(p.bond.hope + 25, 0, 100);
       shove(p.psyche, 2, { hard: true });
       const mem = s.memory[p.id];
-      if (mem) remember(mem, { content: "he courted her in front of the whole arcology, as if she could have refused", week: s.arcology.week, importance: 10, charge: "bright", core: true });
-      startRumor(s, `he is courting ${p.name} in public`, { about: p.id, salience: 8 });
+      if (mem) remember(mem, { content: "you courted her in front of the whole arcology, as if she could have refused", week: s.arcology.week, importance: 10, charge: "bright", core: true });
+      startRumor(s, `the owner is courting ${p.name} in public`, { about: p.id, salience: 8 });
       return [line(`You are courting ${p.name} in public. The concourse is talking about nothing else.`, "good", 9, p.id)];
     },
   },
@@ -215,7 +215,7 @@ export const RITES: Record<string, Rite> = {
       p.bond.hope = clamp(p.bond.hope + 30, 0, 100);
       addState(p.psyche, "waiting for it to be taken back", s.arcology.week);
       const mem = s.memory[p.id];
-      if (mem) remember(mem, { content: "he put it in writing, on the registry, where other people could read it", week: s.arcology.week, importance: 10, charge: "bright", core: true });
+      if (mem) remember(mem, { content: "you put it in writing, on the registry, where other people could read it", week: s.arcology.week, importance: 10, charge: "bright", core: true });
       return [line(`${p.name} is betrothed to you and it is on the registry. She is waiting for you to take it back — that is what she has learned people do.`, "good", 9, p.id)];
     },
   },
@@ -262,9 +262,9 @@ export const RITES: Record<string, Rite> = {
       p.status = "free";
       s.player.owned_by = p.id;
       s.canon.push(`${p.name} runs ${s.arcology.name}. The registry says the arcology's former owner belongs to her, and the registry is not a joke here.`);
-      startRumor(s, `he gave ${p.name} the collar and meant it`, { about: p.id, salience: 10 });
+      startRumor(s, `the owner gave ${p.name} the collar and meant it`, { about: p.id, salience: 10 });
       const mem = s.memory[p.id];
-      if (mem) remember(mem, { content: "the night he handed her the collar and put his own neck in it", week: s.arcology.week, importance: 10, charge: "bright", core: true });
+      if (mem) remember(mem, { content: "the night you handed her the collar and put your own neck in it", week: s.arcology.week, importance: 10, charge: "bright", core: true });
       shove(p.psyche, 3, { hard: true });
       return [
         line(`${p.name} has the arcology. The registry has been changed and the change is real.`, "good", 10, p.id),
@@ -328,14 +328,14 @@ export function renounce(s: SaveState, p: Person, why: string): ReportLine[] {
   const size = idx >= 4 ? 10 : idx >= 3 ? 7 : 4;
   applyTreatment(p, { kind: "promise_broken", size, why }, s.arcology.week);
   const mem = s.memory[p.id];
-  if (mem) remember(mem, { content: `he took it back — ${why}`, week: s.arcology.week, importance: 10, charge: "sharp", core: true });
+  if (mem) remember(mem, { content: `you took it back — ${why}`, week: s.arcology.week, importance: 10, charge: "sharp", core: true });
   addState(p.psyche, "what he took back", s.arcology.week);
   shove(p.psyche, -3, { hard: true });
   rom.standing = "property";
   rom.since_week = s.arcology.week;
   rom.dominion = clamp(rom.dominion - 40, -100, 100);
   if (idx >= 4) {
-    startRumor(s, `he took it back from ${p.name} after promising in public`, { salience: 10, about: p.id });
+    startRumor(s, `the owner took it back from ${p.name} after promising in public`, { salience: 10, about: p.id });
     s.arcology.rep -= 1500;
     for (const other of Object.values(s.people)) {
       if (other.status !== "owned" || other.id === p.id) continue;

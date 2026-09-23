@@ -29,6 +29,7 @@
 import type { Person } from "../engine/types";
 import { restingPose, type ArmPos, type Pose } from "./rig";
 import { garment } from "../data/wardrobe";
+import { artWeight as weightForArt } from "../engine/build";
 
 const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
 
@@ -45,7 +46,9 @@ export const VIEWBOX = "0 0 560 1000";
  *  in a 560-wide box, and rendering the raw viewBox puts a small woman in a large empty rectangle —
  *  which is exactly what the first attempt did. */
 export const CROPS = {
-  full: "185 40 195 890",
+  // The full frame has room above her for the tallest woman and below her for her toes, so height
+  // is drawn as height: a short woman is smaller in the same frame, not blown up to fill it.
+  full: "164 -135 266 1097",
   bust: "215 55 130 380",
   head: "248 58 105 122",
 } as const;
@@ -59,10 +62,15 @@ export type Crop = keyof typeof CROPS;
  * arrived. Widening the crop for everyone instead would shrink her in the common poses, so the
  * window tracks what is actually in the frame.
  */
-export function cropFor(crop: Crop, pose?: { armL: string; armR: string }): string {
-  if (crop !== "full" || !pose) return CROPS[crop];
-  const raised = pose.armL === "High" || pose.armL === "Rebel" || pose.armR === "High";
-  return raised ? "175 40 320 890" : CROPS.full;
+export function cropFor(crop: Crop, pose?: { armL: string; armR: string }, p?: Person): string {
+  if (crop !== "full") return CROPS[crop];
+  // Tall enough for her or for an average woman, whichever is taller: a short woman stands short in
+  // the frame, a tall one gets the headroom she needs, and nobody's toes are cut off.
+  const k = p ? Math.max(1, heightScaleFor(p)) : 1.18;
+  const top = Math.round(940 - 920 * k - 10), h = 965 - top;
+  const raised = !!pose && (pose.armL === "High" || pose.armL === "Rebel" || pose.armR === "High");
+  const w = raised ? 350 : Math.max(266, Math.round(h * 0.26));
+  return `${Math.round(297 - w / 2)} ${top} ${w} ${h}`;
 }
 
 export interface Layer {
@@ -181,25 +189,49 @@ export function styleFor(p: Person, scope: string): string {
 /* ── layer selection ─────────────────────────────────────────────────────────────────────────
  * Ordered back to front. Each entry is proposed; the renderer drops what does not exist. */
 
-function torsoLayer(p: Person): string {
-  const w = p.body.weight;
-  if (w > 55) return "Torso_Obese";
-  if (w > 30) return "Torso_Fat";
-  if (w > 10) return "Torso_Chubby";
-  if (p.body.waist < -40) return "Torso_Hourglass";
-  return "Torso_Normal";
+/**
+ * BODY SHAPE, BY THE ORIGINAL'S TABLES.
+ *
+ * The base game picks a torso from waist AND weight together and a leg from hips AND weight, on a
+ * weight scale about twice as wide as this game's (its "fat" starts at 95, "obese" at 130). These
+ * are its tables, ported, reading our weight through artWeight. The version this replaced ignored the waist,
+ * started "fat" three times too late, and had the two widest leg shapes the wrong way round, so a
+ * woman the text called heavy was drawn slim.
+ */
+function artWeight(p: Person): number { return weightForArt(p.body.weight); }
+
+export function torsoSize(p: Person): string {
+  const w = artWeight(p), waist = p.body.waist;
+  const pick = (t: [number, string][], last: string) => { for (const [min, name] of t) if (w >= min) return name; return last; };
+  if (waist >= 96) return pick([[96, "Obese"], [11, "Fat"], [-30, "Chubby"]], "Normal");
+  if (waist >= 41) return pick([[131, "Obese"], [31, "Fat"], [0, "Chubby"], [-95, "Normal"]], "Hourglass");
+  if (waist >= 11) return pick([[161, "Obese"], [96, "Fat"], [11, "Chubby"], [-30, "Normal"]], "Hourglass");
+  if (waist > -11) return pick([[191, "Obese"], [131, "Fat"], [31, "Chubby"], [0, "Normal"], [-95, "Hourglass"]], "Unnatural");
+  if (waist > -41) return pick([[161, "Fat"], [96, "Chubby"], [11, "Normal"], [-30, "Hourglass"]], "Unnatural");
+  if (waist > -96) return pick([[191, "Fat"], [131, "Chubby"], [31, "Normal"], [-10, "Hourglass"]], "Unnatural");
+  return pick([[161, "Chubby"], [96, "Normal"], [1, "Hourglass"]], "Unnatural");
 }
 
-function legLayer(p: Person): string {
-  const w = p.body.weight;
-  if (w > 40) return "Leg_Wide";
-  if (w > 12) return "Leg_Thick";
-  if (w < -25) return "Leg_Narrow";
-  return "Leg_Normal";
+export function legSize(p: Person): string {
+  const w = artWeight(p), hips = p.body.hips;
+  if (hips <= -2) return w <= 0 ? "Narrow" : w < 161 ? "Normal" : "Wide";
+  if (hips === -1) return w <= -11 ? "Narrow" : w < 96 ? "Normal" : "Wide";
+  if (hips === 0) return w <= -96 ? "Narrow" : w < 11 ? "Normal" : w < 131 ? "Wide" : "Thick";
+  if (hips === 1) return w <= -31 ? "Normal" : w < 31 ? "Wide" : "Thick";
+  return w <= -11 ? "Wide" : "Thick";
 }
 
-function buttLayer(p: Person): string {
-  return `Butt_${Math.max(0, Math.min(6, Math.round(p.body.butt)))}`;
+function torsoLayer(p: Person): string { return `Torso_${torsoSize(p)}`; }
+function legLayer(p: Person): string { return `Leg_${legSize(p)}`; }
+
+/** The original's butt index: its 1–7 scale, minus one. */
+function buttIndex(p: Person): number { return Math.max(0, Math.min(6, Math.trunc(Math.max(1, Math.min(7, p.body.butt))) - 1)); }
+function buttLayer(p: Person): string { return `Butt_${buttIndex(p)}`; }
+
+/** Muscle definition, drawn over the torso, legs and arms the way the original does. */
+function muscleTier(p: Person): string {
+  const m = p.body.muscle;
+  return m >= 97 ? "MHeavy" : m >= 62 ? "MMedium" : m >= 30 ? "MLight" : "";
 }
 
 /** Hair: the art pack's styles, chosen from the free-text style the forge wrote. */
@@ -231,7 +263,7 @@ function hairLength(p: Person): string {
 }
 
 /** True if she is heavy enough that the pack's Fat variants are the right ones. */
-function heavyset(p: Person): boolean { return p.body.weight > 30; }
+function heavyset(p: Person): boolean { return ["Fat", "Obese"].includes(torsoSize(p)); }
 function heavy(p: Person, kind: string): boolean {
   return p.body.marks.filter((m) => m.kind === kind).length >= 3;
 }
@@ -290,7 +322,7 @@ function nippleLayer(p: Person): string {
 }
 
 function pubicLayer(p: Person): string {
-  const fat = p.body.weight > 30 ? "Fat" : "";
+  const fat = heavyset(p) ? "Fat" : "";
   switch (p.body.pubic_hair) {
     case "hairless": case "waxed": return "Pubic_Hair_None";
     case "in a strip": return `Pubic_Hair_Strip${fat}`;
@@ -344,22 +376,21 @@ const BROWS = ["Natural", "Bushy", "Pencilthin", "Tapered"];
 /** The boob transform, straight out of the original. */
 export function boobTransform(p: Person, heightScale: number): string | undefined {
   const cc = p.body.boobs;
-  if (cc < 100) return undefined;
-  const s = 0.383433 * Math.log(0.0452403 * Math.max(50, cc)) * heightScale;
+  // Under 300cc the original draws no breast at all, only the areolae, nudged onto the torso.
+  if (cc < 300) return "matrix(1,0,0,1,22,0)";
+  const s = 0.383433 * Math.log(0.0452403 * cc) * heightScale;
   if (!isFinite(s) || s <= 0) return undefined;
   const tx = -282.841 * s + 292.349;
   const ty = -225.438 * s + 216.274;
   return `matrix(${s.toFixed(4)},0,0,${s.toFixed(4)},${tx.toFixed(2)},${ty.toFixed(2)})`;
 }
 
-/** Belly grows with pregnancy the same way — a scale on the belly layer. */
+/** Belly, the original's curve: nothing under 2,000cc, then logarithmic. */
 function bellyTransform(p: Person): string | undefined {
   const cc = p.body.belly;
-  if (cc < 1500) return undefined;
-  const s = Math.min(2.4, 0.6 + Math.log10(cc) * 0.28);
-  const tx = -160 * (s - 1);
-  const ty = -120 * (s - 1);
-  return `matrix(${s.toFixed(3)},0,0,${s.toFixed(3)},${tx.toFixed(1)},${ty.toFixed(1)})`;
+  if (cc < 2000) return undefined;
+  const s = 0.3 * Math.log(0.011 * cc);
+  return `matrix(${s.toFixed(3)},0,0,${s.toFixed(3)},${(-262 * (s - 1)).toFixed(1)},${(-284 * (s - 1)).toFixed(1)})`;
 }
 
 /**
@@ -378,7 +409,7 @@ function armFamily(p: Person): { prefix: string; kit: string } {
       : /sex/.test(w) ? "ProstheticSexy" : /swiss|multi/.test(w) ? "ProstheticSwiss" : "ProstheticBasic";
     return { prefix: "Arm", kit };
   }
-  return { prefix: p.body.weight > 30 ? "ArmFat" : "Arm", kit: "" };
+  return { prefix: ["Fat", "Obese"].includes(torsoSize(p)) ? "ArmFat" : "Arm", kit: "" };
 }
 
 /**
@@ -488,9 +519,6 @@ function faceLayers(p: Person): Layer[] {
  * legs per width, breasts and belly on their own transforms — and each piece goes in at the same
  * point in the stack the original puts it, so a sleeve sits over an arm and under the hair. */
 
-function torsoSize(p: Person): string { return torsoLayer(p).replace("Torso_", ""); }
-function legSize(p: Person): string { return legLayer(p).replace("Leg_", ""); }
-function buttIndex(p: Person): number { return Math.max(0, Math.min(6, Math.round(p.body.butt))); }
 const ARM_OUTFIT_POS: Record<string, string> = { High: "High", Mid: "Mid", Low: "Low", Rebel: "Rebel", Thumb_Down: "Thumb", None: "None" };
 
 /** The hue shift for her clothes, carried on each clothing layer so the skin under it is untouched. */
@@ -506,7 +534,9 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
   const out: Layer[] = [];
   const len = hairLength(p);
   const style = hairStyle(p);
-  const heightScale = Math.max(0.7, Math.min(1.25, p.body.height_cm / 170));
+  // Breasts keep their real size whatever her height: the figure is scaled by height as a whole, so
+  // this undoes that for the breast alone, and the same cup reads bigger on a small woman.
+  const heightScale = 1 / heightScaleFor(p);
 
   // BEHIND THE BODY, and the arms belong here with it.
   //
@@ -519,6 +549,11 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
 
   const limb = armFamily(p);
   out.push({ id: armLayer(limb, "Left", pose.armL) }, { id: armLayer(limb, "Right", pose.armR) });
+  const tier = muscleTier(p);
+  if (tier && !limb.kit) {
+    if (["High", "Mid", "Low", "Rebel"].includes(pose.armL)) out.push({ id: `Arm_Left_${pose.armL}_MLight` });
+    if (["High", "Mid", "Low"].includes(pose.armR)) out.push({ id: `Arm_Right_${pose.armR}_MLight` });
+  }
   const g = garment(p.clothes);
   const fit = g?.art;
   if (fit) {
@@ -529,14 +564,17 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
   if (p.look?.tail) out.push({ id: `${cap(p.look.tail)}_Tail` });
 
   out.push({ id: buttLayer(p) });
-  out.push({ id: legLayer(p) });
-
-  // FEET, OR WHAT IS ON THEM, then stockings, then the lower half of the outfit.
+  // Bare feet go UNDER the legs, so the ankle's own edge covers the join. The pack's bare feet are
+  // drawn pointed, as if she were in heels she isn't wearing; these stand flat, with toes.
   const shoe = garment(p.shoes)?.art;
+  const hose = garment(p.legwear)?.art;
+  if (!shoe && !hose) out.push({ id: "Feet_Flat" });
+  out.push({ id: legLayer(p) });
+  if (tier) out.push({ id: `${legLayer(p)}_${tier}` });
+
+  // SHOES, then stockings, then the lower half of the outfit.
   if (shoe === "Shoes_Boot" || shoe === "Shoes_Extreme_Heel") out.push({ id: `${shoe}_${legSize(p)}` });
   else if (shoe) out.push({ id: shoe });
-  else out.push({ id: "Feet" });
-  const hose = garment(p.legwear)?.art;
   if (hose) {
     const base = shoe === "Shoes_Heel" ? "Shoes_Heel" : shoe === "Shoes_Pump" ? "Shoes_Pump" : shoe === "Shoes_Flat" ? "Shoes_Flat" : !shoe ? "Shoes_Stockings" : "";
     if (base) out.push({ id: `${base}_${hose}_${legSize(p)}` });
@@ -547,6 +585,7 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
   } else if (g?.shine) out.push({ id: `Leg_Outfit_Shine_${legSize(p)}` });
 
   out.push({ id: torsoLayer(p) });
+  if (tier) out.push({ id: `${torsoLayer(p)}_${tier}` });
 
   // the front of the body
   if (p.body.vagina !== null) {
@@ -575,7 +614,7 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
 
   const boob = boobTransform(p, heightScale);
   if (boob) {
-    out.push({ id: "Boob_Alt", transform: boob });
+    if (p.body.boobs >= 300) out.push({ id: "Boob_Alt", transform: boob });
     out.push({ id: areolaLayer(p), transform: boob });
     out.push({ id: nippleLayer(p), transform: boob });
     if (fit && p.body.boobs >= 300) out.push(worn(`Boob_Outfit_${fit}`, p, boob));
@@ -610,5 +649,11 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
 
 /** Height is rendered as scale, exactly as the original does it. */
 export function heightScaleFor(p: Person): number {
-  return Math.max(0.72, Math.min(1.22, p.body.height_cm / 172));
+  return Math.max(0.78, Math.min(1.18, p.body.height_cm / 172));
+}
+
+/** The whole figure scaled by height about the point between her feet. */
+export function heightTransform(p: Person): string {
+  const k = heightScaleFor(p);
+  return `translate(297 940) scale(${k.toFixed(3)}) translate(-297 -940)`;
 }

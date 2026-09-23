@@ -39,6 +39,14 @@ woman, which ambitions you met, and a title. You can keep playing past it.
 
 The old Supplicationism storyline is still there as an option on the start screen.
 
+## You
+
+Pick what's between your legs on the start screen: a cock, a pussy, or both. The **You** screen has
+the rest, drawn live with the same art as everyone else: height, weight, muscle, chest, shoulders,
+waist, hips, ass, cock and balls size, foreskin, pubic hair, face, skin, eyes, hair, and anything in
+the wardrobe. The scenes follow it. Without a cock, penetration is a strap-on and the acts that need
+you to come in or on her are closed; without balls you can't breed anyone.
+
 ## With her
 
 Tap **be with her** on anyone in People. Her figure is at the top, posed and reacting; what happens
@@ -96,6 +104,8 @@ src/engine/       the simulation. Nothing in here imports React.
   encounter.ts      follow-ups and talking
   asks.ts           what she asks you for
   story.ts          origins, arcs, beats, choices
+  you.ts            your body
+  build.ts          one weight scale for the picture, the kilograms and the words
   run.ts            twists, ambitions, endings
   week.ts           the weekly tick, in order
   obedience.ts      devotion and trust, derived from bond, fear, resentment and hope

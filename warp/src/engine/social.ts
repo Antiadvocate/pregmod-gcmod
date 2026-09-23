@@ -347,7 +347,7 @@ export function gossip(state: SaveState, week: number): Rumor[] {
   } else if (fear > 30 && week % 5 === 2) {
     seed(`he decides who it is going to be that week before he comes down`, { salience: 8, charge: -1 });
   } else if (mean > 30 && week % 7 === 0) {
-    seed(`he is not like the others and the ones who came from the others know it`, { salience: 6, charge: 1 });
+    seed(`the owner is not like the others, and the ones who came from other houses know it`, { salience: 6, charge: 1 });
   }
   return out;
 }

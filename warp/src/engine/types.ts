@@ -739,6 +739,8 @@ export interface PendingEvent {
 }
 
 export interface SaveState {
+  /** When each kind of event last fired, keyed by kind or kind:person. Stops repeats. */
+  event_log?: Record<string, number>;
   id: string;
   name: string;
   schema: number;
@@ -805,6 +807,11 @@ export interface Player {
   /** The player's own body, in the same shape as anyone's — the old game modelled this and it
    *  matters for scenes. */
   body: Partial<Body> & { appearance_facts: string };
+  /** What you wear, from the same wardrobe as everyone. */
+  clothes?: string;
+  shoes?: string;
+  legwear?: string;
+  look?: Look;
   /** Career before the arcology; sets starting skills and how citizens read you. */
   career: string;
   skills: Record<string, number>;

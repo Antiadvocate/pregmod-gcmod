@@ -20,6 +20,8 @@ import { rng } from "./rng";
 import { newStory } from "./story";
 import { newRun } from "./run";
 import { ORIGIN_BY_ID } from "../data/story";
+import { settleBody, type Kit } from "./you";
+import { cityOf, cityYield } from "./city";
 
 export interface NewGameOptions {
   arcology_name?: string;
@@ -37,6 +39,8 @@ export interface NewGameOptions {
   supplication?: boolean;
   /** Up to two twists on the world. See engine/run.ts. */
   twists?: string[];
+  /** What you have between your legs, which the scenes follow. The rest is shaped on the You screen. */
+  kit?: Kit;
 }
 
 const ARC_NAMES = ["Aurelia", "Vireo", "Marrow", "Halcyon", "Sable Rock", "Ninth Terrace", "Corvid", "The Spindle", "Tessellate", "Antioch"];
@@ -163,6 +167,7 @@ export function newGame(opts: NewGameOptions = {}): SaveState {
   // Who you were, and the story that comes with it. Setup runs before the story so an origin's
   // household changes are in place when its arc picks who it is about.
   if (opts.address) state.player.address = opts.address;
+  if (opts.kit) settleBody(state, opts.kit);
   const origin = ORIGIN_BY_ID[opts.origin ?? ""];
   if (origin) {
     origin.setup(state, r);
@@ -172,6 +177,10 @@ export function newGame(opts: NewGameOptions = {}): SaveState {
   newRun(state, seed, opts.twists ?? []);
   newStory(state, origin?.id ?? "none", seed, opts.supplication ?? false);
   for (const p of Object.values(state.people)) refresh(p, state.memory[p.id]);
+  // The city starts with its people housed. It used to start 1,200 against room for 400 and spend
+  // the first months emptying out.
+  cityOf(state);
+  state.arcology.population = Math.min(state.arcology.population, Math.round((400 + cityYield(state).housing) * 0.9));
 
   state.market = rollMarkets(state);
   return state;
