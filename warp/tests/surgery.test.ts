@@ -40,9 +40,9 @@ function theatre(seed: string, sex: "female" | "male" | "futa" = "female", level
   p.body.vagina = null;
   const before = s.arcology.cash;
   const out = operate(s, p, "male_to_female");
-  check("a woman with a cock can be given a cunt and keep the cock",
-    out.ok && p.body.vagina === 0 && p.body.dick !== null && p.body.dick > 0,
-    { ok: out.ok, why: out.why, vagina: p.body.vagina, dick: p.body.dick });
+  check("turning a cock into a pussy takes the cock and balls, as in the original",
+    out.ok && p.body.vagina === 0 && p.body.dick === null && p.body.balls === null,
+    { ok: out.ok, why: out.why, vagina: p.body.vagina, dick: p.body.dick, balls: p.body.balls });
   check("it costs money and puts her on the ward",
     s.arcology.cash === before - 15000 && p.health.recovery_weeks >= 3,
     { spent: before - s.arcology.cash, weeks: p.health.recovery_weeks });

@@ -110,7 +110,11 @@ export interface ActDef {
   group: "use" | "service" | "play" | "discipline" | "tenderness" | "display" | "hers" | "feet";
   tags: string[];
   /** Anatomy required of her. */
-  needs?: ("mouth" | "vagina" | "anus" | "dick" | "breasts" | "milk" | "balls" | "feet" | "pregnant" | "belly" | "nipples")[];
+  needs?: ("mouth" | "vagina" | "anus" | "dick" | "breasts" | "milk" | "balls" | "feet" | "pregnant" | "belly" | "nipples"
+    | "hard" | "prostate" | "clit" | "caged" | "ticklish" | "standing")[];
+  /** She is on the receiving end: you do it to her. Her flaws about GIVING (hates oral) don't
+   *  fire, and the narrator is told plainly who is doing what. */
+  receives?: boolean;
   /** Skill trained, and how fast. */
   trains?: Record<string, number>;
   /** Base effect before her own wiring is applied. */
@@ -151,7 +155,7 @@ export const ACTS: ActDef[] = [
     base: { arousal: 3, relaxation: -0.3, bond: -0.5, resentment: 3, release: 3 } },
   { id: "swallow", you: "cock", name: "Make her swallow", what: "you finish in her mouth and she swallows it", group: "use", tags: ["cum", "swallow", "oral"], needs: ["mouth"],
     base: { arousal: 3, relaxation: -0.2, bond: 0, resentment: 2, release: 3 } },
-  { id: "penetrative", name: "Let her fuck you", what: "she fucks you", group: "use", tags: ["penetrative", "domination", "using another"], needs: ["dick"],
+  { id: "penetrative", name: "Let her fuck you", what: "she fucks you with her cock", group: "use", tags: ["penetrative", "domination", "using another"], needs: ["dick", "hard"],
     trains: { penetrative: 3 }, base: { arousal: 12, relaxation: 0.6, bond: 3, resentment: 0, release: 4 }, wants_devotion: 20 },
   { id: "group", name: "Two of them at once", what: "you have sex with her and another slave at the same time", group: "use", tags: ["group", "unusual", "sharing"],
     trains: { oral: 1.5, vaginal: 1.5 }, base: { arousal: 7, relaxation: -0.5, bond: -0.5, resentment: 3, release: 9 } },
@@ -167,7 +171,7 @@ export const ACTS: ActDef[] = [
   // ── play ───────────────────────────────────────────────────────────────────────────────────
   { id: "teasing", name: "Work her up and stop", what: "you get her close to orgasm and then stop", group: "play", tags: ["teasing", "denial"],
     base: { arousal: 18, relaxation: -0.3, bond: 0.5, resentment: 2, release: 0 } },
-  { id: "getoff", name: "Get her off", what: "you use your hands and mouth to make her cum, and ask for nothing back", group: "play", tags: ["tenderness", "servicing"],
+  { id: "getoff", receives: true, name: "Get her off", what: "you use your hands and mouth to make her cum, and ask for nothing back", group: "play", tags: ["tenderness", "servicing"],
     base: { arousal: -35, relaxation: 1.4, bond: 4, resentment: -3, release: 0 } },
   { id: "toys", name: "Use toys on her", what: "you use vibrators, dildos and plugs on her", group: "play", tags: ["toys", "anal toys", "unusual"],
     trains: { anal: 1 }, base: { arousal: 12, relaxation: -0.2, bond: 0.5, resentment: 1, release: 2 } },
@@ -196,23 +200,23 @@ export const ACTS: ActDef[] = [
   // above treats her as somewhere to put something. These treat her as somebody with a body: a
   // tenth of the arcology has a cock and the rest have a cunt, and until now neither fact was
   // anything you could do anything about.
-  { id: "suck her", name: "Suck her off", what: "you suck her cock until she cums", group: "hers", tags: ["oral", "servicing", "hers", "worship"], needs: ["dick"],
+  { id: "suck her", receives: true, name: "Suck her off", what: "you suck her cock until she cums", group: "hers", tags: ["oral", "servicing", "hers", "worship"], needs: ["dick"],
     base: { arousal: -30, relaxation: 1.5, bond: 5, resentment: -4, release: 0 }, wants_devotion: -20 },
-  { id: "stroke her", name: "Get her off with your hand", what: "you jerk her off until she cums", group: "hers", tags: ["hers", "tenderness", "servicing"], needs: ["dick"],
+  { id: "stroke her", receives: true, name: "Get her off with your hand", what: "you jerk her off until she cums", group: "hers", tags: ["hers", "tenderness", "servicing"], needs: ["dick"],
     base: { arousal: -25, relaxation: 1.1, bond: 3.5, resentment: -3, release: 0 } },
-  { id: "ride her", name: "Ride her", what: "you put her on her back and ride her cock", group: "hers", tags: ["penetrative", "hers", "domination"], needs: ["dick"],
+  { id: "ride her", name: "Ride her", what: "you put her on her back and ride her cock", group: "hers", tags: ["penetrative", "hers", "domination"], needs: ["dick", "hard"],
     trains: { penetrative: 3.5 }, base: { arousal: 14, relaxation: 0.8, bond: 3, resentment: -1, release: 5 }, wants_devotion: 10 },
   { id: "drain her", name: "Empty her", what: "you milk her balls, making her cum over and over until she's dry", group: "hers", tags: ["hers", "oral", "rough", "denial"], needs: ["balls"],
     base: { arousal: -10, relaxation: -0.9, bond: 0.5, resentment: 4, release: 0 } },
-  { id: "eat her", name: "Go down on her", what: "you eat her pussy until she cums", group: "hers", tags: ["oral", "servicing", "hers", "worship", "tenderness"], needs: ["vagina"],
+  { id: "eat her", receives: true, name: "Go down on her", what: "you eat her pussy until she cums", group: "hers", tags: ["oral", "servicing", "hers", "worship", "tenderness"], needs: ["vagina"],
     base: { arousal: -35, relaxation: 1.7, bond: 5.5, resentment: -5, release: 0 }, wants_devotion: -20 },
-  { id: "worship her", name: "Worship her", what: "you spend an hour worshipping her body with your hands and mouth", group: "hers", tags: ["hers", "worship", "tenderness", "servicing"],
+  { id: "worship her", receives: true, name: "Worship her", what: "you spend an hour worshipping her body with your hands and mouth", group: "hers", tags: ["hers", "worship", "tenderness", "servicing"],
     base: { arousal: -20, relaxation: 2.0, bond: 7, resentment: -8, release: 0 } },
 
   // ── her feet ───────────────────────────────────────────────────────────────────────────────
   { id: "footjob", you: "cock", name: "Have her use her feet", what: "she oils her feet and gives you a footjob", group: "feet", tags: ["feet", "servicing", "unusual"], needs: ["feet"],
     trains: { oral: 0.5 }, base: { arousal: 4, relaxation: 0.2, bond: 0.5, resentment: 1, release: 6 } },
-  { id: "worship feet", name: "Worship her feet", what: "you massage, kiss and suck her feet", group: "feet", tags: ["feet", "worship", "hers", "servicing"], needs: ["feet"],
+  { id: "worship feet", receives: true, name: "Worship her feet", what: "you massage, kiss and suck her feet", group: "feet", tags: ["feet", "worship", "hers", "servicing"], needs: ["feet"],
     base: { arousal: -8, relaxation: 1.2, bond: 4, resentment: -4, release: 0 }, wants_devotion: -30 },
   { id: "make her worship", name: "Make her worship yours", what: "she kneels and kisses, licks and sucks your feet", group: "feet", tags: ["feet", "degradation", "orders", "submission"],
     base: { arousal: 3, relaxation: -0.9, bond: -1, resentment: 6, release: 1 } },
@@ -224,9 +228,9 @@ export const ACTS: ActDef[] = [
     base: { arousal: 2, relaxation: 1.4, bond: 5, resentment: -3, release: 0 } },
   { id: "belly fuck", you: "cock", name: "Fuck her belly", what: "you fuck the fold under her belly while she holds it up", group: "use", tags: ["pregnancy", "belly worship", "unusual"], needs: ["belly"],
     base: { arousal: 5, relaxation: -0.2, bond: 0.5, resentment: 2, release: 6 } },
-  { id: "belly worship", name: "Worship her belly", what: "you rub, kiss and worship her pregnant belly", group: "tenderness", tags: ["pregnancy", "belly worship", "worship", "tenderness"], needs: ["pregnant"],
+  { id: "belly worship", receives: true, name: "Worship her belly", what: "you rub, kiss and worship her pregnant belly", group: "tenderness", tags: ["pregnancy", "belly worship", "worship", "tenderness"], needs: ["pregnant"],
     base: { arousal: 4, relaxation: 1.8, bond: 6, resentment: -6, release: 0 } },
-  { id: "breed her back", name: "Let her breed you", what: "she cums inside you to get you pregnant", group: "hers", tags: ["penetrative", "breeding", "hers", "domination", "pregnancy"], needs: ["balls"],
+  { id: "breed her back", name: "Let her breed you", what: "she cums inside you to get you pregnant", group: "hers", tags: ["penetrative", "breeding", "hers", "domination", "pregnancy"], needs: ["balls", "hard"],
     trains: { penetrative: 2 }, base: { arousal: 12, relaxation: 1.0, bond: 5, resentment: -2, release: 4 }, wants_devotion: 30 },
 
   // ── the ugly end ───────────────────────────────────────────────────────────────────────────
@@ -237,6 +241,38 @@ export const ACTS: ActDef[] = [
     base: { arousal: 1, relaxation: -2.2, bond: -4, resentment: 12, release: 2 } },
   { id: "abuse", name: "Take it out on her", what: "you take your bad mood out on her, roughly", group: "discipline", tags: ["pain", "rough", "punishment", "degradation"],
     base: { arousal: 2, relaxation: -2.6, bond: -5, resentment: 14, release: 5 } },
+
+  // ── her cock and balls ─────────────────────────────────────────────────────────────────────
+  { id: "ball worship", receives: true, name: "Worship her balls", what: "you lick, suck and fondle her balls, taking each one in your mouth, while you stroke her cock", group: "hers", tags: ["hers", "worship", "servicing"], needs: ["balls"],
+    base: { arousal: 18, relaxation: 1.0, bond: 3.5, resentment: -3, release: 0 } },
+  { id: "prostate", receives: true, name: "Milk her prostate", what: "you work a lubed finger into her ass and massage her prostate until her cock leaks and she cums without being touched", group: "hers", tags: ["anal", "hers", "milking", "anal toys"], needs: ["prostate", "anus"],
+    trains: { anal: 1 }, base: { arousal: -20, relaxation: 0.8, bond: 2.5, resentment: 1, release: 0 } },
+  { id: "clit suck", receives: true, name: "Suck her clit", what: "you suck her oversized clit like a little cock until she cums", group: "hers", tags: ["oral", "hers", "worship"], needs: ["clit"],
+    base: { arousal: -30, relaxation: 1.4, bond: 4.5, resentment: -4, release: 0 } },
+  { id: "frot", you: "cock", name: "Rub cocks with her", what: "you press your cock against hers and grind them together in your fist until you both cum", group: "hers", tags: ["hers", "unusual"], needs: ["dick"],
+    base: { arousal: -15, relaxation: 0.6, bond: 2.5, resentment: 0, release: 6 } },
+  { id: "cage tease", name: "Tease her through her cage", what: "you stroke and lick her caged cock and fondle her balls until she's desperate and leaking through the cage, and leave her locked", group: "play", tags: ["teasing", "denial", "hers", "submissive"], needs: ["caged"],
+    base: { arousal: 25, relaxation: -0.4, bond: 0, resentment: 3, release: 1 } },
+  { id: "own cum", name: "Make her eat her own cum", what: "you jerk her off with her cock aimed at her face, then make her lick up and swallow every drop", group: "discipline", tags: ["cum", "degradation", "humiliation", "hers"], needs: ["dick", "balls"],
+    base: { arousal: -10, relaxation: -0.8, bond: -1, resentment: 6, release: 2 } },
+  { id: "cbt", name: "Torture her cock and balls", what: "you tie off her balls, slap and squeeze them, and flick her cock until she's crying", group: "discipline", tags: ["pain", "discipline", "punishment", "cbt"], needs: ["balls"],
+    base: { arousal: 1, relaxation: -2.0, bond: -3, resentment: 10, release: 3 } },
+
+  // ── more of her feet ───────────────────────────────────────────────────────────────────────
+  { id: "tickle feet", name: "Tickle her feet", what: "you pin her ankles in your lap and tickle her bare soles until she's shrieking with laughter and begging you to stop", group: "feet", tags: ["feet", "teasing", "humiliation", "play"], needs: ["feet", "ticklish"],
+    base: { arousal: 4, relaxation: -0.3, bond: 1, resentment: 2, release: 2 } },
+  { id: "bastinado", name: "Whip her soles", what: "you tie her ankles up with her soles facing you and cane the soles of her feet, stroke by stroke", group: "discipline", tags: ["feet", "pain", "punishment", "discipline"], needs: ["feet"],
+    base: { arousal: 1, relaxation: -1.8, bond: -2.5, resentment: 8, release: 3 } },
+  { id: "trample", name: "Have her walk on you", what: "you lie on the floor and she stands on you barefoot, walking over your chest and stomach and resting a sole on your face", group: "feet", tags: ["feet", "domination", "hers"], needs: ["feet", "standing"],
+    base: { arousal: 6, relaxation: 0.6, bond: 2, resentment: -1, release: 2 } },
+  { id: "foot smother", name: "Have her rest her feet on your face", what: "she sits back and presses her bare soles against your face, making you smell and lick them while she relaxes", group: "feet", tags: ["feet", "domination", "hers"], needs: ["feet"],
+    base: { arousal: 5, relaxation: 0.8, bond: 2, resentment: -1, release: 2 } },
+  { id: "toe suck", receives: true, name: "Suck her toes", what: "you take her toes into your mouth one at a time and suck them, then lick up her soles", group: "feet", tags: ["feet", "worship", "hers"], needs: ["feet"],
+    base: { arousal: 6, relaxation: 1.0, bond: 3, resentment: -2, release: 0 } },
+  { id: "sole job", you: "cock", name: "Fuck her soles", what: "she presses her soles together and you fuck the gap between them, then cum across her toes", group: "feet", tags: ["feet", "servicing", "cum"], needs: ["feet"],
+    base: { arousal: 3, relaxation: 0.1, bond: 0.5, resentment: 1, release: 6 } },
+  { id: "pedicure", name: "Give her a pedicure", what: "you soak her feet, rub lotion into her soles and paint her toenails", group: "tenderness", tags: ["feet", "tenderness", "worship"], needs: ["feet"],
+    base: { arousal: 2, relaxation: 1.6, bond: 4, resentment: -4, release: 0 } },
 
   // ── tenderness ─────────────────────────────────────────────────────────────────────────────
   { id: "kissing", name: "Kiss her", what: "you kiss her, slowly and properly", group: "tenderness", tags: ["kissing", "slow", "tenderness"],

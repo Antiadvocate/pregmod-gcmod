@@ -9,6 +9,7 @@
  * A configured narrator model still writes over the top of this. This is the floor, and the floor
  * has to be a scene.
  */
+import { dickWord, ballsWord, feetOf, footSizeWord } from "./genitals";
 import type { Person, SaveState } from "./types";
 import type { ActOutcome } from "./intimacy";
 import { ACT_BY_ID, FETISH_BY_ID } from "../data/intimacy";
@@ -26,14 +27,18 @@ export function bodyWords(p: Person): Record<string, string> {
   const ass = b.butt <= 1 ? "her narrow ass" : b.butt <= 3 ? "her ass" : b.butt <= 5 ? "her round ass" : "her huge ass";
   const hairLen = b.hair_length < 8 ? "cropped" : b.hair_length < 25 ? "short" : b.hair_length < 55 ? "" : "long";
   const hair = `${hairLen ? hairLen + " " : ""}${b.hair_color} hair`;
-  const cock = b.dick === null || b.dick === 0 ? "" : b.dick <= 2 ? "her small cock" : b.dick <= 4 ? "her cock" : "her thick cock";
+  const cock = b.dick === null || b.dick === 0 ? "" : `her ${dickWord(b.dick)} cock`;
+  const balls = b.balls ? `her ${ballsWord(b.balls)} balls` : "";
+  const f = feetOf(p);
+  const feet = `her ${footSizeWord(f.size)} feet`;
+  const soles = f.soles === "soft" ? "her soft soles" : f.soles === "calloused" ? "her rough soles" : "her soles";
   const build = b.height_cm < 155 ? "small" : b.height_cm > 178 ? "tall" : ["fat", "obese"].includes(buildOf(b.weight)) ? "fat" : buildOf(b.weight) === "chubby" ? "soft" : b.muscle > 30 ? "hard-bodied" : "slim";
   const belly = p.womb.weeks > 20 ? "her swollen belly" : b.belly > 4000 ? "her round belly" : "her stomach";
   const she = p.pronouns === "he/him" ? "he" : p.pronouns === "they/them" ? "they" : "she";
   const her = p.pronouns === "he/him" ? "his" : p.pronouns === "they/them" ? "their" : "her";
   const herObj = p.pronouns === "he/him" ? "him" : p.pronouns === "they/them" ? "them" : "her";
   return {
-    name: p.name, tits, ass, hair, cock, build, belly, skin: `${b.skin} skin`,
+    name: p.name, tits, ass, hair, cock, balls, feet, soles, build, belly, skin: `${b.skin} skin`,
     eyes: `${b.eye_color} eyes`, she, She: cap(she), her, Her: cap(her), herObj,
   };
 }
@@ -438,6 +443,92 @@ const ACT_TEXT: Record<string, ActText> = {
       ],
       yours: ["You come with her fingers inside you, holding her close."],
     },
+  },
+  "ball worship": {
+    core: [
+      "You kneel between her legs and take {balls} in your hands, then your mouth, sucking each one in turn while you stroke {cock} slowly.",
+      "You lick up the underside of {balls} and suck on them one at a time, her cock twitching against your cheek.",
+    ],
+  },
+  prostate: {
+    core: [
+      "You put her on her back with her knees up, work a lubed finger into her ass and curl it against her prostate. You massage it steadily; {cock} starts to leak without being touched.",
+      "You bend her over and milk her prostate with two fingers, slow and firm, until a steady drip runs from her.",
+    ],
+  },
+  "clit suck": {
+    core: [
+      "You spread her open and take her swollen clit into your mouth, sucking it like a little cock while she grips the sheets.",
+      "You wrap your lips around her oversized clit and bob on it, tongue working underneath, until her hips are bucking.",
+    ],
+  },
+  frot: {
+    core: [
+      "You press your cock against {cock} and wrap your fist around both, grinding them together until you're both slick.",
+      "You straddle her and rub your cock along the length of hers, slow at first, then fast.",
+    ],
+    yours: ["You cum together, all over her stomach.", "You cum first, across {cock}, and keep stroking until she follows."],
+  },
+  "cage tease": {
+    core: [
+      "You run your fingers over her cage and fondle {balls} while she strains against the plastic. You lick the tip through the bars until she's leaking and begging, then stop.",
+      "You tease her locked cock through the cage for half an hour. She's dripping and desperate by the end, and you leave her locked.",
+    ],
+  },
+  "own cum": {
+    core: [
+      "You put her on her back with her legs over her head and jerk {cock} until she cums across her own face and into her open mouth. Then you make her lick up what she missed.",
+      "You stroke her off into a glass and make her drink every drop while you watch.",
+    ],
+  },
+  cbt: {
+    core: [
+      "You tie off {balls} with a cord and slap them until they're red, then squeeze until she screams.",
+      "You flick the head of {cock} and slap {balls}, again and again, until she's sobbing and her legs are shaking.",
+    ],
+  },
+  "tickle feet": {
+    core: [
+      "You pin her ankles in your lap and run your fingers over {soles}. She's shrieking with laughter within seconds, thrashing and begging you to stop. You don't.",
+      "You tie her ankles down and tickle {soles} with a feather, then your nails, until she's crying with laughter and out of breath.",
+    ],
+  },
+  bastinado: {
+    core: [
+      "You tie her ankles to the bar with {soles} facing you and cane them, one stroke at a time, making her count. By twenty she can't stand on them.",
+      "You whip the soles of her feet with a thin rod until they're striped red and she's howling.",
+    ],
+  },
+  trample: {
+    core: [
+      "You lie down on the floor and she steps onto your chest barefoot, walking slowly up and down you and resting {feet} on your face.",
+      "She stands on your stomach, balancing with a hand on the wall, then walks up your chest and plants one sole over your mouth.",
+    ],
+  },
+  "foot smother": {
+    core: [
+      "She leans back on the couch and presses {soles} against your face, making you breathe her in and lick them while she relaxes.",
+      "She props {feet} on your face and wiggles her toes in your mouth while she reads.",
+    ],
+  },
+  "toe suck": {
+    core: [
+      "You take her foot in your hands and suck her toes one at a time, then lick slowly up {soles} from heel to toe.",
+      "You kneel and suck on her big toe, then the rest, running your tongue between them while she watches.",
+    ],
+  },
+  "sole job": {
+    core: [
+      "She lies back and presses {soles} together, and you fuck the gap between them.",
+      "You hold her ankles together and slide your cock between {soles}, her toes curling around you.",
+    ],
+    yours: ["You cum across her toes and the tops of her feet."],
+  },
+  pedicure: {
+    core: [
+      "You soak her feet in warm water, scrub {soles} smooth, rub lotion into them, and paint her toenails while she watches.",
+      "You sit her down, put {feet} in your lap, and give her a full pedicure: filing, lotion, and fresh polish on every toenail.",
+    ],
   },
   "sleeping together": {
     core: [

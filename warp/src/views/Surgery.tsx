@@ -13,6 +13,7 @@ const GROUPS: { id: Procedure["group"]; label: string; note: string }[] = [
   { id: "genitals", label: "Genitals", note: "Add or remove a cock or pussy. Nothing removed grows back." },
   { id: "fertility", label: "Fertility", note: "Fertility and sterilization." },
   { id: "body", label: "The body", note: "Other procedures." },
+  { id: "feet", label: "Feet", note: "Size, arches, soles, and her tendons." },
 ];
 
 export default function Surgery({ id }: { id: string }) {
@@ -53,7 +54,7 @@ export default function Surgery({ id }: { id: string }) {
                     </div>
                     <div className="text-right shrink-0 text-[11px] dim">
                       <div>¤{proc.cost.toLocaleString()}</div>
-                      <div>{proc.recovery}w down</div>
+                      <div>{proc.recovery ? `${proc.recovery}w down` : "no recovery"}</div>
                     </div>
                   </div>
                   <div className="text-[11.5px] mt-2" style={{

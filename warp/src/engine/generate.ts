@@ -19,6 +19,7 @@ import { newPsyche, clamp } from "./psyche";
 import { rng, hash, type Rng } from "./rng";
 import { QUIRKS, FLAWS } from "../data/intimacy";
 import { buildOf, kgFor } from "./build";
+import { newFeet } from "./genitals";
 
 /** How common each thing is. Submissive and cumslut are the two the trade selects for, because the
  *  trade selects for what sells; sadist and dom are rare in a population that is being sold. */
@@ -176,7 +177,31 @@ export function generatePerson(opts: GenOptions = {}): Person {
     counters: {},
     central: opts.central ?? false,
   };
+  finishGenitals(p);
   return p;
+}
+
+/** Genital detail and feet, on their own random stream so adding them left every existing seed's
+ *  people exactly as they were. Sizes follow the original's spread: most cocks 2–5, a few tiny or
+ *  big; balls track the cock loosely; the scrotum starts fitted. */
+function finishGenitals(p: Person): void {
+  const r = rng(`genitals:${p.id}`);
+  const b = p.body;
+  if (b.dick) {
+    b.dick = r.weighted([1, 2, 3, 4, 5, 6, 7] as const, (d) => [0, 0.6, 2.5, 4, 3, 1.6, 0.6, 0.2][d]);
+    if (b.foreskin) b.foreskin = Math.max(1, b.dick + r.int(-1, 1));
+  }
+  if (b.balls) {
+    b.balls = Math.max(1, Math.min(7, Math.round((b.dick ?? 3) * 0.7 + r.int(0, 2))));
+    b.scrotum = b.balls + r.int(0, 1);
+  } else {
+    b.scrotum = 0;
+  }
+  if (b.vagina !== null) {
+    b.clit = r.weighted([0, 1, 2, 3] as const, (c) => [7, 2.2, 0.6, 0.15][c]);
+    b.vagina_lube = r.weighted([0, 1, 2] as const, (l) => [1, 5, 2][l]);
+  }
+  b.feet = newFeet(r, b.height_cm, !!b.dick && b.vagina === null);
 }
 
 function generateBody(r: Rng, nation: Nation, age: number, sex: "female" | "male" | "futa", q: number): Body {

@@ -10,6 +10,8 @@ import type { Person, SaveState } from "./types";
 import { clamp } from "./psyche";
 import { rng } from "./rng";
 import { kgFor } from "./build";
+import { DRUG_BY_ID } from "../data/drugs";
+import { mobility } from "./genitals";
 
 export interface HealthWeek { delta: number; notes: string[]; died: boolean }
 
@@ -64,6 +66,38 @@ export function tickHealth(state: SaveState, p: Person, load: { health: number; 
   } else if (h.addiction > 0) {
     h.addiction = clamp(h.addiction - 3, 0, 100);
     if (h.addiction > 30) { p.psyche.relaxation = clamp(p.psyche.relaxation - 0.8, -10, 10); notes.push("in withdrawal"); }
+  }
+
+  // Growth drugs and the rest of the regimen, one step a week at most.
+  for (const id of h.drugs ?? []) {
+    const d = DRUG_BY_ID[id];
+    if (!d) continue;
+    const line = d.tick(p, die);
+    if (line) notes.push(line);
+    // A regimen that has done all it can stops, the way the original takes her off it.
+    if (d.can(p) && !["female hormones", "male hormones", "hormone blockers"].includes(id)) {
+      h.drugs = h.drugs.filter((x) => x !== id);
+      notes.push(`taken off ${d.name.toLowerCase()}: ${d.can(p)}`);
+    }
+  }
+
+  // The scrotum stretches to fit what is growing in it; until it does, it hurts.
+  const b = p.body;
+  if (b.balls && b.balls > 0 && (b.scrotum ?? 0) > 0) {
+    const sc = b.scrotum ?? b.balls;
+    if (sc < b.balls && die() < 0.35) b.scrotum = sc + 1;
+    if ((b.scrotum ?? 0) < b.balls - 1) {
+      h.health = clamp(h.health - 2, -100, 100);
+      p.psyche.relaxation = clamp(p.psyche.relaxation - 0.3, -10, 10);
+      notes.push("her overfilled scrotum is painfully tight");
+    }
+  }
+
+  // Past a point the size itself is the problem: dragging it around wears her out.
+  const mob = mobility(p);
+  if (mob.level >= 2 && !b.feet?.heels_clipped) {
+    h.energy = clamp(h.energy - mob.level * 6, 0, 100);
+    if (mob.level === 3) notes.push("too big to walk; she has to be carried everywhere");
   }
 
   // Injuries heal, or they do not.

@@ -201,6 +201,18 @@ export default function Cheats() {
                 <input type="range" min={0} max={3000} step={50} value={target.body.boobs}
                   onChange={(e) => mutate((s) => { s.people[target.id].body.boobs = Number(e.target.value); })} />
               </Field>
+              <Field label={`cock — ${target.body.dick ?? "none"}`}>
+                <input type="range" min={0} max={30} value={target.body.dick ?? 0}
+                  onChange={(e) => mutate((s) => { const b = s.people[target.id].body; const n = Number(e.target.value); b.dick = n || null; b.foreskin = n ? (b.foreskin === 0 ? 0 : Math.max(1, n)) : null; })} />
+              </Field>
+              <Field label={`balls — ${target.body.balls ?? "none"}`}>
+                <input type="range" min={0} max={60} value={target.body.balls ?? 0}
+                  onChange={(e) => mutate((s) => { const b = s.people[target.id].body; const n = Number(e.target.value); b.balls = n || null; b.scrotum = n ? Math.max(b.scrotum ?? 0, n) : 0; if (n && !b.prostate) b.prostate = 1; })} />
+              </Field>
+              <Field label={`clit — ${target.body.clit}`}>
+                <input type="range" min={0} max={5} value={target.body.clit}
+                  onChange={(e) => mutate((s) => { s.people[target.id].body.clit = Number(e.target.value); })} />
+              </Field>
               <Field label={`weight — ${target.body.weight}`}>
                 <input type="range" min={-100} max={100} value={target.body.weight}
                   onChange={(e) => mutate((s) => { s.people[target.id].body.weight = Number(e.target.value); })} />

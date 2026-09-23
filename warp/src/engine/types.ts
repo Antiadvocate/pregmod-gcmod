@@ -64,13 +64,22 @@ export interface Body {
   clit: number;            // 0–5
   labia: 0 | 1 | 2 | 3;
   hymen: boolean;
-  dick: number | null;     // 0–10
+  /** The original's scale: 1 tiny … 10 awe-inspiring, 11–30 hyper. See engine/genitals for the
+   *  words and the centimetres. */
+  dick: number | null;
   /** Foreskin, on its own scale, because circumcision is a state you can be put into and the art
    *  pack has a whole parallel set of layers for it. null when there is nothing to have one. */
   foreskin: number | null;
-  balls: number | null;    // 0–10
+  /** 1 vestigial … 9 monstrous, 10+ hyper (the original runs to 125). */
+  balls: number | null;
+  /** The sack, on the balls' scale. 0 means the testicles are internal. Smaller than the balls is
+   *  an overfilled, painful scrotum; bigger is a loose, dangling one. Stretches as they grow. */
+  scrotum?: number;
+  /** Cut: she still cums, but nothing in it can get anyone pregnant. Separate from the prostate. */
+  vasectomy?: boolean;
   prostate: 0 | 1 | 2 | 3;
   anus: number;            // 0–4
+  feet?: Feet;
   /** Lactation: 0 none, 1 induced, 2 natural. `milk_week` counts how long it has run. */
   lactation: 0 | 1 | 2;
   lactation_weeks: number;
@@ -101,6 +110,23 @@ export interface Body {
   visual_signature?: string;
   portrait_url?: string;
   portrait_seed?: number;
+}
+
+/** Her feet, in more detail than the original kept, because they are something you can use. */
+export interface Feet {
+  /** EU shoe size. 34 is dainty, 38 average, 42+ big. */
+  size: number;
+  arch: "flat" | "normal" | "high";
+  /** What the bottoms of them are like: pampered, ordinary, or worn hard. */
+  soles: "soft" | "normal" | "calloused";
+  /** 0 not at all … 3 hopelessly. */
+  ticklish: 0 | 1 | 2 | 3;
+  /** Toenail colour, or "bare". Set at the salon. */
+  toenails: string;
+  /** Achilles tendons cut: she cannot stand flat and walks only in heels, or crawls. */
+  heels_clipped: boolean;
+  /** Anklets, toe rings. Cosmetic, read by the narrator. */
+  jewelry: string[];
 }
 
 /** The cosmetic layer: what the salon and the wardrobe can change without surgery. */
@@ -786,7 +812,7 @@ export interface SaveState {
   /** The content switches, which the original carried as V.seeExtreme, V.seeCircumcision and the
    *  rest. Defaulted on — this is the game it is — but the surgery table and a handful of acts
    *  read them, because the original let you turn the ugliest parts off and so does this. */
-  content?: { extreme?: boolean; circumcision?: boolean; watersports?: boolean };
+  content?: { extreme?: boolean; circumcision?: boolean; watersports?: boolean; hyper?: boolean };
   /** Everything the integrity checks caught, counted rather than forgotten. */
   integrity: { fires: { week: number; kind: string; detail: string }[] };
   /** Rollback ring, newest last, max 8. */

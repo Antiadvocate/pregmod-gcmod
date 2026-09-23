@@ -5,6 +5,7 @@
  * to her hair and face. Something already owned by somebody in the house costs nothing to put on
  * her; everything else is bought on the spot.
  */
+import { feetOf } from "../engine/genitals";
 import { useMemo, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { useGame } from "../lib/game";
@@ -36,6 +37,9 @@ function ownedGarments(s: SaveState): Set<string> {
   for (const p of Object.values(s.people)) for (const x of [p.clothes, p.collar, p.shoes, p.legwear ?? ""]) worn.add(x);
   return worn;
 }
+
+const TOENAILS = ["bare", "red", "pink", "pale pink", "black", "white", "gold", "deep purple", "navy blue", "french tips"];
+const FOOT_JEWELRY = ["a gold anklet", "a silver anklet", "toe rings", "a chain anklet with your name"];
 
 /** How she takes it, in one line. */
 function reaction(p: Person, g: Garment): string {
@@ -182,6 +186,19 @@ export default function Dressing({ id, onClose }: { id: string; onClose: () => v
             </div>
             <div className="flex flex-wrap gap-1.5 mb-4">
               <button className={cx("chip", p.look?.glasses && "on")} onClick={() => look({ glasses: !p.look?.glasses }, p.look?.glasses ? 0 : 200)}>glasses</button>
+            </div>
+            <div className="text-[11px] uppercase tracking-wider dim mb-1.5">toenails · ¤50</div>
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {TOENAILS.map((c) => (
+                <button key={c} className={cx("chip", feetOf(p).toenails === c && "on")} onClick={() => feetOf(p).toenails !== c && mutate((s) => { feetOf(s.people[id]).toenails = c; if (c !== "bare") pay(s, 50); })}>{c}</button>
+              ))}
+            </div>
+            <div className="text-[11px] uppercase tracking-wider dim mb-1.5">foot jewelry · ¤200 each</div>
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {FOOT_JEWELRY.map((j) => {
+                const on = feetOf(p).jewelry.includes(j);
+                return <button key={j} className={cx("chip", on && "on")} onClick={() => mutate((s) => { const f = feetOf(s.people[id]); f.jewelry = on ? f.jewelry.filter((x) => x !== j) : [...f.jewelry, j]; if (!on) pay(s, 200); })}>{j}</button>;
+              })}
             </div>
             <div className="text-[11px] uppercase tracking-wider dim mb-1.5">skin dye · ¤2,000</div>
             <div className="flex flex-wrap gap-1.5">

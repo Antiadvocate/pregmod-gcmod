@@ -21,6 +21,7 @@
  *
  * Nothing here writes prose. It writes the facts the prose has to honour.
  */
+import { erection, feetOf, mobility } from "./genitals";
 import type { Person, SaveState } from "./types";
 import { ACT_BY_ID, FETISH_BY_ID, FLAW_BY_ID, QUIRK_BY_ID, type ActDef } from "../data/intimacy";
 import { clamp, shove, addState } from "./psyche";
@@ -70,6 +71,12 @@ export function canDo(p: Person, act: ActDef, s?: SaveState): string | null {
       case "pregnant": if (!p.womb.fetuses.length) return "she is not carrying"; break;
       case "belly": if (p.body.belly < 4000) return "there is not enough of her yet"; break;
       case "nipples": if (p.body.nipples !== "fuckable") return "her nipples aren't fuckable"; break;
+      case "hard": { const e = erection(p); if (e === "none") return p.chastity.penis ? "her cock is caged" : "she has no cock"; if (e === "soft") return "she can't get hard"; break; }
+      case "prostate": if (!p.body.prostate) return "she has no prostate"; if (p.chastity.anus) return "her ass is locked"; break;
+      case "clit": if (p.body.vagina === null || p.body.clit < 3) return "her clit isn't big enough"; if (p.chastity.vagina) return "she is locked"; break;
+      case "caged": if (!p.body.dick || !p.chastity.penis) return "her cock isn't caged"; break;
+      case "ticklish": if (feetOf(p).ticklish === 0) return "she isn't ticklish"; break;
+      case "standing": if (feetOf(p).heels_clipped) return "her tendons are clipped; she can't stand flat"; if (mobility(p).level >= 2) return "she can't stand under her own weight"; break;
     }
   }
   if (p.health.recovery_weeks > 0 && act.group !== "tenderness") return "she is still in recovery";
@@ -85,7 +92,9 @@ export function affinity(p: Person, act: ActDef): { score: number; why: string }
   let why = "";
 
   const flaw = p.persona.flaw ? FLAW_BY_ID[p.persona.flaw.id] : undefined;
-  if (flaw && act.tags.some((t) => flaw.hates.includes(t))) {
+  // Hating giving head says nothing about being sucked off; only her receiving-side flaws apply.
+  const flawBites = flaw && !(act.receives && flaw.id === "hates oral");
+  if (flaw && flawBites && act.tags.some((t) => flaw.hates.includes(t))) {
     // The flaw wears: a woman who has been made to do it two hundred times minds less than one who
     // has been made to do it twice, and that is the road to converting it.
     const worn = clamp((p.persona.flaw?.worn ?? 0) / 120, 0, 0.75);
@@ -248,6 +257,15 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
   else if (act.group === "tenderness") applyTreatment(p, { kind: "kindness", size: 3, why: act.what }, week);
   else if (landing === "wanted") applyTreatment(p, { kind: "recognition", size: 2, why: `you gave her ${act.name.toLowerCase()}` }, week);
 
+  // Acts that leave something on her body.
+  if (actId === "pedicure") {
+    const colours = ["red", "pink", "black", "white", "gold", "pale pink", "deep purple", "navy blue"];
+    feetOf(p).toenails = colours[(p.acts[actId] + p.id.length) % colours.length];
+    feetOf(p).soles = "soft";
+  }
+  if (actId === "bastinado") p.health.health = clamp(p.health.health - 3, -100, 100);
+  if (actId === "cbt") p.health.health = clamp(p.health.health - 2, -100, 100);
+
   moveEdge(s.edges, p.id, "owner", { warmth: bond, attraction: aff.score > 0.4 ? 2 : 0 });
   if (opts?.withId) moveEdge(s.edges, p.id, opts.withId, { warmth: landing === "hated" ? -3 : 1 });
 
@@ -268,6 +286,12 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
   lines.push(`## THE PLAYER'S ACTION: ${act.name.toUpperCase()} (${p.name})`);
   lines.push(`What that means: ${act.what}.`);
   lines.push(out.first ? `This is the first time you have done this with her.` : `You have done this with her ${times} time${times === 1 ? "" : "s"} before.`);
+  lines.push(act.receives
+    ? `WHO DOES WHAT: you do this TO ${p.name}. She is on the receiving end and you are serving her. She does not do it to you.`
+    : act.group === "hers" || act.tags.includes("domination")
+      ? `WHO DOES WHAT: ${p.name} is the active one here; she does this to you.`
+      : `WHO DOES WHAT: you do this to ${p.name}, or have her do it for you, exactly as described above.`);
+  lines.push(`Her genitals and feet are on her card under BETWEEN HER LEGS and FEET. Use exactly what is there.`);
   lines.push(`Write this act happening with ${p.name}, from start to finish. It is the whole scene. Do not write a scene about something else.`);
   lines.push(``);
   lines.push(`## HOW SHE TAKES IT (decided by the game; write it this way)`);

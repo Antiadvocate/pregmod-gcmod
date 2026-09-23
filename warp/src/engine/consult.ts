@@ -17,6 +17,7 @@ import { modelsAvailable } from "../config";
 import { read } from "./obedience";
 import { band } from "./psyche";
 import { condition } from "./prompts";
+import { describeGenitals, describeFeet } from "./genitals";
 import { romanceOf } from "./romance";
 import { recall } from "./memory";
 
@@ -54,6 +55,7 @@ export async function askHer(s: SaveState, personId: string, question: string): 
     system: SYSTEM,
     user: [
       `YOU ARE: ${p.name}${p.surname ? " " + p.surname : ""}, ${p.age}, ${p.origin.nationality}. You were a ${p.origin.career}. ${p.origin.background}`,
+      `YOUR BODY (described the way others see it): ${p.body.appearance_facts} ${describeGenitals(p)} ${describeFeet(p)}`,
       `YOUR VOICE: ${p.persona.speech_pattern}`,
       p.persona.voice?.example_lines?.length ? `THINGS ONLY YOU WOULD SAY: ${p.persona.voice.example_lines.map((l) => `"${l}"`).join(" ")}` : "",
       p.persona.voice?.never_says?.length ? `YOU NEVER SAY: ${p.persona.voice.never_says.join("; ")}` : "",
