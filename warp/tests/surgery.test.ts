@@ -18,6 +18,7 @@ import { refresh } from "../src/engine/obedience.ts";
 import { operate, howSheTakesIt, optionsFor, available } from "../src/engine/surgery.ts";
 import { PROCEDURES, PROCEDURE_BY_ID } from "../src/data/surgery.ts";
 import { genesOf } from "../src/engine/pregnancy.ts";
+import { tickHealth, rushRecovery } from "../src/engine/health.ts";
 
 function theatre(seed: string, sex: "female" | "male" | "futa" = "female", level = 2) {
   const s = newGame({ seed, starting_slaves: 2 });
@@ -194,4 +195,27 @@ function theatre(seed: string, sex: "female" | "male" | "futa" = "female", level
   s.arcology.facilities["clinic"].level = 2;
   check("until the clinic reaches level 2", available(s, PROCEDURE_BY_ID["none_to_female"]) === null);
   check("and the tab lists them for a real slave", optionsFor(s, p).some((r) => r.blocked === null || r.blocked !== "you have no surgical theatre"));
+}
+
+/* ── recovery always ends, and can be sped up ───────────────────────────────────────────────── */
+{
+  const { s, p } = theatre("recover", "female", 1);
+  // An older save with no recovery count: surgery must not turn it into NaN.
+  (p.health as { recovery_weeks?: number }).recovery_weeks = undefined;
+  const out = operate(s, p, "clit_enlarge");
+  check("surgery on an old save leaves a real recovery count", out.ok && Number.isFinite(p.health.recovery_weeks) && p.health.recovery_weeks > 0, p.health.recovery_weeks);
+  p.health.recovery_weeks = 6;
+  let weeks = 0;
+  while (p.health.recovery_weeks > 0 && weeks < 20) { s.arcology.week++; tickHealth(s, p, { health: 0, energy: 0 }); weeks++; }
+  check("recovery runs out on its own", p.health.recovery_weeks === 0 && weeks === 6, weeks);
+  p.health.recovery_weeks = 6; p.assignment = "get treatment in the clinic"; p.health.curatives = 2;
+  weeks = 0;
+  while (p.health.recovery_weeks > 0 && weeks < 20) { s.arcology.week++; tickHealth(s, p, { health: 0, energy: 0 }); weeks++; }
+  check("the clinic and curatives shorten it", weeks === 2, weeks);
+  p.health.recovery_weeks = 4;
+  const cash = s.arcology.cash;
+  check("intensive care ends it at once, for money", rushRecovery(s, p) === null && p.health.recovery_weeks === 0 && s.arcology.cash < cash);
+  (p.health as { recovery_weeks: unknown }).recovery_weeks = NaN;
+  s.arcology.week++; tickHealth(s, p, { health: 0, energy: 0 });
+  check("a broken count is cleared, not carried forever", p.health.recovery_weeks === 0);
 }

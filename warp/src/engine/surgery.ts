@@ -11,6 +11,7 @@
  * Nothing here is reversible by the same button that did it. Adding a cunt costs fifteen thousand;
  * taking one costs ten and she does not come back from it the same.
  */
+import { sane, recoveryNote } from "./health";
 import type { Person, ReportLine, SaveState } from "./types";
 import { PROCEDURE_BY_ID, type Procedure } from "../data/surgery";
 import { clamp, shove, addState } from "./psyche";
@@ -90,7 +91,8 @@ export function operate(s: SaveState, p: Person, procId: string): SurgeryResult 
   const bodily = proc.can(p, s);
   if (bodily) return { ok: false, why: bodily };
   if (s.arcology.cash < proc.cost) return { ok: false, why: `costs ¤${proc.cost.toLocaleString()}, which you don't have` };
-  if (p.health.recovery_weeks > 0) return { ok: false, why: "she is still recovering from the last one" };
+  p.health.recovery_weeks = sane(p.health.recovery_weeks);
+  if (p.health.recovery_weeks > 0) return { ok: false, why: `she is still recovering from the last one (${recoveryNote(s, p).replace(/^recovering from surgery: /, "")})` };
   if (p.womb.fetuses.length && proc.group !== "body") return { ok: false, why: "not while she is carrying" };
 
   const week = s.arcology.week;

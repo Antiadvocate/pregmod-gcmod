@@ -13,6 +13,39 @@ import { kgFor } from "./build";
 import { DRUG_BY_ID } from "../data/drugs";
 import { mobility } from "./genitals";
 
+/** A recovery count that is missing, negative or not a number (old saves) reads as none. */
+export function sane(n: unknown): number {
+  const v = Number(n);
+  return Number.isFinite(v) && v > 0 ? Math.min(52, Math.round(v)) : 0;
+}
+
+const inClinic = (p: Person) => p.facility === "clinic" || p.assignment === "get treatment in the clinic";
+
+/** How long she has left, and what would shorten it, for the UI and the blocked-act messages. */
+export function recoveryNote(state: SaveState, p: Person): string {
+  const w = sane(p.health.recovery_weeks);
+  if (!w) return "";
+  const speed = 1 + (inClinic(p) ? 1 : 0) + (state.arcology.facilities["clinic"]?.manager && inClinic(p) ? 1 : 0) + (p.health.curatives >= 2 ? 1 : 0);
+  const left = Math.ceil(w / speed);
+  return `recovering from surgery: ${left} more week${left === 1 ? "" : "s"} at this pace`;
+}
+
+/** Intensive care: pay to have her back on her feet now. Cheaper in your own clinic. */
+export function rushCost(state: SaveState, p: Person): number {
+  const w = sane(p.health.recovery_weeks);
+  return w * (state.arcology.facilities["clinic"]?.level ? 2500 : 4500);
+}
+export function rushRecovery(state: SaveState, p: Person): string | null {
+  const w = sane(p.health.recovery_weeks);
+  if (!w) return "she isn't recovering from anything";
+  const cost = rushCost(state, p);
+  if (state.arcology.cash < cost) return `costs ¤${cost.toLocaleString()}, which you don't have`;
+  state.arcology.cash -= cost;
+  p.health.recovery_weeks = 0;
+  p.health.health = clamp(p.health.health + 5, -100, 100);
+  return null;
+}
+
 export interface HealthWeek { delta: number; notes: string[]; died: boolean }
 
 export function tickHealth(state: SaveState, p: Person, load: { health: number; energy: number }): HealthWeek {
@@ -42,10 +75,14 @@ export function tickHealth(state: SaveState, p: Person, load: { health: number; 
 
   // Medicine.
   if (h.curatives) { h.health = clamp(h.health + 6 * h.curatives, -100, ceiling); }
+  h.recovery_weeks = sane(h.recovery_weeks);
   if (h.recovery_weeks > 0) {
-    h.recovery_weeks--;
-    const nurse = state.arcology.facilities["clinic"]?.manager ? 2 : 1;
-    if (nurse === 2) h.recovery_weeks = Math.max(0, h.recovery_weeks - 1);
+    // One week a week on her own; the clinic, a nurse running it, and curatives each take off more.
+    let off = 1;
+    if (inClinic(p)) off++;
+    if (state.arcology.facilities["clinic"]?.manager && inClinic(p)) off++;
+    if (h.curatives >= 2) off++;
+    h.recovery_weeks = Math.max(0, h.recovery_weeks - off);
     if (h.recovery_weeks === 0) notes.push("out of recovery and back on her feet");
   }
 

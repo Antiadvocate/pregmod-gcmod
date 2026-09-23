@@ -7,6 +7,7 @@
  * is a crash somewhere far away with no clue in it. Everything it fills is a default that a
  * running game would have produced anyway.
  */
+import { sane } from "./health";
 import { feetOf } from "./genitals";
 import type { Arcology, Facility, Person, SaveState, Sector, StandingOrder } from "./types";
 import { SCHEMA_VERSION, DEFAULT_MODELS } from "./types";
@@ -235,6 +236,8 @@ export function sanitize(raw: SaveState): SaveState {
     feetOf(p);
     p.health.injuries = p.health.injuries ?? [];
     p.health.drugs = p.health.drugs ?? [];
+    // A missing or broken recovery count (older saves) must not become NaN and never count down.
+    p.health.recovery_weeks = sane(p.health.recovery_weeks);
     p.womb.fetuses = p.womb.fetuses ?? [];
     p.womb.sired_by = p.womb.sired_by ?? {};
     p.skills.management = p.skills.management ?? {};

@@ -21,6 +21,7 @@
  *
  * Nothing here writes prose. It writes the facts the prose has to honour.
  */
+import { sane, recoveryNote } from "./health";
 import { erection, feetOf, mobility } from "./genitals";
 import type { Person, SaveState } from "./types";
 import { ACT_BY_ID, FETISH_BY_ID, FLAW_BY_ID, QUIRK_BY_ID, type ActDef } from "../data/intimacy";
@@ -79,7 +80,7 @@ export function canDo(p: Person, act: ActDef, s?: SaveState): string | null {
       case "standing": if (feetOf(p).heels_clipped) return "her tendons are clipped; she can't stand flat"; if (mobility(p).level >= 2) return "she can't stand under her own weight"; break;
     }
   }
-  if (p.health.recovery_weeks > 0 && act.group !== "tenderness") return "she is still in recovery";
+  if (sane(p.health.recovery_weeks) > 0 && act.group !== "tenderness") return s ? `she is ${recoveryNote(s, p)}` : "she is recovering from surgery";
   if (s && act.you === "cock" && !hasCock(s)) return "you have no cock";
   if (s && act.you === "sire" && !canSire(s)) return hasCock(s) ? "you can't get anyone pregnant" : "you have no cock";
   if (p.age < 18) return "she is a child";
