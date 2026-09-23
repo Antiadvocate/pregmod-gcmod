@@ -40,6 +40,7 @@ import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf } from "./romance"
 import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
 import { tickStory } from "./story";
+import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
 import { tickThreads } from "./threads";
 import { THREAD_BY_KIND } from "../data/threads";
@@ -227,7 +228,7 @@ export function endWeek(s: SaveState): WeekReport {
   tickProximity(s);
   const pulled = coRegulate(s);
   const flips = pulled.filter((x) => Math.abs(x.pull) > 0.25).length;
-  if (flips >= 3) push(`The mood moved through ${flips} of them together this week — whatever is in that room, they are all in it.`, "neutral", 4);
+  if (flips >= 3) push(`The mood moved through ${flips} of them together this week — whatever's in that room, they're all feeling it.`, "neutral", 4);
   // Seed from the week that just happened, then let it spread. Seeding after diffusion would
   // mean a new rumour is known by exactly one person for a week, which is not how a house works.
   gossip(s, week);
@@ -266,6 +267,7 @@ export function endWeek(s: SaveState): WeekReport {
   // moves the arcology's adoption, and it is where the service fees come from once they are open.
   lines.push(...tickReversal(s));
   for (const l of tickStory(s)) push(l.text, l.tone, l.weight);
+  lines.push(...tickRun(s));
 
   const soc = tickSociety(s);
   led.entry("doctrine", "your citizens, on how you live", soc.cash, soc.rep);
@@ -336,7 +338,7 @@ export function endWeek(s: SaveState): WeekReport {
   const wornOut = alive(s).filter((p) => wear(p.psyche) > 0.7);
   if (wornOut.length) problems.push(`${wornOut.length} have been braced so long their resting point has moved.`);
   const u = unrest(s);
-  if (u > 50) problems.push(`Household unrest is at ${Math.round(u)}. No amount of security touches this number.`);
+  if (u > 50) problems.push(`Household unrest is at ${Math.round(u)}. Guards won't fix it.`);
 
   // You get better at this by doing it: a week of running a household is a week of practice.
   practise(s, "slaving", 0.5 + alive(s).length * 0.05);

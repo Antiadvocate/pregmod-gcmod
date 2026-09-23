@@ -18,6 +18,7 @@ import { defaultOrders } from "./rules";
 import { rollMarkets } from "./market";
 import { rng } from "./rng";
 import { newStory } from "./story";
+import { newRun } from "./run";
 import { ORIGIN_BY_ID } from "../data/story";
 
 export interface NewGameOptions {
@@ -34,6 +35,8 @@ export interface NewGameOptions {
   address?: string;
   /** Run the Supplicationism chain as well. */
   supplication?: boolean;
+  /** Up to two twists on the world. See engine/run.ts. */
+  twists?: string[];
 }
 
 const ARC_NAMES = ["Aurelia", "Vireo", "Marrow", "Halcyon", "Sable Rock", "Ninth Terrace", "Corvid", "The Spindle", "Tessellate", "Antioch"];
@@ -128,7 +131,7 @@ export function newGame(opts: NewGameOptions = {}): SaveState {
       body: { appearance_facts: "unremarkable, and dressed like somebody who does not need to be remarkable" },
       career: opts.player_career ?? "trader",
       skills: { trading: 35, hacking: 15, slaving: 25, engineering: 15, medicine: 10 },
-      household_read: { feared: 0, trusted: 0, label: "unknown quantity" },
+      household_read: { feared: 0, trusted: 0, label: "nobody in particular" },
     },
     scene: {
       location: "the penthouse",
@@ -166,6 +169,7 @@ export function newGame(opts: NewGameOptions = {}): SaveState {
     if (difficulty === "generous") state.arcology.cash += 50000;
     if (difficulty === "hard") state.arcology.cash = Math.round(state.arcology.cash * 0.55);
   }
+  newRun(state, seed, opts.twists ?? []);
   newStory(state, origin?.id ?? "none", seed, opts.supplication ?? false);
   for (const p of Object.values(state.people)) refresh(p, state.memory[p.id]);
 
@@ -236,6 +240,7 @@ export function sanitize(raw: SaveState): SaveState {
   // A save from before the story existed keeps the plot chain it was playing and joins the deck
   // from here, with no origin arc — it already has a history.
   if (!s.story && s.arcology) newStory(s, "none", s.id, true);
+  if (!s.run && s.arcology) newRun(s, s.id, []);
 
   // A save written before the return rule existed has the old three orders and a household that
   // may already be parked in the spa with no way out. Add the missing one rather than resetting

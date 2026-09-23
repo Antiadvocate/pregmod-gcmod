@@ -81,7 +81,7 @@ export const EVENTS: EventDef[] = [
       { id: "push", label: "Push her the rest of the way", note: "a broken slave is obedient and nothing else",
         resolve: (s, _e, p) => { p!.psyche.relaxation = -9.5; p!.psyche.state = "broken"; p!.psyche.break_mode = "dissociative"; applyTreatment(p!, { kind: "cruelty", size: 9, why: "finished her" }, s.arcology.week); return `She broke on the Tuesday. She has been perfectly obedient since.`; } },
       { id: "ignore", label: "Leave her in place",
-        resolve: () => `Nothing changed, which is its own decision.` },
+        resolve: () => `You left her where she was. Nothing changed.` },
     ],
   },
   {
@@ -91,7 +91,7 @@ export const EVENTS: EventDef[] = [
     seed: (_s, c) => `${c.person!.name} has asked to speak to you. She has clearly been working up to it for days.`,
     options: [
       { id: "grant", label: "Give her what she asks for",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "promise_kept", size: 6, why: "she asked and you said yes" }, s.arcology.week); s.arcology.cash -= 500; return `You said yes. It cost about five hundred and bought considerably more.`; } },
+        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "promise_kept", size: 6, why: "she asked and you said yes" }, s.arcology.week); s.arcology.cash -= 500; return `You said yes. It cost about five hundred. She thanked you three times on the way out.`; } },
       { id: "later", label: "Tell her later",
         resolve: (s, _e, p) => { applyTreatment(p!, { kind: "neglect", size: 3, why: "asked and got 'later'" }, s.arcology.week); return `She said of course. She has stopped asking things.`; } },
       { id: "refuse", label: "Refuse, and say why",
@@ -119,7 +119,7 @@ export const EVENTS: EventDef[] = [
       { id: "separate", label: "Separate them", resolve: () => `They are on different floors now.` },
       { id: "pick", label: "Back one of them publicly",
         resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 5, why: "backed in public" }, s.arcology.week); return `You backed ${p!.name}. Everyone saw.` } },
-      { id: "both", label: "Punish both", resolve: (s, _e, p) => { applyTreatment(p!, { kind: "coercion", size: 4, why: "punished for fighting" }, s.arcology.week); return `Both punished. Neither learned the lesson you meant.` } },
+      { id: "both", label: "Punish both", resolve: (s, _e, p) => { applyTreatment(p!, { kind: "coercion", size: 4, why: "punished for fighting" }, s.arcology.week); return `Both punished. They still aren't speaking to each other, and now they aren't speaking to you either.` } },
     ],
   },
   {
@@ -128,7 +128,7 @@ export const EVENTS: EventDef[] = [
     weight: (s) => 5 + s.arcology.neighbours.filter((n) => n.attitude < -30).length * 3,
     seed: (s) => {
       const n = s.arcology.neighbours.filter((x) => x.attitude < 0).sort((a, b) => a.attitude - b.attitude)[0];
-      return `${n?.name ?? "The arcology to the east"} has started buying your suppliers. Not quietly enough to be a secret, and not loudly enough to be a declaration.`;
+      return `${n?.name ?? "The arcology to the east"} has started buying your suppliers. Three of them have stopped returning your steward's calls.`;
     },
     options: [
       { id: "buy", label: "Outbid them", note: "expensive, and it works",
@@ -161,14 +161,14 @@ export const EVENTS: EventDef[] = [
       { id: "end", label: "End it",
         resolve: (s, _e, p) => { p!.womb.fetuses = []; p!.womb.abortions++; p!.womb.weeks = 0; applyTreatment(p!, { kind: "cruelty", size: 6, why: "the pregnancy ended without her say" }, s.arcology.week); const mem = s.memory[p!.id]; if (mem) remember(mem, { content: "the pregnancy was ended, and nobody asked her", week: s.arcology.week, importance: 9, charge: "sharp", core: true }); return `Done on the Wednesday.`; } },
       { id: "ask", label: "Ask her what she wants",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 7, why: "asked about her own body" }, s.arcology.week); return `You asked. That is the part she will remember.`; } },
+        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 7, why: "asked about her own body" }, s.arcology.week); return `You asked her what she wanted. She had to think about it; nobody had asked her before.`; } },
     ],
   },
   {
     id: "shark", severity: "major", endogenous: false,
     candidates: (s) => (s.arcology.cash < 4000 ? [{}] : []),
     weight: (s) => (s.arcology.cash < 0 ? 12 : 5),
-    seed: () => `A man who does not give a surname has left a card with your steward. He knows exactly how much you are short by, which is the point of the card.`,
+    seed: () => `A man who does not give a surname has left a card with your steward. The back of it says exactly how much you're short by.`,
     options: [
       { id: "take", label: "Take the money", note: "40% APR, and he collects",
         resolve: (s) => { s.arcology.cash += 20000; s.arcology.loans.push({ lender: "shark", principal: 20000, apr: 0.4, due_week: s.arcology.week + 20, installments: 4 }); return `Twenty thousand in hand and a man who knows where you live.`; } },
@@ -215,7 +215,7 @@ export const EVENTS: EventDef[] = [
     seed: (s, c) => {
       const e = s.edges.filter((x) => x.from === c.person!.id).sort((a, b) => b.warmth - a.warmth)[0];
       const other = e ? s.people[e.to] : undefined;
-      return `${c.person!.name} and ${other?.name ?? "one of the others"} have become something. They are being careful about it in front of you, which is how you know.`;
+      return `${c.person!.name} and ${other?.name ?? "one of the others"} have become something. They stop touching when you walk in.`;
     },
     options: [
       { id: "allow", label: "Leave them alone",
@@ -227,7 +227,7 @@ export const EVENTS: EventDef[] = [
             person.psyche.relaxation = clamp(person.psyche.relaxation + 1, -10, 10);
           }
           if (edge) { edge.roles.push("lover"); }
-          return `Nothing was said about it, which was the correct thing to say.`;
+          return `You didn't say anything. They noticed you didn't.`;
         } },
       { id: "separate", label: "Separate them",
         resolve: (s, _e, p) => {
@@ -258,7 +258,7 @@ export const EVENTS: EventDef[] = [
     weight: () => 5,
     seed: (s, c) => {
       const strong = Object.entries(s.arcology.doctrines).sort((a, b) => b[1].adoption - a[1].adoption)[0];
-      return `Somebody wrote about ${c.person!.name} on the public boards. Your arcology believes what it believes about bodies now — ${Math.round(strong?.[1].adoption ?? 0)}% of it does — and she is standing evidence against it.`;
+      return `Somebody wrote about ${c.person!.name} on the public boards. Your arcology believes what it believes about bodies now — ${Math.round(strong?.[1].adoption ?? 0)}% of it does — and somebody has written that she doesn't belong in it.`;
     },
     options: [
       { id: "change", label: "Change her to fit", note: "expensive, and she is the one who pays it",

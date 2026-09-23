@@ -9,6 +9,7 @@ import { Card, Empty, Fold, Meter, cx } from "../lib/ui";
 import { arcDef, type NPC } from "../engine/story";
 import { ORIGIN_BY_ID } from "../data/story";
 import { SlaveHead } from "./SlaveArt";
+import Ambitions from "./Ambitions";
 
 export default function Journal() {
   const { save } = useGame();
@@ -26,6 +27,10 @@ export default function Journal() {
         {origin ? <p className="font-prose text-[15px] mid mt-1.5">{origin.pitch}</p> : null}
         <p className="text-[12px] dim mt-2">{save.player.name !== "you" ? `${save.player.name}. ` : ""}The household calls you {save.player.address || "Master"}.</p>
       </Card>
+
+      <Fold id="journal-ambitions" title="What you're after">
+        <Ambitions />
+      </Fold>
 
       <Fold id="journal-cast" title="The people in it" count={cast.length}>
         {cast.length ? (

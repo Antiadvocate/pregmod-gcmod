@@ -761,6 +761,8 @@ export interface SaveState {
   events: PendingEvent[];
   /** What the household is asking you for this week. See engine/asks.ts. */
   asks?: import("./asks").Ask[];
+  /** Twists, ambitions and the end of the run. See engine/run.ts. */
+  run?: import("./run").RunState;
   /** Your origin, your cast, and the arcs this run has drawn. See engine/story.ts. */
   story?: import("./story").StoryState;
   /** The Supplicationism plot chain — see engine/reversal.ts. */

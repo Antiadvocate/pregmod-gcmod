@@ -15,6 +15,7 @@ import { generateDynamicEvent, resolveDynamic, dynamicReadiness } from "../engin
 import { voiceAsk } from "../engine/asks";
 import { AskList } from "./AskCard";
 import StoryCard from "./StoryCard";
+import Ambitions from "./Ambitions";
 import { theKeeper } from "../engine/romance";
 import { nextEvent as chainEvent, resolveChain, reversalOf, subjectOf, GESTURES, gestureAvailable, doGesture, type Reaction } from "../engine/reversal";
 import { liveThreads, answerThread, describeThread } from "../engine/threads";
@@ -279,6 +280,10 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
           </Card>
         </Section>
       ) : null}
+
+      <Fold id="ambitions" title="What you're after" defaultOpen={false}>
+        <Ambitions />
+      </Fold>
 
       <Fold id="flags" count={flags.length} title="Who needs looking at" right={<Button size="sm" kind="ghost" onClick={() => go("people")}>all {people.length} <ChevronRight size={13} /></Button>}>
         {flags.length ? (

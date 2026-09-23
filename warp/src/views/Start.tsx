@@ -7,6 +7,7 @@ import { getSave, importSave, listSaves, putSave, deleteSave } from "../store";
 import { Button, Card, Field, Section, cx } from "../lib/ui";
 import { Dice5 } from "lucide-react";
 import { ORIGINS } from "../data/story";
+import { TWISTS, TWIST_BY_ID } from "../engine/run";
 import { modelsAvailable } from "../config";
 
 const ADDRESSES = ["Master", "Mistress", "Sir", "Ma'am", "Owner"];
@@ -19,6 +20,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
   const [custom, setCustom] = useState("");
   const [origin, setOrigin] = useState<string>(() => ORIGINS[Math.floor(Math.random() * ORIGINS.length)].id);
   const [supplication, setSupplication] = useState(false);
+  const [twists, setTwists] = useState<string[]>([]);
   const [difficulty, setDifficulty] = useState<"generous" | "standard" | "hard">("standard");
   const [busy, setBusy] = useState(false);
 
@@ -28,7 +30,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
     setBusy(true);
     const s = newGame({
       arcology_name: name || undefined, player_name: player || undefined, difficulty, origin,
-      address: address === "custom" ? custom.trim() || "Master" : address, supplication,
+      address: address === "custom" ? custom.trim() || "Master" : address, supplication, twists,
     });
     await putSave(s);
     localStorage.setItem("warp-last", s.id);
@@ -73,6 +75,18 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
               {(["generous", "standard", "hard"] as const).map((d) => (
                 <Button key={d} kind={difficulty === d ? "primary" : undefined} size="sm" onClick={() => setDifficulty(d)}>{d}</Button>
               ))}
+            </div>
+          </Field>
+          <Field label="Twists" hint={twists.length ? twists.map((t) => TWIST_BY_ID[t].what).join(" ") : "Up to two. Each one bends the world a little."}>
+            <div className="flex flex-wrap gap-1.5">
+              {TWISTS.map((t) => (
+                <button key={t.id} className={cx("chip !text-[12px] !py-1 !px-3", twists.includes(t.id) && "on")}
+                  onClick={() => setTwists((xs) => (xs.includes(t.id) ? xs.filter((x) => x !== t.id) : [...xs, t.id].slice(-2)))}>{t.name}</button>
+              ))}
+              <button className="chip !text-[12px] !py-1 !px-3" onClick={() => {
+                const pool = [...TWISTS].sort(() => Math.random() - 0.5);
+                setTwists(pool.slice(0, 1 + Math.floor(Math.random() * 2)).map((t) => t.id));
+              }}><Dice5 size={12} /> roll</button>
             </div>
           </Field>
           <label className="flex items-start gap-2.5 mt-1 cursor-pointer">

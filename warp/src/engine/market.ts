@@ -6,6 +6,7 @@
  * the whole game of buying: the old game rolled a slave and showed you her true stats, which made
  * purchase a shopping trip rather than a judgement.
  */
+import { priceFactor } from "./run";
 import type { MarketOffer, MarketState, Person, SaveState } from "./types";
 import { generatePerson } from "./generate";
 import { valuePerson } from "./economy";
@@ -95,7 +96,7 @@ export function inspect(state: SaveState, offer: MarketOffer): { found: string[]
 /** What you would actually pay: the asking price, less what your own trading and your own market
  *  licence take off it. Shown in the market so the discount is visible rather than a surprise. */
 export function askingPrice(state: SaveState, offer: MarketOffer): number {
-  return Math.max(200, Math.round(offer.price * skill.trading(state) * (1 - marketDiscount(state))));
+  return Math.max(200, Math.round(offer.price * skill.trading(state) * (1 - marketDiscount(state)) * priceFactor(state)));
 }
 
 export function buy(state: SaveState, offer: MarketOffer): { ok: boolean; why?: string; person?: Person } {

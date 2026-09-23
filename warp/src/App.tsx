@@ -27,6 +27,7 @@ import Report from "./views/Report";
 import SettingsView from "./views/Settings";
 import You from "./views/You";
 import Journal from "./views/Journal";
+import Ending from "./views/Ending";
 import Cheats from "./views/Cheats";
 
 export type Route = "penthouse" | "people" | "story" | "scene" | "city" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
@@ -147,6 +148,8 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
           {unseen ? <span className="absolute" /> : null}
         </button>
       </nav>
+
+      <Ending onNewRun={onSwitch} />
 
       <Sheet open={moreOpen} onClose={() => setMoreOpen(false)} title="Everything else">
         <div className="grid grid-cols-2 gap-2">

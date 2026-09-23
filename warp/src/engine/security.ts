@@ -68,17 +68,17 @@ export function tickSecurity(s: SaveState): SecurityWeek {
           worst.p.status = "free";
           worst.p.exit_week = arc.week;
           worst.p.exit_note = "escaped";
-          lines.push({ person: worst.p.id, tone: "bad", weight: 10, text: `${worst.p.name} is gone. Nobody in the household is saying anything about it, which is its own kind of answer.` });
+          lines.push({ person: worst.p.id, tone: "bad", weight: 10, text: `${worst.p.name} is gone. Nobody in the household is saying anything about it. Two of them are smiling.` });
           startRumor(s, `${worst.p.name} got out`, { salience: 9 });
           for (const p of household) if (p.id !== worst.p.id) p.bond.hope = clamp(p.bond.hope + 8, 0, 100);
         }
       } else {
-        lines.push({ person: worst.p.id, tone: "warning", weight: 8, text: `${worst.p.name} refused an instruction in front of four other people. What happens next is not really about her.` });
+        lines.push({ person: worst.p.id, tone: "warning", weight: 8, text: `${worst.p.name} refused an instruction in front of four other people. Everyone is waiting to see what you do.` });
         for (const p of household) p.bond.hope = clamp(p.bond.hope + 3, 0, 100);
       }
     }
   }
-  if (u > 75) lines.push({ tone: "bad", weight: 9, text: `Your household is at ${Math.round(u)} unrest. Watch and drones do nothing to this number; only what you are carrying with them does.` });
+  if (u > 75) lines.push({ tone: "bad", weight: 9, text: `Your household is at ${Math.round(u)} unrest. Guards won't fix it. It's about how you've treated them.` });
 
   /* ── the neighbours ───────────────────────────────────────────────────────────────────────── */
   for (const n of arc.neighbours) {

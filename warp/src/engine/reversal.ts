@@ -372,7 +372,7 @@ export function resolveChain(s: SaveState, optionId: string): { line: string; re
       bump(14); publicly = true;
       line = "You let him, and refused the money, and he did not know what to do with that.";
       break;
-    case "first_fee:refuse": bump(-2); line = "He was put out. He will tell people, which is not nothing."; break;
+    case "first_fee:refuse": bump(-2); line = "He was put out. He will tell people."; break;
 
     case "the_register:file":
       bump(16); publicly = true; rev.association -= 30;

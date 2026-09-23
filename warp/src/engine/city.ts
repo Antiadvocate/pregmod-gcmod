@@ -281,7 +281,7 @@ export function annex(s: SaveState, neighbourId: string, how: "buy" | "force"): 
   s.canon.push(how === "buy"
     ? `${n.name} was bought outright and folded into ${s.arcology.name}.`
     : `${n.name} was taken. The other arcologies have not forgotten it.`);
-  startRumor(s, how === "buy" ? `${n.name} belongs to us now` : `he took ${n.name} and did not pretend otherwise`, { salience: 10 });
+  startRumor(s, how === "buy" ? `${n.name} belongs to us now` : `the owner took ${n.name} and did not pretend otherwise`, { salience: 10 });
 
   return {
     ok: true,
@@ -290,6 +290,8 @@ export function annex(s: SaveState, neighbourId: string, how: "buy" | "force"): 
       : `${n.name} is yours. It took a night, it cost you your standing with everyone who watched, and the blocks you took are in a state.`,
   };
 }
+
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
 /* ── the week ──────────────────────────────────────────────────────────────────────────────── */
 
@@ -348,7 +350,7 @@ export function tickCity(s: SaveState): { lines: ReportLine[]; cash: number } {
   }
 
   if (cash) {
-    lines.push({ tone: "good", weight: 6, text: `The city: ¤${Math.round(cash).toLocaleString()} from ${city.districts.filter((d) => d.level && d.owner === "you").length} blocks and ${city.routes.filter((x) => !x.disrupted).length} routes.` });
+    lines.push({ tone: "good", weight: 6, text: `The city: ¤${Math.round(cash).toLocaleString()} from ${plural(city.districts.filter((d) => d.level && d.owner === "you").length, "block")} and ${plural(city.routes.filter((x) => !x.disrupted).length, "route")}.` });
   }
   return { lines, cash: Math.round(cash) };
 }

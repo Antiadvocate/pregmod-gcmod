@@ -82,16 +82,16 @@ export const THREADS: ThreadDef[] = [
         at: 68,
         line: (c) => `${c.who.b} said something to ${c.who.a} in the corridor and both of them looked at you.`,
         title: "Two of them, at the far end of the room",
-        text: (c) => `It has been about six weeks and you can date it from the rota if you go back and look.
+        text: (c) => `You come down to the kitchens for coffee at six and ${c.who.a} and ${c.who.b} are already there, heads together over one cup. ${c.who.b} is talking. ${c.who.a} is nodding.
 
-They are not plotting. That would be easier and you would have caught it. What they are doing is agreeing with each other, quietly, every day, about what this place is — and two people who agree about that are a different thing from two people who each think it privately.
+They stop when they see you. ${c.who.a} gets up to make your coffee. ${c.who.b} stays sitting down, which six weeks ago she would never have done.
 
-${c.who.a} does the thinking. ${c.who.b} does the deciding, which she would not have done six weeks ago on her own.`,
+The rota says they've been on the same shift since week ${Math.max(1, c.s.arcology.week - c.weeks)}. You signed it.`,
         options: [
-          { id: "split", label: "Put them on different rotas", note: "the obvious move, and they will both know why" },
-          { id: "sit", label: "Sit down with both of them", note: "asks what it is; you may not like the answer" },
-          { id: "buy", label: "Give one of them something", note: "cheap, effective, and the other one watches you do it" },
-          { id: "leave", label: "Leave it", note: "it does not stop on its own" },
+          { id: "split", label: "Put them on different rotas", note: "they'll both know why" },
+          { id: "sit", label: "Pull out a chair and sit down with them", note: "ask what's going on" },
+          { id: "buy", label: "Give one of them something", note: "cheap; the other one watches" },
+          { id: "leave", label: "Take your coffee and go", note: "it won't stop on its own" },
         ],
       },
       {
@@ -114,19 +114,19 @@ ${c.who.a} does the thinking. ${c.who.b} does the deciding, which she would not 
         at: 70,
         line: (c) => `${c.who.passed} is not managing it any more.`,
         title: "The one you passed over",
-        text: (c) => `${c.who.risen} has what she has because of things you did, most of which you can remember doing.
+        text: (c) => `${c.who.passed} brings the weekly figures up to your office and puts them on the desk upside down.
 
-${c.who.passed} has been here longer. She was better at it. She did the arithmetic weeks ago and got an answer she has not said out loud, and this week she stopped bothering to hide the working.
+"${c.who.risen} usually does this now," she says. "I thought I'd see what it's like."
 
-She is not going to do anything to ${c.who.risen}. She is going to stop being useful to you, slowly, in ways that are individually deniable, and you will notice in about two months.`,
+She's been here longer than ${c.who.risen}. She was better at the work, and she knows you know it. The figures are right, to the last digit. She waits to be dismissed and doesn't look at you while she waits.`,
         options: [
-          { id: "raise", label: "Raise her too", note: "costs, and it works" },
-          { id: "explain", label: "Tell her why it went the other way", note: "she may take it; she may not" },
-          { id: "break", label: "Make an example of her", note: "the household is watching this one" },
-          { id: "nothing", label: "Nothing", note: "she was right about you" },
+          { id: "raise", label: "Give her a step up too", note: "it costs, and it works" },
+          { id: "explain", label: "Tell her why it went the other way", note: "she might take it" },
+          { id: "break", label: "Make an example of her", note: "the house is watching" },
+          { id: "nothing", label: "Turn the figures the right way up and say nothing" },
         ],
       },
-      { at: 92, line: (c) => `${c.who.passed} has stopped competing, which everybody has mistaken for settling down.` },
+      { at: 92, line: (c) => `${c.who.passed} has stopped competing. Everyone thinks she's settled down.` },
     ],
     fallout: (c) => `${c.who.passed} stopped trying, and it took two months to show.`,
   },
@@ -143,28 +143,28 @@ She is not going to do anything to ${c.who.risen}. She is going to stop being us
         at: 74,
         line: (c) => `${c.who.a} asked you for something, and it was not for herself.`,
         title: "The two of them",
-        text: (c) => `${c.who.a} asks to be put on the same rota as ${c.who.b}. She has a reason ready and the reason is about the work.
+        text: (c) => `${c.who.a} asks to be put on the same rota as ${c.who.b}. She's rehearsed it: the laundry runs faster with two who know the machines, and ${c.who.b} knows the machines.
 
-It is not about the work. You knew before she opened her mouth and she knows you knew, and the whole exchange is both of you agreeing to talk about the rota.
+Her hands are shaking a little. Yesterday you saw them on the service stairs, ${c.who.b}'s forehead against ${c.who.a}'s shoulder, not doing anything, just standing there.
 
-This is the one thing in the building that happened without you. What you do about that is the decision.`,
+"It's just for the work," ${c.who.a} says.`,
         options: [
-          { id: "allow", label: "Put them together", note: "they will both be better at everything" },
-          { id: "separate", label: "Separate them", note: "and they will both know exactly why" },
-          { id: "use", label: "Make it conditional", note: "you now own the thing they have" },
-          { id: "ignore", label: "Say nothing either way" },
+          { id: "allow", label: "\"Fine. Same rota.\"", note: "both of them will be better at everything" },
+          { id: "separate", label: "Put them on opposite ends of the building", note: "they'll know exactly why" },
+          { id: "use", label: "\"If you both earn it.\"", note: "now it's yours to take away" },
+          { id: "ignore", label: "Change the subject" },
         ],
       },
-      { at: 90, line: (c) => `Whatever ${c.who.a} and ${c.who.b} have, it is load-bearing for both of them now.` },
+      { at: 90, line: (c) => `${c.who.a} and ${c.who.b} hold each other up now, and everyone can see it.` },
     ],
-    fallout: (c) => `${c.who.a} and ${c.who.b} have each other, which is a thing you do not control.`,
+    fallout: (c) => `${c.who.a} and ${c.who.b} have each other, and you had nothing to do with it.`,
   },
 
   /* ── the household ────────────────────────────────────────────────────────────────────────── */
   {
     kind: "belief",
     name: "It stopped being gossip",
-    blurb: "Something the household says about you has hardened into something it knows.",
+    blurb: "A rumour about you has become something they all know.",
     build: 13, cool: 16, roles: [],
     beats: [
       { at: 24, line: () => `The thing they have been saying is being repeated now without the part where somebody heard it somewhere.` },
@@ -175,14 +175,14 @@ This is the one thing in the building that happened without you. What you do abo
         title: "What they know about you",
         text: (c) => `${c.facts[0] ?? "Something got out."}
 
-It has been going round for long enough that the version being told now has been smoothed by the telling — the details are gone and what is left is the shape, which is harder to argue with than the details ever were.
+You hear it from the newest girl, on her fourth day. She says it to another new girl on the stairs, the way you'd tell someone where the toilets are. She doesn't know you're on the landing above.
 
-Everybody in the building believes it. Two of them believe it about things you did not do. New arrivals are being told it in the first week, by women who were told it themselves, and none of them have any reason to doubt the source.`,
+When you come down, she goes white. The other one doesn't — she hasn't been told yet what you look like.`,
         options: [
-          { id: "deny", label: "Say it plainly, to all of them", note: "denial spreads it further and they know that too" },
-          { id: "prove", label: "Do something that contradicts it", note: "slow, expensive, and the only thing that works" },
-          { id: "own", label: "Confirm it", note: "it stops being a rumour and starts being policy" },
-          { id: "hunt", label: "Find out who started it", note: "and everybody watches you look" },
+          { id: "deny", label: "Call them all in and say it isn't true", note: "a denial spreads it too" },
+          { id: "prove", label: "Spend a month doing the opposite where they can see", note: "slow and expensive" },
+          { id: "own", label: "\"It's true. Remember it.\"", note: "it stops being a rumour and becomes a rule" },
+          { id: "hunt", label: "Find out who started it", note: "everyone watches you look" },
         ],
       },
       { at: 90, line: () => `It is settled. Nobody in the building will be talked out of it now.` },
@@ -202,16 +202,16 @@ Everybody in the building believes it. Two of them believe it about things you d
         at: 76,
         line: () => `The household is running as two households that share a kitchen.`,
         title: "Two of everything",
-        text: (c) => `You can draw the line on the rota. ${c.who.one} on one side, ${c.who.other} on the other, and every woman in the building has picked without being asked to.
+        text: (c) => `Dinner in the servants' hall: two long tables, and nobody has told them to sit that way. ${c.who.one} at the head of one. ${c.who.other} at the head of the other. The girl who came in last week stands with her tray between them for a long second before she picks.
 
-It is not about either of them. They are only where it settled. What it is about is that two ways of surviving here both work, and each one makes the other look like a mistake, and nobody can hold both.
+Somebody's bunk got flooded on Tuesday. Somebody else's uniform got bleached on Wednesday. Nobody saw anything.
 
-The work is getting done. That is the part that will keep you from acting until it is much worse.`,
+The work is all getting done. That's the worst part: nothing on paper tells you anything's wrong.`,
         options: [
-          { id: "pick", label: "Back one side openly", note: "ends it fast, at the cost of the other half" },
-          { id: "mix", label: "Break up every rota", note: "expensive, slow, and nobody forgives it quickly" },
-          { id: "third", label: "Give them something that is neither", note: "a common problem is the oldest trick there is" },
-          { id: "watch", label: "Let it run" },
+          { id: "pick", label: "Sit down at one of the tables", note: "ends it fast; the other table loses" },
+          { id: "mix", label: "Break up every rota and every room", note: "slow and resented" },
+          { id: "third", label: "Give them all something bigger to worry about", note: "a common enemy" },
+          { id: "watch", label: "Eat upstairs" },
         ],
       },
       { at: 92, line: () => `Two households. The pretence has been dropped.` },
@@ -223,26 +223,24 @@ The work is getting done. That is the part that will keep you from acting until 
   {
     kind: "gone_quiet",
     name: "She has gone quiet",
-    blurb: "Somebody has stopped being in the room she is standing in.",
+    blurb: "She does everything she is told and isn't really there.",
     build: 15, cool: 26, roles: ["her"],
     beats: [
       { at: 22, line: (c) => `${c.who.her} has stopped asking for things. Not refused — stopped.` },
-      { at: 48, line: (c) => `${c.who.her} has stopped flinching, which everybody keeps reading as progress.` },
+      { at: 48, line: (c) => `${c.who.her} has stopped flinching. The Madam calls it progress.` },
       {
         at: 70,
         line: (c) => `${c.who.her} is not in the room she is standing in.`,
         title: "She has gone somewhere",
-        text: (c) => `${c.who.her} does what she is told, on time, correctly. Her health is fine. She has not cried in a month and she has not complained about anything since before that.
+        text: (c) => `You say ${c.who.her}'s name twice before she turns round. She's folding towels. She finishes the one in her hands first.
 
-It reads as settling in. Everybody who works with her thinks she has settled in.
+"Yes?"
 
-What is actually happening is that she has stopped being present for it. She is somewhere else, all day, and coming back costs her more each week she does not — and the body left behind is very easy to run a household with, which is the trap.
-
-This does not get better on its own, and the point where it stops being reversible does not announce itself.`,
+She does everything she's told, on time, correctly. She hasn't cried in a month or complained since before that. The Madam says she's settled in. You ask her what she had for lunch and she thinks about it for a long time and says she doesn't know.`,
         options: [
-          { id: "pull", label: "Take her off everything", note: "weeks of nothing asked of her; it costs you and it works" },
-          { id: "reach", label: "Get in the way of it", note: "make her be here for something, which she will hate" },
-          { id: "use", label: "Leave her as she is", note: "she is the most useful woman in the building like this" },
+          { id: "pull", label: "Take her off everything for a while", note: "weeks with nothing asked of her" },
+          { id: "reach", label: "Drag her back into the room", note: "make her feel something; she'll hate it" },
+          { id: "use", label: "Leave her folding towels", note: "she's never been easier to manage" },
         ],
       },
       { at: 93, line: (c) => `${c.who.her} is not coming back from this without something being done about it.` },
@@ -253,22 +251,20 @@ This does not get better on its own, and the point where it stops being reversib
   {
     kind: "remodelled",
     name: "She is not who arrived",
-    blurb: "Her resting point has moved. That does not come back.",
+    blurb: "She has changed, and she hasn't noticed.",
     build: 9, cool: 6, roles: ["her"],
     beats: [
-      { at: 30, line: (c) => `${c.who.her} was startled by something this week and got over it in about a second, which she could not do in her first month.` },
+      { at: 30, line: (c) => `A door slammed near ${c.who.her} this week and she barely looked up. In her first month she'd have hidden.` },
       {
         at: 62,
         line: (c) => `${c.who.her} does not brace when the door goes any more.`,
         title: "Whoever this is now",
-        text: (c) => `Go back and read what you wrote about ${c.who.her} when she arrived.
+        text: (c) => `A tray goes over in the corridor, loud, right behind ${c.who.her}. In her first month she'd have been flat against the wall. Today she looks round, sees what it is, and goes back to what she was doing.
 
-It is not the same person. Not worn down and not fixed — moved. Her body has picked a new place to sit when nothing is happening, and it is somewhere she has been often enough that it stopped being the exception.
-
-She has not noticed. People do not notice this about themselves. Somebody who knew her before would notice inside a minute.`,
+You pull her intake sheet. The woman described on it flinched at doors, slept with the light on, and wouldn't eat in front of anyone. You look up at the woman in the corridor, eating an apple while she works.`,
         options: [
-          { id: "tell", label: "Tell her", note: "she has a right to know and it will land badly" },
-          { id: "write", label: "Write it down and say nothing", note: "for you, not for her" },
+          { id: "tell", label: "Show her the intake sheet", note: "it'll land hard" },
+          { id: "write", label: "Put the sheet back and say nothing" },
         ],
       },
     ],
@@ -278,7 +274,7 @@ She has not noticed. People do not notice this about themselves. Somebody who kn
   {
     kind: "watcher",
     name: "Her model of you is wrong",
-    blurb: "Somebody frightened has built a theory of you and started acting on it.",
+    blurb: "She is frightened of a version of you that doesn't exist.",
     build: 12, cool: 15, roles: ["her"],
     beats: [
       { at: 24, line: (c) => `${c.who.her} apologised twice this week for things nobody had raised.` },
@@ -287,17 +283,17 @@ She has not noticed. People do not notice this about themselves. Somebody who kn
         at: 74,
         line: (c) => `${c.who.her} is running on a version of you that does not exist.`,
         title: "The version of you she is living with",
-        text: (c) => `Fear is a terrible teacher and this is what it taught ${c.who.her}.
+        text: (c) => `You reach past ${c.who.her} for a pen and she's on her knees before your hand gets there.
 
-She has been watching you for months, from far too close, in a state where a neutral face reads as a threat and a pause reads as a decision already made. She has built a complete theory of you out of that, and it is wrong — not wrong about everything, which would be easier, but wrong in a way that has the shape of being right.
+"I'm sorry. I'm sorry, I'll fix it."
 
-She is acting on it daily. She placates things you were not going to do. She flinches at the wrong second and takes the wrong lesson from the correction. And every time you fail to be the man in her head, she files it as an exception rather than as evidence, because the theory is the only thing keeping her safe.
+There's nothing to fix. You ask her what she thinks she did. She tells you, in a rush — three things, none of which happened, and one that happened to someone else a month ago. She has a whole list. She's been keeping track of what makes you angry, and almost none of it is true.
 
-You cannot argue her out of it. She is not reasoning.`,
+She's still on her knees, waiting to find out which one this is.`,
         options: [
-          { id: "calm", label: "Take the pressure off long enough for her to look", note: "months; it is the only thing that reaches this" },
-          { id: "predictable", label: "Become boringly consistent", note: "slower, cheaper, and it works on the mechanism" },
-          { id: "confirm", label: "Be the man in her head", note: "she is right, the theory holds, and she stops flinching wrong" },
+          { id: "calm", label: "Pick her up and take the pressure off her for a while", note: "it takes months" },
+          { id: "predictable", label: "Be exactly the same with her, every day", note: "slow, and it works" },
+          { id: "confirm", label: "Become what she thinks you are", note: "she'll stop getting it wrong" },
         ],
       },
       { at: 92, line: (c) => `${c.who.her} has a complete and inaccurate model of you, and she is not revising it.` },
@@ -308,25 +304,25 @@ You cannot argue her out of it. She is not reasoning.`,
   {
     kind: "debt",
     name: "She is owed and she knows it",
-    blurb: "Kindness landed, and it created an expectation nobody named.",
+    blurb: "You were kind to her, and she has been keeping count.",
     build: 11, cool: 13, roles: ["her"],
     beats: [
       { at: 26, line: (c) => `${c.who.her} asked for something small this week and was surprised to get it.` },
-      { at: 52, line: (c) => `${c.who.her} has started asking for things on other people's behalf, which is a promotion she gave herself.` },
+      { at: 52, line: (c) => `${c.who.her} has started asking for things on other people's behalf.` },
       {
         at: 72,
         line: (c) => `${c.who.her} wants something real, and has decided she has earned it.`,
         title: "The account she has been keeping",
-        text: (c) => `You were good to ${c.who.her}. Repeatedly, over months, in ways you mostly did not think about.
+        text: (c) => `${c.who.her} closes your office door behind her, which nobody does without being told to.
 
-She thought about all of them. She has been keeping an account you did not know was open, and this week the balance got high enough for her to ask.
+"You let me sleep in when I was ill. You brought me the good soap. You asked about my mother." She says it like a list she's practised. "I've never asked you for anything big."
 
-She is not wrong. That is the difficulty. By any reading of what has passed between you she is owed something, and both of you can feel that, and neither of you agreed to it.`,
+She wants a room with a window and one day a week that's hers. She's standing very straight. She's sure she's earned it, and she's not wrong.`,
         options: [
-          { id: "pay", label: "Give her what she is asking for", note: "the bond converts to something that holds" },
-          { id: "part", label: "Give her part of it", note: "honest, and she will count it" },
-          { id: "refuse", label: "Refuse, and say why", note: "the account closes; so does something else" },
-          { id: "punish", label: "Remind her what she is", note: "settles it permanently, one way" },
+          { id: "pay", label: "Give her the room and the day", note: "and she stays for good" },
+          { id: "part", label: "The room, not the day", note: "she'll take it and remember the rest" },
+          { id: "refuse", label: "Say no, and tell her why" },
+          { id: "punish", label: "Remind her what she is", note: "she won't ask again" },
         ],
       },
     ],

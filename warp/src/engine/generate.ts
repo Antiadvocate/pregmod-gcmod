@@ -300,7 +300,7 @@ function generatePersona(r: Rng, career: (typeof CAREERS)[number], origin: (type
     speech_pattern: r.pick([
       "short sentences, and a long pause before the ones that matter",
       "talks around a thing three times before naming it",
-      "polite in a way that is its own kind of distance",
+      "polite, and keeps you at arm's length with it",
       "fast, and interrupts herself",
       "answers exactly the question asked and nothing more",
       "warm and a little too familiar, on purpose",

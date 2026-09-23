@@ -84,7 +84,7 @@ export const RUNGS: Rung[] = [
     id: "courted", name: "Courted", what: "You are courting her, in front of everybody, like she is somebody who could say no.",
     rite: "court",
     gate: { devotion: 60, trust: 45, fragility: 0.35, bond: 40, hope: 35, weeks: 8, tilt: 0.1 },
-    effect: "The household reads it. Her hope climbs weekly. Doctrines that think she is livestock start costing you standing.",
+    effect: "The household sees it. Her hope climbs every week. Doctrines that think she's livestock start costing you standing.",
   },
   {
     id: "betrothed", name: "Betrothed", what: "You have said it out loud, in public, and it is on the registry.",
@@ -142,7 +142,7 @@ export function nextRung(s: SaveState, p: Person): { rung: Rung; ready: boolean;
       : `what she remembers is only ${tilt.toFixed(2)} good, and this needs ${g.tilt}`);
   }
   if (g.fragility !== undefined && r.fragility > g.fragility) {
-    blocked.push(`${Math.round(r.fragility * 100)}% of her obedience is fear, and this rung allows ${Math.round(g.fragility * 100)}%. She would say yes to anything you asked. That is the problem.`);
+    blocked.push(`${Math.round(r.fragility * 100)}% of her obedience is fear, and this rung allows ${Math.round(g.fragility * 100)}%. She would say yes to anything right now, because she is afraid to say no.`);
   }
   if (p.age < 18) blocked.push("she is a child");
   if (p.status !== "owned" && p.status !== "indentured" && rom.standing === "property") blocked.push("she is not yours");
@@ -196,7 +196,7 @@ export const RITES: Record<string, Rite> = {
   },
   court: {
     id: "court", name: "Court her, publicly", cash: 9000, rep: 200,
-    seed: (_s, p) => `You have started courting ${p.name} where people can see it — which in an arcology means you have made a statement about what she is, and the statement contradicts the paperwork.`,
+    seed: (_s, p) => `You have started courting ${p.name} where people can see it . People stop you on the concourse to ask if it's true.`,
     apply: (s, p) => {
       applyTreatment(p, { kind: "promise_kept", size: 6, why: "courted in public, like somebody who could say no" }, s.arcology.week);
       p.bond.hope = clamp(p.bond.hope + 25, 0, 100);
@@ -204,7 +204,7 @@ export const RITES: Record<string, Rite> = {
       const mem = s.memory[p.id];
       if (mem) remember(mem, { content: "he courted her in front of the whole arcology, as if she could have refused", week: s.arcology.week, importance: 10, charge: "bright", core: true });
       startRumor(s, `he is courting ${p.name} in public`, { about: p.id, salience: 8 });
-      return [line(`You are courting ${p.name} in public. Every doctrine you hold has now been asked a question.`, "good", 9, p.id)];
+      return [line(`You are courting ${p.name} in public. The concourse is talking about nothing else.`, "good", 9, p.id)];
     },
   },
   promise: {
