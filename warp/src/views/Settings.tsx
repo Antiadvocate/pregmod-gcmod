@@ -147,6 +147,23 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
         </Card>
       </Section>
 
+      <Section title="Content">
+        <Card>
+          <div className="text-[11.5px] dim mb-2">All on by default, as in the original. Turning one off hides it from surgery, drugs and acts.</div>
+          <div className="flex flex-wrap gap-2">
+            {([
+              ["extreme", "extreme content (castration, removing genitals, clipped tendons)"],
+              ["hyper", "hyper growth (cocks and balls past natural sizes)"],
+              ["circumcision", "circumcision"],
+              ["watersports", "watersports"],
+            ] as const).map(([k, label]) => {
+              const on = save.content?.[k] !== false;
+              return <Chip key={k} on={on} onClick={() => mutate((s) => { s.content = { ...(s.content ?? {}), [k]: !on }; })}>{label}</Chip>;
+            })}
+          </div>
+        </Card>
+      </Section>
+
       <Section title="How much the world does on its own">
         <Card>
           <Field label={`Tension — ${save.models.tension}`} hint="0 means only your own household causes events. Higher means outside events happen more often and escalate faster.">

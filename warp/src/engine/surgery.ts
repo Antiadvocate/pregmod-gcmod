@@ -47,8 +47,8 @@ export function howSheTakesIt(s: SaveState, p: Person, proc: Procedure): { score
   const gendered = proc.group === "genitals";
   if (gendered) {
     const dom = fetish("dom"), sub = fetish("submissive"), maso = fetish("masochist");
-    const adding = /male_to_female|none_to_female|herm|restore/.test(proc.id);
-    const taking = /chop|geld|vagina_removal|sterilise/.test(proc.id);
+    const adding = /none_to_female|herm|restore|add_|enlarge|expand/.test(proc.id);
+    const taking = /male_to_female|chop|geld|vagina_removal|sterilise|reduce|tuck|clip_tendons/.test(proc.id);
 
     if (maso && maso.strength > 50 && taking) { score += 22; why = "she's a masochist and wants it done to her"; }
     else if (sub && sub.strength > 50 && taking) { score += 12; why = "she's submissive and likes having it decided for her"; }
@@ -61,7 +61,7 @@ export function howSheTakesIt(s: SaveState, p: Person, proc: Procedure): { score
   const doc = s.arcology.doctrines;
   const radical = doc["gender_radical"]?.adoption ?? 0;
   const purist = (doc["body_purist"]?.adoption ?? 0) + (doc["gender_fundamentalist"]?.adoption ?? 0);
-  if (proc.group === "genitals" || proc.group === "body") {
+  if (proc.group === "genitals" || proc.group === "body" || proc.group === "feet") {
     if (radical > 40) { score += radical / 8; why = why || "lots of people in the arcology have had similar surgery"; }
     if (purist > 40) { score -= purist / 10; why = why || "she knows the body purists will look down on her"; }
   }
@@ -79,7 +79,7 @@ export function operate(s: SaveState, p: Person, procId: string): SurgeryResult 
   if (!proc) return { ok: false, why: "no such procedure" };
   const gate = available(s, proc);
   if (gate) return { ok: false, why: gate };
-  const bodily = proc.can(p);
+  const bodily = proc.can(p, s);
   if (bodily) return { ok: false, why: bodily };
   if (s.arcology.cash < proc.cost) return { ok: false, why: `costs ¤${proc.cost.toLocaleString()}, which you don't have` };
   if (p.health.recovery_weeks > 0) return { ok: false, why: "she is still recovering from the last one" };
@@ -150,7 +150,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function optionsFor(s: SaveState, p: Person): { proc: Procedure; blocked: string | null; felt: ReturnType<typeof howSheTakesIt> }[] {
   return Object.values(PROCEDURE_BY_ID).map((proc) => ({
     proc,
-    blocked: available(s, proc) ?? proc.can(p) ?? (s.arcology.cash < proc.cost ? "you cannot afford it" : null),
+    blocked: available(s, proc) ?? proc.can(p, s) ?? (s.arcology.cash < proc.cost ? "you cannot afford it" : null),
     felt: howSheTakesIt(s, p, proc),
   }));
 }

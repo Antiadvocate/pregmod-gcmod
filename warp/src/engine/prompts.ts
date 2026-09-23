@@ -15,6 +15,7 @@
  */
 import type { Person, SaveState } from "./types";
 import { band } from "./psyche";
+import { describeGenitals, describeFeet } from "./genitals";
 import { read } from "./obedience";
 import { recall } from "./memory";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
@@ -97,6 +98,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(`### ${p.name}${p.surname ? " " + p.surname : ""} [${p.id}] — ${p.age}, ${p.origin.nationality}, ${p.pronouns}`);
   const now = p.body.appearance_now && !/^wearing\b/i.test(p.body.appearance_now) ? `Right now: ${p.body.appearance_now}. ` : "";
   lines.push(`BODY: ${p.body.appearance_facts} ${now}Wearing ${p.clothes}.`);
+  lines.push(`BETWEEN HER LEGS (fact; never contradict it): ${describeGenitals(p)}`);
+  lines.push(`FEET: ${describeFeet(p)}`);
   if (p.womb.fetuses.length) lines.push(`PREGNANT: ${p.womb.weeks} weeks, ${p.womb.fetuses.length > 1 ? `${p.womb.fetuses.length} babies` : "one baby"}.`);
   if (p.body.lactation) lines.push(`LACTATING.`);
   if (p.health.health < -20) lines.push(`HEALTH: ill (${p.health.health}). ${p.health.injuries.filter((i) => !i.healed_week).map((i) => i.what).join("; ")}`);

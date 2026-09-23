@@ -5,6 +5,8 @@
  * is she like that", which is the question the old game could not answer at any price because the
  * answer was distributed across every passage that had ever touched her.
  */
+import { DRUGS, canStart } from "../data/drugs";
+import { describeGenitals, describeFeet, mobility, dickCM, ballsWord, vaginaWord, anusWord, feetOf } from "../engine/genitals";
 import { useMemo, useState, useRef } from "react";
 import { Search, X } from "lucide-react";
 import { useGame } from "../lib/game";
@@ -330,10 +332,21 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
             <p className="font-prose text-[14.5px] leading-relaxed">{p.body.appearance_facts}</p>
             <p className="text-[12.5px] dim mt-2">{p.body.appearance_now}</p>
           </Card>
+          <Card>
+            <div className="text-[10.5px] uppercase tracking-wider dim mb-1">Between her legs</div>
+            <p className="font-prose text-[14px] leading-relaxed">{describeGenitals(p)}</p>
+            <div className="text-[10.5px] uppercase tracking-wider dim mt-3 mb-1">Feet</div>
+            <p className="font-prose text-[14px] leading-relaxed">{describeFeet(p)}</p>
+            {mobility(p).level ? <p className="text-[12.5px] mt-2" style={{ color: "var(--warn)" }}>Mobility: {mobility(p).note}.</p> : null}
+          </Card>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {[["height", `${p.body.height_cm}cm`], ["weight", `${p.body.weight_kg}kg`], ["build", buildOf(p.body.weight) === "slim" && p.body.muscle > 25 ? "strong" : buildOf(p.body.weight)],
               ["face", `${p.body.face}/100`], ["breasts", `${p.body.boobs}cc${p.body.boob_implant ? " (implants)" : ""}`], ["butt", `${p.body.butt}/10`],
-              ["hair", `${p.body.hair_color}, ${p.body.hair_length}cm`], ["eyes", p.body.eye_color], ["skin", p.body.skin]].map(([k, v]) => (
+              ["hair", `${p.body.hair_color}, ${p.body.hair_length}cm`], ["eyes", p.body.eye_color], ["skin", p.body.skin],
+              ...(p.body.dick ? [["cock", `${p.body.dick} · ${dickCM(p.body.dick)}cm`]] : []),
+              ...(p.body.balls ? [["balls", `${p.body.balls} · ${ballsWord(p.body.balls)}`], ["scrotum", `${p.body.scrotum ?? p.body.balls}`]] : []),
+              ...(p.body.vagina !== null ? [["pussy", `${p.body.vagina} · ${vaginaWord(p.body.vagina, p.body.hymen)}`], ["clit / labia", `${p.body.clit} / ${p.body.labia}`]] : []),
+              ["anus", `${p.body.anus} · ${anusWord(p.body.anus)}`], ["feet", `EU ${feetOf(p).size}${feetOf(p).heels_clipped ? " · clipped" : ""}`]].map(([k, v]) => (
               <div key={k} className="card-2 px-3 py-2">
                 <div className="text-[10.5px] uppercase tracking-wider dim">{k}</div>
                 <div className="text-[13px] font-mono">{v}</div>
@@ -479,9 +492,29 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
                   <input type="range" min={0} max={3} value={p.health.aphrodisiacs} onChange={(e) => mutate((s) => { s.people[id].health.aphrodisiacs = Number(e.target.value) as 0 | 1 | 2 | 3; })} />
                 </Field>
               </div>
+              <div className="text-[10.5px] uppercase tracking-wider dim mt-2 mb-1">Growth drugs and hormones</div>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {DRUGS.filter((d) => !(d.hyper && save.content?.hyper === false)).map((d) => {
+                  const on = p.health.drugs.includes(d.id);
+                  const why = on ? null : canStart(save, p, d.id);
+                  return (
+                    <Chip key={d.id} on={on} title={`${d.note}. ¤${d.cost}/week.${why ? ` Not now: ${why}.` : ""}`}
+                      onClick={() => { if (!on && why) return; mutate((s) => { const h = s.people[id].health; h.drugs = on ? h.drugs.filter((x) => x !== d.id) : [...h.drugs, d.id]; }); }}>
+                      <span className={!on && why ? "dim" : undefined}>{d.name.toLowerCase()}</span>
+                    </Chip>
+                  );
+                })}
+              </div>
+              {p.health.drugs.length ? (
+                <ul className="text-[11.5px] mid mb-2 space-y-0.5">
+                  {p.health.drugs.map((x) => <li key={x}><span className="hi">{x}</span> — {DRUGS.find((d) => d.id === x)?.note}</li>)}
+                </ul>
+              ) : null}
               <div className="flex flex-wrap gap-2 mt-1">
                 <Chip on={p.womb.contraceptives} onClick={() => mutate((s) => { s.people[id].womb.contraceptives = !s.people[id].womb.contraceptives; })}>contraceptives</Chip>
-                <Chip on={p.chastity.vagina} onClick={() => mutate((s) => { s.people[id].chastity.vagina = !s.people[id].chastity.vagina; })}>chastity</Chip>
+                {p.body.vagina !== null ? <Chip on={p.chastity.vagina} onClick={() => mutate((s) => { s.people[id].chastity.vagina = !s.people[id].chastity.vagina; })}>pussy chastity</Chip> : null}
+                {p.body.dick ? <Chip on={p.chastity.penis} onClick={() => mutate((s) => { s.people[id].chastity.penis = !s.people[id].chastity.penis; })}>cock cage</Chip> : null}
+                <Chip on={p.chastity.anus} onClick={() => mutate((s) => { s.people[id].chastity.anus = !s.people[id].chastity.anus; })}>anal chastity</Chip>
                 <Chip on={p.rules_exempt} onClick={() => mutate((s) => { s.people[id].rules_exempt = !s.people[id].rules_exempt; })}>exempt from standing orders</Chip>
               </div>
             </Card>

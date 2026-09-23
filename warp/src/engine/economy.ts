@@ -7,6 +7,7 @@
  * transaction: `earn` and `spend` write a line, and the week's cash delta is the sum of the lines.
  * If the number on screen is wrong, the line that is wrong is on screen next to it.
  */
+import { DRUG_BY_ID } from "../data/drugs";
 import type { LedgerEntry, Person, SaveState } from "./types";
 import { FACILITY_BY_ID } from "../data/facilities";
 import { ASSIGNMENT_BY_ID } from "../data/assignments";
@@ -121,7 +122,7 @@ export function weeklyMoney(state: SaveState, p: Person): { income: number; upke
 
   // UPKEEP. Feeding, clothing, housing and medicating one person for a week.
   let upkeep = 220;
-  upkeep += p.health.drugs.length * 90;
+  upkeep += p.health.drugs.reduce((n, id) => n + (DRUG_BY_ID[id]?.cost ?? 90), 0);
   upkeep += p.health.curatives * 60 + p.health.aphrodisiacs * 40;
   if (p.health.recovery_weeks > 0) upkeep += 180;
   if (fac && facDef) upkeep += facDef.upkeep_per_slot;

@@ -7,6 +7,7 @@
  * is a crash somewhere far away with no clue in it. Everything it fills is a default that a
  * running game would have produced anyway.
  */
+import { feetOf } from "./genitals";
 import type { Arcology, Facility, Person, SaveState, Sector, StandingOrder } from "./types";
 import { SCHEMA_VERSION, DEFAULT_MODELS } from "./types";
 import { FACILITIES } from "../data/facilities";
@@ -229,6 +230,9 @@ export function sanitize(raw: SaveState): SaveState {
     p.counters = p.counters ?? {};
     p.rules_applied = p.rules_applied ?? [];
     p.body.marks = p.body.marks ?? [];
+    // Saves from before genital detail: the sack starts fitted, and feet are derived from the body.
+    if (p.body.scrotum === undefined) p.body.scrotum = p.body.balls ?? 0;
+    feetOf(p);
     p.health.injuries = p.health.injuries ?? [];
     p.health.drugs = p.health.drugs ?? [];
     p.womb.fetuses = p.womb.fetuses ?? [];

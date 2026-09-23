@@ -31,6 +31,7 @@ import { shiftDominion, romanceOf } from "./romance";
 import { resolveAct } from "./intimacy";
 import { FETISH_BY_ID, ACT_BY_ID } from "../data/intimacy";
 import { condition } from "./prompts";
+import { describeGenitals, describeFeet } from "./genitals";
 
 /** THE CLOSED TABLE. A generated option may name one of these and nothing else. */
 export const DYNAMIC_EFFECTS: Record<string, { note: string; run: (s: SaveState, p: Person, value?: string | number) => string }> = {
@@ -88,6 +89,8 @@ function dossier(s: SaveState, p: Person): string {
   const lines = [
     `HER: ${p.name}, ${p.age}, ${p.origin.nationality}. Was a ${p.origin.career}. ${p.origin.background}`,
     `BODY: ${p.body.appearance_facts} Currently: ${p.body.appearance_now}. Wearing ${p.clothes}.`,
+    `GENITALS: ${describeGenitals(p)}`,
+    `FEET: ${describeFeet(p)}`,
     p.womb.fetuses.length ? `${p.womb.weeks} weeks pregnant.` : "",
     p.body.lactation ? "Lactating." : "",
     `DOING: ${p.assignment}${p.facility ? ` in the ${s.arcology.facilities[p.facility]?.name}` : ""}.`,
