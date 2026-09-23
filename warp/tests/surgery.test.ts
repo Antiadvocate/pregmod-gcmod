@@ -22,9 +22,9 @@ import { genesOf } from "../src/engine/pregnancy.ts";
 function theatre(seed: string, sex: "female" | "male" | "futa" = "female", level = 2) {
   const s = newGame({ seed, starting_slaves: 2 });
   s.arcology.cash = 500000;
-  s.arcology.facilities["surgery"] = {
-    id: "surgery", kind: "surgery", name: "Surgical theatre", level,
-    upgrades: {}, capacity: 4, workers: [], decoration: 0, settings: {},
+  s.arcology.facilities["clinic"] = {
+    id: "clinic", kind: "clinic", name: "The Clinic", level,
+    upgrades: { surgery: 1 }, capacity: 4, workers: [], decoration: 0, settings: {},
   };
   const p = generatePerson({ seed: `${seed}-p`, sex });
   p.age = 24; p.physical_age = 24; p.status = "owned";
@@ -179,4 +179,19 @@ function theatre(seed: string, sex: "female" | "male" | "futa" = "female", level
   const { s, p } = theatre("options", "futa");
   const rows = optionsFor(s, p);
   check("and the theatre can list them all with a reason each", rows.length === PROCEDURES.length && rows.every((r) => !!r.felt.why));
+}
+
+/* ── the theatre is the Clinic's upgrade, bought the way the Arcology screen buys it ────────── */
+{
+  const s = newGame({ seed: "real-theatre", starting_slaves: 1 });
+  const p = Object.values(s.people)[0];
+  check("no clinic, no theatre", !!available(s, PROCEDURE_BY_ID["add_penis"]));
+  s.arcology.facilities["clinic"].level = 1;
+  check("a clinic alone is not a theatre", !!available(s, PROCEDURE_BY_ID["add_penis"]));
+  s.arcology.facilities["clinic"].upgrades["surgery"] = 1;
+  check("buying the Surgical theatre upgrade opens the ordinary procedures", available(s, PROCEDURE_BY_ID["add_penis"]) === null);
+  check("but not the advanced ones", !!available(s, PROCEDURE_BY_ID["none_to_female"]));
+  s.arcology.facilities["clinic"].level = 2;
+  check("until the clinic reaches level 2", available(s, PROCEDURE_BY_ID["none_to_female"]) === null);
+  check("and the tab lists them for a real slave", optionsFor(s, p).some((r) => r.blocked === null || r.blocked !== "you have no surgical theatre"));
 }

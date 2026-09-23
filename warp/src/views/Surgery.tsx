@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Empty, Section } from "../lib/ui";
-import { optionsFor, operate } from "../engine/surgery";
+import { optionsFor, operate, theatreLevel } from "../engine/surgery";
 import type { Procedure } from "../data/surgery";
 
 const GROUPS: { id: Procedure["group"]; label: string; note: string }[] = [
@@ -22,10 +22,12 @@ export default function Surgery({ id }: { id: string }) {
   const p = save.people[id];
   if (!p) return null;
   const rows = optionsFor(save, p);
-  const theatre = save.arcology.facilities["surgery"];
+  const clinic = save.arcology.facilities["clinic"];
 
-  if (!theatre?.level) {
-    return <Empty>No surgical theatre yet. Build one from the Arcology screen.</Empty>;
+  if (!theatreLevel(save)) {
+    return <Empty>{clinic?.level
+      ? "The Clinic has no surgical theatre yet. Buy the Surgical theatre upgrade on the Clinic, on the Arcology screen."
+      : "No surgical theatre yet. Build the Clinic on the Arcology screen, then buy its Surgical theatre upgrade."}</Empty>;
   }
 
   return (
@@ -38,6 +40,9 @@ export default function Surgery({ id }: { id: string }) {
         </Card>
       ) : null}
 
+      {theatreLevel(save) < 2 ? (
+        <div className="text-[11.5px] dim mb-3">Some procedures need the Clinic expanded to level 2.</div>
+      ) : null}
       {GROUPS.map((g) => {
         const mine = rows.filter((r) => r.proc.group === g.id);
         if (!mine.length) return null;

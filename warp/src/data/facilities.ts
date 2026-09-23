@@ -187,7 +187,7 @@ export const FACILITIES: FacilityDef[] = [
     trains: {},
     upgrades: [
       { id: "diagnostics", name: "Diagnostics", cost: 10000, note: "catches health problems early" },
-      { id: "surgery", name: "Surgical theatre", cost: 16000, note: "procedures on site; cheaper and safer" },
+      { id: "surgery", name: "Surgical theatre", cost: 16000, note: "unlocks surgery on each slave's surgery tab; level 2 unlocks the advanced procedures" },
       { id: "organ_farm", name: "Organ farm", cost: 22000, note: "grow the parts instead of buying them", needs_level: 2 },
     ],
     pleases: ["paternalist", "transformation"],

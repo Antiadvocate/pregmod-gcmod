@@ -27,11 +27,19 @@ export interface SurgeryResult {
   cost?: number;
 }
 
+/** The surgical theatre is an upgrade bought on the Clinic. 0: none. 1: the theatre. 2: the
+ *  theatre in a clinic expanded to level 2, which the advanced procedures need. */
+export function theatreLevel(s: SaveState): number {
+  const clinic = s.arcology.facilities["clinic"];
+  if (!clinic?.level || !clinic.upgrades?.["surgery"]) return 0;
+  return clinic.level >= 2 ? 2 : 1;
+}
+
 /** Whether the theatre can do it at all, before we ask whether her body can take it. */
 export function available(s: SaveState, proc: Procedure): string | null {
-  const theatre = s.arcology.facilities["surgery"];
-  if (!theatre?.level) return "you have no surgical theatre";
-  if (proc.needs_upgrade && theatre.level < 2) return "the clinic isn't equipped for that";
+  const level = theatreLevel(s);
+  if (!level) return "you have no surgical theatre";
+  if (proc.needs_upgrade && level < 2) return "needs the Clinic expanded to level 2";
   if (proc.extreme && s.content?.extreme === false) return "disabled in content settings";
   if (proc.id === "circumcise" && s.content?.circumcision === false) return "disabled in content settings";
   return null;
