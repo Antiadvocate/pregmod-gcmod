@@ -186,7 +186,7 @@ export function allowedAssignments(p: Person, all: Assignment[]): Assignment[] {
 
 /** The one writer for what somebody is doing. Returns what was refused, if anything. */
 export function setAssignment(s: SaveState, p: Person, a: Assignment): string | null {
-  if (isMinor(p) && !MINOR_ASSIGNMENTS.includes(a)) return `${p.name} is ${p.age}. That is not a thing she can be assigned to.`;
+  if (isMinor(p) && !MINOR_ASSIGNMENTS.includes(a)) return `${p.name} is ${p.age}, too young for that assignment.`;
   p.assignment = a;
   return null;
 }
@@ -312,19 +312,19 @@ function effectPhrase(e: RuleEffect): string {
 export function defaultOrders(): StandingOrder[] {
   return [
     {
-      id: "o-health", name: "Pull the badly hurt out", enabled: true, priority: 10,
+      id: "o-health", name: "Send badly hurt slaves to rest", enabled: true, priority: 10,
       conditions: [{ field: "health", op: "lt", value: -35 }],
       effects: [{ field: "release", value: true }, { field: "curatives", value: 1 }],
     },
     {
-      id: "o-break", name: "Nobody breaks on my watch", enabled: true, priority: 20,
+      id: "o-break", name: "Send slaves close to breaking to the spa", enabled: true, priority: 20,
       conditions: [{ field: "state", op: "eq", value: "fracturing" }],
-      effects: [{ field: "facility", value: "spa" }, { field: "flag_review", value: "coming apart — moved to the spa" }],
+      effects: [{ field: "facility", value: "spa" }, { field: "flag_review", value: "close to breaking; moved to the spa" }],
     },
     {
       // The counterpart to the two rules above. Without it they are a one-way door and the
       // household ends up parked in the spa, earning nothing, permanently.
-      id: "o-return", name: "Back on the rota when she has mended", enabled: true, priority: 25,
+      id: "o-return", name: "Back to work when recovered", enabled: true, priority: 25,
       conditions: [
         { field: "state", op: "eq", value: "intact" },
         { field: "health", op: "gt", value: -10 },
@@ -333,7 +333,7 @@ export function defaultOrders(): StandingOrder[] {
       effects: [{ field: "back_to_work", value: true }],
     },
     {
-      id: "o-flight", name: "Watch the ones looking at the door", enabled: true, priority: 30,
+      id: "o-flight", name: "Flag slaves likely to run", enabled: true, priority: 30,
       conditions: [{ field: "flight_risk", op: "gt", value: 40 }],
       effects: [{ field: "flag_review", value: "flight risk" }],
     },

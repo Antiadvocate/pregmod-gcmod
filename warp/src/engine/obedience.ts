@@ -238,26 +238,26 @@ export function explain(p: Person, mem?: PersonMemory): string[] {
   const b = p.bond;
   const out: string[] = [];
 
-  if (r.fragility > 0.65) out.push(`Most of what holds her here is fear — ${Math.round(r.fragility * 100)}% of her compliance. Stop maintaining it and it is gone in a month.`);
-  else if (r.fragility < 0.25 && b.bond > 20) out.push(`She is here on the bond rather than the fear; it would survive you being away.`);
+  if (r.fragility > 0.65) out.push(`${Math.round(r.fragility * 100)}% of her obedience is fear. If you stop keeping it up, it'll be gone in a month.`);
+  else if (r.fragility < 0.25 && b.bond > 20) out.push(`She obeys because she's attached to you, not out of fear. It would last if you were away.`);
 
-  if (b.resentment > 55) out.push(`She has not forgiven ${Math.round(b.resentment)} points' worth of what has been done to her, and it drags down everything else.`);
-  if (b.hope < 12) out.push(`She has stopped expecting anything to improve. Promises are worth nothing to her until one is kept.`);
-  else if (b.hope > 60) out.push(`She thinks things can get better for her, and it shows in how hard she tries.`);
+  if (b.resentment > 55) out.push(`She resents how she's been treated (${Math.round(b.resentment)}), and it's dragging everything else down.`);
+  if (b.hope < 12) out.push(`She's lost hope. Promises mean nothing to her until you keep one.`);
+  else if (b.hope > 60) out.push(`She's hopeful about her future, and she works hard because of it.`);
 
   const tilt = memoryTilt(mem);
-  if (tilt < -0.35) out.push(`What she actually remembers about being here is mostly bad, and that outweighs this week.`);
-  if (tilt > 0.35) out.push(`What she remembers about being here is mostly good, and it is carrying her through worse weeks than this one.`);
+  if (tilt < -0.35) out.push(`Her memories of this place are mostly bad.`);
+  if (tilt > 0.35) out.push(`Her memories of this place are mostly good, which helps her through bad weeks.`);
 
-  if (p.psyche.state === "broken") out.push(`She is broken. She'll do anything you say, and none of it means anything.`);
-  else if (p.psyche.state === "fracturing") out.push(`She is coming apart — four straight weeks at the bottom will do it.`);
+  if (p.psyche.state === "broken") out.push(`She's mindbroken. She'll do anything you say.`);
+  else if (p.psyche.state === "fracturing") out.push(`She's close to breaking after four weeks of constant stress.`);
 
   const w = wear(p.psyche);
-  if (w > 0.55) out.push(`Her resting point has moved ${(p.psyche.capacity_born - p.psyche.capacity).toFixed(1)} below what she arrived with. Small things stop getting through to her; a real blow still lands in full.`);
+  if (w > 0.55) out.push(`Long-term stress has permanently worn her down (${(p.psyche.capacity_born - p.psyche.capacity).toFixed(1)}). Small things don't bother her any more, but big ones still do.`);
 
-  if (b.weeks_since_kindness > 8) out.push(`Nothing she counts as good has come from you in ${b.weeks_since_kindness} weeks.`);
-  if (r.flight_risk > 0.35) out.push(`Flight risk: ${Math.round(r.flight_risk * 100)}%. She is looking for the door.`);
+  if (b.weeks_since_kindness > 8) out.push(`You haven't done anything nice for her in ${b.weeks_since_kindness} weeks.`);
+  if (r.flight_risk > 0.35) out.push(`Flight risk: ${Math.round(r.flight_risk * 100)}%. She's thinking about running.`);
 
-  if (!out.length) out.push(`Nothing much is holding her either way. She does the work and thinks about something else.`);
+  if (!out.length) out.push(`She's neither attached to you nor afraid of you. She just does her work.`);
   return out;
 }

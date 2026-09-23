@@ -118,7 +118,7 @@ const DETECTORS: Detector[] = [
           if (a.id >= b.id || !together(s, a, b)) continue;
           const e = getEdge(s.edges, a.id, b.id);
           if (!e || e.warmth < 22) continue;
-          return { cast: { a: a.id, b: b.id }, fact: `${a.name} and ${b.name} have both been getting angrier at the same rate since week ${s.arcology.week - 5}.` };
+          return { cast: { a: a.id, b: b.id }, fact: `${a.name} and ${b.name} have both been getting angrier since week ${s.arcology.week - 5}.` };
         }
       }
       return null;
@@ -214,7 +214,7 @@ const DETECTORS: Detector[] = [
       if (one.some((p) => other.includes(p))) return null;   // not actually two camps
       return {
         cast: { one: worst.a.id, other: worst.b.id },
-        fact: `${one.length + 1} on one side, ${other.length + 1} on the other, and nobody in the middle.`,
+        fact: `${one.length + 1} on one side, ${other.length + 1} on the other.`,
       };
     },
   },
@@ -232,7 +232,7 @@ const DETECTORS: Detector[] = [
         if (p.psyche.braced_run < 8) continue;
         if (p.psyche.discharge_lift > 0.2) continue;
         if (p.psyche.state === "broken") continue;   // past this; a different problem
-        return { cast: { her: p.id }, fact: `${p.name} has been braced for ${p.psyche.braced_run} ticks and nothing has moved on her in six weeks.` };
+        return { cast: { her: p.id }, fact: `${p.name} has been tense and withdrawn for six weeks straight.` };
       }
       return null;
     },
@@ -251,8 +251,8 @@ const DETECTORS: Detector[] = [
         return {
           cast: { her: p.id },
           fact: g.remodel < 0
-            ? `${p.name} arrived resting at ${p.psyche.capacity_born.toFixed(1)} and now rests at ${p.psyche.capacity.toFixed(1)}.`
-            : `${p.name} arrived resting at ${p.psyche.capacity_born.toFixed(1)} and has settled up to ${p.psyche.capacity.toFixed(1)}.`,
+            ? `${p.name} is far more nervous than when she arrived.`
+            : `${p.name} is far calmer than when she arrived.`,
         };
       }
       return null;
@@ -280,7 +280,7 @@ const DETECTORS: Detector[] = [
         const mem = s.memory[p.id];
         const aboutYou = mem?.episodic.filter((e) => e.core).length ?? 0;
         if (aboutYou < 2) continue;
-        return { cast: { her: p.id }, fact: `${p.name} reads a room at ${Math.round(acc * 100)}% accuracy and is certain about ${aboutYou} things she will not revise.` };
+        return { cast: { her: p.id }, fact: `${p.name} believes ${aboutYou} things about you that aren't true.` };
       }
       return null;
     },
@@ -295,7 +295,7 @@ const DETECTORS: Detector[] = [
         if (p.bond.bond - g.dev < 20) continue;
         if (p.bond.weeks_since_kindness > 4) continue;
         if (p.economics.weeks_owned < 10) continue;
-        return { cast: { her: p.id }, fact: `${p.name} is attached at ${Math.round(p.bond.bond)} and only devoted at ${Math.round(g.dev)}.` };
+        return { cast: { her: p.id }, fact: `${p.name} is attached to you (${Math.round(p.bond.bond)}), but only devoted at ${Math.round(g.dev)}.` };
       }
       return null;
     },
@@ -470,18 +470,18 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       const b = P("b");
       if (b) { b.facility = undefined; applyTreatment(b, { kind: "cruelty", size: 3, why: "moved off the rota away from her friend" }, week); }
       cool(45);
-      line = "Different rotas from Monday. They both worked out why before lunch.";
+      line = "You put them on different shifts from Monday. They both know why.";
       break;
     }
     case "talkers:sit": {
       for (const r of ["a", "b"]) {
         const p = P(r);
         if (!p) continue;
-        applyTreatment(p, { kind: "recognition", size: 6, why: "he asked what it was and then listened" }, week);
+        applyTreatment(p, { kind: "recognition", size: 6, why: "the owner asked what was wrong and listened" }, week);
         p.bond.resentment = clamp(p.bond.resentment - 14, 0, 100);
       }
       cool(60); closes = true;
-      line = "You sat down. They told you what they'd been saying. Some of it was fair. You were still thinking about that part in bed.";
+      line = "You sat down with them and they told you what they'd been complaining about. Some of it was fair.";
       break;
     }
     case "talkers:buy": {
@@ -489,12 +489,12 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       if (a) applyTreatment(a, { kind: "kindness", size: 8, why: "given something, in front of the other one" }, week);
       if (b) { b.bond.resentment = clamp(b.bond.resentment + 12, 0, 100); shove(b.psyche, -0.7, { hard: true }); }
       cool(30);
-      line = "You gave one of them a better room. The other one helped her carry her things.";
+      line = "You gave one of them a better room. The other one is jealous.";
       break;
     }
     case "talkers:leave":
       t.heat = clamp(t.heat + 12, 0, 100);
-      line = "You took your coffee and went. They started talking again before the door closed.";
+      line = "You took your coffee and left. They started whispering again as soon as you were gone.";
       break;
 
     /* the favourite */
@@ -503,7 +503,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       if (q) { applyTreatment(q, { kind: "recognition", size: 12, why: "raised as well, and not quietly" }, week); q.bond.hope = clamp(q.bond.hope + 22, 0, 100); }
       s.arcology.cash -= 6000;
       cool(70); closes = true;
-      line = "You raised her too. ¤6,000, and she stopped leaving the figures upside down.";
+      line = "You promoted her too, for ¤6,000. She's much happier.";
       break;
     }
     case "favourite:explain": {
@@ -512,8 +512,8 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
         const r = read(q, s.memory[q.id]);
         // Whether an explanation lands is not the player's call. A woman who trusts you can hear
         // it; one who does not hears a better-dressed version of the same answer.
-        if (r.trust > 20) { applyTreatment(q, { kind: "recognition", size: 7, why: "told the truth about why" }, week); cool(45); closes = true; line = "She listened, and nodded once, and the next week's figures came up the right way round."; }
-        else { q.bond.resentment = clamp(q.bond.resentment + 10, 0, 100); cool(8); line = `She listened to all of it and said, "Yes, of course." She didn't believe a word.`; }
+        if (r.trust > 20) { applyTreatment(q, { kind: "recognition", size: 7, why: "told the truth about why" }, week); cool(45); closes = true; line = "She listened and accepted it. She's stopped sulking."; }
+        else { q.bond.resentment = clamp(q.bond.resentment + 10, 0, 100); cool(8); line = `She listened to all of it and said, "Yes, of course." She clearly didn't believe you.`; }
       }
       break;
     }
@@ -521,14 +521,14 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       const q = P("passed");
       if (q) { applyTreatment(q, { kind: "cruelty", size: 10, why: "made an example of in front of the household" }, week); shove(q.psyche, -2, { hard: true }); }
       for (const other of Object.values(s.people)) if (held(other) && other.id !== q?.id) other.bond.fear = clamp(other.bond.fear + 6, 0, 100);
-      startRumor(s, `that is what happens to you for being second`, { salience: 8 });
+      startRumor(s, `the owner punishes slaves for complaining`, { salience: 8 });
       cool(80); closes = true;
-      line = "It stopped. Every woman in the building learned from it that doing the job well gets you nothing here.";
+      line = "The complaining stopped. All your slaves learned that working hard gets them nothing.";
       break;
     }
     case "favourite:nothing":
       t.heat = clamp(t.heat + 10, 0, 100);
-      line = "You turned the figures round and said nothing. She went back downstairs and told the others.";
+      line = "You said nothing. She went back downstairs and complained to the others.";
       break;
 
     /* the pair */
@@ -536,25 +536,25 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       for (const r of ["a", "b"]) {
         const p = P(r);
         if (!p) continue;
-        applyTreatment(p, { kind: "recognition", size: 9, why: "allowed to be near the other one" }, week);
+        applyTreatment(p, { kind: "recognition", size: 9, why: "allowed to work with her lover" }, week);
         shove(p.psyche, 1.2);
         p.bond.hope = clamp(p.bond.hope + 15, 0, 100);
       }
       cool(70); closes = true;
-      line = "Same rota. Neither of them said thank you. The laundry has never run faster.";
+      line = "You put them on the same shift. They're both happier, and they work harder.";
       break;
     }
     case "pair:separate": {
       for (const r of ["a", "b"]) {
         const p = P(r);
         if (!p) continue;
-        applyTreatment(p, { kind: "cruelty", size: 9, why: "taken away from the one thing that was hers" }, week);
+        applyTreatment(p, { kind: "cruelty", size: 9, why: "separated from her lover" }, week);
         p.bond.hope = clamp(p.bond.hope - 20, 0, 100);
         const m = s.memory[p.id];
-        if (m) remember(m, { content: "the week he separated them, and what he said the reason was", week, importance: 9, charge: "sharp", core: true });
+        if (m) remember(m, { content: "the week the owner separated her from her lover", week, importance: 9, charge: "sharp", core: true });
       }
       cool(90); closes = true;
-      line = "Opposite ends of the building. They pass on the stairs twice a day and don't look at each other in front of anyone.";
+      line = "You split them up to opposite ends of the arcology. They're both miserable.";
       break;
     }
     case "pair:use": {
@@ -563,39 +563,39 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
         if (!p) continue;
         p.bond.fear = clamp(p.bond.fear + 14, 0, 100);
         p.bond.hope = clamp(p.bond.hope - 8, 0, 100);
-        addState(p.psyche, "the thing he can take away", week);
+        addState(p.psyche, "afraid the owner will separate them", week);
       }
       cool(40);
-      line = "They can have it while everything else is right. Now they both have something you can take away, and they both know it.";
+      line = "They can be together as long as they both work hard. They know you can take it away.";
       break;
     }
-    case "pair:ignore": cool(15); line = "You changed the subject. They took that as a yes."; break;
+    case "pair:ignore": cool(15); line = "You changed the subject, and they took that as a yes."; break;
 
     /* the belief */
     case "belief:deny":
       s.arcology.rep = Math.max(0, s.arcology.rep - 200);
       t.heat = clamp(t.heat + 14, 0, 100);
-      line = "You called them in and told them it wasn't true. By Friday two more people had heard it.";
+      line = "You called them all in and told them it wasn't true. The rumor just spread further.";
       break;
     case "belief:prove":
       s.arcology.cash -= 14000;
-      for (const p of Object.values(s.people)) if (held(p)) applyTreatment(p, { kind: "kindness", size: 4, why: "something that did not fit what they had been told" }, week);
+      for (const p of Object.values(s.people)) if (held(p)) applyTreatment(p, { kind: "kindness", size: 4, why: "saw the owner acting against the rumor" }, week);
       cool(48);
-      line = "Fourteen thousand and a month of doing the opposite where they could see it. The new girls stopped repeating it.";
+      line = "It cost fourteen thousand and a month of effort, but the rumor has died down.";
       break;
     case "belief:own": {
       for (const p of Object.values(s.people)) if (held(p)) { p.bond.fear = clamp(p.bond.fear + 10, 0, 100); p.bond.hope = clamp(p.bond.hope - 10, 0, 100); }
-      s.canon.push(`It was true, the owner said so, and it became the way the house runs.`);
+      s.canon.push(`The owner confirmed the rumor was true.`);
       cool(100); closes = true;
-      line = "You said it was true. Nobody's repeated it since. Nobody needs to.";
+      line = "You told them it was true. Now everyone knows it for certain.";
       break;
     }
     case "belief:hunt": {
       const pick = Object.values(s.people).filter(held).sort((a, b) => b.bond.resentment - a.bond.resentment)[0];
-      if (pick) { applyTreatment(pick, { kind: "cruelty", size: 8, why: "named as the source, on no evidence" }, week); }
+      if (pick) { applyTreatment(pick, { kind: "cruelty", size: 8, why: "blamed for the rumor without evidence" }, week); }
       for (const p of Object.values(s.people)) if (held(p)) p.bond.fear = clamp(p.bond.fear + 5, 0, 100);
       cool(35);
-      line = pick ? `You went looking and stopped at ${pick.name}, who may or may not have started it. Everybody watched you decide she had.` : "You went looking and found nothing.";
+      line = pick ? `You went looking and blamed ${pick.name}, who may or may not have started it. Everyone saw you punish her.` : "You went looking and found nothing.";
       break;
     }
 
@@ -603,25 +603,25 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
     case "fracture:pick": {
       const one = P("one"), other = P("other");
       if (one) applyTreatment(one, { kind: "recognition", size: 8, why: "backed openly" }, week);
-      if (other) { applyTreatment(other, { kind: "cruelty", size: 8, why: "not backed, in front of everybody" }, week); }
+      if (other) { applyTreatment(other, { kind: "cruelty", size: 8, why: "lost the owner's support in front of everyone" }, week); }
       cool(65); closes = true;
-      line = "You sat down at one table. The other table finished eating in silence and cleared their plates without a word.";
+      line = "You sat down at one table. The other side knows you've picked against them.";
       break;
     }
     case "fracture:mix": {
       for (const p of Object.values(s.people)) if (held(p)) { p.facility = undefined; shove(p.psyche, -0.5); }
       for (const f of Object.values(s.arcology.facilities)) f.workers = [];
       cool(75);
-      line = "Every rota and every room, broken up and reshuffled. Everyone's unhappy, and the two tables are one table again.";
+      line = "You reshuffled every shift and every room. Everyone's unhappy, but the factions are broken up.";
       break;
     }
     case "fracture:third":
       for (const p of Object.values(s.people)) if (held(p)) p.bond.resentment = clamp(p.bond.resentment - 6, 0, 100);
-      startRumor(s, `there is something coming that is worse than each other`, { salience: 7 });
+      startRumor(s, `something bad is coming for the arcology`, { salience: 7 });
       cool(50);
-      line = "You gave them all something bigger to worry about. It worked, for as long as the worry lasted.";
+      line = "You gave them something bigger to worry about. It worked, for a while.";
       break;
-    case "fracture:watch": t.heat = clamp(t.heat + 10, 0, 100); line = "You ate upstairs."; break;
+    case "fracture:watch": t.heat = clamp(t.heat + 10, 0, 100); line = "You ate upstairs and let them fight it out."; break;
 
     /* gone quiet */
     case "gone_quiet:pull": {
@@ -629,31 +629,31 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       if (her) {
         her.facility = undefined; her.assignment = "rest";
         her.health.recovery_weeks = Math.max(her.health.recovery_weeks, 3);
-        applyTreatment(her, { kind: "kindness", size: 10, why: "taken off everything, for weeks, with nothing asked" }, week);
+        applyTreatment(her, { kind: "kindness", size: 10, why: "given weeks off to recover" }, week);
         her.psyche.braced_run = 0;
         shove(her.psyche, 1.5);
       }
       cool(70); closes = true;
-      line = "Off everything. A month of her work gone. On the third week she asked what day it was, and then she asked for a book.";
+      line = "You gave her a month off. In the third week she asked for a book, which is the first thing she's wanted in ages.";
       break;
     }
     case "gone_quiet:reach": {
       const her = P("her");
       if (her) {
         shove(her.psyche, -1.4, { hard: true });
-        addState(her.psyche, "being made to be here for it", week);
+        addState(her.psyche, "being forced out of her shell", week);
         her.bond.bond = clamp(her.bond.bond + 8, -100, 100);
         her.psyche.braced_run = Math.max(0, her.psyche.braced_run - 4);
       }
       cool(30);
-      line = "You didn't let her drift. She hated every minute of it, and she was there for every minute. First time in two months.";
+      line = "You forced her to engage with you. She hated it, but it worked.";
       break;
     }
     case "gone_quiet:use": {
       const her = P("her");
       if (her) { her.psyche.capacity = clamp(her.psyche.capacity - 0.5, -6, 6); }
       t.heat = clamp(t.heat + 15, 0, 100);
-      line = "You left her folding towels. She's the most reliable woman in the building, and there's less of her every week.";
+      line = "You left her to it. She's your most reliable worker, and she's getting emptier every week.";
       break;
     }
 
@@ -662,17 +662,17 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       const her = P("her");
       if (her) {
         const m = s.memory[her.id];
-        if (m) remember(m, { content: "the afternoon he told her she was not the same person who arrived", week, importance: 9, charge: "sharp", core: true });
+        if (m) remember(m, { content: "the day the owner showed her how much she'd changed", week, importance: 9, charge: "sharp", core: true });
         shove(her.psyche, -1, { hard: true });
         her.bond.bond = clamp(her.bond.bond + 6, -100, 100);
       }
       closes = true;
-      line = "You showed her the sheet. She said she knew. Then she read it again, slower.";
+      line = "You showed her the intake sheet. She's surprised by how much she's changed.";
       break;
     }
     case "remodelled:write":
       closes = true;
-      line = "You put the sheet back in the file and said nothing.";
+      line = "You put the sheet back and said nothing.";
       break;
 
     /* the watcher */
@@ -680,35 +680,35 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       const her = P("her");
       if (her) {
         her.facility = undefined; her.assignment = "rest";
-        applyTreatment(her, { kind: "kindness", size: 11, why: "months of nothing to brace against" }, week);
+        applyTreatment(her, { kind: "kindness", size: 11, why: "months of gentle treatment" }, week);
         shove(her.psyche, 2.2);
         her.bond.fear = clamp(her.bond.fear - 20, 0, 100);
       }
       cool(75); closes = true;
-      line = "Months of it. In the sixth week you reached past her for a pen and she just handed it to you. She looked startled at herself.";
+      line = "It took months, but in the sixth week you reached past her for a pen and she just handed it to you instead of flinching.";
       break;
     }
     case "watcher:predictable": {
       const her = P("her");
       if (her) {
-        applyTreatment(her, { kind: "kindness", size: 5, why: "the same thing every time, for a long time" }, week);
+        applyTreatment(her, { kind: "kindness", size: 5, why: "consistent treatment" }, week);
         shove(her.psyche, 0.9);
         her.bond.fear = clamp(her.bond.fear - 9, 0, 100);
       }
       cool(35);
-      line = "The same with her, every day, no surprises. She's started testing it, on purpose, to see if it holds.";
+      line = "You treat her exactly the same every day. She's slowly starting to trust it.";
       break;
     }
     case "watcher:confirm": {
       const her = P("her");
       if (her) {
-        applyTreatment(her, { kind: "cruelty", size: 7, why: "he turned out to be exactly what she thought" }, week);
+        applyTreatment(her, { kind: "cruelty", size: 7, why: "the owner turned out to be as cruel as she thought" }, week);
         her.psyche.capacity = clamp(her.psyche.capacity - 0.6, -6, 6);
         const m = s.memory[her.id];
-        if (m) remember(m, { content: "the week she found out she had been right about him the whole time", week, importance: 9, charge: "sharp", core: true });
+        if (m) remember(m, { content: "the week the owner proved her fears right", week, importance: 9, charge: "sharp", core: true });
       }
       cool(100); closes = true;
-      line = "You became what she was afraid of. She stopped flinching at the wrong moments, because now there are no wrong ones.";
+      line = "You became exactly as cruel as she feared. She's terrified of you, and now she's right to be.";
       break;
     }
 
@@ -722,14 +722,14 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       }
       s.arcology.cash -= 4000;
       cool(85); closes = true;
-      line = "She got her room and her day. She spends the day at the window.";
+      line = "You gave her the room and the day off. She's delighted.";
       break;
     }
     case "debt:part": {
       const her = P("her");
       if (her) { applyTreatment(her, { kind: "kindness", size: 6, why: "given part of what she asked for, and told why" }, week); }
       cool(40);
-      line = "The room, not the day. She thanked you properly and put the day on her list.";
+      line = "You gave her the room but not the day off. She thanked you, but she's still hoping for the day.";
       break;
     }
     case "debt:refuse": {
@@ -738,10 +738,10 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
         her.bond.hope = clamp(her.bond.hope - 20, 0, 100);
         her.bond.bond = clamp(her.bond.bond - 14, -100, 100);
         const m = s.memory[her.id];
-        if (m) remember(m, { content: "the day she asked for the thing she had earned and he explained why not", week, importance: 8, charge: "sharp", core: true });
+        if (m) remember(m, { content: "the day she asked for what she'd earned and was refused", week, importance: 8, charge: "sharp", core: true });
       }
       cool(70); closes = true;
-      line = "You said no and told her why. She nodded and left, and she's been polite to you ever since, and nothing else.";
+      line = "You said no and told her why. She's been coldly polite to you ever since.";
       break;
     }
     case "debt:punish": {
@@ -752,7 +752,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
         shove(her.psyche, -2.2, { hard: true });
       }
       cool(100); closes = true;
-      line = "She won't ask for anything again. Neither will anyone who heard about it.";
+      line = "She'll never ask you for anything again, and neither will any slave who heard about it.";
       break;
     }
 
@@ -784,7 +784,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
 export function threadBrief(s: SaveState): string {
   const live = liveThreads(s).filter((t) => t.heat > 25);
   if (!live.length) return "";
-  const out: string[] = ["WHAT IS GOING ON IN THIS HOUSE RIGHT NOW (do not state any of this outright; let it show):"];
+  const out: string[] = ["ONGOING SITUATIONS IN THE HOUSEHOLD (background; bring them in only if the action touches them):"];
   for (const t of live) {
     const def = THREAD_BY_KIND[t.kind];
     if (!def) continue;

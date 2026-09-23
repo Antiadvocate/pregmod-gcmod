@@ -66,10 +66,10 @@ export function canDo(p: Person, act: ActDef, s?: SaveState): string | null {
       case "milk": if (!p.body.lactation) return "she is not lactating"; break;
       case "balls": if (p.body.balls === null || p.body.balls === 0) return "she has nothing to empty"; break;
       case "feet": if (p.body.marks.some((m) => m.kind === "prosthetic" && /leg|foot|feet/i.test(m.where))) break;
-        if (p.health.recovery_weeks > 2) return "she is not steady enough on them"; break;
+        if (p.health.recovery_weeks > 2) return "she can't stand well enough yet"; break;
       case "pregnant": if (!p.womb.fetuses.length) return "she is not carrying"; break;
       case "belly": if (p.body.belly < 4000) return "there is not enough of her yet"; break;
-      case "nipples": if (p.body.nipples !== "fuckable") return "her nipples do not take anything"; break;
+      case "nipples": if (p.body.nipples !== "fuckable") return "her nipples aren't fuckable"; break;
     }
   }
   if (p.health.recovery_weeks > 0 && act.group !== "tenderness") return "she is still in recovery";
@@ -112,7 +112,7 @@ export function affinity(p: Person, act: ActDef): { score: number; why: string }
   // given nothing. The engine's one soft spot, and it is deliberate.
   if (act.group === "tenderness") {
     score += clamp(0.25 + p.bond.bond / 200 + (p.bond.weeks_since_kindness > 6 ? 0.25 : 0), 0, 0.8);
-    if (!why) why = "nobody has done anything like that for her in a long time";
+    if (!why) why = "nobody has been this nice to her in a long time";
   }
 
   return { score: clamp(score, -1.5, 1.5), why };
@@ -182,7 +182,7 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
     if (!def || f.known) continue;
     if (act.tags.some((t) => def.acts.includes(t)) && f.strength >= 40) {
       f.known = true;
-      discovered = `she is a ${def.name}, and now you know it`;
+      discovered = `she's a ${def.name}`;
     }
   }
   if (!discovered && p.persona.quirk && !p.persona.quirk.known) {
@@ -194,7 +194,7 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
   }
   if (!discovered && p.persona.flaw && !p.persona.flaw.known && aff.score < -0.3) {
     p.persona.flaw.known = true;
-    discovered = `she ${p.persona.flaw.id}, and you have just watched her prove it`;
+    discovered = `she ${p.persona.flaw.id}`;
   }
 
   // THE LONG ROAD. Keep doing the thing she cannot stand and the flaw wears; far enough down that
@@ -207,7 +207,7 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
       converted = `${p.persona.flaw.id} → ${def.softens_to}`;
       p.persona.quirk = { id: def.softens_to, known: true };
       delete p.persona.flaw;
-      addState(p.psyche, `whatever she used to be about ${def.hates[0] ?? "it"}`, week);
+      addState(p.psyche, `no longer hates ${def.hates[0] ?? "it"}`, week);
     }
   }
   // And a fetish that is fed forever stops being a preference.
@@ -237,7 +237,7 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
       memoryLine = `the first time — ${act.what}`;
       remember(mem, { content: memoryLine, week, importance: landing === "hated" ? 9 : 6, charge: landing === "hated" ? "sharp" : landing === "wanted" ? "bright" : "dull", core: landing === "hated" || landing === "wanted", where: s.scene.location });
     } else if (landing === "hated" || landing === "wanted" || act.group === "tenderness") {
-      memoryLine = `${act.what}${landing === "hated" ? ", and she has not let go of it" : ""}`;
+      memoryLine = `${act.what}${landing === "hated" ? ", and she hasn't forgiven it" : ""}`;
       remember(mem, { content: memoryLine, week, importance: landing === "hated" ? 7 : 5, charge: landing === "hated" ? "sharp" : "warm", where: s.scene.location });
     }
   }
@@ -253,39 +253,36 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
 
   return {
     act: actId, arousal: arousalDelta, relaxation, finished, landing,
-    because: aff.why || "nothing about it is particularly hers",
+    because: aff.why || "it doesn't match anything she's into",
     bond: +bond.toFixed(2), resentment: +resent.toFixed(2),
     discovered, converted, first, trained, memory: memoryLine,
   };
 }
 
-/** THE DIRECTIVE — what the narrator is told, so the prose is the same event as the numbers.
- *
- *  This is deliberately blunt. A local model asked to write an explicit scene from a vague prompt
- *  writes around it; asked to write THIS act, on THIS body, landing THIS way, with the register
- *  named, it writes the scene. The last paragraph is the register instruction and it is the whole
- *  reason a local model is worth configuring for this game. */
+/** THE DIRECTIVE — what the narrator is told, so the prose is the same event as the numbers. It
+ *  names the act, who it is done to, and how she takes it, and asks for that act to be written. */
 export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
   const act = ACT_BY_ID[out.act];
+  const times = p.acts?.[out.act] ?? 1;
   const lines: string[] = [];
-  lines.push(`## WHAT IS HAPPENING`);
-  lines.push(`${act.what.charAt(0).toUpperCase()}${act.what.slice(1)}. ${out.first ? "This is the first time this has ever been done to her." : `This has been done to her ${p.acts?.[out.act] ?? 1} times before.`}`);
+  lines.push(`## THE PLAYER'S ACTION: ${act.name.toUpperCase()} (${p.name})`);
+  lines.push(`What that means: ${act.what}.`);
+  lines.push(out.first ? `This is the first time you have done this with her.` : `You have done this with her ${times} time${times === 1 ? "" : "s"} before.`);
+  lines.push(`Write this act happening with ${p.name}, from start to finish. It is the whole scene. Do not write a scene about something else.`);
   lines.push(``);
-  lines.push(`## HOW IT LANDS ON HER — this is law, not a suggestion`);
+  lines.push(`## HOW SHE TAKES IT (decided by the game; write it this way)`);
   switch (out.landing) {
-    case "wanted": lines.push(`SHE WANTS THIS. ${out.because}. Write her into it — she is not performing enthusiasm, she is having a good time and it shows in her body before it shows in anything she says.`); break;
-    case "willing": lines.push(`She is fine with this. Not transported, not enduring it. Ordinary willingness, which is its own thing to write.`); break;
-    case "endured": lines.push(`SHE IS ENDURING THIS. She does it, competently, and she is somewhere else while it happens. Do not write enthusiasm she does not have and do not write a struggle she is not putting up.`); break;
-    case "hated": lines.push(`SHE HATES THIS. ${out.because}. She does it because of what she is, and it costs her. Write the cost — in the body, in what she does with her hands and her face, in what she says afterwards, if she says anything.`); break;
-    default: lines.push(`This does nothing for her either way. She is present and she is not engaged, and the writing should be honest about that rather than filling it in.`); break;
+    case "wanted": lines.push(`She loves it. ${out.because}. Say so, and show her enjoying it.`); break;
+    case "willing": lines.push(`She's happy enough to go along with it.`); break;
+    case "endured": lines.push(`She puts up with it because she has to. She does what's expected and doesn't enjoy it.`); break;
+    case "hated": lines.push(`She hates it. ${out.because}. She obeys because she's a slave, and it's obvious how much she hates it.`); break;
+    default: lines.push(`It does nothing for her either way.`); break;
   }
-  lines.push(`Her body: ${p.psyche.arousal >= 70 ? "wound up and obvious about it" : p.psyche.arousal >= 35 ? "warming, slowly" : "not going anywhere near it on its own"}. ${out.finished ? "She gets there, and the engine has recorded that she did." : "She does not get off."}`);
-  if (out.discovered) lines.push(`SOMETHING WAS FOUND OUT THIS TIME: ${out.discovered}. Show it happening — the moment it becomes obvious to the person watching.`);
-  if (out.converted) lines.push(`SOMETHING IN HER CHANGED FOR GOOD: ${out.converted}.`);
+  lines.push(`Arousal: ${p.psyche.arousal >= 70 ? "she's very turned on" : p.psyche.arousal >= 35 ? "she's getting turned on" : "she isn't turned on"}. ${out.finished ? "She orgasms." : "She doesn't orgasm."}`);
+  if (out.discovered) lines.push(`You find out that ${out.discovered}. Write the moment it becomes obvious.`);
+  if (out.converted) lines.push(`This changes her for good: ${out.converted}.`);
   lines.push(``);
-  lines.push(`## REGISTER`);
-  lines.push(`This is an adult game about a legal slave economy and this scene is explicit. Write it explicitly. Name what is happening with the words the setting uses for it — cunt, cock, ass, tits, cum — not clinical terms and not euphemism. No fade to black, no cutting away at the door, no closing on a metaphor about the weather. No moralising about the arrangement, from you or from anybody in the room who does not have a character reason for it. The camera stays where it is until the thing is finished.`);
-  lines.push(`What you may not do is state her interior. You write her body, her breath, her hands, what she says and how she says it. The lines above tell you what she feels; render it, never announce it.`);
+  lines.push(`Write it explicitly, in the game's own words. No fade to black, no cutting away, no moralizing.`);
   return lines.join("\n");
 }
 

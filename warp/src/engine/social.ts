@@ -320,19 +320,19 @@ export function gossip(state: SaveState, week: number): Rumor[] {
     // so the first version of this tested a delta that had already been overwritten five times
     // before it was read, and never fired. State, not deltas.
     if (p.psyche.relaxation <= -5) {
-      seed(`something happened to ${p.name} and she will not say what`, { about: p.id, salience: 6, from: p.id, charge: -1 });
+      seed(`something happened to ${p.name} and she won't talk about it`, { about: p.id, salience: 6, from: p.id, charge: -1 });
     }
     // Somebody is doing conspicuously well, which is its own kind of news.
     if (r.devotion > 40 && p.psyche.relaxation > 2) {
-      seed(`${p.name} has it easier than the rest of us and everybody has noticed`, { about: p.id, salience: 5, charge: -1 });
+      seed(`${p.name} gets special treatment`, { about: p.id, salience: 5, charge: -1 });
     }
     // Somebody came back changed.
     if (p.health.recovery_weeks > 0 && p.health.health < -15) {
-      seed(`${p.name} came back from the theatre and is not right`, { about: p.id, salience: 7, charge: -1 });
+      seed(`${p.name} hasn't been right since her surgery`, { about: p.id, salience: 7, charge: -1 });
     }
     // Somebody is on the way out.
     if (r.devotion < -35 && p.bond.resentment > 62) {
-      seed(`${p.name} is going to do something and everybody can see it coming`, { about: p.id, salience: 7, charge: -1 });
+      seed(`${p.name} is about to snap`, { about: p.id, salience: 7, charge: -1 });
     }
   }
 
@@ -343,11 +343,11 @@ export function gossip(state: SaveState, week: number): Rumor[] {
   const fear = held.reduce((n, p) => n + p.bond.fear, 0) / held.length;
   const res = held.reduce((n, p) => n + p.bond.resentment, 0) / held.length;
   if (res > 45 && week % 5 === 0) {
-    seed(`nothing anybody does in this house makes any difference to how he treats them`, { salience: 8, charge: -1 });
+    seed(`the owner treats you the same no matter how hard you work`, { salience: 8, charge: -1 });
   } else if (fear > 30 && week % 5 === 2) {
-    seed(`he decides who it is going to be that week before he comes down`, { salience: 8, charge: -1 });
+    seed(`the owner picks who to punish each week at random`, { salience: 8, charge: -1 });
   } else if (mean > 30 && week % 7 === 0) {
-    seed(`the owner is not like the others, and the ones who came from other houses know it`, { salience: 6, charge: 1 });
+    seed(`the owner is kinder than most, and the slaves from other houses know it`, { salience: 6, charge: 1 });
   }
   return out;
 }

@@ -31,9 +31,9 @@ export interface SurgeryResult {
 export function available(s: SaveState, proc: Procedure): string | null {
   const theatre = s.arcology.facilities["surgery"];
   if (!theatre?.level) return "you have no surgical theatre";
-  if (proc.needs_upgrade && theatre.level < 2) return "the theatre is not equipped for that";
-  if (proc.extreme && s.content?.extreme === false) return "the arcology does not permit it";
-  if (proc.id === "circumcise" && s.content?.circumcision === false) return "not something this arcology does";
+  if (proc.needs_upgrade && theatre.level < 2) return "the clinic isn't equipped for that";
+  if (proc.extreme && s.content?.extreme === false) return "disabled in content settings";
+  if (proc.id === "circumcise" && s.content?.circumcision === false) return "disabled in content settings";
   return null;
 }
 
@@ -50,10 +50,10 @@ export function howSheTakesIt(s: SaveState, p: Person, proc: Procedure): { score
     const adding = /male_to_female|none_to_female|herm|restore/.test(proc.id);
     const taking = /chop|geld|vagina_removal|sterilise/.test(proc.id);
 
-    if (maso && maso.strength > 50 && taking) { score += 22; why = "she wants it to be something that was done to her"; }
-    else if (sub && sub.strength > 50 && taking) { score += 12; why = "having it decided for her is most of the appeal"; }
-    else if (dom && dom.strength > 55 && taking) { score -= 18; why = "she has spent a year being the one who decides and this is not that"; }
-    else if (adding && p.persona.paraphilia) { score += 8; why = "she has stopped having opinions about what gets added"; }
+    if (maso && maso.strength > 50 && taking) { score += 22; why = "she's a masochist and wants it done to her"; }
+    else if (sub && sub.strength > 50 && taking) { score += 12; why = "she's submissive and likes having it decided for her"; }
+    else if (dom && dom.strength > 55 && taking) { score -= 18; why = "she's dominant and hates having this forced on her"; }
+    else if (adding && p.persona.paraphilia) { score += 8; why = "she doesn't care what's done to her body any more"; }
   }
 
   // The arcology's own position. A body purist household treats a herm as a mutilation; a gender
@@ -62,15 +62,15 @@ export function howSheTakesIt(s: SaveState, p: Person, proc: Procedure): { score
   const radical = doc["gender_radical"]?.adoption ?? 0;
   const purist = (doc["body_purist"]?.adoption ?? 0) + (doc["gender_fundamentalist"]?.adoption ?? 0);
   if (proc.group === "genitals" || proc.group === "body") {
-    if (radical > 40) { score += radical / 8; why = why || "half the arcology has had something similar done"; }
-    if (purist > 40) { score -= purist / 10; why = why || "she knows what her neighbours will call her"; }
+    if (radical > 40) { score += radical / 8; why = why || "lots of people in the arcology have had similar surgery"; }
+    if (purist > 40) { score -= purist / 10; why = why || "she knows the body purists will look down on her"; }
   }
 
   // Fear does most of the work here. A woman held by terror expects the worst of every operation.
   score -= p.bond.fear / 12;
   score += p.bond.bond / 20;
   if (p.psyche.state === "broken") { score = Math.max(score, -4); why = "she is past minding"; }
-  if (!why) why = score < -20 ? "she has understood exactly what is being taken" : score > 8 ? "she has wanted this" : "she will be quiet about it";
+  if (!why) why = score < -20 ? "she knows exactly what she's losing" : score > 8 ? "she wanted this" : "she doesn't have strong feelings about it";
   return { score: Math.round(score), why };
 }
 
@@ -81,7 +81,7 @@ export function operate(s: SaveState, p: Person, procId: string): SurgeryResult 
   if (gate) return { ok: false, why: gate };
   const bodily = proc.can(p);
   if (bodily) return { ok: false, why: bodily };
-  if (s.arcology.cash < proc.cost) return { ok: false, why: `¤${proc.cost.toLocaleString()} and you do not have it` };
+  if (s.arcology.cash < proc.cost) return { ok: false, why: `costs ¤${proc.cost.toLocaleString()}, which you don't have` };
   if (p.health.recovery_weeks > 0) return { ok: false, why: "she is still recovering from the last one" };
   if (p.womb.fetuses.length && proc.group !== "body") return { ok: false, why: "not while she is carrying" };
 
@@ -98,7 +98,7 @@ export function operate(s: SaveState, p: Person, procId: string): SurgeryResult 
   shove(p.psyche, felt.score / 12, { hard: true });
   if (felt.score < -10) {
     applyTreatment(p, { kind: "cruelty", size: Math.min(12, Math.abs(felt.score) / 3), why: proc.name.toLowerCase() }, week);
-    addState(p.psyche, `what they did in the theatre`, week);
+    addState(p.psyche, `upset about her surgery`, week);
     p.bond.hope = clamp(p.bond.hope - Math.abs(felt.score) / 4, 0, 100);
   } else if (felt.score > 6) {
     applyTreatment(p, { kind: "recognition", size: Math.min(10, felt.score / 2), why: `she asked for this and got it` }, week);
@@ -117,7 +117,7 @@ export function operate(s: SaveState, p: Person, procId: string): SurgeryResult 
   // The household finds out. Genital work is the kind of thing everybody in the building knows by
   // Thursday, and what they take from it is what could be done to them.
   if (proc.group === "genitals") {
-    startRumor(s, `${p.name} came back from the theatre changed`, { about: p.id, salience: felt.score < -20 ? 9 : 5 });
+    startRumor(s, `${p.name} had surgery`, { about: p.id, salience: felt.score < -20 ? 9 : 5 });
     if (felt.score < -25) {
       for (const other of Object.values(s.people)) {
         if (other.id === p.id || (other.status !== "owned" && other.status !== "indentured")) continue;
@@ -129,18 +129,18 @@ export function operate(s: SaveState, p: Person, procId: string): SurgeryResult 
 
   return {
     ok: true, cost: proc.cost,
-    line: `${proc.name}. ¤${proc.cost.toLocaleString()}, ${proc.recovery} week${proc.recovery > 1 ? "s" : ""} flat on her back.`,
+    line: `${proc.name}. ¤${proc.cost.toLocaleString()}, ${proc.recovery} week${proc.recovery > 1 ? "s" : ""} of recovery.`,
     reaction: reactionLine(p, felt.score, felt.why),
   };
 }
 
 function reactionLine(p: Person, score: number, why: string): string {
-  if (p.psyche.state === "broken") return `${p.name} is wheeled back in and does not ask what was done.`;
-  if (score < -35) return `${p.name} works out what is gone before anybody tells her, and the sound she makes is not one you will forget. ${cap(why)}.`;
-  if (score < -15) return `${p.name} is quiet about it for a fortnight and then quiet about it in a different way. ${cap(why)}.`;
-  if (score < -4) return `${p.name} takes it the way she takes most things here. ${cap(why)}.`;
-  if (score > 14) return `${p.name} spends the first day out of the tank looking at herself, and is better company that week than she has been all year.`;
-  if (score > 4) return `${p.name} is pleased, and slightly embarrassed about being pleased. ${cap(why)}.`;
+  if (p.psyche.state === "broken") return `${p.name} is wheeled back in. She's mindbroken, and doesn't notice what was done.`;
+  if (score < -35) return `${p.name} realizes what's been done before anyone tells her, and screams. ${cap(why)}.`;
+  if (score < -15) return `${p.name} is upset, and quiet and withdrawn for two weeks. ${cap(why)}.`;
+  if (score < -4) return `${p.name} accepts it. ${cap(why)}.`;
+  if (score > 14) return `${p.name} spends her first day out of surgery admiring herself in the mirror. She's delighted.`;
+  if (score > 4) return `${p.name} is pleased with the result. ${cap(why)}.`;
   return `${p.name} is back on her feet by Thursday. ${cap(why)}.`;
 }
 

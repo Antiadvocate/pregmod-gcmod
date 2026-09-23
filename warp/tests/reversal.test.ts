@@ -66,7 +66,7 @@ function world(seed: string, n = 3) {
   p.psyche.state = "broken";
   const out = reactTo(s, 10, true);
   check("a broken woman agreeing is reported as the failure it is",
-    out.length === 1 && out[0].tone === "bad" && /would have agreed with the opposite/.test(out[0].line), out[0]);
+    out.length === 1 && out[0].tone === "bad" && /agreed with anything you said/.test(out[0].line), out[0]);
 }
 
 /* ── 2. the gates, and the way back in ──────────────────────────────────────────────────────── */
@@ -205,7 +205,7 @@ function world(seed: string, n = 3) {
   s.arcology.mercenaries.hired = true;
   const text = endgame(s, "stand");
   check("and a household kept by fear loses it with every gun you own",
-    reversalOf(s).ended === "broken" && /opened from the inside/.test(text), text);
+    reversalOf(s).ended === "broken" && /opened the doors from the inside/.test(text), text);
 }
 
 /* ── 5. every option is wired ───────────────────────────────────────────────────────────────── */

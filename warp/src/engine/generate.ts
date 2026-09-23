@@ -247,7 +247,7 @@ function generateBody(r: Rng, nation: Nation, age: number, sex: "female" | "male
 export function describeBody(b: Body, nation: Nation, age: number): string {
   const w = buildOf(b.weight);
   const build = w === "slim" ? (b.muscle > 30 ? "visibly strong" : "average build")
-    : { skinny: "thin to the point of it showing", thin: "thin", plump: "soft", chubby: "chubby", fat: "fat", obese: "very fat" }[w];
+    : { skinny: "skinny", thin: "thin", plump: "soft", chubby: "chubby", fat: "fat", obese: "very fat" }[w];
   const chest = b.boobs > 1200 ? "enormous breasts" : b.boobs > 700 ? "big breasts" : b.boobs > 350 ? "full breasts" : b.boobs > 100 ? "small breasts" : "flat-chested";
   const hair = b.hair_length > 60 ? `long ${b.hair_color} hair` : b.hair_length > 20 ? `${b.hair_color} hair to the shoulder` : `short ${b.hair_color} hair`;
   return `${age}, ${nation.name}, ${b.height_cm}cm, ${build}. ${b.skin} skin, ${hair}, ${b.eye_color} eyes. ${chest}.`;
@@ -259,53 +259,53 @@ function generatePersona(r: Rng, career: (typeof CAREERS)[number], origin: (type
     (s) => (s === "secure" ? 5 : s === "anxious" ? 3.5 : s === "avoidant" ? 3 : 1.5));
 
   const underThreat = {
-    secure: "says what is wrong, once, and then deals with it",
-    anxious: "pursues, explains, re-checks, and cannot leave it alone",
-    avoidant: "goes flat and finds a reason to be somewhere else",
-    disorganized: "reaches for whoever is nearest and flinches from them in the same motion",
+    secure: "complains once and then gets on with it",
+    anxious: "gets clingy and keeps asking if she's done something wrong",
+    avoidant: "shuts down and tries to avoid you",
+    disorganized: "panics and can't decide whether to cling or run",
   }[style];
   const soothed = {
-    secure: "being told the truth about what is going to happen",
-    anxious: "somebody staying in the room",
-    avoidant: "being left alone for an afternoon and not asked about it after",
-    disorganized: "predictability — the same thing, at the same time, for weeks",
+    secure: "being told honestly what's going to happen",
+    anxious: "company and reassurance",
+    avoidant: "being left alone for a while",
+    disorganized: "a strict, predictable routine",
   }[style];
 
   const traitPool = [
-    "answers a question with a joke first and the real answer only if you wait her out",
-    "watches hands, not faces",
-    "tidies whatever is in reach when a conversation gets difficult",
-    "counts things under her breath",
-    "agrees out loud and does it her own way",
-    "asks a question back instead of answering one",
-    "goes very still before she says something that costs her",
-    "makes herself useful the moment she is frightened",
-    "keeps a private ledger of who owes whom",
-    "touches people on the arm to end a conversation",
-    "laughs at the wrong moment and knows it",
-    "will not eat in front of anyone she does not know",
-    "learns everybody's name in a room within an hour",
-    "repeats an instruction back before she follows it",
+    "jokes around instead of giving a straight answer",
+    "suspicious of everyone",
+    "a neat freak",
+    "nervous and fidgety",
+    "says yes and then does what she wants anyway",
+    "evasive",
+    "shy, and slow to open up",
+    "eager to please when she's scared",
+    "holds grudges and keeps score",
+    "touchy-feely",
+    "giggles when she's nervous",
+    "self-conscious about her body",
+    "friendly and sociable",
+    "careful to follow instructions exactly",
   ];
   const valuePool = ["not being lied to", "her own privacy", "being useful", "her family, wherever they are",
-    "getting through it intact", "the people she came in with", "not owing anyone", "being good at something",
-    "keeping her word", "her own body", "one day being somewhere else"];
-  const texturePool = ["always cold", "knows a great deal about birds", "hums when she thinks nobody is listening",
-    "cannot sleep with a door open", "counts stairs", "reads whatever is left lying around", "afraid of the lifts",
-    "good with her hands", "sings badly and often", "keeps a plant alive"];
+    "surviving", "the people she came in with", "not owing anyone", "being good at something",
+    "keeping her word", "her own body", "getting free someday"];
+  const texturePool = ["always feels cold", "loves birds", "hums to herself",
+    "can't sleep with the door open", "hates heights", "reads anything she can get", "afraid of elevators",
+    "good with her hands", "sings badly and often", "likes plants"];
 
   return {
-    background: `A ${career.name}. ${career.arrives.replace(/^(with|still|already|expecting|slotting|waiting|assessing|praying|on|having|somewhere)/, (m) => m)}.`,
+    background: `She was a ${career.name}, and she's ${career.arrives}.`,
     life_history: "",
     core_traits: r.shuffle([...traitPool]).slice(0, 3),
     values: r.shuffle([...valuePool]).slice(0, 2),
     speech_pattern: r.pick([
-      "short sentences, and a long pause before the ones that matter",
-      "talks around a thing three times before naming it",
-      "polite, and keeps you at arm's length with it",
-      "fast, and interrupts herself",
-      "answers exactly the question asked and nothing more",
-      "warm and a little too familiar, on purpose",
+      "quiet, and talks in short sentences",
+      "rambles and takes a while to get to the point",
+      "stiffly polite",
+      "talks fast and interrupts herself",
+      "terse",
+      "friendly and a bit too familiar",
     ]),
     attachment: { style, under_threat: underThreat, soothed_by: soothed },
     conscience: clamp(+r.normal(0.68, 0.2).toFixed(2), 0.05, 1),
@@ -316,12 +316,12 @@ function generatePersona(r: Rng, career: (typeof CAREERS)[number], origin: (type
     attracted_to: r.weighted(["men", "women", "anyone", "no one"] as const,
       (a) => (a === "men" ? 5 : a === "women" ? 2 : a === "anyone" ? 2.5 : 0.4)),
     taste: r.pick([
-      "tall, quiet, and older than her",
-      "somebody competent doing their job well",
-      "soft, warm, and safe to be near",
-      "anyone who is obviously dangerous, which she knows is a problem",
-      "clever above everything; she has to be interested before anything else happens",
-      "familiar — she wants somebody who reminds her of home",
+      "tall, quiet, older people",
+      "competent people",
+      "gentle, soft people",
+      "dangerous people",
+      "smart people",
+      "people who remind her of home",
     ]),
     // The base game's own lists. Most people have one thing; a few have two; `none` is a real
     // answer and roughly a third of the population gets it, because a world where everybody has a

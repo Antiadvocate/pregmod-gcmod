@@ -105,9 +105,9 @@ function planted(seed: string, opts: { fetish?: string; flaw?: string; quirk?: s
   const out = resolveAct(s, p, "oral");
   if (!("error" in out)) {
     const d = actDirective(s, p, out);
-    check("the directive tells the narrator how it landed", /SHE HATES THIS/.test(d), d.slice(0, 200));
-    check("and names the register rather than leaving it to be guessed", /REGISTER/.test(d) && /explicit/i.test(d));
-    check("and forbids the one thing the narrator must never do", /may not do is state her interior/i.test(d));
+    check("the directive tells the narrator how it landed", /She hates it/.test(d), d.slice(0, 200));
+    check("and asks for it written explicitly", /explicit/i.test(d));
+    check("and asks for the chosen act to be the whole scene", /from start to finish/i.test(d) && /whole scene/i.test(d));
   }
 }
 
@@ -253,7 +253,7 @@ function planted(seed: string, opts: { fetish?: string; flaw?: string; quirk?: s
   let pulled = false;
   for (let i = 0; i < 12; i++) {
     warm.s.arcology.week++;
-    if (keeperRunsTheWeek(warm.s).lines.some((l) => /took .* off the floors/.test(l.text))) pulled = true;
+    if (keeperRunsTheWeek(warm.s).lines.some((l) => /took .* off work/.test(l.text))) pulled = true;
   }
   check("and a warm one runs a warm one", pulled);
 }

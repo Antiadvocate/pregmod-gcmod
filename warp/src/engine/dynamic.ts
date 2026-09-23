@@ -30,7 +30,7 @@ import { startRumor } from "./social";
 import { shiftDominion, romanceOf } from "./romance";
 import { resolveAct } from "./intimacy";
 import { FETISH_BY_ID, ACT_BY_ID } from "../data/intimacy";
-import { band, wear } from "./psyche";
+import { condition } from "./prompts";
 
 /** THE CLOSED TABLE. A generated option may name one of these and nothing else. */
 export const DYNAMIC_EFFECTS: Record<string, { note: string; run: (s: SaveState, p: Person, value?: string | number) => string }> = {
@@ -91,30 +91,30 @@ function dossier(s: SaveState, p: Person): string {
     p.womb.fetuses.length ? `${p.womb.weeks} weeks pregnant.` : "",
     p.body.lactation ? "Lactating." : "",
     `DOING: ${p.assignment}${p.facility ? ` in the ${s.arcology.facilities[p.facility]?.name}` : ""}.`,
-    `WIRED: ${fetish || "no particular fetish"}${p.persona.quirk ? ` · quirk: ${p.persona.quirk.id}` : ""}${p.persona.flaw ? ` · flaw: ${p.persona.flaw.id}` : ""}${p.persona.paraphilia ? ` · PARAPHILIA: ${p.persona.paraphilia}` : ""}.`,
-    `HER BODY RIGHT NOW: ${band(p.psyche)}, arousal ${Math.round(p.psyche.arousal)}, mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` Holding: ${p.psyche.active_states.join(", ")}.` : ""}${wear(p.psyche) > 0.5 ? " Worn down — ordinary friction has stopped landing on her." : ""}`,
-    `TOWARD YOU: ${r.label} (${r.devotion}), ${r.trust_label} (${r.trust}). ${Math.round(r.fragility * 100)}% of her obedience is fear rather than bond. Resentment ${Math.round(p.bond.resentment)}, hope ${Math.round(p.bond.hope)}.`,
-    `STANDING: ${rom.standing}${rom.dominion > -80 ? `, and she decides ${Math.round(rom.dominion)} out of 100 around here` : ""}.`,
-    `SPEAKS: ${p.persona.speech_pattern}`,
+    `FETISHES: ${fetish || "no particular fetish"}${p.persona.quirk ? ` · quirk: ${p.persona.quirk.id}` : ""}${p.persona.flaw ? ` · flaw: ${p.persona.flaw.id}` : ""}${p.persona.paraphilia ? ` · PARAPHILIA: ${p.persona.paraphilia}` : ""}.`,
+    `HOW SHE IS: ${condition(p)}, arousal ${Math.round(p.psyche.arousal)}, mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` On her mind: ${p.psyche.active_states.join(", ")}.` : ""}`,
+    `TOWARD YOU: ${r.label} (${r.devotion}), ${r.trust_label} (${r.trust}). ${Math.round(r.fragility * 100)}% of her obedience is fear. Resentment ${Math.round(p.bond.resentment)}, hope ${Math.round(p.bond.hope)}.`,
+    `STANDING: ${rom.standing}${rom.dominion > -80 ? ` (${Math.round(rom.dominion)}/100 say in the household)` : ""}.`,
+    `TALKS LIKE: ${p.persona.speech_pattern}`,
     `TRAITS: ${p.persona.core_traits.join("; ")}`,
-    p.persona.texture.length ? `SMALL TRUE THINGS: ${p.persona.texture.join("; ")}` : "",
+    p.persona.texture.length ? `LIKES AND DISLIKES: ${p.persona.texture.join("; ")}` : "",
     mem?.episodic.length ? `SHE REMEMBERS: ${mem.episodic.slice(-5).map((m) => `${m.content} (wk ${m.week})`).join(" | ")}` : "",
     p.acts && Object.keys(p.acts).length ? `WHAT HAS BEEN DONE TO HER: ${Object.entries(p.acts).map(([a, n]) => `${a} ×${n}`).join(", ")}` : "",
-    `THE PLACE: ${s.arcology.name}, week ${s.arcology.week}. ${Object.keys(s.arcology.doctrines).length ? `Its doctrine: ${Object.keys(s.arcology.doctrines).join(", ")}.` : "No doctrine of its own yet."}`,
+    `THE PLACE: ${s.arcology.name}, week ${s.arcology.week}. ${Object.keys(s.arcology.doctrines).length ? `Its doctrine: ${Object.keys(s.arcology.doctrines).join(", ")}.` : "No doctrine adopted yet."}`,
   ];
   return lines.filter(Boolean).join("\n");
 }
 
-const SYSTEM = `You invent ONE situation for an adult game set in an arcology — a private city-state with a legal, ordinary, administered slave economy. You are given one woman's complete record. Invent the thing that HER particular week would actually throw up: not a generic slave event, hers, built out of what is on the record — her fetish, her flaw, what has been done to her, what she remembers, where she stands with the owner.
+const SYSTEM = `You write one random event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. Write it the way the original game writes its random events: second person, present tense, plain and explicit, a short setup describing what one of your slaves is doing or has done, ending with you having to decide how to respond.
 
-THE REGISTER. This is an explicit game for an audience that came for exactly that. Write plainly and crudely where the situation is crude: cunt, cock, ass, tits, cum, fuck. No euphemism, no clinical language, no fade to black, no moralising about the arrangement — nobody in this world is arguing about whether slavery is acceptable, any more than anybody in ours argues about whether rent is. Sex, degradation, discipline, breeding and public use are ordinary business here and the writing treats them as ordinary business.
+Build it from her record: her fetish, her flaw, her job, what has been done to her, what she remembers, how she feels about you. It should be something that could only happen with her.
 
-WHAT YOU MAY NOT DO. Do not invent a person who is not on the record. Do not state her interior — write her body, her hands, what she says, how she says it. Do not resolve the situation: it ends on the moment the owner has to decide something. Everyone involved is an adult.
+Write plainly and crudely where the situation calls for it (cock, pussy, ass, tits, cum, fuck). No euphemism, no fade to black, no moralizing. You may say what she thinks and feels. Do not invent people who are not on the record. Everyone is an adult. No aphorisms, no mood-setting, no filler gestures.
 
 Output ONE strict JSON object and nothing else:
-{"situation":"2-4 sentences, present tense, ending on the decision","options":[{"label":"what the owner does, 2-6 words","note":"what it costs or means, one short clause","effect":"one id from the list","value":"optional"}]}
+{"situation":"2-4 sentences, present tense, ending where you have to decide","options":[{"label":"what you do, 2-6 words","note":"short plain consequence","effect":"one id from the list","value":"optional"}]}
 
-Three or four options. Every one must be a genuinely different thing to do, and at least one must be a way of NOT engaging.`;
+Three or four options, each a genuinely different response, at least one of which is to leave it alone.`;
 
 function effectList(): string {
   return Object.entries(DYNAMIC_EFFECTS).map(([id, e]) => `${id} — ${e.note}`).join("\n");
@@ -177,13 +177,13 @@ export function resolveDynamic(s: SaveState, e: PendingEvent, optionId: string):
  *  Surfaced in the UI rather than left as a surprise: a cloud model in the narrator slot produces
  *  refusals and half-written scenes, and the player should be told that before they wonder why. */
 export function dynamicReadiness(s: SaveState): { ready: boolean; local: boolean; note: string } {
-  if (!modelsAvailable()) return { ready: false, local: false, note: "No model configured. The hand-written events still fire; the generated ones need a model." };
+  if (!modelsAvailable()) return { ready: false, local: false, note: "No model configured. Written events still happen; generated events need a model." };
   const local = isLocalModel(s.models.narrator_model);
   return {
     ready: true,
     local,
     note: local
-      ? "Pointed at your own machine. Nothing about what it writes goes anywhere."
-      : "Pointed at a hosted model. It will decline or soften a good share of what this game asks for — put a local model in the narrator slot for this part.",
+      ? "Using a local model. Nothing it writes leaves your machine."
+      : "Using a hosted model. Hosted models often refuse or tone down this game's content; a local model in the narrator slot works better here.",
   };
 }

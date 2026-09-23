@@ -18,7 +18,7 @@ export function enact(s: SaveState, id: string): { ok: boolean; why?: string } {
   if (s.arcology.policies[id]) return { ok: false, why: "already in force" };
   if (s.arcology.cash < p.cost) return { ok: false, why: "you cannot cover the cost" };
   const refuser = (p.refused_by ?? []).find((d) => (s.arcology.doctrines[d]?.adoption ?? 0) > 40);
-  if (refuser) return { ok: false, why: `your citizens will not have it while ${refuser} is what they believe` };
+  if (refuser) return { ok: false, why: `your citizens won't accept it under ${refuser}` };
   s.arcology.cash -= p.cost;
   s.arcology.policies[id] = 1;
   return { ok: true };
@@ -44,7 +44,7 @@ export function tickPolicies(s: SaveState, led: Ledger): ReportLine[] {
       case "rep": led.entry("policy", p.name, 0, a * clamp(arc.population / 1000, 0.5, 3)); break;
       case "crime": arc.crime = clamp(arc.crime + a, 0, 100); break;
       case "prosperity": arc.prosperity = clamp(arc.prosperity + a, 0, 200); break;
-      case "trade": led.earn("trade", `${p.name} — the volume it brings`, arc.prosperity * arc.population * 0.06 * a); break;
+      case "trade": led.earn("trade", `${p.name}`, arc.prosperity * arc.population * 0.06 * a); break;
       case "household_hope":
         for (const person of household) person.bond.hope = clamp(person.bond.hope + a, 0, 100);
         break;
@@ -73,8 +73,8 @@ export function tickPolicies(s: SaveState, led: Ledger): ReportLine[] {
     if (!arc.policies[p.id]) continue;
     const refuser = (p.refused_by ?? []).find((d) => (arc.doctrines[d]?.adoption ?? 0) > 60);
     if (refuser) {
-      led.entry("policy", `${p.name} — against what your citizens now believe`, 0, -12);
-      lines.push({ tone: "warning", weight: 6, text: `${p.name} is now at odds with your own doctrine. It is costing you standing every week it stays on the books.` });
+      led.entry("policy", `${p.name} — conflicts with your future society`, 0, -12);
+      lines.push({ tone: "warning", weight: 6, text: `${p.name} conflicts with your future society, and costs you reputation every week you keep it.` });
     }
   }
   return lines;

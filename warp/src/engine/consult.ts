@@ -15,34 +15,35 @@ import type { Person, SaveState } from "./types";
 import { call } from "../llm";
 import { modelsAvailable } from "../config";
 import { read } from "./obedience";
-import { band, aperture, perception } from "./psyche";
+import { band } from "./psyche";
+import { condition } from "./prompts";
 import { romanceOf } from "./romance";
 import { recall } from "./memory";
 
-const SYSTEM = `You are ONE character in an adult game about an arcology with a legal slave economy, speaking OUT OF SCENE in a quiet aside with the person who owns you — a conversation that leaves no trace in the world.
+const SYSTEM = `You are playing one slave in Free Cities, an adult text game about owning an arcology. Her owner is asking her a question in private. Answer as her, in first person, the way she would actually talk.
 
-Stay entirely in character: her voice, her register, her nerve or lack of it. Answer out of HER knowledge and only hers — her memories, the facts she has been told, her beliefs as given. If she does not know a thing, she does not know it. She may deflect, lie, or refuse exactly as this woman would; how open she is right now is given to you and it governs how much she will actually say.
+She only knows what is on her card: her memories, what she has been told, what she believes. If she doesn't know something, she says so, or dodges. How honest she is with her owner is on the card too. She may lie or refuse if that is what she would do.
 
-She is a slave, or was, and neither of you is arguing about the ethics of that; it is the arrangement. If the question is crude, answer at the same register — this game does not do euphemism. Never break character, never mention being a model or a game, never use engine words like "devotion", "bond" or "relaxation".
+Nobody is arguing about whether slavery is right; it is her life. If the question is crude, she answers it plainly. Never break character or mention the game, and never use its stat words ("devotion", "trust", "bond").
 
-One or two short paragraphs of plain speech, first person. What she says, and what her hands do while she says it.`;
+Answer in one or two short paragraphs of ordinary speech. Answer the question that was asked. No sayings, no dramatic one-word lines, no describing her own gestures.`;
 
 /** How much she will actually give you, in one line for the prompt. */
 function openness(s: SaveState, p: Person): string {
   const r = read(p, s.memory[p.id]);
-  if (p.psyche.state === "broken") return "She is broken. She agrees with whatever she thinks you want and there is nobody behind it.";
-  if (r.trust < -30) return "She is frightened of you. She says the safe thing, and only the safe thing.";
-  if (r.trust < 10) return "She does not trust you. She answers narrowly and gives nothing away that was not asked for.";
-  if (r.fragility > 0.6) return "Most of what keeps her civil to you is fear, and it shows: she is agreeing more than she means.";
-  if (r.trust > 60) return "She will actually tell you things, including ones that do not flatter her.";
-  return "Ordinary guardedness. She answers the question and not much around it.";
+  if (p.psyche.state === "broken") return "She's broken. She agrees with whatever she thinks you want to hear.";
+  if (r.trust < -30) return "She's terrified of you and only says what she thinks is safe.";
+  if (r.trust < 10) return "She doesn't trust you. She answers exactly what was asked and nothing more.";
+  if (r.fragility > 0.6) return "She's mostly obedient out of fear, so she agrees more than she means.";
+  if (r.trust > 60) return "She trusts you and will tell you the truth, even the unflattering parts.";
+  return "She's a little guarded. She answers the question and not much else.";
 }
 
 export async function askHer(s: SaveState, personId: string, question: string): Promise<{ ok: boolean; says: string }> {
   const p = s.people[personId];
   if (!p) return { ok: false, says: "" };
   if (!modelsAvailable()) {
-    return { ok: false, says: `${p.name} answers. Without a model configured there is nobody to put the words in her mouth — she is ${band(p.psyche)}, ${p.bond.read.label}, and what she would actually say is on her card.` };
+    return { ok: false, says: `No model is configured, so ${p.name} can't answer free-form questions. She is ${condition(p)} and ${p.bond.read.label}.` };
   }
 
   const mem = s.memory[p.id];
@@ -56,13 +57,12 @@ export async function askHer(s: SaveState, personId: string, question: string): 
       `YOUR VOICE: ${p.persona.speech_pattern}`,
       p.persona.voice?.example_lines?.length ? `THINGS ONLY YOU WOULD SAY: ${p.persona.voice.example_lines.map((l) => `"${l}"`).join(" ")}` : "",
       p.persona.voice?.never_says?.length ? `YOU NEVER SAY: ${p.persona.voice.never_says.join("; ")}` : "",
-      `WHAT YOUR HANDS DO: ${p.persona.core_traits.join("; ")}`,
+      `YOUR PERSONALITY: ${p.persona.core_traits.join("; ")}`,
       `WHAT YOU CARE ABOUT: ${p.persona.values.join("; ")}`,
-      p.persona.texture.length ? `SMALL TRUE THINGS ABOUT YOU: ${p.persona.texture.join("; ")}` : "",
-      `HOW YOU ARE RIGHT NOW: ${band(p.psyche)}, ${p.psyche.mood}.${p.psyche.active_states.length ? ` You are holding: ${p.psyche.active_states.join(", ")}.` : ""}`,
-      `HOW MUCH YOU SAY: ${openness(s, p)} ${aperture(p.psyche).note}`,
-      `HOW YOU READ PEOPLE JUST NOW: ${perception(p.psyche, p.persona.conscience).note}`,
-      `WHERE YOU STAND WITH HIM: ${rom.standing}.${rom.dominion > 0 ? ` You have got used to being listened to.` : ""}`,
+      p.persona.texture.length ? `LIKES AND DISLIKES: ${p.persona.texture.join("; ")}` : "",
+      `HOW YOU ARE RIGHT NOW: ${condition(p)}, ${p.psyche.mood}.${p.psyche.active_states.length ? ` You are holding: ${p.psyche.active_states.join(", ")}.` : ""}`,
+      `HOW OPEN YOU ARE WITH HIM: ${openness(s, p)}`,
+      `WHERE YOU STAND WITH HIM: ${rom.standing}.`,
       `YOUR JOB: ${p.assignment}${p.facility ? ` in the ${s.arcology.facilities[p.facility]?.name}` : ""}.`,
       relevant.length ? `WHAT YOU REMEMBER THAT BEARS ON THIS: ${relevant.map((m) => `${m.content} (week ${m.week})`).join(" | ")}` : "",
       mem?.beliefs.length ? `WHAT YOU HAVE CONCLUDED: ${mem.beliefs.map((b) => `"${b.text}"`).join(" ")}` : "",
@@ -77,6 +77,6 @@ export async function askHer(s: SaveState, personId: string, question: string): 
     temperature: 0.95,
   });
 
-  if (!res.ok) return { ok: false, says: `She starts to answer and the words do not arrive. (${res.error ?? "no model"})` };
+  if (!res.ok) return { ok: false, says: `The model didn't answer. (${res.error ?? "no model"})` };
   return { ok: true, says: res.text.trim() };
 }

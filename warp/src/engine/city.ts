@@ -157,9 +157,9 @@ export function canRaise(s: SaveState, d: District, kind?: DistrictKind): string
   if (!def) return "no such district";
   if (d.kind === "spire" && kind && kind !== "spire") return "that is your own building";
   if (d.level >= def.cap) return `${def.name} does not go past level ${def.cap}`;
-  if (d.ring === 0 && k !== "spire") return "the core is the spire's footing";
+  if (d.ring === 0 && k !== "spire") return "the core is reserved for the spire";
   const price = costToRaise(s, d, k);
-  if (s.arcology.cash < price) return `¤${price.toLocaleString()} and you do not have it`;
+  if (s.arcology.cash < price) return `costs ¤${price.toLocaleString()}, which you don't have`;
   return null;
 }
 
@@ -192,7 +192,7 @@ export function raise(s: SaveState, id: string, kind?: DistrictKind): { ok: bool
   return {
     ok: true,
     line: founding
-      ? `${def.name} founded on ${RINGS[d.ring].name}. ¤${price.toLocaleString()}, and there is scaffolding up by Thursday.`
+      ? `${def.name} founded on ${RINGS[d.ring].name} for ¤${price.toLocaleString()}. Construction starts Thursday.`
       : `${def.name} raised to level ${d.level}. ¤${price.toLocaleString()}.`,
   };
 }
@@ -204,7 +204,7 @@ export function refurbish(s: SaveState, id: string): { ok: boolean; why?: string
   if (!d || !d.level) return { ok: false, why: "there is nothing there" };
   if (d.condition >= 96) return { ok: false, why: "it is in good order" };
   const price = Math.round((100 - d.condition) * 90 * (RINGS[d.ring]?.mult ?? 1));
-  if (s.arcology.cash < price) return { ok: false, why: `¤${price.toLocaleString()} and you do not have it` };
+  if (s.arcology.cash < price) return { ok: false, why: `costs ¤${price.toLocaleString()}, which you don't have` };
   s.arcology.cash -= price;
   d.condition = clamp(d.condition + 34, 0, 100);
   return { ok: true, line: `Work done on ${DISTRICT_BY_KIND[d.kind as DistrictKind]?.name ?? "the block"}. ¤${price.toLocaleString()}.` };
@@ -219,7 +219,7 @@ export function openRoute(s: SaveState, regionId: string): { ok: boolean; why?: 
   if (city.routes.some((r) => r.region === regionId)) return { ok: false, why: "you already trade there" };
   const reach = cityYield(s).reach;
   if (reach < reg.reach) return { ok: false, why: `needs ${reg.reach} dock reach and you have ${Math.floor(reach)}` };
-  if (s.arcology.cash < reg.open) return { ok: false, why: `¤${reg.open.toLocaleString()} and you do not have it` };
+  if (s.arcology.cash < reg.open) return { ok: false, why: `costs ¤${reg.open.toLocaleString()}, which you don't have` };
   s.arcology.cash -= reg.open;
   city.routes.push({ region: regionId, opened: s.arcology.week, disrupted: 0 });
   return { ok: true, line: `A route to ${reg.name} is open. ${reg.note}` };
@@ -255,7 +255,7 @@ export function annex(s: SaveState, neighbourId: string, how: "buy" | "force"): 
   if (how === "buy") {
     if (n.ownership < 55) return { ok: false, why: `you hold ${Math.round(n.ownership)}% of it; a purchase needs 55%` };
     const price = annexCost(s, neighbourId);
-    if (s.arcology.cash < price) return { ok: false, why: `¤${price.toLocaleString()} and you do not have it` };
+    if (s.arcology.cash < price) return { ok: false, why: `costs ¤${price.toLocaleString()}, which you don't have` };
     s.arcology.cash -= price;
   } else {
     const mine = militaryStrength(s);
@@ -286,14 +286,14 @@ export function annex(s: SaveState, neighbourId: string, how: "buy" | "force"): 
   s.arcology.population += Math.round(n.prosperity * 22);
   s.canon.push(how === "buy"
     ? `${n.name} was bought outright and folded into ${s.arcology.name}.`
-    : `${n.name} was taken. The other arcologies have not forgotten it.`);
-  startRumor(s, how === "buy" ? `${n.name} belongs to us now` : `the owner took ${n.name} and did not pretend otherwise`, { salience: 10 });
+    : `${n.name} was conquered. The other arcologies won't forget it.`);
+  startRumor(s, how === "buy" ? `${n.name} belongs to us now` : `the owner conquered ${n.name} by force`, { salience: 10 });
 
   return {
     ok: true,
     line: how === "buy"
-      ? `${n.name} is yours. Three of its blocks are on your books by Friday and nobody has to be told anything.`
-      : `${n.name} is yours. It took a night, it cost you your standing with everyone who watched, and the blocks you took are in a state.`,
+      ? `${n.name} is yours. Three of its blocks are on your books by Friday.`
+      : `${n.name} is yours. It took a night of fighting, it cost you a lot of reputation, and the blocks you took are badly damaged.`,
   };
 }
 
@@ -323,7 +323,7 @@ export function tickCity(s: SaveState): { lines: ReportLine[]; cash: number } {
 
   const failing = city.districts.filter((d) => d.level && d.condition < 25);
   if (failing.length >= 3) {
-    lines.push({ tone: "bad", weight: 8, text: `${failing.length} blocks are visibly going. You can see it from the residential ring.` });
+    lines.push({ tone: "bad", weight: 8, text: `${failing.length} blocks are falling into disrepair.` });
   }
 
   // THE YIELDS, into the places they are actually read.
@@ -337,7 +337,7 @@ export function tickCity(s: SaveState): { lines: ReportLine[]; cash: number } {
   const ceiling = 400 + y.housing;
   if (s.arcology.population > ceiling) {
     s.arcology.population = Math.round(s.arcology.population - (s.arcology.population - ceiling) * 0.12);
-    lines.push({ tone: "warning", weight: 7, text: `There is nowhere for people to live. ${Math.round(s.arcology.population).toLocaleString()} against room for ${Math.round(ceiling).toLocaleString()}, and they are leaving.` });
+    lines.push({ tone: "warning", weight: 7, text: `There's not enough housing: ${Math.round(s.arcology.population).toLocaleString()} people and room for ${Math.round(ceiling).toLocaleString()}. People are leaving.` });
   }
 
   // TRADE. Routes pay, and occasionally do not.
@@ -346,12 +346,12 @@ export function tickCity(s: SaveState): { lines: ReportLine[]; cash: number } {
     if (!reg) continue;
     if (route.disrupted > 0) {
       route.disrupted--;
-      if (!route.disrupted) lines.push({ tone: "good", weight: 5, text: `${reg.name} is moving again.` });
+      if (!route.disrupted) lines.push({ tone: "good", weight: 5, text: `Trade with ${reg.name} has resumed.` });
       continue;
     }
     if (r.chance(reg.risk)) {
       route.disrupted = 1 + Math.floor(r() * 3);
-      lines.push({ tone: "bad", weight: 7, text: `Nothing is coming out of ${reg.name}. Nobody will say why, and it will be ${route.disrupted} week${route.disrupted === 1 ? "" : "s"} before it is.` });
+      lines.push({ tone: "bad", weight: 7, text: `Trade with ${reg.name} is disrupted for ${route.disrupted} week${route.disrupted === 1 ? "" : "s"}.` });
     }
   }
 
@@ -382,10 +382,10 @@ export function cityProblems(s: SaveState): string[] {
   const out: string[] = [];
   const ceiling = 400 + y.housing;
   if (s.arcology.population > ceiling * 0.92) out.push(`Housing is nearly full — ${Math.round(s.arcology.population).toLocaleString()} of ${Math.round(ceiling).toLocaleString()}. Build residential or the city stops growing.`);
-  if (y.security < 6 && s.arcology.crime > 40) out.push("Crime is eating the outer blocks and there is no civic presence to speak of.");
-  if (!y.reach) out.push("No docks, so no trade routes, so the whole world outside the city is closed to you.");
-  if (y.arms < 15 && s.arcology.neighbours.some((n) => n.attitude < -40)) out.push("Somebody out there dislikes you and you have nothing they respect.");
+  if (y.security < 6 && s.arcology.crime > 40) out.push("Crime is rising in the outer blocks and there's no police presence.");
+  if (!y.reach) out.push("Without docks you can't open trade routes.");
+  if (y.arms < 15 && s.arcology.neighbours.some((n) => n.attitude < -40)) out.push("A hostile neighbor is out there, and your military is too weak to deter them.");
   const rotting = city.districts.filter((d) => d.level && d.condition < 35).length;
-  if (rotting) out.push(`${rotting} block${rotting === 1 ? " is" : "s are"} falling apart. Refurbishment is cheap next to rebuilding.`);
+  if (rotting) out.push(`${rotting} block${rotting === 1 ? " is" : "s are"} falling apart. Repairs are cheaper than rebuilding.`);
   return out;
 }

@@ -36,10 +36,10 @@ export const TWISTS: Twist[] = [
   { id: "boom", name: "Boom Town", what: "Money is pouring into the region. Prosperity climbs on its own, and the markets charge for it.",
     setup: (s) => { s.arcology.prosperity += 15; },
     tick: (s) => { if (s.arcology.prosperity < 170) s.arcology.prosperity = clamp(s.arcology.prosperity + 0.5, 0, 200); return null; } },
-  { id: "flood", name: "Buyer's Market", what: "A war up north has filled every block in the region. Slaves are cheap, and everyone knows why." },
+  { id: "flood", name: "Buyer's Market", what: "A war up north has flooded the region with captives. Slaves are cheap." },
   { id: "old_money", name: "Old Money", what: "The Association is watching you closely. You start known, with less cash to show for it.",
     setup: (s) => { s.arcology.rep += 1200; s.arcology.public_standing = clamp(s.arcology.public_standing + 2, -10, 10); s.arcology.cash = Math.round(s.arcology.cash * 0.8); } },
-  { id: "neighbours", name: "Bad Neighbours", what: "Every arcology on the horizon wants what's yours. Their attitudes start low, and so does your margin for error.",
+  { id: "neighbours", name: "Bad Neighbours", what: "Every neighboring arcology wants what's yours. They start out hostile.",
     setup: (s) => { for (const n of s.arcology.neighbours) n.attitude = clamp(n.attitude - 35, -100, 100); s.arcology.security = clamp(s.arcology.security + 10, 0, 100); } },
   { id: "fever", name: "Fever Season", what: "Something is going round the lower levels. Every few weeks, somebody in your house comes down with it.",
     tick: (s) => {
@@ -154,7 +154,7 @@ export function tickRun(s: SaveState): ReportLine[] {
     if (def.met(s)) {
       a.met = s.arcology.week;
       s.arcology.rep += 600;
-      lines.push({ text: `You did it: ${def.title.toLowerCase()}. People noticed.`, tone: "good", weight: 12 });
+      lines.push({ text: `You did it: ${def.title.toLowerCase()}.`, tone: "good", weight: 12 });
     }
   }
 
@@ -192,25 +192,25 @@ function fate(s: SaveState, p: Person): string {
   if (p.womb.births > 0) facts.push(`She's had ${p.womb.births === 1 ? "a child" : `${p.womb.births} children`}.`);
   if (p.womb.fetuses.length) facts.push("She's carrying now.");
   if (known.length) facts.push(`You found out she's ${known.join(" and ")}.`);
-  if (p.persona.paraphilia) facts.push(`It isn't a preference any more with her. She needs it.`);
+  if (p.persona.paraphilia) facts.push(`She has a paraphilia; she needs it now.`);
   if (p.fame.why) facts.push(`People know her as the one who ${p.fame.why.replace(/^(the one who )/, "")}.`);
   const fact = facts.length ? ` ${pick.pick(facts)}` : "";
 
-  if (rom.standing === "keeper") return `${p.name} holds the collar now. The registry says so, and so does everyone who works here.${fact}`;
-  if (rom.standing === "wife") return `${p.name} is your wife. ${r.devotion > 60 ? "She means it." : "Nobody is quite sure she means it, including her."}${fact}`;
-  if (p.psyche.state === "broken") return `${p.name} is still here, and does whatever she's told, and there's nobody behind her eyes to ask about it.`;
+  if (rom.standing === "keeper") return `${p.name} owns you now, and runs the arcology.${fact}`;
+  if (rom.standing === "wife") return `${p.name} is your wife. ${r.devotion > 60 ? "She loves you." : "Nobody is sure whether she really loves you, including her."}${fact}`;
+  if (p.psyche.state === "broken") return `${p.name} is still here, mindbroken, doing whatever she's told.`;
   if (r.devotion > 70) return `${p.name}, ${time} in, would follow you anywhere.${fact}`;
   if (r.devotion > 35) return `${p.name} has made her peace with the place, ${time} in.${fact}`;
-  if (p.bond.fear > 55) return `${p.name} is here because she's afraid not to be. Take the fear away and she'd be gone by morning.${fact}`;
-  if (p.bond.resentment > 50) return `${p.name} is still here after ${time}, still angry, and still waiting for something.${fact}`;
-  return `${pick.pick([`${p.name} does her work and keeps her own counsel.`, `${p.name} has been here ${time} and still calls you by your title and nothing else.`, `${p.name} gets through the weeks. That's about all anyone could say.`])}${fact}`;
+  if (p.bond.fear > 55) return `${p.name} only stays because she's afraid of you. If she weren't, she'd be gone by morning.${fact}`;
+  if (p.bond.resentment > 50) return `${p.name} is still here after ${time}, and she still hates you.${fact}`;
+  return `${pick.pick([`${p.name} does her work and keeps to herself.`, `${p.name} has been here ${time} and is still distant with you.`, `${p.name} gets by, and not much more.`])}${fact}`;
 }
 
 function titleFor(s: SaveState, lost: string | null): string {
   const name = s.arcology.name;
   if (lost === "broke") return `${name} went to the receivers`;
   if (lost === "empty") return `An empty house in ${name}`;
-  if (lost === "revolt") return `The doors of ${name} opened from the inside`;
+  if (lost === "revolt") return `The slaves of ${name} revolted`;
   if (lost === "signed") return `${name} belongs to someone else now`;
   const run = runOf(s);
   const met = run.ambitions.filter((a) => a.met).length;
@@ -231,10 +231,10 @@ export function epilogue(s: SaveState, lost: string | null): Ending {
   const run = runOf(s);
   const lines: string[] = [];
   const opening: Record<string, string> = {
-    broke: `The debts caught up. The receivers came up in the lift with a court order and a locksmith, and you watched them change the codes.`,
-    empty: `By the end there was nobody left to run it for. The dormitories were clean and quiet and you slept in the penthouse alone.`,
-    revolt: `It started in the laundry and was on your floor by midnight. They didn't need guns. They had the codes, and each other.`,
-    signed: `You signed the last of it away. You still have a key to the penthouse. It's somebody else's penthouse.`,
+    broke: `Your debts caught up with you. The receivers came up in the elevator with a court order and a locksmith, and changed the codes on you.`,
+    empty: `By the end you had no slaves left. The dormitories were empty, and you slept in the penthouse alone.`,
+    revolt: `Your slaves revolted. It started in the laundry and reached your floor by midnight. They didn't need guns; they had the door codes, and there were more of them than you.`,
+    signed: `You signed away the last of your ownership. You still live in the penthouse, but someone else owns it.`,
   };
   if (lost) lines.push(opening[lost]);
   else lines.push(`${s.arcology.week >= 100 ? "Two years" : `${s.arcology.week} weeks`}. ${s.arcology.name} has ${Math.round(s.arcology.population).toLocaleString()} people living in it, ${money(s.arcology.cash)} in the accounts, and your name on ${Math.round(s.arcology.ownership)}% of it.`);
@@ -261,6 +261,6 @@ export function epilogue(s: SaveState, lost: string | null): Ending {
     if (def) lines.push(a.met ? `You set out to ${def.title.charAt(0).toLowerCase()}${def.title.slice(1)}, and did it in week ${a.met}.` : `You meant to ${def.title.charAt(0).toLowerCase()}${def.title.slice(1)}. You got to ${def.progress(s)}.`);
   }
 
-  if (owned(s).length) lines.push(`Ask any of them about you and they'll say you're ${householdRead(s).label}.`);
+  if (owned(s).length) lines.push(`Your slaves would describe you as ${householdRead(s).label}.`);
   return { week: s.arcology.week, kind: lost ? "lost" : "done", title: titleFor(s, lost), lines };
 }

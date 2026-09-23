@@ -122,9 +122,9 @@ export function tickSociety(state: SaveState): { rep: number; cash: number; line
     rep += Math.round(d.rep * share * popScale * (0.4 + mean * 0.6 + 0.4));
     cash += Math.round(d.cash * share * popScale);
 
-    if (st.adoption >= 90 && before < 90) lines.push(`${d.noun} is now culturally established. Your citizens have stopped arguing about it.`);
-    if (st.adoption <= 10 && before > 10) lines.push(`${d.noun} has collapsed to nothing. Nobody in your arcology is living it.`);
-    if (mean < -0.3 && st.adoption > 40) lines.push(`${d.noun} is losing ground: your household is the argument against it.`);
+    if (st.adoption >= 90 && before < 90) lines.push(`${d.noun} is now fully established in your arcology.`);
+    if (st.adoption <= 10 && before > 10) lines.push(`${d.noun} has collapsed completely.`);
+    if (mean < -0.3 && st.adoption > 40) lines.push(`${d.noun} is losing ground because your own slaves don't fit it.`);
   }
   return { rep, cash, lines };
 }
@@ -134,9 +134,9 @@ export function adoptDoctrine(state: SaveState, id: string): { ok: boolean; why?
   if (!d) return { ok: false, why: "no such doctrine" };
   if (state.arcology.doctrines[id]) return { ok: false, why: "already adopted" };
   const clash = conflictsWith(id).find((c) => state.arcology.doctrines[c]);
-  if (clash) return { ok: false, why: `${DOCTRINE_BY_ID[clash].noun} says otherwise, and both cannot be true at once` };
+  if (clash) return { ok: false, why: `conflicts with ${DOCTRINE_BY_ID[clash].noun}` };
   const adopted = Object.keys(state.arcology.doctrines).length;
-  if (adopted >= 4) return { ok: false, why: "four doctrines is as much as any population will hold at once" };
+  if (adopted >= 4) return { ok: false, why: "you can't hold more than four future societies at once" };
   state.arcology.doctrines[id] = { adoption: 5, decoration: 0, research: false, policies: {}, adopted_week: state.arcology.week };
   return { ok: true };
 }

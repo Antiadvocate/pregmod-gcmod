@@ -96,7 +96,7 @@ export function runFollowup(s: SaveState, id: string, fid: string): Beat {
     case "hold":
       applyTreatment(p, { kind: "kindness", size: 3, why: "held afterwards" }, week);
       shove(p.psyche, 0.6);
-      out = { you: "You pull her in and hold her.", text: r.pick([`${p.name} fits against you after a moment's stiffness.`, `${p.name} tucks her head under your chin.`, `${p.name} stays rigid for a breath, then lets go all at once.`]), said: say(s, p, "hold", r) };
+      out = { you: "You pull her in and hold her.", text: r.pick([`${p.name} is stiff at first, then relaxes against you.`, `${p.name} tucks her head under your chin.`, `${p.name} clings to you.`]), said: say(s, p, "hold", r) };
       break;
     case "praise":
       applyTreatment(p, { kind: "recognition", size: 2, why: "told she did well" }, week);
@@ -111,7 +111,7 @@ export function runFollowup(s: SaveState, id: string, fid: string): Beat {
     case "comfort":
       applyTreatment(p, { kind: "kindness", size: 2, why: "told it was over" }, week);
       shove(p.psyche, 0.4);
-      out = { you: "You tell her it's over.", text: r.pick([`${p.name} lets out a breath she's been holding.`, `${p.name} nods without looking at you.`]), said: r.chance(0.5) ? say(s, p, "hold", r) : undefined };
+      out = { you: "You tell her it's over.", text: r.pick([`${p.name} is relieved.`, `${p.name} nods.`]), said: r.chance(0.5) ? say(s, p, "hold", r) : undefined };
       break;
     case "thank":
       applyTreatment(p, { kind: "coercion", size: 2, why: "made to say thank you" }, week);
@@ -187,26 +187,26 @@ const VALUE_SAYS: Record<string, string> = {
   "her own privacy": "A door that locks. From my side.",
   "being useful": "To be good at something here. To matter to how it runs.",
   "her family, wherever they are": "To know my family's alive. Just that.",
-  "getting through it intact": "To still be me when this is over.",
+  "surviving": "To get through this alive.",
   "the people she came in with": "To know the girls I came in with are all right.",
   "not owing anyone": "To not owe anybody anything. Ever again.",
   "being good at something": "To be good at something. Anything.",
   "keeping her word": "I want you to keep your word. I keep mine.",
   "her own body": "My body back. Some of it. Some say in it.",
-  "one day being somewhere else": "Somewhere else. Anywhere else. One day.",
+  "getting free someday": "To be free. Someday.",
 };
 
 const TEXTURE_SAYS: Record<string, string> = {
-  "always cold": "I'm always cold. Always. Even in the spa.",
-  "knows a great deal about birds": "I know every gull species on this coast. There are eleven.",
-  "hums when she thinks nobody is listening": "I hum. When I think no one's around. You've probably heard.",
-  "cannot sleep with a door open": "I can't sleep with the door open. I never could.",
-  "counts stairs": "I count stairs. There are two hundred and six from the dormitory to the kitchens.",
-  "reads whatever is left lying around": "I've read every manual in the service corridor. Twice.",
-  "afraid of the lifts": "I take the stairs because the lifts scare me. There. Now you know.",
-  "good with her hands": "I fixed the dormitory heater. Nobody noticed. I didn't tell anyone.",
+  "always feels cold": "I'm always cold. Always. Even in the spa.",
+  "loves birds": "I love birds. I watch the gulls from the windows. There are eleven kinds on this coast.",
+  "hums to herself": "I hum. When I think no one's around. You've probably heard.",
+  "can't sleep with the door open": "I can't sleep with the door open. I never could.",
+  "hates heights": "I hate heights. I don't go near the windows up here.",
+  "reads anything she can get": "I've read every manual in the service corridor. Twice.",
+  "afraid of elevators": "I take the stairs because the elevators scare me.",
+  "good with her hands": "I fixed the dormitory heater last week. Nobody even noticed.",
   "sings badly and often": "I sing. Badly. In the shower. The others hate it.",
-  "keeps a plant alive": "I've got a plant. A cutting from the atrium. Don't tell anyone.",
+  "likes plants": "I've got a plant. A cutting from the atrium. Don't tell anyone.",
 };
 
 function hedge(reg: Register, truth: string, r: ReturnType<typeof rng>): string {

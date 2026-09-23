@@ -46,14 +46,14 @@ export function householdRead(s: SaveState): HouseholdRead {
     "fair enough, as owners go";
 
   const lines: string[] = [];
-  if (frag > 0.65) lines.push(`Fear does most of the work in your house: ${Math.round(frag * 100)}% of it. Stop keeping it up and it's gone within a month.`);
-  else if (frag < 0.3) lines.push(`Most of them stay because they've decided to. That holds when you're away or have a bad month.`);
-  if (resent / n > 50) lines.push(`They're carrying a lot they haven't forgiven. Sooner or later one of them acts on it.`);
-  if (hope / n < 15) lines.push(`None of them expects anything to get better. A promise means nothing to them until you keep one.`);
-  else if (hope / n > 55) lines.push(`They think things can get better here, and it shows in how hard they try.`);
+  if (frag > 0.65) lines.push(`Your slaves obey mostly out of fear (${Math.round(frag * 100)}%). If you stop keeping it up, it'll be gone within a month.`);
+  else if (frag < 0.3) lines.push(`Most of your slaves are genuinely attached to you, which holds up when you're away or have a bad month.`);
+  if (resent / n > 50) lines.push(`Your slaves resent you a lot. Sooner or later one of them will act on it.`);
+  if (hope / n < 15) lines.push(`Your slaves have lost hope. Promises mean nothing to them until you keep one.`);
+  else if (hope / n > 55) lines.push(`Your slaves are hopeful, and they work harder for it.`);
   const broken = household.filter((p) => p.psyche.state !== "intact").length;
-  if (broken) lines.push(`${broken} of them ${broken === 1 ? "is" : "are"} coming apart, or already has.`);
-  if (!lines.length) lines.push(`They do the work and think about something else.`);
+  if (broken) lines.push(`${broken} of them ${broken === 1 ? "is" : "are"} broken or close to it.`);
+  if (!lines.length) lines.push(`Your slaves do their work without strong feelings about you either way.`);
   return { feared, trusted, label, lines };
 }
 
@@ -61,7 +61,7 @@ export function householdRead(s: SaveState): HouseholdRead {
  *  legible thing, rather than the twelve the old game had and the two that mattered. */
 export const PLAYER_SKILLS: { id: string; name: string; does: string }[] = [
   { id: "trading", name: "Trading", does: "better prices in the markets, and more found on an inspection" },
-  { id: "slaving", name: "Slaving", does: "training goes faster, and you read a body correctly on sight" },
+  { id: "slaving", name: "Slaving", does: "training goes faster, and you can judge slaves accurately on sight" },
   { id: "medicine", name: "Medicine", does: "procedures are safer and recovery is shorter" },
   { id: "engineering", name: "Engineering", does: "construction and upgrades cost less" },
   { id: "hacking", name: "Hacking", does: "you see the neighbours' schemes earlier" },

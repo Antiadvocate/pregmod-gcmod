@@ -52,10 +52,10 @@ export interface TurnResult {
 }
 
 const MODE_FRAME: Record<ActionMode, (a: string) => string> = {
-  do: (a) => `THE OWNER DOES: ${a}`,
-  say: (a) => `THE OWNER SAYS, aloud, exactly this: "${a}"\nRender the room's answer. Do not repeat their line back to them.`,
-  think: (a) => `THE OWNER IS THINKING: ${a}\nThis is interior and silent — nobody in the room can hear it, react to it, or answer it. It steers what the camera attends to and nothing else.`,
-  story: (a) => `DIRECTION TO THE NARRATOR (not an action in the fiction, and never quoted on the page): ${a}`,
+  do: (a) => `## THE PLAYER'S ACTION\n${a}\nWrite this happening, all the way through, and how the people it involves react.`,
+  say: (a) => `## THE PLAYER SAYS\n"${a}"\nWrite how the people it's said to answer and what they do about it. Don't repeat the line back.`,
+  think: (a) => `## THE PLAYER IS THINKING (silent; nobody hears it)\n${a}\nUse it to decide what the scene pays attention to. Nobody reacts to it.`,
+  story: (a) => `## DIRECTION FOR THE WRITER (not something that happens in the scene; never quote it)\n${a}`,
 };
 
 export async function runTurn(
@@ -124,8 +124,8 @@ export async function runTurn(
 
   // ── detectors: what the narrator did wrong, quoted back at it next turn ────────────────────
   s.corrections = {};
-  const leak = findInteriorLeak(prose, s);
-  if (leak) { s.corrections.leak = leak; s.integrity.fires.push({ week: s.arcology.week, kind: "interior", detail: leak }); }
+  const filler = findFiller(prose);
+  if (filler) { s.corrections.filler = filler; s.integrity.fires.push({ week: s.arcology.week, kind: "filler", detail: filler }); }
   const maxim = findMaxim(prose);
   if (maxim) { s.corrections.maxim = maxim; s.integrity.fires.push({ week: s.arcology.week, kind: "maxim", detail: maxim }); }
   const echo = findEcho(prose, action);
@@ -190,7 +190,7 @@ export async function runActTurn(
   if (modelsAvailable()) {
     const res = await call({
       system: NARRATOR_SYSTEM,
-      user: `${digest(s, act.name)}\n\n${actDirective(s, p, outcome)}`,
+      user: `${digest(s, act.name, p.id)}\n\n${actDirective(s, p, outcome)}`,
       model: s.models.narrator_model,
       fallback: s.models.fallback_model,
       onDelta: opts?.onDelta,
@@ -429,35 +429,33 @@ export function showsDeparture(prose: string, name: string): boolean {
 
 /* ── DETECTORS ─────────────────────────────────────────────────────────────────────────────── */
 
-const INTERIOR = /\b(\w+)\s+(felt|knew|realis(?:ed|es)|realiz(?:ed|es)|understood|decided|remembered|wondered|hoped|feared|wanted to)\b/i;
-const VAGUE = /\bsomething\s+(tightened|shifted|flickered|passed|moved|hardened|softened)\b/i;
+/** Gestures a model reaches for when it has nothing to say about what is actually happening. */
+const FILLER = /\b(breath (catches|caught|hitches|hitched)|throat (moves|moved|works|worked)|(fingers?|hands?) (tap|taps|tapped|twitch|twitches|twitched|curl|curls|curled|flex|flexes|flexed)|shifts? (her|his|their) weight|shoulders? (settle|settled|drop|dropped|loosen|loosened)|jaw (tightens|tightened|sets|set|works|worked)|something (tightened|shifted|flickered|passed|moved|hardened|softened)|the rhythm falters|exhales? through (her|his|their) nose|doesn't look at you|does not look at you)\b/i;
 
-/** A sentence that states an interior the narrator was not given. Quoted back next turn — the one
- *  correction channel that has ever reliably changed a model's behaviour mid-story. */
-export function findInteriorLeak(prose: string, s: SaveState): string | undefined {
-  const names = new Set(Object.values(s.people).map((p) => p.name.toLowerCase()));
+/** A sentence of filler body language standing in for the action. Quoted back next turn. */
+export function findFiller(prose: string): string | undefined {
   for (const sentence of prose.split(/(?<=[.!?])\s+/)) {
-    if (sentence.includes('"')) continue;      // dialogue is somebody speaking, not the camera claiming
-    const m = INTERIOR.exec(sentence);
-    if (m && (names.has(m[1].toLowerCase()) || /^(she|he|they)$/i.test(m[1]))) return sentence.trim().slice(0, 180);
-    if (VAGUE.test(sentence)) return sentence.trim().slice(0, 180);
+    if (sentence.includes('"')) continue;
+    if (FILLER.test(sentence)) return sentence.trim().slice(0, 180);
   }
   return undefined;
 }
 
-const MAXIM = /^(?:[^"]*")([^"]{20,140})"/;
+const QUOTED = /"([^"]{3,160})"/g;
+/** Fragments and closed sayings: "Not like this." "Almost." "Some things don't need saying." */
+const APHORISM = /\b(always|never|everyone|everybody|nobody|no one|people|the world|life|men|women|some things|that's how it|that is how it)\b/i;
 
-/** A short, closed, portable sentence stating a general truth — the thing a model reaches for when
- *  it has nothing for a character to actually say. */
+/** A portable line of wisdom or a dramatic fragment where a person should have said something. */
 export function findMaxim(prose: string): string | undefined {
-  for (const line of prose.split(/\n+/)) {
-    const m = MAXIM.exec(line);
-    if (!m) continue;
-    const said = m[1];
-    if (/\b(always|never|everyone|nobody|people|the world|life|men|women)\b/i.test(said) &&
-        !/\b(I|you|we|me|my|your)\b/.test(said) && said.split(/\s+/).length <= 18) {
-      return said;
-    }
+  for (const m of prose.matchAll(QUOTED)) {
+    const said = m[1].trim();
+    const words = said.split(/\s+/);
+    if (APHORISM.test(said) && !/\b(I|you|we|me|my|your)\b/.test(said) && words.length <= 18) return said;
+  }
+  // Narration that ends a paragraph on a fragment: "Almost." "Not quite." "Not yet."
+  for (const para of prose.split(/\n+/)) {
+    const last = para.trim().split(/(?<=[.!?])\s+/).at(-1) ?? "";
+    if (!last.includes('"') && /^(almost|not quite|not yet|not like this|not really|just barely|nothing more|and then nothing)[.!]?$/i.test(last)) return last;
   }
   return undefined;
 }

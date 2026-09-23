@@ -86,7 +86,7 @@ export function reactTo(s: SaveState, size: number, publicly: boolean): Reaction
 
     if (p.psyche.state === "broken") {
       shove(p.psyche, -0.2);
-      out.push({ id: p.id, tone: "bad", line: `${p.name} is told what is changing and agrees that it is a good idea. She would have agreed with the opposite.` });
+      out.push({ id: p.id, tone: "bad", line: `${p.name} is told about the change and agrees with it. She'd have agreed with anything you said.` });
       continue;
     }
 
@@ -94,32 +94,32 @@ export function reactTo(s: SaveState, size: number, publicly: boolean): Reaction
       shove(p.psyche, size * 0.25, { hard: true });
       applyTreatment(p, { kind: "recognition", size: Math.min(8, size), why: "given room to be what she is" }, week);
       shiftDominion(s, p, size * 0.8, "the household changed shape around her");
-      out.push({ id: p.id, tone: "good", line: `${p.name} takes to it immediately and without any visible surprise, which suggests she has been waiting.` });
+      out.push({ id: p.id, tone: "good", line: `${p.name} takes to it immediately. She's clearly wanted this for a while.` });
     } else if (sub && sub.strength > 50) {
       // Being handed power she does not want is a real injury, and the engine should not pretend
       // otherwise just because the direction of travel looks generous.
       shove(p.psyche, -size * 0.3, { hard: true });
       p.bond.hope = clamp(p.bond.hope - size, 0, 100);
       addState(p.psyche, "being asked to decide things", week);
-      out.push({ id: p.id, tone: "bad", line: `${p.name} spends the day trying to work out what she is supposed to do now, and does not eat.` });
+      out.push({ id: p.id, tone: "bad", line: `${p.name} is confused and upset by the change, and doesn't eat all day.` });
     } else if (sadist && sadist.strength > 45 && p.persona.conscience < 0.4) {
       shiftDominion(s, p, size, "she was handed something");
-      out.push({ id: p.id, tone: "warning", line: `${p.name} has understood the new arrangement faster than anybody and is already testing the edges of it.` });
+      out.push({ id: p.id, tone: "warning", line: `${p.name} understands the new arrangement faster than anyone, and is already pushing to see how far it goes.` });
     } else if (maso && maso.strength > 50) {
-      out.push({ id: p.id, tone: "neutral", line: `${p.name} cannot make the new arrangement work in her head and keeps arriving at the same wrong answer.` });
+      out.push({ id: p.id, tone: "neutral", line: `${p.name} can't get her head around the new arrangement.` });
     } else if (p.persona.conscience > 0.7) {
       applyTreatment(p, { kind: "kindness", size: Math.min(5, size * 0.6), why: "the household changed" }, week);
-      out.push({ id: p.id, tone: "good", line: `${p.name} is careful with it, and checks twice that she is allowed, and is gentler about the whole thing than anybody expected.` });
+      out.push({ id: p.id, tone: "good", line: `${p.name} is careful with her new power, and gentler about it than anyone expected.` });
     } else if (p.bond.resentment > 55) {
       // Forty weeks of fear, and then you hand them a lever.
       shiftDominion(s, p, size * 1.2, "she has been waiting for exactly this");
       p.bond.resentment = clamp(p.bond.resentment - size * 0.4, 0, 100);
-      out.push({ id: p.id, tone: "warning", line: `${p.name} takes what she is given without a word. She has a great deal of unfinished business and now she has somewhere to put it.` });
+      out.push({ id: p.id, tone: "warning", line: `${p.name} takes her new power without a word. She resents you a lot, and now she can do something about it.` });
     } else if (r.fragility > 0.7) {
-      out.push({ id: p.id, tone: "neutral", line: `${p.name} watches to see whether this is a test, decides it probably is, and behaves exactly as before.` });
+      out.push({ id: p.id, tone: "neutral", line: `${p.name} assumes it's a test and carries on exactly as before.` });
     } else if (publicly) {
       p.bond.hope = clamp(p.bond.hope + size * 0.5, 0, 100);
-      out.push({ id: p.id, tone: "good", line: `${p.name} heard about it from somebody on the concourse before she heard about it from you.` });
+      out.push({ id: p.id, tone: "good", line: `${p.name} heard about it on the concourse before you told her, and she's delighted.` });
     }
   }
   return out.slice(0, 6);
@@ -134,9 +134,9 @@ export function reactTo(s: SaveState, size: number, publicly: boolean): Reaction
 export interface Gesture { id: string; label: string; note: string; gain: number; rep: number; }
 
 export const GESTURES: Gesture[] = [
-  { id: "house", label: "Wait on her at the table, at home", note: "the household sees it; nobody else does", gain: 1, rep: 0 },
-  { id: "concourse", label: "Carry for her on the commercial level", note: "shift change, four hundred people", gain: 2, rep: -70 },
-  { id: "club", label: "Kneel to her at the club", note: "in front of the ones whose opinion is worth money", gain: 3, rep: -220 },
+  { id: "house", label: "Wait on her at the table, at home", note: "only your household sees", gain: 1, rep: 0 },
+  { id: "concourse", label: "Carry for her on the commercial level", note: "hundreds of citizens will see", gain: 2, rep: -70 },
+  { id: "club", label: "Kneel to her at the club", note: "in front of the arcology's elite", gain: 3, rep: -220 },
 ];
 
 export function gestureAvailable(s: SaveState): boolean {
@@ -162,15 +162,15 @@ export function doGesture(s: SaveState, id: string): { line: string; reactions: 
   let line: string;
   switch (id) {
     case "house":
-      line = `${her.name} let you do it, and did not thank you, and ate.`;
+      line = `You serve ${her.name} dinner at the table. She lets you, and doesn't thank you.`;
       break;
     case "concourse":
-      startRumor(s, `he carries for ${her.name} on the commercial level and does not hurry about it`, { salience: 6 });
-      line = `Two people you do business with saw. One of them nodded.`;
+      startRumor(s, `the owner carries ${her.name}'s bags on the commercial level`, { salience: 6 });
+      line = `You carry ${her.name}'s bags around the concourse. Two of your business contacts see you.`;
       break;
     default:
-      startRumor(s, `he went down on one knee to ${her.name} at the club, in the main room`, { salience: 9 });
-      line = `The room did not go quiet, which was worse. They carried on talking and watched you out of the sides of their faces.`;
+      startRumor(s, `the owner knelt to ${her.name} in the main room of the club`, { salience: 9 });
+      line = `You kneel to ${her.name} in the middle of the club. Nobody says anything, but everyone stares.`;
   }
   const reactions = reactTo(s, g.gain, g.rep !== 0);
   note(s, line, "good");
@@ -219,7 +219,7 @@ export function tickReversal(s: SaveState): ReportLine[] {
   const idle = s.arcology.week - (rev.last_public ?? 0);
   if (idle > 4 && rev.deference > 0) {
     rev.deference = clamp(rev.deference - 1, 0, 100);
-    if (idle === 9) lines.push({ tone: "warning", weight: 7, text: `Two months of behaving like an ordinary owner. The concourse has gone back to assuming the ordinary thing.` });
+    if (idle === 9) lines.push({ tone: "warning", weight: 7, text: `You've acted like an ordinary owner for two months, and people have stopped talking about you.` });
   }
 
   // The fees, once open, are the whole economy. Two things set the number: how many of them have
@@ -237,8 +237,8 @@ export function tickReversal(s: SaveState): ReportLine[] {
       lines.push({
         tone: "good", weight: 5,
         text: standing
-          ? `Service fees: ¤${take.toLocaleString()} across ${standing} standing arrangements and the rest of the house. The list is longer than the places.`
-          : `Service fees: ¤${take.toLocaleString()}. Nobody in the house has real standing yet and they are still paying, which tells you what they think they are buying.`,
+          ? `Service fees: ¤${take.toLocaleString()} across ${standing} standing arrangements and the rest of the house. There's still a waiting list.`
+          : `Service fees: ¤${take.toLocaleString()}. Nobody in the household has real power yet, but people are paying anyway.`,
       });
     }
   }
@@ -259,16 +259,16 @@ export function tickReversal(s: SaveState): ReportLine[] {
       for (const c of conflictsWith(SUPPLICATIONISM.id)) {
         if (s.arcology.doctrines[c]) {
           delete s.arcology.doctrines[c];
-          lines.push({ tone: "warning", weight: 8, text: `${DOCTRINE_BY_ID[c].noun} cannot be held next to what you have been doing in public. It is gone.` });
+          lines.push({ tone: "warning", weight: 8, text: `${DOCTRINE_BY_ID[c].noun} is incompatible with how you've been behaving in public, and has been abandoned.` });
         }
       }
       const held = Object.entries(s.arcology.doctrines);
       if (held.length >= 4) {
         const newest = held.sort((a, b) => b[1].adopted_week - a[1].adopted_week)[0];
         delete s.arcology.doctrines[newest[0]];
-        lines.push({ tone: "warning", weight: 7, text: `${DOCTRINE_BY_ID[newest[0]]?.noun ?? newest[0]} has been crowded out.` });
+        lines.push({ tone: "warning", weight: 7, text: `${DOCTRINE_BY_ID[newest[0]]?.noun ?? newest[0]} has been abandoned.` });
       }
-      lines.push({ tone: "warning", weight: 10, text: `Somebody at the exchange used the word Supplicationist about ${s.arcology.name} and it was not meant kindly. It has stuck anyway.` });
+      lines.push({ tone: "warning", weight: 10, text: `People have started calling ${s.arcology.name} Supplicationist. It started as an insult, but the name has stuck.` });
     }
     const doc = (s.arcology.doctrines[SUPPLICATIONISM.id] ??= {
       adoption: 0, decoration: 0, research: true, policies: {}, adopted_week: s.arcology.week,
@@ -306,78 +306,78 @@ export function resolveChain(s: SaveState, optionId: string): { line: string; re
     case "first_time:hold":
       bump(6);
       if (her) { applyTreatment(her, { kind: "recognition", size: 7, why: "he stayed down until she spoke" }, week); shiftDominion(s, her, 12, "the first night"); }
-      line = "She spoke first. It took four minutes.";
+      line = "You stayed on your knees for four minutes before she said anything.";
       break;
     case "first_time:explain":
       bump(3);
       if (her) shiftDominion(s, her, 5, "he explained it");
-      line = "You explained it. She said she understood, which was not the same as agreeing.";
+      line = "You explained what you wanted. She said she understood, but she didn't agree to anything.";
       break;
     case "first_time:up":
       bump(0);
       if (her) { const m = s.memory[her.id]; if (m) remember(m, { content: "the night he knelt and then pretended he had not", week, importance: 7, charge: "sharp" }); }
-      line = "Neither of you has mentioned it since. She has not forgotten it.";
+      line = "Neither of you has mentioned it since, but she remembers.";
       break;
 
     case "household_sees:louder":
       bump(9); publicly = true;
       startRumor(s, "he kneels to her, and he does not care who sees", { salience: 8 });
-      line = "Three of them watched. By morning all of them knew.";
+      line = "Three of your slaves watched, and by morning they all knew.";
       break;
-    case "household_sees:quiet": bump(1); line = "The door stayed shut."; break;
+    case "household_sees:quiet": bump(1); line = "You kept it behind closed doors."; break;
     case "household_sees:ask":
       bump(7);
       if (her) { shiftDominion(s, her, 10, "he asked her to decide"); applyTreatment(her, { kind: "recognition", size: 6, why: "asked to decide who watches" }, week); }
-      line = "She thought about it and said yes. That was the part that mattered.";
+      line = "She thought about it and said yes.";
       break;
 
     case "the_name:formal":
       bump(10); publicly = true;
-      if (her) { s.canon.push(`${her.name} is named on every instrument of the household as its principal.`); }
-      line = "It is on the register, the rota and the accounts.";
+      if (her) { s.canon.push(`${her.name} is listed on every household document as its head.`); }
+      line = "Her new title is on the register, the schedule and the accounts.";
       break;
-    case "the_name:verbal": bump(4); line = "Spoken, not written. The steward keeps writing the old thing."; break;
-    case "the_name:revert": bump(-6); line = "The steward corrected it without comment."; break;
+    case "the_name:verbal": bump(4); line = "Everyone uses her new title, but it isn't written down anywhere."; break;
+    case "the_name:revert": bump(-6); line = "The steward changed it back."; break;
 
     case "first_outing:slow":
       bump(12); publicly = true;
       s.arcology.rep -= 300;
       startRumor(s, "he carried her bag through the concourse at shift change", { salience: 9 });
-      line = "The long way round, at shift change. Four hundred people.";
+      line = "You take the long way round at shift change, and hundreds of people see.";
       break;
-    case "first_outing:brisk": bump(6); publicly = true; s.arcology.rep -= 120; line = "Quick, and still seen."; break;
-    case "first_outing:abort": bump(-4); line = "You turned back at the lifts. Somebody saw you turn back."; break;
+    case "first_outing:brisk": bump(6); publicly = true; s.arcology.rep -= 120; line = "You're quick, but plenty of people still see."; break;
+    case "first_outing:abort": bump(-4); line = "You turn back at the elevators, but someone sees you do it."; break;
 
-    case "broker_refuses:pay": s.arcology.cash -= 20000; bump(2); line = "Twenty thousand and Halvorsen remembers his manners."; break;
-    case "broker_refuses:replace": bump(4); rev.association -= 8; line = "The shark's people have never once asked what anything is for."; break;
+    case "broker_refuses:pay": s.arcology.cash -= 20000; bump(2); line = "Twenty thousand is enough to keep Halvorsen working for you."; break;
+    case "broker_refuses:replace": bump(4); rev.association -= 8; line = "The shark's people don't ask questions."; break;
     case "broker_refuses:public":
       bump(8); rev.association -= 20; s.arcology.rep -= 400;
       startRumor(s, "he printed Halvorsen's letter with the name still on it", { salience: 8 });
-      line = "You printed it with his name still on it.";
+      line = "You publish Halvorsen's letter with his name on it.";
       break;
 
     case "the_dinner:serve":
       bump(14); publicly = true; rev.association -= 25; s.arcology.rep -= 600;
       if (her) { applyTreatment(her, { kind: "recognition", size: 9, why: "served at Eiger's table, in front of all of them" }, week); shiftDominion(s, her, 15, "Eiger's table"); }
-      line = "You served her plate at Eiger's table. His wife has not stopped talking about it.";
+      line = "You serve her plate at Eiger's table, and his wife tells everyone about it.";
       break;
-    case "the_dinner:normal": bump(2); line = "You behaved like a guest. Eiger was relieved and did not hide it well."; break;
-    case "the_dinner:leave": bump(0); line = "You left before the meat."; break;
+    case "the_dinner:normal": bump(2); line = "You behave like a normal guest. Eiger is visibly relieved."; break;
+    case "the_dinner:leave": bump(0); line = "You leave before the main course."; break;
 
     case "first_fee:take":
       rev.fees_open = true; bump(11); s.arcology.cash += 9000;
-      line = "Nine thousand for one evening, and he has asked about the next one.";
+      line = "He pays nine thousand for one evening, and books another.";
       break;
     case "first_fee:free":
       bump(14); publicly = true;
-      line = "You let him, and refused the money, and he did not know what to do with that.";
+      line = "You let him serve her for free. He's confused, but grateful.";
       break;
-    case "first_fee:refuse": bump(-2); line = "He was put out. He will tell people."; break;
+    case "first_fee:refuse": bump(-2); line = "You throw him out. He'll tell people about it."; break;
 
     case "the_register:file":
       bump(16); publicly = true; rev.association -= 30;
-      if (her) { s.canon.push(`${her.name} holds title over the owner of ${s.arcology.name}, and the owner holds title over her. Both instruments are filed.`); }
-      line = "Filed at 3:40. Both names, the same size type.";
+      if (her) { s.canon.push(`${her.name} legally owns the owner of ${s.arcology.name}, and the owner legally owns her.`); }
+      line = "The paperwork is filed. You and she legally own each other.";
       break;
     case "the_register:onesided":
       bump(20); publicly = true; rev.association -= 40;
@@ -389,48 +389,48 @@ export function resolveChain(s: SaveState, optionId: string): { line: string; re
         rom.dominion = 100;
         her.status = "free";
         s.player.owned_by = her.id;
-        s.canon.push(`${her.name} holds title over the owner of ${s.arcology.name}. The owner holds nothing over her, and the clerk filed it that way.`);
-        startRumor(s, `he filed one instrument instead of two and it was hers`, { about: her.id, salience: 10 });
+        s.canon.push(`${her.name} legally owns the owner of ${s.arcology.name}. The owner has no legal claim on her.`);
+        startRumor(s, `the owner legally belongs to ${her.name} now, and not the other way round`, { about: her.id, salience: 10 });
         const m = s.memory[her.id];
         if (m) remember(m, { content: "the afternoon he signed away the half of it that was his", week, importance: 10, charge: "bright", core: true });
         shove(her.psyche, 3, { hard: true });
       }
-      line = "Only her title over you. The clerk asked twice whether you understood what you were giving up, and you did.";
+      line = "You file only her ownership of you. The clerk asks twice whether you understand what you're giving up.";
       break;
-    case "the_register:withdraw": bump(-10); line = "Withdrawn. The clerk looked almost disappointed."; break;
+    case "the_register:withdraw": bump(-10); line = "You withdraw the filing."; break;
 
-    case "household_splits:both": bump(10); line = "Each of them got what she actually asked for, including the one who asked for nothing."; break;
-    case "household_splits:level": bump(8); line = "Both raised. The second one has not spoken to you since."; break;
-    case "household_splits:hold": bump(0); line = "Neither, for now. They both understood that as an answer."; break;
+    case "household_splits:both": bump(10); line = "Each of them got what she wanted."; break;
+    case "household_splits:level": bump(8); line = "You raised both of them. The one who didn't want it hasn't spoken to you since."; break;
+    case "household_splits:hold": bump(0); line = "You gave neither of them anything, for now."; break;
 
     case "censure:attend":
       bump(12); publicly = true; rev.association -= 25; s.arcology.rep -= 800;
-      line = "You went to the spring session and said it out loud in front of nine of them.";
+      line = "You went to the spring session and defended yourself in front of all nine of them.";
       break;
-    case "censure:ignore": rev.association -= 15; bump(3); line = "No reply. They noted that too."; break;
+    case "censure:ignore": rev.association -= 15; bump(3); line = "You didn't reply. The Association took note."; break;
     case "censure:recant":
       rev.deference = clamp(rev.deference - 35, 0, 100); rev.association += 40; rev.fees_open = false;
-      line = "You gave them what they wanted. Your household watched you do it.";
+      line = "You gave the Association what it wanted, in front of your household.";
       break;
 
-    case "waiting_list:raise": s.arcology.cash += 30000; bump(6); line = "You tripled it again. The list got longer."; break;
-    case "waiting_list:vet": bump(9); line = "You read all thirty-one yourself. Two of them were Association members."; break;
-    case "waiting_list:open": s.arcology.cash += 15000; bump(4); s.arcology.crime += 6; line = "Anyone who can pay. It is a great deal of money and some of it is filthy."; break;
+    case "waiting_list:raise": s.arcology.cash += 30000; bump(6); line = "You tripled the price again, and the list got longer."; break;
+    case "waiting_list:vet": bump(9); line = "You vetted all thirty-one names yourself."; break;
+    case "waiting_list:open": s.arcology.cash += 15000; bump(4); s.arcology.crime += 6; line = "You opened it to anyone who can pay. It's a lot of money, and some of the clients are criminals."; break;
 
-    case "abuse:cover": s.arcology.cash -= 25000; bump(0); line = "It went away. Everybody in the clinic knows it went away."; break;
-    case "abuse:confront": bump(4); line = "You took it up with her. She listened, and did not agree, and that is now a thing that can happen."; break;
+    case "abuse:cover": s.arcology.cash -= 25000; bump(0); line = "You paid to make it go away, but the clinic staff know."; break;
+    case "abuse:confront": bump(4); line = "You took it up with her. She listened, but didn't agree, and there was nothing you could do about it."; break;
     case "abuse:strip":
       bump(-14); publicly = true;
-      line = "You took it back in front of the household. Every woman in the building did the arithmetic.";
+      line = "You took her power away in front of the household. Every slave got the message.";
       break;
 
-    case "embargo:absorb": rev.embargo = 1; bump(5); line = "You are paying the difference every week."; break;
-    case "embargo:allies": bump(10); rev.association -= 10; s.arcology.prosperity += 6; line = "There are more of them than you thought. Two other arcologies want to talk."; break;
-    case "embargo:fold": rev.deference = clamp(rev.deference - 20, 0, 100); rev.association += 25; line = "Word was sent that you would moderate."; break;
+    case "embargo:absorb": rev.embargo = 1; bump(5); line = "You're paying the extra costs every week."; break;
+    case "embargo:allies": bump(10); rev.association -= 10; s.arcology.prosperity += 6; line = "Two other arcologies want to work with you."; break;
+    case "embargo:fold": rev.deference = clamp(rev.deference - 20, 0, 100); rev.association += 25; line = "You promised to tone it down."; break;
 
-    case "the_offer:refuse": bump(8); rev.association -= 20; line = "Refused. Eiger thanked you for your time."; break;
-    case "the_offer:sell": rev.ended = "sold"; line = "You took it. The household was dispersed within the fortnight."; break;
-    case "the_offer:counter": bump(12); rev.association -= 30; line = "You offered him a place on the list. He came a long way to ask about her."; break;
+    case "the_offer:refuse": bump(8); rev.association -= 20; line = "You refused. Eiger thanked you for your time and left."; break;
+    case "the_offer:sell": rev.ended = "sold"; line = "You took the money. Your household was broken up within two weeks."; break;
+    case "the_offer:counter": bump(12); rev.association -= 30; line = "You offered Eiger a place on the waiting list, and he took it."; break;
 
     case "the_move:stand": case "the_move:her": {
       rev.done.push(event.id); delete rev.pending;
@@ -440,7 +440,7 @@ export function resolveChain(s: SaveState, optionId: string): { line: string; re
     }
     case "the_move:run": {
       rev.done.push(event.id); delete rev.pending; rev.ended = "fled";
-      const out = "You got out with what you could carry, which was less than you thought and did not include most of them.";
+      const out = "You escaped with what you could carry, and left most of your household behind.";
       note(s, out, "danger");
       return { line: out, reactions: [] };
     }
@@ -486,16 +486,16 @@ export function endgame(s: SaveState, how: "stand" | "her"): string {
 
   if (score >= 8) {
     rev.ended = "held";
-    s.canon.push(`${s.arcology.name} held. The Association's move failed from inside the building.`);
-    return `Nobody opened anything. ${forYou} of them put themselves between the freight doors and the men who came through them, and ${against ? `${against} did not, and everybody knows which` : "not one of them stood aside"}. By Thursday the lifts answer again and two other arcologies have written asking how it was done.`;
+    s.canon.push(`${s.arcology.name} held. The Association's takeover failed.`);
+    return `Nobody inside betrayed you. ${forYou} of your slaves stood between the freight doors and the men who came through them${against ? `, and ${against} didn't` : ", and not one of them stood aside"}. By Thursday the elevators work again, and two other arcologies have written asking how you did it.`;
   }
   if (score >= 0) {
     rev.ended = "held";
-    return `It holds, barely. ${forYou} stood and ${against} went quiet in a way that was its own answer. The building is yours on Friday morning and there are four fewer people in it.`;
+    return `You hold on, barely. ${forYou} of your slaves stood with you and ${against} didn't. By Friday morning the arcology is yours again, but four people are gone.`;
   }
   rev.ended = "broken";
   s.canon.push(`The Association took ${s.arcology.name} back. The instruments were voided.`);
-  return `The doors opened from the inside. ${against} of them had been waiting a long time for somebody to ask, and the Association only had to ask once. The instruments are void by Monday and everything on the register goes back the way it was.`;
+  return `Someone opened the doors from the inside. ${against} of your slaves had been waiting for a chance to betray you, and the Association gave them one. By Monday the ownership papers are void and everything goes back to how it was.`;
 }
 
 export const DOCTRINE = SUPPLICATIONISM;

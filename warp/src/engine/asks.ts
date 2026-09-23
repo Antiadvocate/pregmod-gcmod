@@ -86,7 +86,7 @@ const PAYLOADS: Record<string, (s: SaveState, p: Person, value?: string | number
   exclusive: (s, p) => { romanceOf(p).exclusive = true; applyTreatment(p, { kind: "promise_kept", size: 8, why: "she asked to be the only one and you agreed" }, s.arcology.week); return "she is the only one you touch"; },
   name: (s, p, value) => { p.slave_name = String(value); applyTreatment(p, { kind: "recognition", size: 6, why: "she asked to be called by her own name again" }, s.arcology.week); return `she is ${value} again`; },
   answer: (s, p) => { applyTreatment(p, { kind: "recognition", size: 5, why: "she asked you something and you answered honestly" }, s.arcology.week); p.bond.hope = clamp(p.bond.hope + 8, 0, 100); return "you told her the truth"; },
-  money: (s, p, value) => { const n = Number(value) || 2000; s.arcology.cash -= n; applyTreatment(p, { kind: "recognition", size: 4, why: "money spent on something that was only for her" }, s.arcology.week); return `¤${n} on something that was only ever for her`; },
+  money: (s, p, value) => { const n = Number(value) || 2000; s.arcology.cash -= n; applyTreatment(p, { kind: "recognition", size: 4, why: "money spent on something that was only for her" }, s.arcology.week); return `you spent ¤${n} on something just for her`; },
 };
 
 /** What she calls an act when she is the one asking for it. */
@@ -147,11 +147,11 @@ const WORDING: Record<string, { ask: string[]; tell: string[]; timid?: string[];
     tell: ["\"I'm going to the spa. I'll be back when I'm back.\""],
   },
   off_drugs: {
-    ask: ["\"Take me off the aphrodisiacs. Please. I can't tell which parts are me any more.\"", "She asks to come off the drugs. Her hands are shaking while she asks."],
+    ask: ["\"Take me off the aphrodisiacs. Please. I can't tell which parts are me any more.\"", "She asks to come off the drugs. She's shaking."],
     tell: ["\"I'm stopping the aphrodisiacs. Don't argue.\""],
   },
   contraceptives_on: {
-    ask: ["She asks to be put on contraceptives, and watches your face while she does.", "\"Could I— I'd like to be on the pill. If that's allowed.\""],
+    ask: ["She nervously asks to be put on contraceptives.", "\"Could I— I'd like to be on the pill. If that's allowed.\""],
     tell: ["\"I'm going on contraceptives. I'm not having your child. Not yet.\""],
     sullen: ["\"Put me on the pill. I'm not carrying anything of yours.\""],
   },
@@ -177,11 +177,11 @@ const WORDING: Record<string, { ask: string[]; tell: string[]; timid?: string[];
     tell: ["\"My name is {value}. Use it.\""],
   },
   exclusive: {
-    ask: ["She asks if she's the only one. She knows the answer. She's asking whether it could be true.", "\"Could it just be me? Only me?\""],
+    ask: ["She asks if she could be the only one you sleep with.", "\"Could it just be me? Only me?\""],
     tell: ["\"I'm the only one you touch now. I'm not asking.\""],
   },
   answer: {
-    ask: ["She asks what happens to her. Not rhetorically. She wants the actual answer.", "\"What are you going to do with me? Long term. I need to know.\""],
+    ask: ["She asks what's going to happen to her in the long run.", "\"What are you going to do with me? Long term. I need to know.\""],
     tell: ["\"Tell me the plan. All of it.\""],
   },
   money: {
@@ -342,7 +342,7 @@ export function refuseAsk(s: SaveState, ask: Ask, harshly = false): AskReply {
   p.bond.hope = clamp(p.bond.hope - ask.loss * 0.8, 0, 100);
   if (harshly) {
     applyTreatment(p, { kind: "cruelty", size: 4, why: "she asked for something and was put in her place for asking" }, s.arcology.week);
-    addState(p.psyche, "what happened the last time she asked for something", s.arcology.week);
+    addState(p.psyche, "afraid to ask for anything", s.arcology.week);
     shove(p.psyche, -1.2);
   } else {
     applyTreatment(p, { kind: "neglect", size: 2, why: "she asked and was told no" }, s.arcology.week);
@@ -385,15 +385,15 @@ export async function voiceAsk(s: SaveState, ask: Ask): Promise<string> {
   if (!p) return ask.text;
   const rom = romanceOf(p);
   const res = await call({
-    system: `You put ONE request into one specific woman's mouth, in an adult game about an arcology with a legal slave economy. You are given who she is and what she is asking for. Give it back as one or two sentences of what she actually says and does when she asks — her words, her register, her nerve or lack of it. She is asking a person who owns her, or used to, and how much standing she has to ask with is stated. Blunt is fine. Crude is fine if she is crude. Do NOT change what is being asked for. Do NOT narrate her interior — what she says, how she says it, what her hands do. Output JSON only: {"says":"..."}`,
+    system: `You write one line for Free Cities, an adult text game about owning an arcology. A slave is asking her owner for something. Write what she says when she asks, in one or two sentences: her own words, the way this particular person would say it. Crude if she is crude. Do not change what she is asking for. Plain dialogue; no gestures, no sayings, nothing that sounds like a proverb. Output JSON only: {"says":"..."}`,
     user: [
       `HER: ${p.name}, ${p.age}. ${p.persona.speech_pattern}`,
       p.persona.voice?.example_lines?.length ? `SOUNDS LIKE: "${p.persona.voice.example_lines[0]}"` : "",
       `TRAITS: ${p.persona.core_traits.join("; ")}`,
-      `WHERE SHE STANDS: ${rom.standing}, and she decides ${Math.round(rom.dominion)} out of 100 around here.`,
-      `HOW SHE IS: ${p.bond.read.label}, hope ${Math.round(p.bond.hope)}, and ${p.psyche.mood}.`,
+      `HER STANDING WITH HER OWNER: ${rom.standing} (${Math.round(rom.dominion)}/100 say in the household).`,
+      `HOW SHE IS: ${p.bond.read.label}, mood ${p.psyche.mood}.`,
       `WHAT SHE IS ASKING FOR: ${ask.text}`,
-      ask.kind === "instruction" ? `SHE IS NOT ASKING. She has the standing to tell you, and she uses it.` : "",
+      ask.kind === "instruction" ? `She is not asking; she has enough standing to tell her owner, and does.` : "",
     ].filter(Boolean).join("\n"),
     model: s.models.narrator_model,
     fallback: s.models.fallback_model,

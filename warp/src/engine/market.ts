@@ -34,20 +34,20 @@ export interface MarketDef {
 }
 
 export const MARKETS: MarketDef[] = [
-  { id: "local", name: "The local pens", blurb: "Whatever came through the port this week.", quality: -0.2, markup: 0.9, count: 5, needs_rep: 0, opacity: 0.5 },
-  { id: "corporate", name: "Corporate stock", blurb: "Processed, documented, and entirely uninteresting.", quality: 0.1, markup: 1.15, count: 4, needs_rep: 500, opacity: 0.15 },
-  { id: "refugee", name: "The refugee intake", blurb: "People who signed because the alternative was worse.", quality: -0.35, markup: 0.55, count: 6, needs_rep: 0, opacity: 0.6 },
-  { id: "elite", name: "The elite auction", blurb: "Four lots, catalogued, with provenance.", quality: 0.75, markup: 1.9, count: 3, needs_rep: 4000, opacity: 0.1 },
-  { id: "shark", name: "The shark's back room", blurb: "No paperwork, and no returns.", quality: 0.15, markup: 0.65, count: 3, needs_rep: 0, opacity: 0.85 },
+  { id: "local", name: "The local pens", blurb: "Slaves that came through the port this week.", quality: -0.2, markup: 0.9, count: 5, needs_rep: 0, opacity: 0.5 },
+  { id: "corporate", name: "Corporate stock", blurb: "Processed and documented corporate stock. Reliable, but pricey.", quality: 0.1, markup: 1.15, count: 4, needs_rep: 500, opacity: 0.15 },
+  { id: "refugee", name: "The refugee intake", blurb: "Refugees who sold themselves to escape something worse. Cheap.", quality: -0.35, markup: 0.55, count: 6, needs_rep: 0, opacity: 0.6 },
+  { id: "elite", name: "The elite auction", blurb: "A few high-quality slaves, with full records.", quality: 0.75, markup: 1.9, count: 3, needs_rep: 4000, opacity: 0.1 },
+  { id: "shark", name: "The shark's back room", blurb: "Cheap, no paperwork, no questions, no returns.", quality: 0.15, markup: 0.65, count: 3, needs_rep: 0, opacity: 0.85 },
 ];
 
 export const MARKET_BY_ID: Record<string, MarketDef> = Object.fromEntries(MARKETS.map((m) => [m.id, m]));
 
 const PITCHES = [
   "trained, obedient, and eager to please",
-  "a genuine bargain, and no I cannot say why",
+  "a real bargain, don't ask why",
   "fresh in, unspoiled, papers in order",
-  "she has a temper. You look like a man who enjoys that",
+  "she has a temper, if you like that sort of thing",
   "quiet, clean, no trouble at all",
   "previous owner's estate. Nothing wrong with her",
 ];
@@ -56,9 +56,9 @@ const HIDDEN = [
   "she has been through three owners in eight months",
   "the health certificate is forged",
   "she was sold specifically for what she did to the last household",
-  "she is quietly addicted and it will show in a fortnight",
+  "she's secretly an addict, and it'll show within two weeks",
   "she has family looking for her, with money",
-  "the papers say twenty-two and she is not",
+  "she's older than her papers say",
 ];
 
 export function rollMarkets(state: SaveState): MarketState {
@@ -150,7 +150,7 @@ export function recruitResult(state: SaveState, recruiter: Person): MarketOffer 
   return {
     id: `recruit-${state.arcology.week}`, market: "recruit", person,
     price: Math.round(valuePerson(state, person) * 0.7),
-    pitch: charm ? `${recruiter.name} talked her into the lift herself.` : `${recruiter.name} did not say how, and she is not talking either.`,
+    pitch: charm ? `${recruiter.name} talked her into coming.` : `${recruiter.name} won't say how she got her, and the girl won't talk either.`,
     hidden: [],
   };
 }
