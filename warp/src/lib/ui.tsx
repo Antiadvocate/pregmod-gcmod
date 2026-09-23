@@ -46,9 +46,9 @@ export function Meter({ value, range = [0, 100], invert, label, showValue = true
   return (
     <div>
       {label ? (
-        <div className="flex justify-between text-[11px] mb-1">
-          <span className="mid">{label}</span>
-          {showValue ? <span className="font-mono dim">{Math.round(value)}</span> : null}
+        <div className="flex justify-between gap-1.5 text-[11px] mb-1 min-w-0">
+          <span className="mid truncate">{label}</span>
+          {showValue ? <span className="font-mono dim shrink-0">{Math.round(value)}</span> : null}
         </div>
       ) : null}
       <div className="meter"><div style={{ width: `${pct * 100}%`, background: color }} /></div>
@@ -107,7 +107,7 @@ export function Sheet({ open, onClose, title, children, wide }:
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ background: "rgba(0,0,0,.6)" }} onClick={onClose}>
       {/* The safe-area inset matters on every iPhone since the notch: without it the sheet's last
           control sits under the home indicator and cannot be tapped. */}
-      <div className={cx("card w-full max-h-[86dvh] overflow-y-auto sheet-in", wide ? "sm:max-w-3xl" : "sm:max-w-lg")}
+      <div className={cx("card w-full max-h-[86dvh] overflow-y-auto overflow-x-hidden sheet-in", wide ? "sm:max-w-3xl" : "sm:max-w-lg")}
         style={{ borderRadius: "16px 16px 0 0", paddingBottom: "env(safe-area-inset-bottom)" }}
         onClick={(e) => e.stopPropagation()}>
         <div className="grabber sm:hidden" />

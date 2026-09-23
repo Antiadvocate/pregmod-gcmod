@@ -17,11 +17,12 @@ import { assignToFacility, allowedAssignments, isMinor, setAssignment, MINOR_FAC
 import { ASSIGNMENTS } from "../data/assignments";
 import { FACILITIES, FACILITY_BY_ID } from "../data/facilities";
 import { PROCEDURES } from "../engine/health";
-import { WARDROBE, MODIFICATIONS, GARMENT_BY_NAME } from "../data/wardrobe";
+import { MODIFICATIONS, GARMENT_BY_NAME } from "../data/wardrobe";
 import { sell } from "../engine/market";
 import { enrichPerson } from "../engine/forge";
 import { getEdge } from "../engine/social";
-import Acts from "./Acts";
+import Interact from "./Interact";
+import Dressing from "./Dressing";
 import Surgery from "./Surgery";
 import HerPanel from "./HerPanel";
 import { romanceOf, RUNG_BY_ID } from "../engine/romance";
@@ -32,6 +33,7 @@ import { renderDoll } from "../lib/dollrender";
 import { askHer } from "../engine/consult";
 import SlaveArt, { SlaveHead } from "./SlaveArt";
 import { practise, skill } from "../engine/player";
+import { buildOf } from "../engine/build";
 
 type Sort = "name" | "devotion" | "trust" | "health" | "income" | "trouble";
 
@@ -40,6 +42,8 @@ export default function Roster() {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("trouble");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [withId, setWithId] = useState<string | null>(null);
+  const [dressId, setDressId] = useState<string | null>(null);
 
   const people = useMemo(() => {
     const list = Object.values(save.people).filter((p) => p.status === "owned" || p.status === "indentured");
@@ -77,13 +81,15 @@ export default function Roster() {
 
       {people.length ? (
         <div className="grid gap-2.5 sm:grid-cols-2">
-          {people.map((p) => <RosterCard key={p.id} p={p} onOpen={() => setOpenId(p.id)} />)}
+          {people.map((p) => <RosterCard key={p.id} p={p} onOpen={() => setOpenId(p.id)} onWith={() => setWithId(p.id)} />)}
         </div>
-      ) : <Empty>Nobody. The market is on the left.</Empty>}
+      ) : <Empty>Nobody yet. Buy someone at the Market.</Empty>}
 
       <Sheet open={!!openId} onClose={() => setOpenId(null)} title={openId ? save.people[openId]?.name ?? "" : ""} wide>
-        {openId && save.people[openId] ? <PersonPanel id={openId} onClose={() => setOpenId(null)} /> : null}
+        {openId && save.people[openId] ? <PersonPanel id={openId} onClose={() => setOpenId(null)} onWith={() => setWithId(openId)} onDress={() => setDressId(openId)} /> : null}
       </Sheet>
+      {withId && save.people[withId] ? <Interact id={withId} onClose={() => setWithId(null)} /> : null}
+      {dressId && save.people[dressId] ? <Dressing id={dressId} onClose={() => setDressId(null)} /> : null}
     </>
   );
 }
@@ -117,7 +123,7 @@ function AskHer({ id }: { id: string }) {
         <Button size="sm" onClick={ask} disabled={busy || !q.trim()}>{busy ? "…" : "ask"}</Button>
       </div>
       {says ? <p className="font-prose text-[15px] leading-relaxed mt-3">{says}</p> : null}
-      {!modelsAvailable() ? <div className="text-[11px] dim mt-2">Needs a model — this one is all voice.</div> : null}
+      {!modelsAvailable() ? <div className="text-[11px] dim mt-2">Needs a model set up in Settings. For offline talk, use "Be with her" → Talk.</div> : null}
     </Card>
   );
 }
@@ -129,7 +135,7 @@ function ownedGarments(save: ReturnType<typeof useGame>["save"]): Set<string> {
   return worn;
 }
 
-function RosterCard({ p, onOpen }: { p: Person; onOpen: () => void }) {
+function RosterCard({ p, onOpen, onWith }: { p: Person; onOpen: () => void; onWith: () => void }) {
   const { save } = useGame();
   const r = read(p, save.memory[p.id]);
   const fac = p.facility ? save.arcology.facilities[p.facility] : undefined;
@@ -152,6 +158,9 @@ function RosterCard({ p, onOpen }: { p: Person; onOpen: () => void }) {
             {p.psyche.state !== "intact" ? p.psyche.state : band(p.psyche)}
           </div>
           <div className="text-[11px] dim font-mono">{p.economics.income_last_week ? `¤${p.economics.income_last_week}` : ""}</div>
+          {p.age >= 18 ? (
+            <button className="btn btn-primary btn-sm mt-1.5" onClick={(e) => { e.stopPropagation(); onWith(); }}>be with her</button>
+          ) : null}
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2 mt-3">
@@ -169,9 +178,9 @@ function RosterCard({ p, onOpen }: { p: Person; onOpen: () => void }) {
   );
 }
 
-function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
+function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: () => void; onWith: () => void; onDress: () => void }) {
   const { save, mutate } = useGame();
-  const [tab, setTab] = useState<"do" | "her" | "read" | "body" | "theatre" | "work" | "history">("do");
+  const [tab, setTab] = useState<"her" | "read" | "body" | "theatre" | "work" | "history">("read");
   const [painting, setPainting] = useState(false);
   const [forging, setForging] = useState(false);
   const [pose, setPose] = useState<Pose | undefined>(undefined);
@@ -185,16 +194,16 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
     <div>
       {/* Her, then the numbers about her — in that order, at that ratio. */}
       <div className="flex gap-4 mb-4">
-        <div className="card-2 shrink-0 px-2" style={{ width: 190 }}>
-          <SlaveArt person={p} height={430} pose={pose} svgRef={doll} />
+        <div className="card-2 shrink-0 px-1" style={{ width: "clamp(118px, 34vw, 190px)" }}>
+          <SlaveArt person={p} height="clamp(270px, 78vw, 430px)" pose={pose} svgRef={doll} />
         </div>
         <div className="flex-1 min-w-0">
           {p.body.portrait_url ? <img src={p.body.portrait_url} alt="" className="w-full max-h-40 object-cover rounded-lg mb-2" /> : null}
-          <p className="font-prose text-[14px] leading-relaxed">{p.body.appearance_facts}</p>
-          <p className="text-[12px] dim mt-1">{p.body.appearance_now}. Wearing {p.clothes}.</p>
-          <div className="grid grid-cols-3 gap-2 mt-3">
-            <Meter value={r.devotion} range={[-100, 100]} label={r.label} />
-            <Meter value={r.trust} range={[-100, 100]} label={r.trust_label} />
+          <p className="font-prose text-[13.5px] leading-snug">{p.body.appearance_facts}</p>
+          <p className="text-[12px] dim mt-1">{p.clothes === "no clothing" ? "Naked." : `Wearing ${p.clothes}.`}{p.body.appearance_now && !/^wearing whatever/.test(p.body.appearance_now) ? ` ${p.body.appearance_now}.` : ""}</p>
+          <div className="grid grid-cols-1 gap-2 mt-3">
+            <Meter value={r.devotion} range={[-100, 100]} label={`devotion · ${r.label}`} />
+            <Meter value={r.trust} range={[-100, 100]} label={`trust · ${r.trust_label}`} />
             <Meter value={p.health.health} range={[-100, 100]} label="health" />
           </div>
         </div>
@@ -246,13 +255,17 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
 
       {note ? <Card className="mb-4 text-[12.5px] acc">{note}</Card> : null}
 
-      <div className="flex gap-1 mb-4">
-        {(["do", "her", "read", "body", "theatre", "work", "history"] as const).map((t) => (
-          <Button key={t} size="sm" kind={tab === t ? "primary" : "ghost"} onClick={() => setTab(t)}>{t}</Button>
+      <div className="flex gap-2 mb-4">
+        {p.age >= 18 ? <Button kind="primary" className="flex-1" onClick={onWith}>Be with her</Button> : null}
+        <Button className="flex-1" onClick={onDress}>Dress her</Button>
+      </div>
+
+      <div className="flex flex-wrap gap-1 mb-4">
+        {([["read", "how she is"], ["her", "you and her"], ["body", "body"], ["theatre", "surgery"], ["work", "work"], ["history", "history"]] as const).map(([t, label]) => (
+          <Button key={t} size="sm" kind={tab === t ? "primary" : "ghost"} onClick={() => setTab(t)}>{label}</Button>
         ))}
       </div>
 
-      {tab === "do" && <Acts id={id} />}
       {tab === "her" && <HerPanel id={id} />}
       {tab === "theatre" && <Surgery id={id} />}
 
@@ -274,7 +287,7 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
             </Card>
           </Section>
 
-          <Section title="What is actually holding her">
+          <Section title="What keeps her here">
             <Card>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Meter value={p.bond.bond} range={[-100, 100]} label="bond (slow, sticky)" />
@@ -282,7 +295,7 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
                 <Meter value={p.bond.resentment} range={[0, 100]} invert label="resentment" />
                 <Meter value={p.bond.hope} range={[0, 100]} label="hope" />
               </div>
-              <p className="text-[11.5px] dim mt-3">Fear decays 15% a week unmaintained. Bond does not.</p>
+              <p className="text-[11.5px] dim mt-3">Fear drops about 15% a week unless you keep it up. Bond stays.</p>
             </Card>
           </Section>
 
@@ -318,7 +331,7 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
             <p className="text-[12.5px] dim mt-2">{p.body.appearance_now}</p>
           </Card>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {[["height", `${p.body.height_cm}cm`], ["weight", `${p.body.weight_kg}kg`], ["build", p.body.weight > 20 ? "soft" : p.body.muscle > 25 ? "strong" : "average"],
+            {[["height", `${p.body.height_cm}cm`], ["weight", `${p.body.weight_kg}kg`], ["build", buildOf(p.body.weight) === "slim" && p.body.muscle > 25 ? "strong" : buildOf(p.body.weight)],
               ["face", `${p.body.face}/100`], ["breasts", `${p.body.boobs}cc${p.body.boob_implant ? " (implants)" : ""}`], ["butt", `${p.body.butt}/10`],
               ["hair", `${p.body.hair_color}, ${p.body.hair_length}cm`], ["eyes", p.body.eye_color], ["skin", p.body.skin]].map(([k, v]) => (
               <div key={k} className="card-2 px-3 py-2">
@@ -330,28 +343,15 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
           {p.body.marks.length ? (
             <Section title="Marks"><Card><ul className="text-[12.5px] mid space-y-1">{p.body.marks.map((m, i) => <li key={i}>{m.what} — {m.where} (wk {m.week})</li>)}</ul></Card></Section>
           ) : null}
-          <Section title="What she is wearing" >
+          <Section title="What she is wearing">
             <Card>
-              <div className="grid sm:grid-cols-3 gap-3">
-                {(["clothes", "collar", "shoes"] as const).map((slot) => (
-                  <Field key={slot} label={slot}>
-                    <select value={p[slot]} onChange={(e) => mutate((s) => {
-                      const g = GARMENT_BY_NAME[e.target.value];
-                      if (g && g.cost && !ownedGarments(save).has(g.name)) s.arcology.cash -= g.cost;
-                      s.people[id][slot] = e.target.value;
-                    })}>
-                      {WARDROBE.filter((g) => g.slot === slot).map((g) => (
-                        <option key={g.id} value={g.name}>{g.name}{g.cost ? ` — ¤${g.cost}` : ""}</option>
-                      ))}
-                    </select>
-                  </Field>
-                ))}
-              </div>
-              <div className="text-[11.5px] dim">
+              <div className="text-[13px]">{p.clothes}{p.collar && p.collar !== "none" && p.collar !== "no collar" ? `, ${p.collar}` : ""}{p.shoes && p.shoes !== "none" && p.shoes !== "barefoot" ? `, ${p.shoes}` : ""}{p.legwear && p.legwear !== "bare legs" ? `, ${p.legwear}` : ""}</div>
+              <div className="text-[11.5px] dim mt-1">
                 {[p.clothes, p.collar, p.shoes].map((n) => GARMENT_BY_NAME[n]).filter(Boolean).map((g) => (
-                  `${g!.name}: ×${g!.appeal.toFixed(2)} on what she earns${g!.relaxation ? `, ${g!.relaxation > 0 ? "+" : ""}${g!.relaxation.toFixed(2)} a week to her` : ""}${g!.note ? ` — ${g!.note}` : ""}`
+                  `${g!.name}: ×${g!.appeal.toFixed(2)} on what she earns${g!.relaxation ? `, ${g!.relaxation > 0 ? "easier" : "harder"} on her` : ""}`
                 )).join(" · ")}
               </div>
+              <Button size="sm" className="mt-3" onClick={onDress}>Open the dressing room</Button>
             </Card>
           </Section>
 
@@ -538,7 +538,7 @@ function PersonPanel({ id, onClose }: { id: string; onClose: () => void }) {
                   </div>
                 ))}
               </div>
-            ) : <Empty>Nothing yet. Nothing has happened to her here.</Empty>}
+            ) : <Empty>Nothing yet.</Empty>}
           </Section>
           {mem?.beliefs.length ? (
             <Section title="What she has concluded">

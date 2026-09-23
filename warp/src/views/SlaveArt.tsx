@@ -21,16 +21,27 @@
  */
 import { useEffect, useState, useMemo, useRef, type RefObject } from "react";
 import type { Person } from "../engine/types";
-import { ART_BASE, cropFor, layersFor, styleFor, heightScaleFor, type Crop, type Layer } from "../lib/vectorart";
+import { ART_BASE, cropFor, layersFor, styleFor, heightTransform, type Crop, type Layer } from "../lib/vectorart";
 import { frameAt, jointFor, restingPose, transformFor, STILL, type Joint, type Pose } from "../lib/rig";
 import { subscribeClock, stillWanted } from "../lib/clock";
+import { expressionOf, ExpressionLayer, type Moment } from "../lib/expression";
 
 /** file stem → inner SVG markup, or null when the file is not in the pack. */
 const cache = new Map<string, string | null>();
 const inflight = new Map<string, Promise<string | null>>();
 
+/** Every layer the pack has, read once. A proposed layer that is not in it is skipped without a
+ *  request — an outfit proposes a sleeve for every arm position and most outfits do not have one. */
+let manifest: Promise<Set<string> | null> | null = null;
+function known(): Promise<Set<string> | null> {
+  manifest ??= fetch(`${ART_BASE}/index.json`).then((r) => (r.ok ? r.json() : null)).then((xs: string[] | null) => (xs ? new Set(xs) : null)).catch(() => null);
+  return manifest;
+}
+
 async function loadLayer(id: string): Promise<string | null> {
   if (cache.has(id)) return cache.get(id)!;
+  const have = await known();
+  if (have && !have.has(id)) { cache.set(id, null); return null; }
   const existing = inflight.get(id);
   if (existing) return existing;
   const job = (async () => {
@@ -59,12 +70,21 @@ async function loadLayer(id: string): Promise<string | null> {
 
 let scopeSeq = 0;
 
-export default function SlaveArt({ person, height = 260, crop = "full", className, pose, animate = true, svgRef }:
+export default function SlaveArt({ person, height = 260, crop = "full", className, pose, animate = true, svgRef, moment, face = true }:
   { person: Person; height?: number | string; crop?: Crop; className?: string; pose?: Pose; animate?: boolean;
+    /** What just happened, so her face can show it. */
+    moment?: Moment;
+    /** Draw the expression layer at all. Off for the ControlNet render, where it would only confuse. */
+    face?: boolean;
     /** Handed out so a caller can rasterise exactly what is on screen — see lib/dollrender.ts. */
     svgRef?: RefObject<SVGSVGElement | null> }) {
   const held = pose ?? restingPose(person);
-  const layers = useMemo(() => layersFor(person, held), [person, held]);
+  // The save is mutated in place, so the person object is the same one after her clothes change.
+  // Key on what would actually be drawn instead of on the object.
+  const fresh = layersFor(person, held);
+  const layerKey = fresh.map((l) => `${l.id}:${l.transform ?? ""}:${l.tint ?? ""}`).join("|");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const layers = useMemo(() => fresh, [layerKey]);
   const scope = useMemo(() => `sa${(scopeSeq++).toString(36)}`, []);
   const [markup, setMarkup] = useState<{ layer: Layer; inner: string }[]>([]);
   const own = useRef<SVGSVGElement>(null);
@@ -79,6 +99,11 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
     })();
     return () => { live = false; };
   }, [layers]);
+
+  // The face goes on after the features and before the fringe, so hair falls over a blush the way
+  // it would.
+  const expr = face ? expressionOf(person, moment) : null;
+  const foreAt = markup.findIndex((m) => m.layer.id.startsWith("Hair_Fore") || /_Ear_Fore$/.test(m.layer.id));
 
   // The moving part. Writes attributes rather than state: a breathing roster must not re-render.
   useEffect(() => {
@@ -102,24 +127,33 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
 
     if (!animate || stillWanted()) { paint(STILL); return; }
     return subscribeClock((ms) => paint(frameAt(person, held, ms)));
-  }, [markup, person, held, animate]);
+  }, [markup, person, held, animate, !!expr]);
 
-  const css = useMemo(() => styleFor(person, scope), [person, scope]);
-  const scale = heightScaleFor(person);
+  const css = styleFor(person, scope);
+  const tints = useMemo(() => [...new Set(markup.map((m) => m.layer.tint).filter((t): t is number => !!t))], [markup]);
 
   return (
     <div className={className} style={{ height, display: "flex", alignItems: "flex-end", justifyContent: "center", overflow: "hidden" }}>
-      <svg ref={svg} viewBox={cropFor(crop, held)} className={scope} preserveAspectRatio="xMidYMax meet"
-        style={{ height: "100%", transform: crop === "full" ? `scale(${scale})` : undefined, transformOrigin: "bottom center" }}
+      <svg ref={svg} viewBox={cropFor(crop, held, person)} className={scope} preserveAspectRatio="xMidYMax meet"
+        style={{ height: "100%" }}
         role="img" aria-label={`${person.name} — ${held.reads}`}>
         <style>{css}</style>
+        {tints.length ? (
+          <defs>
+            {tints.map((t) => <filter key={t} id={`${scope}-hue${t}`}><feColorMatrix type="hueRotate" values={String(t)} /></filter>)}
+          </defs>
+        ) : null}
+        <g transform={crop === "full" ? heightTransform(person) : undefined}>
         {markup.map(({ layer, inner }, i) => (
           <g key={`${layer.id}-${i}`}
             data-joint={jointFor(layer.id)}
             data-own={layer.transform ?? ""}
             transform={layer.transform}
+            filter={layer.tint ? `url(#${scope}-hue${layer.tint})` : undefined}
             dangerouslySetInnerHTML={{ __html: inner }} />
-        ))}
+        )).flatMap((el, i) => (i === foreAt && expr ? [<ExpressionLayer key="expr" e={expr} scope={scope} />, el] : [el]))}
+        {expr && foreAt < 0 && markup.length ? <ExpressionLayer e={expr} scope={scope} /> : null}
+        </g>
       </svg>
     </div>
   );

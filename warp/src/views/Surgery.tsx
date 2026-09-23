@@ -24,7 +24,7 @@ export default function Surgery({ id }: { id: string }) {
   const theatre = save.arcology.facilities["surgery"];
 
   if (!theatre?.level) {
-    return <Empty>You have no surgical theatre. Build one in the arcology before you start changing what people are.</Empty>;
+    return <Empty>No surgical theatre yet. Build one from the Arcology screen.</Empty>;
   }
 
   return (

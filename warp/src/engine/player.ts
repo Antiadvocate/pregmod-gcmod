@@ -22,7 +22,7 @@ export interface HouseholdRead {
 
 export function householdRead(s: SaveState): HouseholdRead {
   const household = Object.values(s.people).filter((p) => p.status === "owned" || p.status === "indentured");
-  if (!household.length) return { feared: 0, trusted: 0, label: "an unknown quantity", lines: ["You own nobody. Nobody has an opinion."] };
+  if (!household.length) return { feared: 0, trusted: 0, label: "nobody in particular", lines: ["You don't own anyone yet."] };
 
   let fear = 0, trust = 0, hope = 0, resent = 0, fragility = 0;
   for (const p of household) {
@@ -39,21 +39,21 @@ export function householdRead(s: SaveState): HouseholdRead {
   const frag = fragility / n;
 
   const label =
-    feared > 60 && trusted < 25 ? "somebody they are careful around" :
-    trusted > 55 && feared < 25 ? "somebody they would rather keep" :
-    feared > 45 && trusted > 45 ? "somebody they cannot read, which is worse" :
-    feared < 20 && trusted < 20 ? "somebody who is barely there" :
-    "an ordinary owner, which in an arcology is not nothing";
+    feared > 60 && trusted < 25 ? "someone to be careful around" :
+    trusted > 55 && feared < 25 ? "worth staying for" :
+    feared > 45 && trusted > 45 ? "impossible to read" :
+    feared < 20 && trusted < 20 ? "hardly ever around" :
+    "fair enough, as owners go";
 
   const lines: string[] = [];
-  if (frag > 0.65) lines.push(`Your household runs on fear — ${Math.round(frag * 100)}% of its obedience. It works, it is expensive to maintain, and it evaporates the first month you are distracted.`);
-  else if (frag < 0.3) lines.push(`Your household mostly stays because it has decided to. That survives your absence, a bad quarter, and one genuine mistake.`);
-  if (resent / n > 50) lines.push(`They are carrying ${Math.round(resent / n)} points of unforgiven treatment, on average. Some of that is going to arrive as a decision somebody makes.`);
-  if (hope / n < 15) lines.push(`Nobody here expects anything to improve. Promises are worth nothing to them until one is kept.`);
-  else if (hope / n > 55) lines.push(`They believe things can get better, which is most of why they are trying.`);
+  if (frag > 0.65) lines.push(`Fear does most of the work in your house: ${Math.round(frag * 100)}% of it. Stop keeping it up and it's gone within a month.`);
+  else if (frag < 0.3) lines.push(`Most of them stay because they've decided to. That holds when you're away or have a bad month.`);
+  if (resent / n > 50) lines.push(`They're carrying a lot they haven't forgiven. Sooner or later one of them acts on it.`);
+  if (hope / n < 15) lines.push(`None of them expects anything to get better. A promise means nothing to them until you keep one.`);
+  else if (hope / n > 55) lines.push(`They think things can get better here, and it shows in how hard they try.`);
   const broken = household.filter((p) => p.psyche.state !== "intact").length;
-  if (broken) lines.push(`${broken} of them ${broken === 1 ? "is" : "are"} coming apart, or has already.`);
-  if (!lines.length) lines.push(`Nothing about you is remarkable to them either way. They do the work and think about something else.`);
+  if (broken) lines.push(`${broken} of them ${broken === 1 ? "is" : "are"} coming apart, or already has.`);
+  if (!lines.length) lines.push(`They do the work and think about something else.`);
   return { feared, trusted, label, lines };
 }
 

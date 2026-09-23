@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import {
-  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, MoreHorizontal, Globe2,
+  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, MoreHorizontal, Globe2, BookOpen,
 } from "lucide-react";
 import type { SaveState } from "./engine/types";
 import { GameProvider, useGame } from "./lib/game";
@@ -26,13 +26,16 @@ import Orders from "./views/Orders";
 import Report from "./views/Report";
 import SettingsView from "./views/Settings";
 import You from "./views/You";
+import Journal from "./views/Journal";
+import Ending from "./views/Ending";
 import Cheats from "./views/Cheats";
 
-export type Route = "penthouse" | "people" | "scene" | "city" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
+export type Route = "penthouse" | "people" | "story" | "scene" | "city" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
 
 const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "penthouse", label: "Penthouse", icon: Building2 },
   { id: "people", label: "People", icon: Users },
+  { id: "story", label: "Story", icon: BookOpen },
   { id: "scene", label: "Scene", icon: Play },
   { id: "city", label: "City", icon: Globe2 },
   { id: "arcology", label: "Arcology", icon: Landmark },
@@ -75,7 +78,7 @@ export default function App() {
 /** On a phone, five destinations fit. The other six lived off the right-hand edge of a bar that
  *  scrolled without saying so, which is the same as not existing — the Cheats screen was shipped
  *  and unreachable on the device it was asked for. */
-const PRIMARY: Route[] = ["penthouse", "people", "scene", "city", "market"];
+const PRIMARY: Route[] = ["penthouse", "people", "story", "city", "market"];
 
 function Shell({ onSwitch }: { onSwitch: () => void }) {
   const { save, rev } = useGame();
@@ -117,6 +120,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
           <div className={cx("mx-auto w-full", route === "scene" ? "max-w-3xl h-full" : "max-w-5xl p-4 sm:p-6")}>
             {route === "penthouse" && <Penthouse go={setRoute} />}
             {route === "people" && <Roster />}
+            {route === "story" && <Journal />}
             {route === "scene" && <Scene />}
             {route === "city" && <City />}
             {route === "arcology" && <ArcologyView />}
@@ -144,6 +148,8 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
           {unseen ? <span className="absolute" /> : null}
         </button>
       </nav>
+
+      <Ending onNewRun={onSwitch} />
 
       <Sheet open={moreOpen} onClose={() => setMoreOpen(false)} title="Everything else">
         <div className="grid grid-cols-2 gap-2">

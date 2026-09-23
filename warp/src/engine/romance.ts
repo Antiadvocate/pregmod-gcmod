@@ -65,8 +65,8 @@ export interface Rung {
 
 export const RUNGS: Rung[] = [
   {
-    id: "property", name: "Property", what: "She is yours. That is the whole of it.",
-    gate: {}, effect: "Nothing. This is where everybody starts.",
+    id: "property", name: "Property", what: "She's yours, on paper and nowhere else.",
+    gate: {}, effect: "Where everyone starts.",
   },
   {
     id: "favourite", name: "Favourite", what: "You keep coming back to her, and the household has noticed.",
@@ -84,13 +84,13 @@ export const RUNGS: Rung[] = [
     id: "courted", name: "Courted", what: "You are courting her, in front of everybody, like she is somebody who could say no.",
     rite: "court",
     gate: { devotion: 60, trust: 45, fragility: 0.35, bond: 40, hope: 35, weeks: 8, tilt: 0.1 },
-    effect: "The household reads it. Her hope climbs weekly. Doctrines that think she is livestock start costing you standing.",
+    effect: "The household sees it. Her hope climbs every week. Doctrines that think she's livestock start costing you standing.",
   },
   {
     id: "betrothed", name: "Betrothed", what: "You have said it out loud, in public, and it is on the registry.",
     rite: "promise",
     gate: { devotion: 75, trust: 65, fragility: 0.22, bond: 60, hope: 55, weeks: 8, tilt: 0.25 },
-    effect: "A promise on the ledger. Breaking it now is the most expensive thing you can do to a person in this game.",
+    effect: "It's on the registry. Breaking it costs you every woman in the house.",
   },
   {
     id: "wife", name: "Wife", what: "Married. Witnessed. The arcology has an opinion and so does every doctrine you hold.",
@@ -99,7 +99,7 @@ export const RUNGS: Rung[] = [
     effect: "She stops being a slave on the registry and becomes your wife on it. She gains a say — dominion starts moving.",
   },
   {
-    id: "keeper", name: "She has the collar", what: "You did what she asked, and then you kept doing it, and at some point it stopped being a game.",
+    id: "keeper", name: "She has the collar", what: "You did what she asked, then kept doing it, until the registry said it too.",
     rite: "reversal",
     gate: { devotion: 90, trust: 85, fragility: 0.1, bond: 85, dominion: 85, weeks: 12, tilt: 0.4 },
     effect: "The arcology is hers. The week is reported to her. She decides, and you are asked.",
@@ -142,7 +142,7 @@ export function nextRung(s: SaveState, p: Person): { rung: Rung; ready: boolean;
       : `what she remembers is only ${tilt.toFixed(2)} good, and this needs ${g.tilt}`);
   }
   if (g.fragility !== undefined && r.fragility > g.fragility) {
-    blocked.push(`${Math.round(r.fragility * 100)}% of her obedience is fear, and this rung allows ${Math.round(g.fragility * 100)}%. She would say yes to anything you asked. That is the problem.`);
+    blocked.push(`${Math.round(r.fragility * 100)}% of her obedience is fear, and this rung allows ${Math.round(g.fragility * 100)}%. She would say yes to anything right now, because she is afraid to say no.`);
   }
   if (p.age < 18) blocked.push("she is a child");
   if (p.status !== "owned" && p.status !== "indentured" && rom.standing === "property") blocked.push("she is not yours");
@@ -196,15 +196,15 @@ export const RITES: Record<string, Rite> = {
   },
   court: {
     id: "court", name: "Court her, publicly", cash: 9000, rep: 200,
-    seed: (_s, p) => `You have started courting ${p.name} where people can see it — which in an arcology means you have made a statement about what she is, and the statement contradicts the paperwork.`,
+    seed: (_s, p) => `You have started courting ${p.name} where people can see it . People stop you on the concourse to ask if it's true.`,
     apply: (s, p) => {
       applyTreatment(p, { kind: "promise_kept", size: 6, why: "courted in public, like somebody who could say no" }, s.arcology.week);
       p.bond.hope = clamp(p.bond.hope + 25, 0, 100);
       shove(p.psyche, 2, { hard: true });
       const mem = s.memory[p.id];
-      if (mem) remember(mem, { content: "he courted her in front of the whole arcology, as if she could have refused", week: s.arcology.week, importance: 10, charge: "bright", core: true });
-      startRumor(s, `he is courting ${p.name} in public`, { about: p.id, salience: 8 });
-      return [line(`You are courting ${p.name} in public. Every doctrine you hold has now been asked a question.`, "good", 9, p.id)];
+      if (mem) remember(mem, { content: "you courted her in front of the whole arcology, as if she could have refused", week: s.arcology.week, importance: 10, charge: "bright", core: true });
+      startRumor(s, `the owner is courting ${p.name} in public`, { about: p.id, salience: 8 });
+      return [line(`You are courting ${p.name} in public. The concourse is talking about nothing else.`, "good", 9, p.id)];
     },
   },
   promise: {
@@ -215,7 +215,7 @@ export const RITES: Record<string, Rite> = {
       p.bond.hope = clamp(p.bond.hope + 30, 0, 100);
       addState(p.psyche, "waiting for it to be taken back", s.arcology.week);
       const mem = s.memory[p.id];
-      if (mem) remember(mem, { content: "he put it in writing, on the registry, where other people could read it", week: s.arcology.week, importance: 10, charge: "bright", core: true });
+      if (mem) remember(mem, { content: "you put it in writing, on the registry, where other people could read it", week: s.arcology.week, importance: 10, charge: "bright", core: true });
       return [line(`${p.name} is betrothed to you and it is on the registry. She is waiting for you to take it back — that is what she has learned people do.`, "good", 9, p.id)];
     },
   },
@@ -262,9 +262,9 @@ export const RITES: Record<string, Rite> = {
       p.status = "free";
       s.player.owned_by = p.id;
       s.canon.push(`${p.name} runs ${s.arcology.name}. The registry says the arcology's former owner belongs to her, and the registry is not a joke here.`);
-      startRumor(s, `he gave ${p.name} the collar and meant it`, { about: p.id, salience: 10 });
+      startRumor(s, `the owner gave ${p.name} the collar and meant it`, { about: p.id, salience: 10 });
       const mem = s.memory[p.id];
-      if (mem) remember(mem, { content: "the night he handed her the collar and put his own neck in it", week: s.arcology.week, importance: 10, charge: "bright", core: true });
+      if (mem) remember(mem, { content: "the night you handed her the collar and put your own neck in it", week: s.arcology.week, importance: 10, charge: "bright", core: true });
       shove(p.psyche, 3, { hard: true });
       return [
         line(`${p.name} has the arcology. The registry has been changed and the change is real.`, "good", 10, p.id),
@@ -328,14 +328,14 @@ export function renounce(s: SaveState, p: Person, why: string): ReportLine[] {
   const size = idx >= 4 ? 10 : idx >= 3 ? 7 : 4;
   applyTreatment(p, { kind: "promise_broken", size, why }, s.arcology.week);
   const mem = s.memory[p.id];
-  if (mem) remember(mem, { content: `he took it back — ${why}`, week: s.arcology.week, importance: 10, charge: "sharp", core: true });
+  if (mem) remember(mem, { content: `you took it back — ${why}`, week: s.arcology.week, importance: 10, charge: "sharp", core: true });
   addState(p.psyche, "what he took back", s.arcology.week);
   shove(p.psyche, -3, { hard: true });
   rom.standing = "property";
   rom.since_week = s.arcology.week;
   rom.dominion = clamp(rom.dominion - 40, -100, 100);
   if (idx >= 4) {
-    startRumor(s, `he took it back from ${p.name} after promising in public`, { salience: 10, about: p.id });
+    startRumor(s, `the owner took it back from ${p.name} after promising in public`, { salience: 10, about: p.id });
     s.arcology.rep -= 1500;
     for (const other of Object.values(s.people)) {
       if (other.status !== "owned" || other.id === p.id) continue;

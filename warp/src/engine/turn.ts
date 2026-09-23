@@ -22,6 +22,7 @@ import { moveEdge, addRole, startRumor } from "./social";
 import { snapshot } from "./state";
 import { hash } from "./rng";
 import { resolveAct, actDirective, type ActOutcome } from "./intimacy";
+import { writeAct, summarise, type Written } from "./writer";
 import { ACT_BY_ID } from "../data/intimacy";
 import { getLocalImage } from "../config";
 import { generateLocalImage, DEFAULT_NEGATIVE } from "../lib/diffusion";
@@ -167,14 +168,17 @@ export async function runActTurn(
   s: SaveState,
   personId: string,
   actId: string,
-  opts?: { onDelta?: (c: string) => void; onImage?: (url: string) => void; onProgress?: (n: string) => void; public?: boolean; signal?: AbortSignal },
-): Promise<{ outcome: ActOutcome | { error: string }; prose: string; notes: string[] }> {
+  opts?: { onDelta?: (c: string) => void; onImage?: (url: string) => void; onProgress?: (n: string) => void; public?: boolean; signal?: AbortSignal; lead?: boolean },
+): Promise<{ outcome: ActOutcome | { error: string }; prose: string; notes: string[]; written?: Written }> {
   const p = s.people[personId];
   if (!p) return { outcome: { error: "she is not here" }, prose: "", notes: [] };
 
   snapshot(s);
   const outcome = resolveAct(s, p, actId, { public: opts?.public });
   if ("error" in outcome) return { outcome, prose: "", notes: [] };
+  // Written before the model is asked, so there is always a scene on the page even while the
+  // narrator is thinking, and a scene left behind if it never answers.
+  const written = writeAct(s, p, outcome, { lead: opts?.lead });
 
   s.turn++;
   if (!s.scene.present.includes(personId)) s.scene.present.push(personId);
@@ -199,12 +203,12 @@ export async function runActTurn(
       tokensIn = res.usage.prompt_tokens; tokensOut = res.usage.completion_tokens; cost = res.usage.cost ?? 0;
     } else notes.push(`the narrator did not answer (${res.error ?? "unknown"})`);
   }
-  if (!prose) prose = offlineAct(s, p, outcome);
+  if (!prose) prose = [...written.paragraphs, written.said ? `"${written.said}"` : ""].filter(Boolean).join("\n\n");
 
   const entry: TurnEntry = {
     turn: s.turn, week: s.arcology.week,
     action: act.name, mode: "do", prose,
-    summary: `${act.what} — she ${outcome.landing} it`,
+    summary: summarise(p, outcome),
     present: [...s.scene.present], location: s.scene.location, time: s.scene.time,
     bookkeeping: modelsAvailable() ? "ok" : "offline",
     tokens_in: tokensIn, tokens_out: tokensOut, cost,
@@ -226,21 +230,7 @@ export async function runActTurn(
   }
 
   refresh(p, s.memory[p.id]);
-  return { outcome, prose, notes };
-}
-
-/** With no narrator, the act still happened and the engine says exactly what it was. */
-function offlineAct(s: SaveState, p: Person, o: ActOutcome): string {
-  const act = ACT_BY_ID[o.act];
-  const lines = [`${s.scene.time} — ${s.scene.location}.`, `${act.what.charAt(0).toUpperCase()}${act.what.slice(1)}.`];
-  const because = o.because.replace(/\.?$/, ".");
-  lines.push(`${p.name} ${o.landing === "wanted" ? "wanted it" : o.landing === "hated" ? "hated it" : o.landing === "endured" ? "endured it" : o.landing === "willing" ? "was willing" : "was somewhere else for it"} — ${because}`);
-  if (o.first) lines.push("First time.");
-  if (o.finished) lines.push("She got there.");
-  if (o.discovered) lines.push(`Found out: ${o.discovered}.`);
-  if (o.converted) lines.push(`Changed for good: ${o.converted}.`);
-  lines.push(`arousal ${o.arousal >= 0 ? "+" : ""}${o.arousal} · relaxation ${o.relaxation >= 0 ? "+" : ""}${o.relaxation.toFixed(2)} · bond ${o.bond >= 0 ? "+" : ""}${o.bond} · resentment +${o.resentment}`);
-  return lines.join("\n");
+  return { outcome, prose, notes, written };
 }
 
 /** Her portrait, on demand. The clause that draws her is locked the first time and reused after. */

@@ -39,9 +39,12 @@ import { refreshPlayer, practise, skill } from "./player";
 import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf } from "./romance";
 import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
+import { tickStory } from "./story";
+import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
 import { tickThreads } from "./threads";
 import { THREAD_BY_KIND } from "../data/threads";
+import { canSire } from "./you";
 
 const alive = (s: SaveState): Person[] => Object.values(s.people).filter((p) => p.status === "owned" || p.status === "indentured");
 
@@ -155,10 +158,9 @@ export function endWeek(s: SaveState): WeekReport {
     if (hw.died) { dead.push(p); continue; }
 
     // SEX, AND WHAT COMES OF IT
-    const exposure = sexualExposure(p);
+    const exposure = sexualExposure(p, s);
     if (exposure > 0 && !p.womb.contraceptives) {
-      const father = exposure > 3 ? null : s.player.name ? null : null;
-      const f = tryConception(s, p, father, exposure);
+      const f = tryConception(s, p, null, exposure);
       if (f) push(`${p.name} is pregnant.`, "neutral", 6, p.id);
     }
     const preg = tickPregnancy(s, p);
@@ -226,7 +228,7 @@ export function endWeek(s: SaveState): WeekReport {
   tickProximity(s);
   const pulled = coRegulate(s);
   const flips = pulled.filter((x) => Math.abs(x.pull) > 0.25).length;
-  if (flips >= 3) push(`The mood moved through ${flips} of them together this week — whatever is in that room, they are all in it.`, "neutral", 4);
+  if (flips >= 3) push(`The mood moved through ${flips} of them together this week — whatever's in that room, they're all feeling it.`, "neutral", 4);
   // Seed from the week that just happened, then let it spread. Seeding after diffusion would
   // mean a new rumour is known by exactly one person for a week, which is not how a house works.
   gossip(s, week);
@@ -264,6 +266,8 @@ export function endWeek(s: SaveState): WeekReport {
   // The plot chain, which is a society pass of its own: it moves your standing with the trade, it
   // moves the arcology's adoption, and it is where the service fees come from once they are open.
   lines.push(...tickReversal(s));
+  for (const l of tickStory(s)) push(l.text, l.tone, l.weight);
+  lines.push(...tickRun(s));
 
   const soc = tickSociety(s);
   led.entry("doctrine", "your citizens, on how you live", soc.cash, soc.rep);
@@ -322,8 +326,9 @@ export function endWeek(s: SaveState): WeekReport {
     const who = s.people[ask.person];
     if (who) push(`${who.name} wants something.`, "neutral", 7, who.id);
   }
-  s.events = [...s.events.filter((e) => week - e.week < 2), ...selectEvents(s)];
-  for (const e of s.events.filter((x) => x.week === arc.week - 1 || x.week === arc.week)) {
+  const fresh = selectEvents(s);
+  s.events = [...s.events.filter((e) => week - e.week < 2), ...fresh];
+  for (const e of fresh) {
     push(e.seed, e.severity === "major" ? "warning" : "neutral", 10, e.person);
   }
 
@@ -334,7 +339,7 @@ export function endWeek(s: SaveState): WeekReport {
   const wornOut = alive(s).filter((p) => wear(p.psyche) > 0.7);
   if (wornOut.length) problems.push(`${wornOut.length} have been braced so long their resting point has moved.`);
   const u = unrest(s);
-  if (u > 50) problems.push(`Household unrest is at ${Math.round(u)}. No amount of security touches this number.`);
+  if (u > 50) problems.push(`Household unrest is at ${Math.round(u)}. Guards won't fix it.`);
 
   // You get better at this by doing it: a week of running a household is a week of practice.
   practise(s, "slaving", 0.5 + alive(s).length * 0.05);
@@ -360,7 +365,9 @@ export function endWeek(s: SaveState): WeekReport {
 
 /** Roughly how much sex a week of this assignment is. Feeds conception, and nothing else — the
  *  income model already counts customers separately. */
-function sexualExposure(p: Person): number {
+function sexualExposure(p: Person, s: SaveState): number {
+  // The two jobs that are only you: nothing to conceive from if you can't sire.
+  if ((p.assignment === "please you" || p.assignment === "be your Concubine") && !canSire(s)) return 0;
   switch (p.assignment) {
     case "work in the brothel": return 5;
     case "be confined in the arcade": return 6;

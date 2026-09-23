@@ -12,7 +12,10 @@ import { endWeek } from "../engine/week";
 import { writeWeekProse } from "../engine/forge";
 import { resolveEvent, EVENT_BY_ID } from "../engine/events";
 import { generateDynamicEvent, resolveDynamic, dynamicReadiness } from "../engine/dynamic";
-import { grantAsk, refuseAsk, voiceAsk } from "../engine/asks";
+import { voiceAsk } from "../engine/asks";
+import { AskList } from "./AskCard";
+import StoryCard from "./StoryCard";
+import Ambitions from "./Ambitions";
 import { theKeeper } from "../engine/romance";
 import { nextEvent as chainEvent, resolveChain, reversalOf, subjectOf, GESTURES, gestureAvailable, doGesture, type Reaction } from "../engine/reversal";
 import { liveThreads, answerThread, describeThread } from "../engine/threads";
@@ -79,6 +82,9 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
           </p>
         </Card>
       ) : null}
+
+      {/* YOUR STORY FIRST. It is the thing that is only about you. */}
+      <StoryCard />
 
       {/* SITUATIONS FIRST. A thread is the game telling you something it worked out about the last
           two months, which outranks anything that happened on Tuesday. */}
@@ -193,32 +199,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
         </Section>
       ) : null}
 
-      {save.asks?.length ? (
-        <Section title={keeper ? "What she wants from you" : "They are asking"}>
-          <div className="space-y-3">
-            {save.asks.map((ask) => {
-              const who = save.people[ask.person];
-              if (!who) return null;
-              return (
-                <Card key={ask.id}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="chip on">{who.name}</span>
-                    <span className="text-[11px] uppercase tracking-wider dim">{ask.kind === "instruction" ? "not asking" : ask.kind}</span>
-                  </div>
-                  <p className="font-prose text-[15px] leading-relaxed mb-3">{ask.text}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" kind="primary" onClick={() => mutate((s) => { grantAsk(s, ask); })}>
-                      do it{ask.cash ? ` · ¤${ask.cash.toLocaleString()}` : ""}
-                    </Button>
-                    <Button size="sm" onClick={() => mutate((s) => { refuseAsk(s, ask, false); })}>no</Button>
-                    <Button size="sm" kind="danger" onClick={() => mutate((s) => { refuseAsk(s, ask, true); })}>put her in her place</Button>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </Section>
-      ) : null}
+      <AskList asks={save.asks ?? []} title={keeper ? "What she wants from you" : "They want something"} />
 
       {save.events.length ? (
         <Section title="Waiting on you" right={
@@ -277,8 +258,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
         </Fold>
       ) : null}
 
-      {!save.events.length ? (
-        <Section title="Nothing is happening" right={
+      {!save.events.length && dyn.ready ? (
+        <Section title="Quiet week" right={
           <Button size="sm" disabled={inventing || !dyn.ready} title={dyn.note} onClick={async () => {
             setInventing(true);
             const e = await generateDynamicEvent(save);
@@ -300,6 +281,10 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
         </Section>
       ) : null}
 
+      <Fold id="ambitions" title="What you're after" defaultOpen={false}>
+        <Ambitions />
+      </Fold>
+
       <Fold id="flags" count={flags.length} title="Who needs looking at" right={<Button size="sm" kind="ghost" onClick={() => go("people")}>all {people.length} <ChevronRight size={13} /></Button>}>
         {flags.length ? (
           <div className="space-y-2">
@@ -320,7 +305,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
               </Card>
             ))}
           </div>
-        ) : <Empty>Nobody is in trouble. That is not the same as nobody having a problem.</Empty>}
+        ) : <Empty>Nobody needs you this week.</Empty>}
       </Fold>
 
       <Section title="The week">

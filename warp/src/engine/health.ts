@@ -9,6 +9,7 @@
 import type { Person, SaveState } from "./types";
 import { clamp } from "./psyche";
 import { rng } from "./rng";
+import { kgFor } from "./build";
 
 export interface HealthWeek { delta: number; notes: string[]; died: boolean }
 
@@ -82,7 +83,7 @@ export function tickHealth(state: SaveState, p: Person, load: { health: number; 
     case "cleansing": h.health = clamp(h.health + 3, -100, ceiling); break;
   }
   // Weight follows the body's own arithmetic, not a separate ledger.
-  p.body.weight_kg = Math.round(((21 + p.body.weight * 0.09) * (p.body.height_cm / 100) ** 2) * 10) / 10;
+  p.body.weight_kg = kgFor(p.body.weight, p.body.height_cm);
 
   const died = h.health <= -100 || (h.health < -80 && h.illness >= 4);
   if (died) notes.push("did not survive the week");

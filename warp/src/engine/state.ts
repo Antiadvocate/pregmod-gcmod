@@ -17,6 +17,11 @@ import { newPsyche } from "./psyche";
 import { defaultOrders } from "./rules";
 import { rollMarkets } from "./market";
 import { rng } from "./rng";
+import { newStory } from "./story";
+import { newRun } from "./run";
+import { ORIGIN_BY_ID } from "../data/story";
+import { settleBody, type Kit } from "./you";
+import { cityOf, cityYield } from "./city";
 
 export interface NewGameOptions {
   arcology_name?: string;
@@ -26,6 +31,16 @@ export interface NewGameOptions {
   starting_cash?: number;
   difficulty?: "generous" | "standard" | "hard";
   seed?: string;
+  /** Who you were before the building. See data/story/origins.ts. */
+  origin?: string;
+  /** What the household calls you. */
+  address?: string;
+  /** Run the Supplicationism chain as well. */
+  supplication?: boolean;
+  /** Up to two twists on the world. See engine/run.ts. */
+  twists?: string[];
+  /** What you have between your legs, which the scenes follow. The rest is shaped on the You screen. */
+  kit?: Kit;
 }
 
 const ARC_NAMES = ["Aurelia", "Vireo", "Marrow", "Halcyon", "Sable Rock", "Ninth Terrace", "Corvid", "The Spindle", "Tessellate", "Antioch"];
@@ -120,7 +135,7 @@ export function newGame(opts: NewGameOptions = {}): SaveState {
       body: { appearance_facts: "unremarkable, and dressed like somebody who does not need to be remarkable" },
       career: opts.player_career ?? "trader",
       skills: { trading: 35, hacking: 15, slaving: 25, engineering: 15, medicine: 10 },
-      household_read: { feared: 0, trusted: 0, label: "unknown quantity" },
+      household_read: { feared: 0, trusted: 0, label: "nobody in particular" },
     },
     scene: {
       location: "the penthouse",
@@ -148,6 +163,24 @@ export function newGame(opts: NewGameOptions = {}): SaveState {
     telemetry: [],
     corrections: {},
   };
+
+  // Who you were, and the story that comes with it. Setup runs before the story so an origin's
+  // household changes are in place when its arc picks who it is about.
+  if (opts.address) state.player.address = opts.address;
+  if (opts.kit) settleBody(state, opts.kit);
+  const origin = ORIGIN_BY_ID[opts.origin ?? ""];
+  if (origin) {
+    origin.setup(state, r);
+    if (difficulty === "generous") state.arcology.cash += 50000;
+    if (difficulty === "hard") state.arcology.cash = Math.round(state.arcology.cash * 0.55);
+  }
+  newRun(state, seed, opts.twists ?? []);
+  newStory(state, origin?.id ?? "none", seed, opts.supplication ?? false);
+  for (const p of Object.values(state.people)) refresh(p, state.memory[p.id]);
+  // The city starts with its people housed. It used to start 1,200 against room for 400 and spend
+  // the first months emptying out.
+  cityOf(state);
+  state.arcology.population = Math.min(state.arcology.population, Math.round((400 + cityYield(state).housing) * 0.9));
 
   state.market = rollMarkets(state);
   return state;
@@ -213,6 +246,11 @@ export function sanitize(raw: SaveState): SaveState {
     }
     refresh(p, s.memory[p.id]);
   }
+  // A save from before the story existed keeps the plot chain it was playing and joins the deck
+  // from here, with no origin arc — it already has a history.
+  if (!s.story && s.arcology) newStory(s, "none", s.id, true);
+  if (!s.run && s.arcology) newRun(s, s.id, []);
+
   // A save written before the return rule existed has the old three orders and a household that
   // may already be parked in the spa with no way out. Add the missing one rather than resetting
   // orders wholesale, which would throw away everything the player has written.

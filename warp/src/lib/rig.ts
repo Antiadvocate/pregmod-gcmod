@@ -49,8 +49,11 @@ export const PIVOT: Record<Joint, [number, number]> = {
 
 /** Which joint each layer hangs off. The chain is root → hips → chest → neck → features. */
 export function jointFor(layerId: string): Joint {
-  if (/^Arm(Fat)?_Left/.test(layerId)) return "armL";
-  if (/^Arm(Fat)?_Right/.test(layerId)) return "armR";
+  if (/^Arm(Fat)?_Left/.test(layerId) || /^Arm_Outfit_.*_Left(_|$)/.test(layerId)) return "armL";
+  if (/^Arm(Fat)?_Right/.test(layerId) || /^Arm_Outfit_.*_Right(_|$)/.test(layerId)) return "armR";
+  if (/^(Head_Outfit|Collar|Glasses|\w+_Ear_)/.test(layerId)) return "neck";
+  if (/^(Torso_Outfit|Boob_Outfit|Belly_Outfit)/.test(layerId)) return "chest";
+  if (/^(Butt_Outfit|Leg_Outfit|Shoes|Bulge)/.test(layerId)) return "legs";
   if (/^Eyes_/.test(layerId)) return "eyes";
   if (/^(Head|Face|Nose|Mouth|Lip_|Eyebrow_|Hair_Fore|Hair_Back)/.test(layerId)) return "neck";
   if (/^(Torso|Boob|Belly)/.test(layerId)) return "chest";

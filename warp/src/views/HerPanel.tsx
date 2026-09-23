@@ -11,7 +11,8 @@ import { useGame } from "../lib/game";
 import { Button, Card, Chip, Meter, Money, Section, cx } from "../lib/ui";
 import { LADDER, RUNGS, RUNG_BY_ID, RITES, ascend, nextRung, renounce, romanceOf, rungIndex, herReach } from "../engine/romance";
 import { read } from "../engine/obedience";
-import { generateAsk, grantAsk, refuseAsk, voiceAsk } from "../engine/asks";
+import { generateAsk, voiceAsk } from "../engine/asks";
+import { AskList } from "./AskCard";
 import { runTurn } from "../engine/turn";
 import { modelsAvailable } from "../config";
 
@@ -19,6 +20,7 @@ export default function HerPanel({ id }: { id: string }) {
   const { save, mutate } = useGame();
   const [busy, setBusy] = useState(false);
   const [rite, setRite] = useState<string | null>(null);
+  const [quiet, setQuiet] = useState(false);
   const p = save.people[id];
   if (!p) return null;
 
@@ -62,11 +64,11 @@ export default function HerPanel({ id }: { id: string }) {
           <Meter value={rom.dominion} range={[-100, 100]} label="who is deciding — you ← → her" />
           <div className="text-[11px] dim mt-1">
             {rom.dominion <= -60 ? "You decide everything and she knows it."
-              : rom.dominion < 0 ? "She has opinions. You have not had to hear many of them."
+              : rom.dominion < 0 ? "She has opinions. She mostly keeps them to herself."
               : rom.dominion < 40 ? "She says things now, and sometimes you do them."
               : rom.dominion < 70 ? "She moves people around the household and tells you afterwards."
-              : rom.dominion < 85 ? "She is running this. You are being kept informed."
-              : "She decides. You are asked."}
+              : rom.dominion < 85 ? "She runs most of it now and tells you what she did."
+              : "She decides. You find out after."}
           </div>
           <div className="flex flex-wrap gap-1.5 mt-2">
             <Chip on={reach.assignments}>assignments</Chip>
@@ -78,34 +80,23 @@ export default function HerPanel({ id }: { id: string }) {
         </div>
       </Card>
 
-      {ask ? (
-        <Card>
-          <div className="text-[11px] uppercase tracking-wider dim mb-1.5">{ask.kind === "instruction" ? "she is not asking" : "she is asking"}</div>
-          <p className="font-prose text-[15px] mb-3">{ask.text}</p>
-          <div className="flex flex-wrap gap-2">
-            <Button kind="primary" onClick={() => mutate((s) => { grantAsk(s, ask); })}>
-              do it{ask.cash ? ` · ¤${ask.cash.toLocaleString()}` : ""}
-            </Button>
-            <Button onClick={() => mutate((s) => { refuseAsk(s, ask, false); })}>say no</Button>
-            <Button kind="danger" onClick={() => mutate((s) => { refuseAsk(s, ask, true); })}>put her in her place</Button>
-          </div>
-          <div className="text-[11px] dim mt-2 font-mono">
-            she gains {ask.gain} if you do · she loses {ask.loss} if you do not
-          </div>
-        </Card>
-      ) : (
+      <AskList asks={(save.asks ?? []).filter((a) => a.person === id)} />
+      {ask ? null : (
         <Button size="sm" kind="ghost" disabled={busy} onClick={async () => {
           setBusy(true);
-          const a = generateAsk(save, p);
-          if (a) {
-            a.text = await voiceAsk(save, a);
-            mutate((s) => { s.asks = [...(s.asks ?? []).filter((x) => x.person !== id), a]; });
-          }
+          let a: ReturnType<typeof generateAsk> = null;
+          mutate((s) => { a = generateAsk(s, s.people[id]); });
+          const got = a as ReturnType<typeof generateAsk>;
+          if (got) {
+            got.text = await voiceAsk(save, got);
+            mutate((s) => { s.asks = [...(s.asks ?? []).filter((x) => x.person !== id), got]; });
+          } else setQuiet(true);
           setBusy(false);
         }}>
           {busy ? <Loader2 size={13} className="animate-spin" /> : "ask her what she wants"}
         </Button>
       )}
+      {quiet && !ask ? <p className="text-[12.5px] dim">She doesn't ask for anything. {read(p, save.memory[id]).trust < 10 ? "She doesn't trust you enough to." : "Nothing she wants right now is something she thinks you'd give."}</p> : null}
 
       <Section title="The ladder">
         <div className="space-y-2">
@@ -145,7 +136,7 @@ export default function HerPanel({ id }: { id: string }) {
         <Card>
           <div className="text-[11px] uppercase tracking-wider dim mb-1.5">it happened</div>
           <p className="font-prose text-[15px]">{rite}</p>
-          <div className="text-[11.5px] dim mt-2">Played out in the scene log.</div>
+          <div className="text-[11.5px] dim mt-2">It's in the scene log.</div>
         </Card>
       ) : null}
 

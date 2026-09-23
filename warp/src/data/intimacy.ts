@@ -126,6 +126,9 @@ export interface ActDef {
     /** how much of the player's own appetite it answers */
     release: number;
   };
+  /** What it needs from YOU. "cock": something that comes; "sire": something that can get her
+   *  pregnant. Everything else a strap-on or your hands and mouth can do. */
+  you?: "cock" | "sire";
   /** Requires her to be willing, or it counts as taken rather than given. */
   wants_devotion?: number;
 }
@@ -142,11 +145,11 @@ export const ACTS: ActDef[] = [
     trains: { anal: 3 }, base: { arousal: 6, relaxation: -0.4, bond: 0, resentment: 3, release: 8 } },
   { id: "painal", name: "Take her ass dry", what: "you take her ass without working her up to it", group: "use", tags: ["anal", "painal", "pain", "rough"], needs: ["anus"],
     trains: { anal: 4 }, base: { arousal: 2, relaxation: -1.6, bond: -2, resentment: 9, release: 8 } },
-  { id: "mammary", name: "Use her tits", what: "you fuck her tits", group: "use", tags: ["mammary", "boobs"], needs: ["breasts"],
+  { id: "mammary", you: "cock", name: "Use her tits", what: "you fuck her tits", group: "use", tags: ["mammary", "boobs"], needs: ["breasts"],
     trains: { oral: 0.5 }, base: { arousal: 5, relaxation: 0, bond: 0.5, resentment: 1, release: 6 } },
-  { id: "facial", name: "Finish on her face", what: "you finish on her face and leave it there a while", group: "use", tags: ["facial", "cum", "degradation"],
+  { id: "facial", you: "cock", name: "Finish on her face", what: "you finish on her face and leave it there a while", group: "use", tags: ["facial", "cum", "degradation"],
     base: { arousal: 3, relaxation: -0.3, bond: -0.5, resentment: 3, release: 3 } },
-  { id: "swallow", name: "Make her swallow", what: "you finish in her mouth and she swallows it", group: "use", tags: ["cum", "swallow", "oral"], needs: ["mouth"],
+  { id: "swallow", you: "cock", name: "Make her swallow", what: "you finish in her mouth and she swallows it", group: "use", tags: ["cum", "swallow", "oral"], needs: ["mouth"],
     base: { arousal: 3, relaxation: -0.2, bond: 0, resentment: 2, release: 3 } },
   { id: "penetrative", name: "Let her fuck you", what: "she fucks you", group: "use", tags: ["penetrative", "domination", "using another"], needs: ["dick"],
     trains: { penetrative: 3 }, base: { arousal: 12, relaxation: 0.6, bond: 3, resentment: 0, release: 4 }, wants_devotion: 20 },
@@ -158,7 +161,7 @@ export const ACTS: ActDef[] = [
     trains: { oral: 2 }, base: { arousal: 5, relaxation: -0.2, bond: 0, resentment: 2, release: 2 } },
   { id: "milking", name: "Milk her", what: "she gets milked, by hand or by machine", group: "service", tags: ["milking", "boobs"], needs: ["milk"],
     base: { arousal: 4, relaxation: 0.2, bond: 0, resentment: 2, release: 1 } },
-  { id: "breeding", name: "Breed her", what: "you finish in her cunt and both of you know exactly what for", group: "service", tags: ["breeding", "vaginal", "pregnancy"], needs: ["vagina"],
+  { id: "breeding", you: "sire", name: "Breed her", what: "you finish in her cunt and both of you know exactly what for", group: "service", tags: ["breeding", "vaginal", "pregnancy"], needs: ["vagina"],
     trains: { vaginal: 2 }, base: { arousal: 9, relaxation: -0.2, bond: 1, resentment: 4, release: 9 } },
 
   // ── play ───────────────────────────────────────────────────────────────────────────────────
@@ -207,7 +210,7 @@ export const ACTS: ActDef[] = [
     base: { arousal: -20, relaxation: 2.0, bond: 7, resentment: -8, release: 0 } },
 
   // ── her feet ───────────────────────────────────────────────────────────────────────────────
-  { id: "footjob", name: "Have her use her feet", what: "oil, both feet, and she is better at it than she expected to be", group: "feet", tags: ["feet", "servicing", "unusual"], needs: ["feet"],
+  { id: "footjob", you: "cock", name: "Have her use her feet", what: "oil, both feet, and she is better at it than she expected to be", group: "feet", tags: ["feet", "servicing", "unusual"], needs: ["feet"],
     trains: { oral: 0.5 }, base: { arousal: 4, relaxation: 0.2, bond: 0.5, resentment: 1, release: 6 } },
   { id: "worship feet", name: "Worship her feet", what: "you take her foot in both hands and put your mouth to it, and she watches you do it", group: "feet", tags: ["feet", "worship", "hers", "servicing"], needs: ["feet"],
     base: { arousal: -8, relaxation: 1.2, bond: 4, resentment: -4, release: 0 }, wants_devotion: -30 },
@@ -215,11 +218,11 @@ export const ACTS: ActDef[] = [
     base: { arousal: 3, relaxation: -0.9, bond: -1, resentment: 6, release: 1 } },
 
   // ── the body it is doing ───────────────────────────────────────────────────────────────────
-  { id: "nipple fuck", name: "Fuck her nipples", what: "her nipples take you, which is a thing her body can do now", group: "use", tags: ["nipples", "boobs", "unusual", "mammary"], needs: ["nipples"],
+  { id: "nipple fuck", you: "cock", name: "Fuck her nipples", what: "her nipples take you, which is a thing her body can do now", group: "use", tags: ["nipples", "boobs", "unusual", "mammary"], needs: ["nipples"],
     base: { arousal: 8, relaxation: -0.3, bond: 0, resentment: 3, release: 7 } },
   { id: "suckle", name: "Nurse from her", what: "you take a nipple in your mouth and drink, and neither of you says anything for a while", group: "service", tags: ["milking", "boobs", "tenderness", "unusual"], needs: ["milk"],
     base: { arousal: 2, relaxation: 1.4, bond: 5, resentment: -3, release: 0 } },
-  { id: "belly fuck", name: "Fuck her belly", what: "you use the underside of her belly while she holds it up out of the way", group: "use", tags: ["pregnancy", "belly worship", "unusual"], needs: ["belly"],
+  { id: "belly fuck", you: "cock", name: "Fuck her belly", what: "you use the underside of her belly while she holds it up out of the way", group: "use", tags: ["pregnancy", "belly worship", "unusual"], needs: ["belly"],
     base: { arousal: 5, relaxation: -0.2, bond: 0.5, resentment: 2, release: 6 } },
   { id: "belly worship", name: "Worship her belly", what: "hands and mouth over every inch of it while she lies back and lets you", group: "tenderness", tags: ["pregnancy", "belly worship", "worship", "tenderness"], needs: ["pregnant"],
     base: { arousal: 4, relaxation: 1.8, bond: 6, resentment: -6, release: 0 } },
@@ -228,7 +231,7 @@ export const ACTS: ActDef[] = [
 
   // ── the ugly end ───────────────────────────────────────────────────────────────────────────
   // The base game has these and the rebuild was pretending it was a nicer game than it is.
-  { id: "fill her", name: "Fill her ass and plug it", what: "you finish in her ass and put a plug in it, and she wears it", group: "discipline", tags: ["anal", "degradation", "cum", "orders"], needs: ["anus"],
+  { id: "fill her", you: "cock", name: "Fill her ass and plug it", what: "you finish in her ass and put a plug in it, and she wears it", group: "discipline", tags: ["anal", "degradation", "cum", "orders"], needs: ["anus"],
     trains: { anal: 2 }, base: { arousal: 4, relaxation: -1.1, bond: -1.5, resentment: 7, release: 8 } },
   { id: "toilet", name: "Use her as a toilet", what: "exactly what it sounds like, and she is expected to thank you", group: "discipline", tags: ["watersports", "degradation", "humiliation", "unusual"], needs: ["mouth"],
     base: { arousal: 1, relaxation: -2.2, bond: -4, resentment: 12, release: 2 } },

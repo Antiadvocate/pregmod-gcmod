@@ -18,6 +18,7 @@ import { NATIONS, CAREERS, ORIGINS, NATION_WEIGHT, type Nation } from "../data/p
 import { newPsyche, clamp } from "./psyche";
 import { rng, hash, type Rng } from "./rng";
 import { QUIRKS, FLAWS } from "../data/intimacy";
+import { buildOf, kgFor } from "./build";
 
 /** How common each thing is. Submissive and cumslut are the two the trade selects for, because the
  *  trade selects for what sells; sadist and dom are rare in a population that is being sold. */
@@ -184,8 +185,7 @@ function generateBody(r: Rng, nation: Nation, age: number, sex: "female" | "male
   const face = Math.round(clamp(r.normal(52 + q * 18, 15), 5, 99));
   const boobs = female ? Math.round(clamp(r.normal(450 + q * 120, 220), 0, 2000)) : r.chance(0.1) ? 200 : 0;
   const weight = Math.round(clamp(r.normal(q * -6, 22), -60, 80));
-  const bmi = 21 + weight * 0.09;
-  const weight_kg = Math.round((bmi * (height / 100) ** 2) * 10) / 10;
+  const weight_kg = kgFor(weight, height);
 
   const skin = r.pick(nation.skin);
   const hair = r.pick(nation.hair);
@@ -245,7 +245,9 @@ function generateBody(r: Rng, nation: Nation, age: number, sex: "female" | "male
 /** The bedrock look, as one sentence a narrator and a diffusion model can both use. Appended to,
  *  never rewritten — a permanent change adds a clause; nothing edits the original. */
 export function describeBody(b: Body, nation: Nation, age: number): string {
-  const build = b.weight > 30 ? "heavy" : b.weight > 10 ? "soft" : b.weight < -25 ? "thin to the point of it showing" : b.muscle > 30 ? "visibly strong" : "average build";
+  const w = buildOf(b.weight);
+  const build = w === "slim" ? (b.muscle > 30 ? "visibly strong" : "average build")
+    : { skinny: "thin to the point of it showing", thin: "thin", plump: "soft", chubby: "chubby", fat: "fat", obese: "very fat" }[w];
   const chest = b.boobs > 1200 ? "enormous breasts" : b.boobs > 700 ? "big breasts" : b.boobs > 350 ? "full breasts" : b.boobs > 100 ? "small breasts" : "flat-chested";
   const hair = b.hair_length > 60 ? `long ${b.hair_color} hair` : b.hair_length > 20 ? `${b.hair_color} hair to the shoulder` : `short ${b.hair_color} hair`;
   return `${age}, ${nation.name}, ${b.height_cm}cm, ${build}. ${b.skin} skin, ${hair}, ${b.eye_color} eyes. ${chest}.`;
@@ -300,7 +302,7 @@ function generatePersona(r: Rng, career: (typeof CAREERS)[number], origin: (type
     speech_pattern: r.pick([
       "short sentences, and a long pause before the ones that matter",
       "talks around a thing three times before naming it",
-      "polite in a way that is its own kind of distance",
+      "polite, and keeps you at arm's length with it",
       "fast, and interrupts herself",
       "answers exactly the question asked and nothing more",
       "warm and a little too familiar, on purpose",

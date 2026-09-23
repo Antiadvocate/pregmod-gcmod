@@ -5,6 +5,7 @@ import { Button, Card, Field, Meter, Section, Stat } from "../lib/ui";
 import { householdRead, PLAYER_SKILLS } from "../engine/player";
 import { unrest } from "../engine/security";
 import { read } from "../engine/obedience";
+import YourBody from "./YourBody";
 
 const TIGHTNESS = ["not holding anything", "a little wound up", "tight", "very tight", "clenched", "nothing is getting through"];
 
@@ -43,6 +44,10 @@ export default function You() {
               onChange={(e) => mutate((s) => { s.player.body.appearance_facts = e.target.value; })} />
           </Field>
         </Card>
+      </Section>
+
+      <Section title="Your body">
+        <YourBody />
       </Section>
 
       <Section title="What you are good at">

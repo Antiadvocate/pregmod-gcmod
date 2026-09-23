@@ -40,8 +40,8 @@ export default function Report() {
           </div>
           <div>
             <div className="text-[11px] dim uppercase tracking-wider">reputation</div>
-            <div className="font-mono text-[19px]">{report.rep_end.toLocaleString()}</div>
-            <div className="text-[11.5px] dim">{report.rep_end - report.rep_start >= 0 ? "+" : ""}{report.rep_end - report.rep_start}</div>
+            <div className="font-mono text-[19px]">{Math.round(report.rep_end).toLocaleString()}</div>
+            <div className="text-[11.5px] dim">{report.rep_end - report.rep_start >= 0 ? "+" : ""}{Math.round(report.rep_end - report.rep_start)}</div>
           </div>
         </div>
         {report.prose ? <p className="font-prose text-[15px] leading-relaxed mt-4">{report.prose}</p> : null}

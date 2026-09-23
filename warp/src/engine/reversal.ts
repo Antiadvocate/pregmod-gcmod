@@ -140,6 +140,7 @@ export const GESTURES: Gesture[] = [
 ];
 
 export function gestureAvailable(s: SaveState): boolean {
+  if (!chainOn(s)) return false;
   const rev = reversalOf(s);
   return !rev.ended && rev.last_gesture !== s.arcology.week && !!subjectOf(s);
 }
@@ -179,7 +180,13 @@ export function doGesture(s: SaveState, id: string): { line: string; reactions: 
 
 /* ── the chain ───────────────────────────────────────────────────────────────────────────── */
 
+/** Supplicationism is one story among several now, and it only runs when chosen at the start. */
+export function chainOn(s: SaveState): boolean {
+  return !s.story || s.story.supplication;
+}
+
 export function nextEvent(s: SaveState): ChainEvent | undefined {
+  if (!chainOn(s)) return undefined;
   const rev = reversalOf(s);
   if (rev.ended) return undefined;
   if (rev.pending) return CHAIN.find((e) => e.id === rev.pending);
@@ -196,6 +203,7 @@ export function nextEvent(s: SaveState): ChainEvent | undefined {
 export function tickReversal(s: SaveState): ReportLine[] {
   const rev = reversalOf(s);
   const lines: ReportLine[] = [];
+  if (!chainOn(s)) return lines;
   if (rev.ended) return lines;
 
   // Standing with the trade only ever falls on this road, and it falls faster the further you go.
@@ -364,11 +372,11 @@ export function resolveChain(s: SaveState, optionId: string): { line: string; re
       bump(14); publicly = true;
       line = "You let him, and refused the money, and he did not know what to do with that.";
       break;
-    case "first_fee:refuse": bump(-2); line = "He was put out. He will tell people, which is not nothing."; break;
+    case "first_fee:refuse": bump(-2); line = "He was put out. He will tell people."; break;
 
     case "the_register:file":
       bump(16); publicly = true; rev.association -= 30;
-      if (her) { s.canon.push(`${her.name} holds title over the owner of ${s.arcology.name}, and he holds title over her. Both instruments are filed.`); }
+      if (her) { s.canon.push(`${her.name} holds title over the owner of ${s.arcology.name}, and the owner holds title over her. Both instruments are filed.`); }
       line = "Filed at 3:40. Both names, the same size type.";
       break;
     case "the_register:onesided":
@@ -381,7 +389,7 @@ export function resolveChain(s: SaveState, optionId: string): { line: string; re
         rom.dominion = 100;
         her.status = "free";
         s.player.owned_by = her.id;
-        s.canon.push(`${her.name} holds title over the owner of ${s.arcology.name}. He holds nothing over her, and the clerk filed it that way.`);
+        s.canon.push(`${her.name} holds title over the owner of ${s.arcology.name}. The owner holds nothing over her, and the clerk filed it that way.`);
         startRumor(s, `he filed one instrument instead of two and it was hers`, { about: her.id, salience: 10 });
         const m = s.memory[her.id];
         if (m) remember(m, { content: "the afternoon he signed away the half of it that was his", week, importance: 10, charge: "bright", core: true });
@@ -465,7 +473,7 @@ function note(s: SaveState, text: string, kind: "info" | "warning" | "danger" | 
  */
 export function endgame(s: SaveState, how: "stand" | "her"): string {
   const rev = reversalOf(s);
-  const household = Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured" || p.status === "free") && p.age >= 18);
+  const household = Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured" || (p.status === "free" && (p.exit_week === undefined || s.player.owned_by === p.id))) && p.age >= 18);
   let forYou = 0, against = 0;
   for (const p of household) {
     const r = read(p, s.memory[p.id]);

@@ -103,6 +103,18 @@ export interface Body {
   portrait_seed?: number;
 }
 
+/** The cosmetic layer: what the salon and the wardrobe can change without surgery. */
+export interface Look {
+  /** Hue shift applied to everything she wears, in degrees. 0 keeps the garment's own colours. */
+  clothes_hue?: number;
+  /** Lipstick colour as a hex, or undefined for her own. */
+  lips?: string;
+  glasses?: boolean;
+  /** Animal ears, as a costume piece. */
+  ears?: "cat" | "fox" | "cow" | "elf";
+  tail?: "cat" | "fox" | "cow";
+}
+
 /** The nervous system. Ported wholesale from Weft's kernel — see KERNEL.md §2.
  *  One scalar, `relaxation`, and the entourage that shapes how it moves. */
 export interface Psyche {
@@ -387,6 +399,10 @@ export interface Person {
   clothes: string;
   collar: string;
   shoes: string;
+  /** Stockings, if any: "short stockings" or "long stockings". */
+  legwear?: string;
+  /** How she is made up and dressed beyond the garments themselves. */
+  look?: Look;
   chastity: { vagina: boolean; anus: boolean; penis: boolean };
   /** Money. Per-person accounting is what makes the ledger legible. */
   economics: {
@@ -723,6 +739,8 @@ export interface PendingEvent {
 }
 
 export interface SaveState {
+  /** When each kind of event last fired, keyed by kind or kind:person. Stops repeats. */
+  event_log?: Record<string, number>;
   id: string;
   name: string;
   schema: number;
@@ -745,6 +763,10 @@ export interface SaveState {
   events: PendingEvent[];
   /** What the household is asking you for this week. See engine/asks.ts. */
   asks?: import("./asks").Ask[];
+  /** Twists, ambitions and the end of the run. See engine/run.ts. */
+  run?: import("./run").RunState;
+  /** Your origin, your cast, and the arcs this run has drawn. See engine/story.ts. */
+  story?: import("./story").StoryState;
   /** The Supplicationism plot chain — see engine/reversal.ts. */
   reversal?: import("./reversal").ReversalState;
   notifications: Notification[];
@@ -780,9 +802,16 @@ export interface Player {
   pronouns: Pronouns;
   age: number;
   title: string;
+  /** What the household calls you to your face: "Master", "Mistress", "Sir", a name. */
+  address?: string;
   /** The player's own body, in the same shape as anyone's — the old game modelled this and it
    *  matters for scenes. */
   body: Partial<Body> & { appearance_facts: string };
+  /** What you wear, from the same wardrobe as everyone. */
+  clothes?: string;
+  shoes?: string;
+  legwear?: string;
+  look?: Look;
   /** Career before the arcology; sets starting skills and how citizens read you. */
   career: string;
   skills: Record<string, number>;
