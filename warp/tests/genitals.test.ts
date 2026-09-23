@@ -18,9 +18,9 @@ import { ACT_BY_ID } from "../src/data/intimacy.ts";
 function world(seed: string, sex: "female" | "male" | "futa" = "futa") {
   const s = newGame({ seed, starting_slaves: 1 });
   s.arcology.cash = 500000;
-  s.arcology.facilities["surgery"] = {
-    id: "surgery", kind: "surgery", name: "Surgical theatre", level: 2,
-    upgrades: {}, capacity: 4, workers: [], decoration: 0, settings: {},
+  s.arcology.facilities["clinic"] = {
+    id: "clinic", kind: "clinic", name: "The Clinic", level: 2,
+    upgrades: { surgery: 1 }, capacity: 4, workers: [], decoration: 0, settings: {},
   };
   const p = generatePerson({ seed: `${seed}-p`, sex });
   p.age = 25; p.physical_age = 25; p.status = "owned";
@@ -102,7 +102,7 @@ function world(seed: string, sex: "female" | "male" | "futa" = "futa") {
 {
   const { s, p } = world("suck");
   p.body.dick = 4; p.body.balls = 3; p.chastity.penis = false;
-  p.persona.flaw = { id: "hates oral", known: false };
+  p.persona.flaw = { id: "hates oral", known: false, worn: 0 };
   check("hating giving head doesn't make being sucked off a flaw", affinity(p, ACT_BY_ID["suck her"]).score > -0.5, affinity(p, ACT_BY_ID["suck her"]));
   const o = resolveAct(s, p, "suck her");
   if ("error" in o) check("suck her resolves", false, o.error);
