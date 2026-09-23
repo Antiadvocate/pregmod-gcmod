@@ -809,6 +809,8 @@ export interface SaveState {
   /** THE CITY — districts, trade routes, and the whole expand/exploit half of the game.
    *  Absent on saves written before it existed; engine/city.ts builds one on demand. */
   city?: import("./city").CityState;
+  /** THE WORLD — weather, climate, the economy and the Old World regions. Built on demand. */
+  world?: import("./world").WorldState;
   /** The content switches, which the original carried as V.seeExtreme, V.seeCircumcision and the
    *  rest. Defaulted on — this is the game it is — but the surgery table and a handful of acts
    *  read them, because the original let you turn the ugliest parts off and so does this. */

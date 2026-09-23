@@ -9,6 +9,7 @@
  */
 import { sane } from "./health";
 import { feetOf } from "./genitals";
+import { newWorld } from "./world";
 import type { Arcology, Facility, Person, SaveState, Sector, StandingOrder } from "./types";
 import { SCHEMA_VERSION, DEFAULT_MODELS } from "./types";
 import { FACILITIES } from "../data/facilities";
@@ -222,6 +223,8 @@ export function sanitize(raw: SaveState): SaveState {
         s.arcology.facilities[def.id] = { id: def.id, kind: def.id, name: def.name, level: 0, upgrades: {}, capacity: 0, workers: [], decoration: 0, settings: {} };
       }
     }
+    // Saves from before the world existed get one, starting from today.
+    if (!s.world) s.world = newWorld(s);
   }
 
   for (const p of Object.values(s.people)) {

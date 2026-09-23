@@ -25,7 +25,7 @@ import { valuePerson } from "./economy";
 export type Role =
   | "creditor" | "deposed" | "captain" | "old_owner" | "rival_broker" | "sold_one" | "chair"
   | "sibling" | "journalist" | "zealot" | "collector" | "fixer" | "flame" | "auctioneer"
-  | "sister" | "doctor" | "rival_owner";
+  | "sister" | "doctor" | "rival_owner" | "insurgent" | "general" | "refugee" | "engineer";
 
 export interface NPC {
   role: Role;
@@ -53,10 +53,11 @@ const ROLE_WHAT: Record<Role, string> = {
   zealot: "preaches on the lower levels", collector: "collects beautiful things", fixer: "moves cargo nobody asks about",
   flame: "someone from before all this", auctioneer: "runs the Grand Exchange", sister: "is looking for her sister",
   doctor: "a ship's doctor", rival_owner: "owns the arcology next door",
+  insurgent: "leads the local Daughters of Liberty cell", general: "commands an Old World army", refugee: "speaks for the refugees", engineer: "an engineer who builds things that keep the sea out",
 };
 
 /** Roles that are always a particular sex in the fiction, because the story needs it. */
-const ROLE_SEX: Partial<Record<Role, "he" | "she">> = { sold_one: "she", sister: "she", zealot: "he" };
+const ROLE_SEX: Partial<Record<Role, "he" | "she">> = { sold_one: "she", sister: "she", zealot: "he", insurgent: "she", refugee: "she" };
 
 export function makeNpc(st: StoryState, role: Role): NPC {
   const r = rng(`npc:${st.seed}:${role}`);
@@ -142,7 +143,9 @@ export interface BeatDef {
 export interface ArcDef {
   id: string;
   title: string;
-  kind: "origin" | "deck";
+  kind: "origin" | "deck" | "world";
+  /** For world arcs: weeks after it last started before it may start again. Unset: once a run. */
+  repeat?: number;
   /** For origin arcs: which origin. */
   origin?: string;
   /** For deck arcs: whether it can start right now. */
@@ -381,12 +384,12 @@ export function tickStory(s: SaveState): { text: string; tone: "good" | "bad" | 
   if (!st || st.ended) return lines;
   const week = s.arcology.week;
   const running = Object.values(st.arcs).filter((a) => !a.done && arcDef(a.id)?.kind === "deck").length;
-  if (week >= st.next_draw && running < 2) {
+  if (week >= st.next_draw && running < 3) {
     const def = st.deck.map((id) => arcDef(id)).find((d) => d && (!d.when || d.when(s, st)));
     const r = rng(`draw:${st.seed}:${week}`);
     if (def) {
       startArc(s, st, def);
-      st.next_draw = week + 5 + r.int(0, 4);
+      st.next_draw = week + 3 + r.int(0, 3);
     } else st.next_draw = week + 2;
   }
   const before = st.pending;

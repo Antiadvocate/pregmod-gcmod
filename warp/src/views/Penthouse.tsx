@@ -15,6 +15,7 @@ import { generateDynamicEvent, resolveDynamic, dynamicReadiness } from "../engin
 import { voiceAsk } from "../engine/asks";
 import { AskList } from "./AskCard";
 import StoryCard from "./StoryCard";
+import WorldCard from "./WorldCard";
 import Ambitions from "./Ambitions";
 import { theKeeper } from "../engine/romance";
 import { nextEvent as chainEvent, resolveChain, reversalOf, subjectOf, GESTURES, gestureAvailable, doGesture, type Reaction } from "../engine/reversal";
@@ -26,6 +27,7 @@ import { band, wear } from "../engine/psyche";
 import { modelsAvailable } from "../config";
 
 export default function Penthouse({ go }: { go: (r: Route) => void }) {
+  const [outcomes, setOutcomes] = useState<{ id: string; chose: string; text: string; person?: string }[]>([]);
   const { save, mutate } = useGame();
   const [running, setRunning] = useState(false);
   const [inventing, setInventing] = useState(false);
@@ -85,6 +87,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
 
       {/* YOUR STORY FIRST. It is the thing that is only about you. */}
       <StoryCard />
+
+      <WorldCard />
 
       {/* SITUATIONS FIRST. A thread is the game telling you something it worked out about the last
           two months, which outranks anything that happened on Tuesday. */}
@@ -201,6 +205,16 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
 
       <AskList asks={save.asks ?? []} title={keeper ? "What she wants from you" : "They want something"} />
 
+      {outcomes.map((o) => (
+        <Card key={o.id} className="mb-4 border-l-2 fade-in">
+          <div className="player-line !mt-0 !mb-3">{o.chose}</div>
+          <div className="space-y-3">
+            {o.text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[15px] leading-relaxed">{para}</p>)}
+          </div>
+          <Button size="sm" kind="primary" className="mt-3" onClick={() => setOutcomes((xs) => xs.filter((x) => x.id !== o.id))}>Done</Button>
+        </Card>
+      ))}
+
       {save.events.length ? (
         <Section title="Waiting on you" right={
           <Button size="sm" kind="ghost" disabled={inventing || !dyn.ready} title={dyn.note} onClick={async () => {
@@ -223,9 +237,11 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
                   <p className="font-prose text-[15px] leading-relaxed mb-3">{e.seed}</p>
                   <div className="flex flex-wrap gap-2">
                     {(e.kind === "dynamic" ? e.options : EVENT_BY_ID[e.kind]?.options ?? e.options).map((o) => (
-                      <Button key={o.id} size="sm" title={o.note} onClick={() => mutate((s) => {
-                        if (e.kind === "dynamic") resolveDynamic(s, e, o.id); else resolveEvent(s, e, o.id);
-                      })}>
+                      <Button key={o.id} size="sm" title={o.note} onClick={() => {
+                        let text = "";
+                        mutate((s) => { text = e.kind === "dynamic" ? resolveDynamic(s, e, o.id) : resolveEvent(s, e, o.id); });
+                        setOutcomes((xs) => [...xs, { id: e.id, chose: o.label, text, person: e.person }]);
+                      }}>
                         {o.label}
                       </Button>
                     ))}

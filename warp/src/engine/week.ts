@@ -40,6 +40,7 @@ import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf } from "./romance"
 import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
 import { tickStory } from "./story";
+import { tickWorld } from "./world";
 import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
 import { tickThreads } from "./threads";
@@ -272,6 +273,10 @@ export function endWeek(s: SaveState): WeekReport {
   const soc = tickSociety(s);
   led.entry("doctrine", "your citizens, on how you live", soc.cash, soc.rep);
   for (const l of soc.lines) push(l, "neutral", 6);
+
+  // THE WORLD: weather, climate, the economy, the regions. Before the money is settled, because the
+  // weather changes what the farms grew and what the power cost.
+  lines.push(...tickWorld(s, led));
 
   arcologyMoney(s, led);
 
