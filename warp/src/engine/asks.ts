@@ -21,6 +21,8 @@ import { read, applyTreatment } from "./obedience";
 import { remember } from "./memory";
 import { romanceOf, shiftDominion, herReach } from "./romance";
 import { rng } from "./rng";
+import { registerOf, say } from "./voice";
+import { canDo, resolveAct } from "./intimacy";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 
@@ -43,6 +45,9 @@ export interface Ask {
   week: number;
   /** Set once answered, for the record. */
   answered?: "granted" | "refused";
+  /** Which request this is, for the cooldown. Separate from the payload because "take me off the
+   *  pill" and "put me on it" are the same payload and different requests. */
+  key?: string;
 }
 
 /** Everything an ask can actually DO. Closed on purpose: a generated ask is only ever a rewording
@@ -50,9 +55,12 @@ export interface Ask {
 const PAYLOADS: Record<string, (s: SaveState, p: Person, value?: string | number, target?: string) => string> = {
   act: (s, p, value) => {
     const act = ACT_BY_ID[String(value)];
-    p.psyche.arousal = clamp(p.psyche.arousal + 15, 0, 100);
+    // Granting it means doing it: the act resolves for real, so it lands on her the way any other
+    // time would, and she gets the extra for having asked and been heard.
+    if (act && !canDo(p, act)) resolveAct(s, p, act.id);
+    else p.psyche.arousal = clamp(p.psyche.arousal + 15, 0, 100);
     applyTreatment(p, { kind: "recognition", size: 4, why: `she asked for ${act?.name.toLowerCase() ?? "it"} and got it` }, s.arcology.week);
-    return `you gave her ${act?.name.toLowerCase() ?? "what she asked for"}`;
+    return act ? `You did what she asked: ${act.what}.` : "You gave her what she asked for.";
   },
   rest: (s, p) => { p.assignment = "rest"; p.facility = undefined; applyTreatment(p, { kind: "kindness", size: 4, why: "a week off, because she asked" }, s.arcology.week); return "she has the week off"; },
   spa: (s, p) => { p.assignment = "rest in the spa"; p.facility = "spa"; applyTreatment(p, { kind: "kindness", size: 4, why: "sent to the spa on request" }, s.arcology.week); return "she is in the spa"; },
@@ -81,140 +89,237 @@ const PAYLOADS: Record<string, (s: SaveState, p: Person, value?: string | number
   money: (s, p, value) => { const n = Number(value) || 2000; s.arcology.cash -= n; applyTreatment(p, { kind: "recognition", size: 4, why: "money spent on something that was only for her" }, s.arcology.week); return `¤${n} on something that was only ever for her`; },
 };
 
+/** What she calls an act when she is the one asking for it. */
+const IN_HER_WORDS: Record<string, string> = {
+  oral: "me on my knees for you", throat: "you using my throat", vaginal: "you fucking me properly",
+  anal: "you in my ass", painal: "you taking my ass rough", mammary: "you fucking my tits",
+  facial: "you finishing on my face", swallow: "you finishing in my mouth", penetrative: "me fucking you",
+  group: "you and me and one of the others", breeding: "you breeding me", teasing: "you teasing me for hours",
+  getoff: "you getting me off", toys: "the drawer, and all of it", "public use": "you taking me out on the concourse",
+  exposure: "you showing me off", degradation: "you putting me in my place in front of people",
+  restraint: "you tying me down", discipline: "you punishing me", orders: "you giving me orders",
+  "suck her": "you sucking my cock", "stroke her": "your hand on my cock", "ride her": "you riding me",
+  "eat her": "you going down on me", "worship her": "you worshipping me", "worship feet": "you worshipping my feet",
+  "breed her back": "me breeding you", kissing: "you kissing me", slow: "a whole night, slow",
+  "sleeping together": "staying the night", milking: "you milking me", suckle: "you nursing from me",
+  "belly worship": "you worshipping my belly", "nipple fuck": "you fucking my nipples", rimming: "my tongue on you",
+};
+
 const NAMED_CLOTHES = ["silks", "an evening gown", "work clothes", "a plain shift", "a kimono"];
 
-/** Build one ask out of who she actually is. Deterministic; the model only ever rewords it. */
+/** How long a request stays off the table once you have answered it. A yes settles it for longer
+ *  than a no: a woman who was told no will try again, and one who got it has no reason to. */
+const COOLDOWN = { granted: 8, refused: 4 };
+
+function recentlyAnswered(p: Person, kind: string, week: number): boolean {
+  const g = p.counters[`ask_granted:${kind}`];
+  const r = p.counters[`ask_refused:${kind}`];
+  return (g !== undefined && week - g < COOLDOWN.granted) || (r !== undefined && week - r < COOLDOWN.refused);
+}
+
+/** The wording, by how she talks. `ask` is a request, `tell` is what she says once she has the
+ *  standing not to ask. */
+const WORDING: Record<string, { ask: string[]; tell: string[]; timid?: string[]; sullen?: string[] }> = {
+  act: {
+    ask: ["She catches your sleeve on the way past. \"Tonight— I want {act}. I've been thinking about it all day.\"", "\"Can I ask for something? {Act}. That's what I want.\"", "She tells you what she wants, a little red in the face. \"{Act}. Please.\""],
+    tell: ["\"Tonight it's {act}. I've decided.\"", "She tells you what's happening tonight. \"{Act}.\" It isn't a question.", "\"{Act}. Tonight. Don't be late.\""],
+    timid: ["She starts to ask for something twice and stops. The third time she gets it out. \"{Act}— if that's all right.\" Then she apologises for asking."],
+  },
+  getoff: {
+    ask: ["She's been restless for days. \"Please. I need you to get me off. Just that.\"", "\"I'm going out of my mind. Will you— please?\""],
+    tell: ["\"I've been wound up for three days. Fix it.\"", "She pulls your hand between her legs and holds it there. \"Now.\""],
+  },
+  serve: {
+    ask: [],
+    tell: ["She sits back, spreads her knees, and looks at the floor in front of her. \"{Act}. On your knees.\"", "\"You're going to {act}, and you're going to take your time.\"", "She points at the floor. \"{Act}. Now.\""],
+  },
+  stay: {
+    ask: ["\"Can I stay tonight? Not for anything. Just to stay.\"", "She asks if she can sleep in your bed. She says she won't take up much room."],
+    tell: ["\"I'm sleeping in your bed tonight.\""],
+  },
+  rest: {
+    ask: ["She asks for a week off. She's careful about how she puts it.", "\"I'm running on nothing. Could I have a few days?\""],
+    tell: ["\"I'm taking the week off. I'm telling you so you don't have to hear it from someone else.\""],
+    sullen: ["\"I'm dead on my feet. Give me a week or I'll be no use to you anyway.\""],
+  },
+  spa: {
+    ask: ["\"I'm not well. Could I go to the spa? Just until I'm better.\""],
+    tell: ["\"I'm going to the spa. I'll be back when I'm back.\""],
+  },
+  off_drugs: {
+    ask: ["\"Take me off the aphrodisiacs. Please. I can't tell which parts are me any more.\"", "She asks to come off the drugs. Her hands are shaking while she asks."],
+    tell: ["\"I'm stopping the aphrodisiacs. Don't argue.\""],
+  },
+  contraceptives_on: {
+    ask: ["She asks to be put on contraceptives, and watches your face while she does.", "\"Could I— I'd like to be on the pill. If that's allowed.\""],
+    tell: ["\"I'm going on contraceptives. I'm not having your child. Not yet.\""],
+    sullen: ["\"Put me on the pill. I'm not carrying anything of yours.\""],
+  },
+  contraceptives_off: {
+    ask: ["\"Take me off the contraceptives.\" She isn't being coy about why.", "\"I want to be bred. Take me off the pills.\""],
+    tell: ["\"I've stopped the pills. You know what that means. Act like it.\""],
+  },
+  unlock: {
+    ask: ["\"Could you unlock me? Please? Just for a while.\"", "She asks to be let out of the chastity, very politely."],
+    tell: ["She holds out her hand for the key."],
+    sullen: ["\"Get this thing off me.\""],
+  },
+  clothes: {
+    ask: ["She asks for something to wear. She has something in mind: {value}.", "\"Could I have {value}? I'm tired of being cold.\""],
+    tell: ["\"Order me {value}. My size. This week.\""],
+  },
+  spare: {
+    ask: ["She asks you about {target}. Not for herself — for {target}. She wants her taken off what she's on.", "\"{Target} isn't going to last where she is. Please move her.\""],
+    tell: ["\"I'm taking {target} off that rota. I'm telling you as a courtesy.\""],
+  },
+  name: {
+    ask: ["\"Could you call me {value} again? It's my name.\" It's the first thing she's ever asked you for."],
+    tell: ["\"My name is {value}. Use it.\""],
+  },
+  exclusive: {
+    ask: ["She asks if she's the only one. She knows the answer. She's asking whether it could be true.", "\"Could it just be me? Only me?\""],
+    tell: ["\"I'm the only one you touch now. I'm not asking.\""],
+  },
+  answer: {
+    ask: ["She asks what happens to her. Not rhetorically. She wants the actual answer.", "\"What are you going to do with me? Long term. I need to know.\""],
+    tell: ["\"Tell me the plan. All of it.\""],
+  },
+  money: {
+    ask: ["She wants ¤{value} spent on something that's only for her, and she isn't going to justify it."],
+    tell: ["\"I spent ¤{value}. It's on the account. It was for me.\"", "She hands you a receipt for ¤{value}. \"That's what that is.\""],
+  },
+};
+
+function word(kind: string, instruction: boolean, reg: string, r: ReturnType<typeof rng>, vars: Record<string, string>): string {
+  const w = WORDING[kind];
+  if (!w) return "She asks you for something.";
+  const pool = instruction && w.tell.length ? w.tell : (reg === "timid" && w.timid) || (reg === "sullen" && w.sullen) || w.ask;
+  const t = r.pick(pool.length ? pool : w.tell);
+  return t.replace(/\{(\w+)\}/g, (_, k: string) => {
+    const v = vars[k.toLowerCase()] ?? "";
+    return k[0] === k[0].toUpperCase() ? v.charAt(0).toUpperCase() + v.slice(1) : v;
+  });
+}
+
+/** Build one ask out of who she actually is. The model may reword it; it never changes what it is. */
 export function generateAsk(s: SaveState, p: Person): Ask | null {
   const rom = romanceOf(p);
   const r = read(p, s.memory[p.id]);
-  const rng_ = rng(`ask:${p.id}:${s.arcology.week}`);
+  const week = s.arcology.week;
+  // The count moves the stream on, so asking her twice in one week can turn up something else
+  // rather than the same request forever.
+  const nth = p.counters.asks_generated ?? 0;
+  const rng_ = rng(`ask:${p.id}:${week}:${nth}`);
   const reach = herReach(p);
+  const reg = registerOf(p);
 
-  // She has to have enough standing to open her mouth at all. A woman at low trust does not ask
-  // for things; she waits to be told, and that silence is itself information.
+  // She has to have enough standing to open her mouth at all.
   if (r.trust < 10 && r.devotion < 30) return null;
   if (p.psyche.state === "broken") return null;
+  if (p.age < 18) return null;
 
-  const candidates: Omit<Ask, "id" | "person" | "week">[] = [];
+  type Cand = { kind: AskKind; key: string; payload: Ask["payload"]; vars?: Record<string, string>; cash?: number; gain: number; loss: number; weight: number };
+  const c: Cand[] = [];
   const instruction = rom.dominion >= 60;
+  const push = (x: Cand) => { if (!recentlyAnswered(p, x.key, week)) c.push(x); };
 
   // ── what her body wants ──────────────────────────────────────────────────────────────────
   const topFetish = [...p.persona.fetishes].sort((a, b) => b.strength - a.strength)[0];
   if (topFetish && topFetish.name !== "none" && topFetish.strength >= 40 && r.trust > 30) {
     const def = FETISH_BY_ID[topFetish.name];
-    const actId = def?.acts.find((a) => ACT_BY_ID[a]) ?? "slow";
-    candidates.push({
-      kind: "intimate",
-      text: instruction
-        ? `She tells you what she wants tonight, and it is ${ACT_BY_ID[actId]?.name.toLowerCase() ?? "what she is into"}. It is not phrased as a question.`
-        : `She has worked up to asking for something specific: ${ACT_BY_ID[actId]?.name.toLowerCase() ?? "what she is into"}.`,
-      payload: { kind: "act", value: actId },
-      gain: 6, loss: 5,
-    });
+    const acts = (def?.acts ?? []).filter((a) => ACT_BY_ID[a] && !canDo(p, ACT_BY_ID[a]));
+    const actId = acts.length ? rng_.pick(acts) : "slow";
+    push({ kind: "intimate", key: "act", payload: { kind: "act", value: actId }, vars: { act: IN_HER_WORDS[actId] ?? "that" }, gain: 6, loss: 5, weight: 3 });
   }
   if (p.psyche.arousal > 70 && r.trust > 25) {
-    candidates.push({
-      kind: "intimate",
-      text: instruction ? `She has been wound up for days and she is done waiting for you to notice.` : `She asks, badly and indirectly, to be got off.`,
-      payload: { kind: "act", value: "getoff" },
-      gain: 5, loss: 6,
-    });
+    push({ kind: "intimate", key: "getoff", payload: { kind: "act", value: "getoff" }, gain: 5, loss: 6, weight: 3 });
   }
   if (p.persona.quirk?.id === "romantic" && r.devotion > 40) {
-    candidates.push({
-      kind: "intimate",
-      text: `She asks to stay the night. Not for anything — to stay.`,
-      payload: { kind: "act", value: "sleeping together" },
-      gain: 8, loss: 8,
-    });
+    push({ kind: "intimate", key: "stay", payload: { kind: "act", value: "sleeping together" }, gain: 8, loss: 8, weight: 2 });
+  }
+  // Past forty she stops asking to be used and starts telling you to serve her.
+  if (rom.dominion >= 40) {
+    const serve = ["worship her", "eat her", "suck her", "worship feet"].filter((a) => ACT_BY_ID[a] && !canDo(p, ACT_BY_ID[a]));
+    if (serve.length) {
+      const actId = rng_.pick(serve);
+      push({ kind: "instruction", key: "serve", payload: { kind: "act", value: actId }, vars: { act: { "worship her": "worship me", "eat her": "go down on me", "suck her": "suck my cock", "worship feet": "worship my feet" }[actId] ?? "serve me" }, gain: 7, loss: 7, weight: 4 });
+    }
   }
 
   // ── what her week wants ──────────────────────────────────────────────────────────────────
-  if (p.health.energy < 30 || p.health.health < -20) {
-    candidates.push({
-      kind: "comfort",
-      text: instruction ? `She is taking the week off and is informing you rather than asking.` : `She asks for a week off. She is careful about how she puts it.`,
-      payload: { kind: p.health.health < -30 ? "spa" : "rest" },
-      gain: 5, loss: 7,
-    });
+  const resting = p.assignment === "rest" || p.assignment === "rest in the spa";
+  if ((p.health.energy < 30 || p.health.health < -20) && !resting) {
+    push({ kind: "comfort", key: p.health.health < -30 ? "spa" : "rest", payload: { kind: p.health.health < -30 ? "spa" : "rest" }, gain: 5, loss: 7, weight: 4 });
   }
   if (p.health.aphrodisiacs > 0 && p.health.addiction > 25) {
-    candidates.push({
-      kind: "comfort",
-      text: `She wants off the aphrodisiacs. She says she cannot tell any more which parts of it are her.`,
-      payload: { kind: "off_drugs" },
-      gain: 7, loss: 9,
-    });
+    push({ kind: "comfort", key: "off_drugs", payload: { kind: "off_drugs" }, gain: 7, loss: 9, weight: 3 });
   }
-  if (p.chastity.vagina || p.chastity.anus) {
-    candidates.push({ kind: "comfort", text: `She asks to be unlocked.`, payload: { kind: "unlock" }, gain: 5, loss: 5 });
+  if (p.chastity.vagina || p.chastity.anus || p.chastity.penis) {
+    push({ kind: "comfort", key: "unlock", payload: { kind: "unlock" }, gain: 5, loss: 5, weight: 2 });
   }
   if (p.clothes === "no clothing" && r.trust > 20) {
     const want = rng_.pick(NAMED_CLOTHES);
-    candidates.push({ kind: "comfort", text: `She asks for something to wear. She has been specific about it: ${want}.`, payload: { kind: "clothes", value: want }, cash: 1200, gain: 4, loss: 4 });
+    push({ kind: "comfort", key: "clothes", payload: { kind: "clothes", value: want }, vars: { value: want }, cash: 1200, gain: 4, loss: 4, weight: 2 });
   }
-  if (p.womb.fertility > 40 && !p.womb.sterile) {
-    const wantsIt = p.persona.fetishes.some((f) => f.name === "pregnancy" && f.strength > 50);
-    candidates.push({
-      kind: "personal",
-      text: wantsIt ? `She wants you to stop her contraceptives. She has thought about it and she is not being coy.` : `She asks to be put on contraceptives, and watches your face while she does it.`,
-      payload: { kind: "contraceptives", value: wantsIt ? "off" : "on" },
-      gain: 9, loss: 9,
-    });
+  // Contraception: only when what she wants is not already what she has. The old version asked
+  // for the pill every week whether or not she was on it.
+  if (p.womb.fertility > 40 && !p.womb.sterile && !p.womb.fetuses.length && p.body.vagina !== null) {
+    const wantsIt = p.persona.fetishes.some((f) => f.name === "pregnancy" && f.strength > 50) || p.persona.paraphilia === "breeder";
+    if (wantsIt && p.womb.contraceptives) {
+      push({ kind: "personal", key: "contraceptives_off", payload: { kind: "contraceptives", value: "off" }, gain: 9, loss: 9, weight: 3 });
+    } else if (!wantsIt && !p.womb.contraceptives && r.trust > 15) {
+      push({ kind: "personal", key: "contraceptives_on", payload: { kind: "contraceptives", value: "on" }, gain: 8, loss: 9, weight: 2 });
+    }
   }
 
   // ── what she wants for somebody else ─────────────────────────────────────────────────────
   const friend = s.edges
     .filter((e) => e.from === p.id && e.warmth > 45 && s.people[e.to]?.status === "owned")
     .map((e) => s.people[e.to])
-    .find((o) => o && (o.health.health < -20 || o.psyche.state !== "intact" || o.assignment === "be confined in the arcade"));
+    .find((o) => o && o.assignment !== "rest" && (o.health.health < -20 || o.psyche.state !== "intact" || o.assignment === "be confined in the arcade"));
   if (friend && r.trust > 35) {
-    candidates.push({
-      kind: "household",
-      text: instruction
-        ? `She is taking ${friend.name} off the arcade rota. She mentions it on the way past.`
-        : `She asks — for ${friend.name}, not for herself — that she be taken off what she is on.`,
-      payload: { kind: "spare", target: friend.id },
-      gain: 10, loss: 8,
-    });
+    push({ kind: "household", key: "spare", payload: { kind: "spare", target: friend.id }, vars: { target: friend.name }, gain: 10, loss: 8, weight: 4 });
   }
 
   // ── what she wants from you ──────────────────────────────────────────────────────────────
   if (p.slave_name && p.slave_name !== p.name) {
-    candidates.push({ kind: "personal", text: `She asks to be called ${p.name} again. It is the first thing she has asked you for.`, payload: { kind: "name", value: p.name }, gain: 9, loss: 10 });
+    push({ kind: "personal", key: "name", payload: { kind: "name", value: p.name }, vars: { value: p.name }, gain: 9, loss: 10, weight: 3 });
   }
   if (r.devotion > 55 && rom.standing !== "property" && !rom.exclusive) {
-    candidates.push({
-      kind: "personal",
-      text: instruction ? `She has decided she is the only one you touch, and she says so flatly.` : `She asks whether she is the only one. She already knows the answer; she is asking whether it could be true.`,
-      payload: { kind: "exclusive" },
-      gain: 12, loss: 12,
-    });
+    push({ kind: "personal", key: "exclusive", payload: { kind: "exclusive" }, gain: 12, loss: 12, weight: 1.5 });
   }
   if (p.bond.hope < 25 && r.trust > 20) {
-    candidates.push({ kind: "personal", text: `She asks what happens to her. Not rhetorically — she wants the actual answer.`, payload: { kind: "answer" }, gain: 8, loss: 10 });
+    push({ kind: "personal", key: "answer", payload: { kind: "answer" }, gain: 8, loss: 10, weight: 2 });
   }
-  if (reach.purchases && rng_.chance(0.4)) {
-    candidates.push({ kind: "instruction", text: `She wants money spent on something that is not an investment, and she is not justifying it.`, payload: { kind: "money", value: 3000 }, cash: 3000, gain: 5, loss: 8 });
+  if (reach.purchases) {
+    push({ kind: "instruction", key: "money", payload: { kind: "money", value: 3000 }, vars: { value: "3,000" }, cash: 3000, gain: 5, loss: 8, weight: 1 });
   }
 
-  if (!candidates.length) return null;
-  const pick = rng_.pick(candidates);
+  if (!c.length) return null;
+  p.counters.asks_generated = nth + 1;
+  const pick = rng_.weighted(c, (x) => x.weight);
+  const tells = instruction || pick.key === "serve";
   return {
-    ...pick,
-    kind: instruction && pick.kind !== "household" ? "instruction" : pick.kind,
-    id: `ask-${p.id}-${s.arcology.week}-${pick.payload.kind}`,
+    id: `ask-${p.id}-${week}-${pick.key}-${nth}`,
     person: p.id,
-    week: s.arcology.week,
+    kind: tells && pick.kind !== "household" ? "instruction" : pick.kind,
+    text: word(pick.key, tells, reg, rng_, pick.vars ?? {}),
+    payload: pick.payload,
+    cash: pick.cash,
+    gain: pick.gain,
     // An instruction refused costs far more than a request refused. That asymmetry IS the top of
     // the ladder: past a point, saying no to her is a thing you do at a price.
-    loss: instruction ? pick.loss * 2 : pick.loss,
+    loss: tells ? pick.loss * 2 : pick.loss,
+    week,
+    key: pick.key,
   };
 }
 
-export function grantAsk(s: SaveState, ask: Ask): string {
+export interface AskReply { what: string; said: string }
+
+export function grantAsk(s: SaveState, ask: Ask): AskReply {
   const p = s.people[ask.person];
-  if (!p) return "";
+  if (!p) return { what: "", said: "" };
   if (ask.cash) s.arcology.cash -= ask.cash;
   if (ask.rep) s.arcology.rep -= ask.rep;
   const fn = PAYLOADS[ask.payload.kind];
@@ -222,14 +327,16 @@ export function grantAsk(s: SaveState, ask: Ask): string {
   romanceOf(p).granted++;
   shiftDominion(s, p, ask.gain, ask.text.slice(0, 90));
   p.bond.hope = clamp(p.bond.hope + ask.gain * 0.6, 0, 100);
+  p.counters[`ask_granted:${ask.key ?? ask.payload.kind}`] = s.arcology.week;
   ask.answered = "granted";
   s.asks = (s.asks ?? []).filter((a) => a.id !== ask.id);
-  return what;
+  const r = rng(`reply:${ask.id}`);
+  return { what, said: say(s, p, ask.kind === "instruction" ? "praise" : "thank", r) };
 }
 
-export function refuseAsk(s: SaveState, ask: Ask, harshly = false): string {
+export function refuseAsk(s: SaveState, ask: Ask, harshly = false): AskReply {
   const p = s.people[ask.person];
-  if (!p) return "";
+  if (!p) return { what: "", said: "" };
   romanceOf(p).refused++;
   shiftDominion(s, p, -ask.loss, ask.text.slice(0, 90));
   p.bond.hope = clamp(p.bond.hope - ask.loss * 0.8, 0, 100);
@@ -242,15 +349,19 @@ export function refuseAsk(s: SaveState, ask: Ask, harshly = false): string {
   }
   const mem = s.memory[p.id];
   if (mem && ask.gain >= 8) {
-    remember(mem, { content: `she asked for something that mattered and he said no`, week: s.arcology.week, importance: 7, charge: "cold" });
+    remember(mem, { content: `she asked for something that mattered and was told no`, week: s.arcology.week, importance: 7, charge: "cold" });
   }
+  p.counters[`ask_refused:${ask.key ?? ask.payload.kind}`] = s.arcology.week;
   ask.answered = "refused";
   s.asks = (s.asks ?? []).filter((a) => a.id !== ask.id);
-  return harshly ? "she has been put in her place, and she will not ask again for a long time" : "you said no";
+  const r = rng(`reply:${ask.id}`);
+  return {
+    what: harshly ? "She's been put in her place. She won't ask again for a long time." : "You said no.",
+    said: say(s, p, harshly ? "mock" : ask.kind === "instruction" ? "mock" : "dismiss", r),
+  };
 }
 
-/** Weekly: the people with standing to ask, ask. Capped so the screen is a decision rather than a
- *  queue — two a week, and the ones with the most standing go first. */
+/** Weekly: the people with standing to ask, ask. Two a week, most standing first. */
 export function collectAsks(s: SaveState): Ask[] {
   const out: Ask[] = [];
   const people = Object.values(s.people)

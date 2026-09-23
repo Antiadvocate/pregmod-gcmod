@@ -780,6 +780,8 @@ export interface Player {
   pronouns: Pronouns;
   age: number;
   title: string;
+  /** What the household calls you to your face: "Master", "Mistress", "Sir", a name. */
+  address?: string;
   /** The player's own body, in the same shape as anyone's — the old game modelled this and it
    *  matters for scenes. */
   body: Partial<Body> & { appearance_facts: string };

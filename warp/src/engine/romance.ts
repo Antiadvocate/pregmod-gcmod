@@ -65,8 +65,8 @@ export interface Rung {
 
 export const RUNGS: Rung[] = [
   {
-    id: "property", name: "Property", what: "She is yours. That is the whole of it.",
-    gate: {}, effect: "Nothing. This is where everybody starts.",
+    id: "property", name: "Property", what: "She's yours, on paper and nowhere else.",
+    gate: {}, effect: "Where everyone starts.",
   },
   {
     id: "favourite", name: "Favourite", what: "You keep coming back to her, and the household has noticed.",
@@ -90,7 +90,7 @@ export const RUNGS: Rung[] = [
     id: "betrothed", name: "Betrothed", what: "You have said it out loud, in public, and it is on the registry.",
     rite: "promise",
     gate: { devotion: 75, trust: 65, fragility: 0.22, bond: 60, hope: 55, weeks: 8, tilt: 0.25 },
-    effect: "A promise on the ledger. Breaking it now is the most expensive thing you can do to a person in this game.",
+    effect: "It's on the registry. Breaking it costs you every woman in the house.",
   },
   {
     id: "wife", name: "Wife", what: "Married. Witnessed. The arcology has an opinion and so does every doctrine you hold.",
@@ -99,7 +99,7 @@ export const RUNGS: Rung[] = [
     effect: "She stops being a slave on the registry and becomes your wife on it. She gains a say — dominion starts moving.",
   },
   {
-    id: "keeper", name: "She has the collar", what: "You did what she asked, and then you kept doing it, and at some point it stopped being a game.",
+    id: "keeper", name: "She has the collar", what: "You did what she asked, then kept doing it, until the registry said it too.",
     rite: "reversal",
     gate: { devotion: 90, trust: 85, fragility: 0.1, bond: 85, dominion: 85, weeks: 12, tilt: 0.4 },
     effect: "The arcology is hers. The week is reported to her. She decides, and you are asked.",
