@@ -23,7 +23,7 @@ import { theKeeper } from "../src/engine/romance.ts";
 import { DOCTRINE_BY_ID } from "../src/data/doctrines.ts";
 
 function world(seed: string, n = 3) {
-  const s = newGame({ seed, starting_slaves: n });
+  const s = newGame({ seed, starting_slaves: n, supplication: true });
   for (const p of Object.values(s.people)) {
     p.age = 24; p.physical_age = 24;
     s.memory[p.id] = s.memory[p.id] ?? newMemory();

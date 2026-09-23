@@ -140,6 +140,7 @@ export const GESTURES: Gesture[] = [
 ];
 
 export function gestureAvailable(s: SaveState): boolean {
+  if (!chainOn(s)) return false;
   const rev = reversalOf(s);
   return !rev.ended && rev.last_gesture !== s.arcology.week && !!subjectOf(s);
 }
@@ -179,7 +180,13 @@ export function doGesture(s: SaveState, id: string): { line: string; reactions: 
 
 /* ── the chain ───────────────────────────────────────────────────────────────────────────── */
 
+/** Supplicationism is one story among several now, and it only runs when chosen at the start. */
+export function chainOn(s: SaveState): boolean {
+  return !s.story || s.story.supplication;
+}
+
 export function nextEvent(s: SaveState): ChainEvent | undefined {
+  if (!chainOn(s)) return undefined;
   const rev = reversalOf(s);
   if (rev.ended) return undefined;
   if (rev.pending) return CHAIN.find((e) => e.id === rev.pending);
@@ -196,6 +203,7 @@ export function nextEvent(s: SaveState): ChainEvent | undefined {
 export function tickReversal(s: SaveState): ReportLine[] {
   const rev = reversalOf(s);
   const lines: ReportLine[] = [];
+  if (!chainOn(s)) return lines;
   if (rev.ended) return lines;
 
   // Standing with the trade only ever falls on this road, and it falls faster the further you go.

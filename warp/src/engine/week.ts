@@ -39,6 +39,7 @@ import { refreshPlayer, practise, skill } from "./player";
 import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf } from "./romance";
 import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
+import { tickStory } from "./story";
 import { tickCity, cityYield } from "./city";
 import { tickThreads } from "./threads";
 import { THREAD_BY_KIND } from "../data/threads";
@@ -264,6 +265,7 @@ export function endWeek(s: SaveState): WeekReport {
   // The plot chain, which is a society pass of its own: it moves your standing with the trade, it
   // moves the arcology's adoption, and it is where the service fees come from once they are open.
   lines.push(...tickReversal(s));
+  for (const l of tickStory(s)) push(l.text, l.tone, l.weight);
 
   const soc = tickSociety(s);
   led.entry("doctrine", "your citizens, on how you live", soc.cash, soc.rep);

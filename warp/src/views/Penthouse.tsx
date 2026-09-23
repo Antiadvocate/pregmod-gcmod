@@ -14,6 +14,7 @@ import { resolveEvent, EVENT_BY_ID } from "../engine/events";
 import { generateDynamicEvent, resolveDynamic, dynamicReadiness } from "../engine/dynamic";
 import { voiceAsk } from "../engine/asks";
 import { AskList } from "./AskCard";
+import StoryCard from "./StoryCard";
 import { theKeeper } from "../engine/romance";
 import { nextEvent as chainEvent, resolveChain, reversalOf, subjectOf, GESTURES, gestureAvailable, doGesture, type Reaction } from "../engine/reversal";
 import { liveThreads, answerThread, describeThread } from "../engine/threads";
@@ -80,6 +81,9 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
           </p>
         </Card>
       ) : null}
+
+      {/* YOUR STORY FIRST. It is the thing that is only about you. */}
+      <StoryCard />
 
       {/* SITUATIONS FIRST. A thread is the game telling you something it worked out about the last
           two months, which outranks anything that happened on Tuesday. */}
@@ -253,8 +257,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
         </Fold>
       ) : null}
 
-      {!save.events.length ? (
-        <Section title="Nothing is happening" right={
+      {!save.events.length && dyn.ready ? (
+        <Section title="Quiet week" right={
           <Button size="sm" disabled={inventing || !dyn.ready} title={dyn.note} onClick={async () => {
             setInventing(true);
             const e = await generateDynamicEvent(save);

@@ -284,3 +284,15 @@ input[type="range"]:focus { outline: none; }
 @media (prefers-reduced-motion: reduce) {
   .rx-flinch, .rx-shudder, .rx-glow, .rx-breathe, .fade-in { animation: none }
 }
+
+/* ── story choices ───────────────────────────────────────────────────────────────────────── */
+.choice {
+  display: block; width: 100%; text-align: left;
+  padding: 11px 14px; border-radius: 12px;
+  background: var(--ink-2); border: 1px solid var(--line-strong); color: var(--text-hi);
+  transition: background .12s, border-color .12s, transform .1s;
+}
+.choice:hover { border-color: var(--accent-glow); background: var(--ink-3); }
+.choice:active { transform: scale(.99); }
+.choice.on { border-color: var(--accent-glow); background: var(--accent-soft); }
+.choice.locked { opacity: .55; pointer-events: none; }
