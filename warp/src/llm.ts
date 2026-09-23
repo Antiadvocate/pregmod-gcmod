@@ -153,3 +153,55 @@ export function parseJson<T>(text: string): T | null {
   // one repair pass: trailing commas are the single most common malformation
   try { return JSON.parse(body.slice(start, end + 1).replace(/,\s*([}\]])/g, "$1")) as T; } catch { return null; }
 }
+
+/* ── THE MODEL LIST ───────────────────────────────────────────────────────────────────────── */
+
+export interface ModelInfo {
+  id: string;
+  name: string;
+  /** USD per million tokens, input and output. Undefined for local models. */
+  price_in?: number;
+  price_out?: number;
+  context?: number;
+  local?: boolean;
+}
+
+const MODEL_CACHE = "warp-openrouter-models";
+const DAY = 24 * 60 * 60 * 1000;
+
+/** OpenRouter's public catalogue. It needs no key; cached for a day so Settings opens instantly. */
+export async function listOpenRouterModels(force = false): Promise<ModelInfo[]> {
+  if (!force) {
+    try {
+      const raw = localStorage.getItem(MODEL_CACHE);
+      if (raw) {
+        const c = JSON.parse(raw) as { at: number; models: ModelInfo[] };
+        if (Date.now() - c.at < DAY && c.models?.length) return c.models;
+      }
+    } catch { /* no storage, or junk in it: fetch */ }
+  }
+  const res = await fetch("https://openrouter.ai/api/v1/models");
+  if (!res.ok) throw new Error(`OpenRouter model list: ${res.status}`);
+  const json = await res.json();
+  const per = (x: unknown) => { const n = Number(x); return Number.isFinite(n) && n >= 0 ? +(n * 1e6).toFixed(3) : undefined; };
+  const models: ModelInfo[] = (json?.data ?? [])
+    .filter((m: { id?: string }) => m?.id)
+    .map((m: { id: string; name?: string; context_length?: number; pricing?: { prompt?: string; completion?: string } }) => ({
+      id: m.id, name: m.name ?? m.id, context: m.context_length,
+      price_in: per(m.pricing?.prompt), price_out: per(m.pricing?.completion),
+    }))
+    .sort((a: ModelInfo, b: ModelInfo) => a.id.localeCompare(b.id));
+  try { localStorage.setItem(MODEL_CACHE, JSON.stringify({ at: Date.now(), models })); } catch { /* fine */ }
+  return models;
+}
+
+/** Whatever the local OpenAI-compatible server says it has loaded, as `local/<id>`. */
+export async function listLocalModels(): Promise<ModelInfo[]> {
+  const ep = getLocalEndpoint();
+  if (!ep) return [];
+  const res = await fetch(`${ep.url}/models`, { headers: ep.key ? { Authorization: `Bearer ${ep.key}` } : {} });
+  if (!res.ok) throw new Error(`local model list: ${res.status}`);
+  const json = await res.json();
+  return (json?.data ?? []).filter((m: { id?: string }) => m?.id)
+    .map((m: { id: string }) => ({ id: `local/${m.id}`, name: `${m.id} (local)`, local: true }));
+}

@@ -6,19 +6,27 @@ import { getApiKey, setApiKey, getLocalEndpoint, setLocalEndpoint, modelsAvailab
 import { generateLocalImage, KONTEXT_WORKFLOW, listLocalCheckpoints, WORKFLOW_TOKENS } from "../lib/diffusion";
 import { dynamicReadiness } from "../engine/dynamic";
 import { exportSave } from "../store";
-import { llmErrors } from "../llm";
+import { llmErrors, listOpenRouterModels, listLocalModels, type ModelInfo } from "../llm";
+import ModelPicker from "../lib/ModelPicker";
 
-const SUGGESTED = [
-  "deepseek/deepseek-chat",
-  "anthropic/claude-3.5-sonnet",
-  "openai/gpt-4o-mini",
-  "meta-llama/llama-3.3-70b-instruct",
-  "google/gemini-flash-1.5",
-];
 
 export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
   const { save, mutate } = useGame();
   const [key, setKey] = useState(getApiKey());
+  const [models, setModels] = useState<ModelInfo[]>([]);
+  const [modelsState, setModelsState] = useState("Loading the OpenRouter model list…");
+  async function loadModels(force = false) {
+    setModelsState("Loading the OpenRouter model list…");
+    const [remote, local] = await Promise.allSettled([listOpenRouterModels(force), listLocalModels()]);
+    const list = [...(local.status === "fulfilled" ? local.value : []), ...(remote.status === "fulfilled" ? remote.value : [])];
+    setModels(list);
+    const bits = [
+      remote.status === "fulfilled" ? `${remote.value.length} OpenRouter models` : `couldn't reach OpenRouter (${(remote.reason as Error)?.message ?? "error"})`,
+      local.status === "fulfilled" ? (local.value.length ? `${local.value.length} local` : "") : "local server didn't answer",
+    ].filter(Boolean);
+    setModelsState(bits.join(" · "));
+  }
+  useEffect(() => { void loadModels(); }, []);
   const [local, setLocal] = useState(getLocalEndpoint()?.url ?? "");
   const [theme, setTheme] = useState(document.documentElement.dataset.theme ?? "brass");
   const [img, setImg] = useState<LocalImageEndpoint>(getLocalImage() ?? { url: "", backend: "comfy" });
@@ -56,16 +64,19 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
             <input type="password" value={key} placeholder="sk-or-…" onChange={(e) => { setKey(e.target.value); setApiKey(e.target.value); }} />
           </Field>
           <Field label="Local server (optional)" hint="An OpenAI-compatible base URL — KoboldCpp http://localhost:5001/v1, LM Studio http://localhost:1234/v1. Then prefix a model id with local/ to route it there.">
-            <input value={local} placeholder="http://localhost:5001/v1" onChange={(e) => { setLocal(e.target.value); setLocalEndpoint(e.target.value ? { url: e.target.value } : null); }} />
+            <input value={local} placeholder="http://localhost:5001/v1" onChange={(e) => { setLocal(e.target.value); setLocalEndpoint(e.target.value ? { url: e.target.value } : null); }} onBlur={() => loadModels()} />
           </Field>
           <div className="grid sm:grid-cols-2 gap-3">
             {([["narrator_model", "Narrator — the long creative call"], ["bookkeeper_model", "Bookkeeper — strict JSON, small model"], ["forge_model", "Forge — writes a person's interior"], ["fallback_model", "Fallback — when the first one fails"]] as const).map(([k, label]) => (
               <Field key={k} label={label}>
-                <input list="warp-models" value={save.models[k]} onChange={(e) => mutate((s) => { s.models[k] = e.target.value; })} />
+                <ModelPicker value={save.models[k]} models={models} onChange={(id) => mutate((s) => { s.models[k] = id; })} />
               </Field>
             ))}
           </div>
-          <datalist id="warp-models">{SUGGESTED.map((m) => <option key={m} value={m} />)}</datalist>
+          <div className="flex items-center gap-2 text-[11.5px] dim">
+            <span>{modelsState}</span>
+            <Button size="sm" kind="ghost" onClick={() => loadModels(true)}>refresh list</Button>
+          </div>
           <div className="text-[11.5px] dim">{modelsAvailable() ? "Configured." : "Nothing configured — the game runs offline."}</div>
         </Card>
       </Section>
