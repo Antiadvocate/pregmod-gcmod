@@ -5,6 +5,7 @@
  * to her hair and face. Something already owned by somebody in the house costs nothing to put on
  * her; everything else is bought on the spot.
  */
+import { Reaction } from "./MomentCard";
 import { feetOf } from "../engine/genitals";
 import { useMemo, useState } from "react";
 import { ChevronLeft } from "lucide-react";
@@ -107,6 +108,7 @@ export default function Dressing({ id, onClose }: { id: string; onClose: () => v
         <div className="relative h-full"><SlaveArt person={p} height="100%" pose={POSE_BY_ID.easy} /></div>
         {line ? <div className="absolute bottom-2 left-3 right-3 text-center font-prose text-[14px] mid fade-in" key={line}>{line}</div> : null}
       </div>
+      {line ? <div className="px-3 shrink-0" key={`m-${line}-${p.clothes}`}><Reaction auto={false} label="See how she takes it" seed={{ person: id, title: `Dressed in ${p.clothes}`, source: "dressing", you: `You have her put on ${p.clothes}.`, happened: line }} /></div> : null}
 
       <div className="flex gap-1.5 px-3 pt-3 shrink-0">
         {(["clothes", "extras", "salon"] as Tab[]).map((t) => (

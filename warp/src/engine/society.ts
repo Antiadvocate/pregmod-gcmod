@@ -14,6 +14,7 @@
 import type { Person, SaveState } from "./types";
 import { DOCTRINES, DOCTRINE_BY_ID, AXIS_LABEL, conflictsWith, type Axis, type Doctrine } from "../data/doctrines";
 import { clamp } from "./psyche";
+import { feetOf } from "./genitals";
 
 export type AxisVector = Record<Axis, number>;
 
@@ -48,7 +49,24 @@ export function axesOf(p: Person): AxisVector {
     gender,
     breeding: clamp(bearing + barred, -1, 1),
     quality,
+    feet: feetAxis(p),
   };
+}
+
+/** How sacred her feet are kept: bare, soft, painted, adorned, small and whole, and never caned. */
+export function feetAxis(p: Person): number {
+  const f = feetOf(p);
+  const acts = p.acts ?? {};
+  let v = f.soles === "soft" ? 0.35 : f.soles === "calloused" ? -0.35 : 0;
+  if (f.toenails && f.toenails !== "bare") v += 0.15;
+  v += Math.min(0.15, f.jewelry.length * 0.08);
+  if (!p.shoes || p.shoes === "none" || /barefoot|bare feet/i.test(p.shoes)) v += 0.2;
+  else if (/heel/i.test(p.shoes)) v -= 0.1;
+  v += f.size <= 36 ? 0.1 : f.size >= 42 ? -0.05 : 0;
+  v += Math.min(0.25, ((acts["worship feet"] ?? 0) + (acts["toe suck"] ?? 0) + (acts["pedicure"] ?? 0)) * 0.03);
+  v -= Math.min(0.6, (acts["bastinado"] ?? 0) * 0.15);
+  if (f.heels_clipped) v -= 1;
+  return clamp(v, -1, 1);
 }
 
 /** −1 … +1: how well this person serves this doctrine. Indifferent axes contribute nothing, so a

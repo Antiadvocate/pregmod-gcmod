@@ -5,6 +5,7 @@
  * is she like that", which is the question the old game could not answer at any price because the
  * answer was distributed across every passage that had ever touched her.
  */
+import { sane, recoveryNote, rushCost, rushRecovery } from "../engine/health";
 import { DRUGS, canStart } from "../data/drugs";
 import { describeGenitals, describeFeet, mobility, dickCM, ballsWord, vaginaWord, anusWord, feetOf } from "../engine/genitals";
 import { useMemo, useState, useRef } from "react";
@@ -26,6 +27,7 @@ import { getEdge } from "../engine/social";
 import Interact from "./Interact";
 import Dressing from "./Dressing";
 import Surgery from "./Surgery";
+import { OpenMoments } from "./MomentCard";
 import HerPanel from "./HerPanel";
 import { romanceOf, RUNG_BY_ID } from "../engine/romance";
 import { paintPortrait, paintRealistic } from "../engine/turn";
@@ -257,6 +259,24 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
 
       {note ? <Card className="mb-4 text-[12.5px] acc">{note}</Card> : null}
 
+      {recoveryNote(save, p) ? (
+        <Card className="mb-4">
+          <div className="text-[13px]" style={{ color: "var(--warn)" }}>She is {recoveryNote(save, p)}.</div>
+          <div className="text-[11.5px] dim mt-1">
+            Recovery goes down each time you end the week. Assigning her to the Clinic speeds it up, a Nurse managing the Clinic speeds it more, and curatives at full dose take off another week.
+          </div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <Button size="sm" disabled={save.arcology.cash < rushCost(save, p)} onClick={() => mutate((s) => {
+              const why = rushRecovery(s, s.people[id]);
+              setNote(why ? `Not done: ${why}.` : `${p.name} gets intensive care and is back on her feet.`);
+            })}>intensive care now · ¤{rushCost(save, p).toLocaleString()}</Button>
+            {p.health.curatives < 2 ? (
+              <Button size="sm" kind="ghost" onClick={() => mutate((s) => { s.people[id].health.curatives = 2; })}>full curatives</Button>
+            ) : null}
+          </div>
+        </Card>
+      ) : null}
+
       <div className="flex gap-2 mb-4">
         {p.age >= 18 ? <Button kind="primary" className="flex-1" onClick={onWith}>Be with her</Button> : null}
         <Button className="flex-1" onClick={onDress}>Dress her</Button>
@@ -274,6 +294,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
       {tab === "read" && (
         <div className="space-y-4">
           <AskHer id={id} />
+          <OpenMoments person={id} title="Left unfinished with her" />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <Meter value={r.devotion} range={[-100, 100]} label={`devotion — ${r.label}`} />
             <Meter value={r.trust} range={[-100, 100]} label={`trust — ${r.trust_label}`} />
@@ -409,7 +430,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
                       proc.apply(person);
                       const med = skill.medicine(s);
                       person.health.health = Math.max(-100, person.health.health - proc.toll * med);
-                      person.health.recovery_weeks += Math.max(0, Math.round(proc.recovery * med));
+                      person.health.recovery_weeks = sane(person.health.recovery_weeks) + Math.max(0, Math.round(proc.recovery * med));
                       practise(s, "medicine", 2);
                       for (const m of person.body.marks) if (!m.week) m.week = s.arcology.week;
                       if (proc.resented) {

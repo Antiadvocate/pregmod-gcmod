@@ -21,6 +21,7 @@ import { rng } from "../engine/rng";
 import { writeLead } from "../engine/writer";
 import { POSE_BY_ID, poseForAct, restingPose, type Pose } from "../lib/rig";
 import { modelsAvailable } from "../config";
+import { closeMoment, noteMoment, openMoment, playMoment, type MomentLine } from "../engine/moments";
 import SlaveArt from "./SlaveArt";
 import type { Moment } from "../lib/expression";
 import { RoomBackdrop } from "../lib/rooms";
@@ -83,6 +84,51 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
   const [tray, setTray] = useState(true);
   const [moment, setMoment] = useState<Moment | undefined>(undefined);
   const logRef = useRef<HTMLDivElement>(null);
+  // The encounter as a scene the model can carry on, once there's something to carry on from.
+  const [mid, setMid] = useState<string | null>(null);
+  const [replies, setReplies] = useState<string[]>([]);
+  const [said, setSaid] = useState("");
+  const engaged = useRef(false);
+  const midRef = useRef<string | null>(null);
+  const history = useRef<MomentLine[]>([]);
+
+  const record = (lines: MomentLine[]) => {
+    history.current.push(...lines);
+    if (midRef.current) { const m = midRef.current; mutate((s) => noteMoment(s, m, lines)); }
+  };
+  const ensureMoment = (): string => {
+    if (midRef.current) return midRef.current;
+    let made = "";
+    mutate((s) => {
+      made = openMoment(s, { person: id, title: `With ${s.people[id]?.name ?? "her"}, week ${s.arcology.week}`, source: "encounter", happened: "" });
+      noteMoment(s, made, history.current.slice(-12));
+    });
+    midRef.current = made;
+    setMid(made);
+    return made;
+  };
+
+  /** Your words, or the model's expansion of what just happened (reply null). */
+  async function carryOn(reply: string | null) {
+    if (busy) return;
+    const m = ensureMoment();
+    if (reply) { engaged.current = true; setLog((l) => [...l, { k: "you", text: reply }]); }
+    setBusy(true); setStream(""); setReplies([]); setTray(false);
+    const res = await playMoment(save, m, reply, { onDelta: modelsAvailable() ? (c) => setStream((x) => x + c) : undefined });
+    mutate(() => {});
+    setStream("");
+    const entries: Entry[] = res.prose.split(/\n\n+/).filter(Boolean).map((t) => ({ k: "prose" as const, text: t }));
+    if (!res.ok && res.error) entries.push({ k: "note", text: res.error });
+    setLog((l) => [...l, ...entries]);
+    const mo = save.moments?.find((x) => x.id === m);
+    setReplies(mo?.options ?? []);
+    setBusy(false);
+  }
+
+  // Walking out: a scene you took part in stays open for later; one you didn't is closed.
+  useEffect(() => () => {
+    if (midRef.current && !engaged.current) { const m = midRef.current; mutate((s) => closeMoment(s, m)); }
+  }, []);
 
   // Keep the newest thing in view. This is the whole reason the screen exists.
   useEffect(() => {
@@ -146,6 +192,8 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     }
     if (res.written?.tags.length) entries.push({ k: "tags", tags: res.written.tags, tone: o.landing });
     setLog((l) => [...l, ...entries]);
+    record([{ role: "you", text: act.name }, { role: "scene", text: entries.filter((e) => e.k === "prose" || e.k === "said").map((e) => ("text" in e ? e.text : "")).join("\n\n") }]);
+    setReplies([]);
     setPose(poseAfter(o, restingPose(p)));
     setMoment({ landing: o.landing, finished: o.finished, act: o.act });
     play(reactionFor(o));
@@ -168,7 +216,10 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     if (f.id === "hold" || f.id === "comfort") { setPose(POSE_BY_ID.easy); play("rx-glow"); setMoment((m) => (m ? { ...m, landing: m.landing === "hated" ? "endured" : m.landing } : m)); }
     if (f.id === "mock" || f.id === "thank") { setPose(POSE_BY_ID.braced); play("rx-flinch"); }
     setNext((n) => n.filter((x) => x.id !== f.id && x.id !== "again"));
-    if (b.ends) setEnded(true);
+    record([{ role: "you", text: b.you }, { role: "scene", text: [b.text, b.said ? `"${b.said.replace(/^"|"$/g, "")}"` : ""].filter(Boolean).join(" ") }]);
+    if (b.ends) { setEnded(true); return; }
+    // Her answer doesn't stop at a line: the model writes the moment out and gives you things to say.
+    if (modelsAvailable()) void carryOn(null);
   }
 
   function doTalk(topic: string) {
@@ -181,6 +232,9 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     if (b.learned) entries.push({ k: "learned", text: b.learned });
     setLog((l) => [...l, ...entries]);
     setNext([]);
+    record([{ role: "you", text: b.you }, { role: "scene", text: b.said ? `"${b.said.replace(/^"|"$/g, "")}"` : "" }]);
+    if (modelsAvailable()) void carryOn(null);
+    else setReplies([`Ask ${p.name} to say more`, "Tell her that's enough", "Kiss her"]);
   }
 
   const knownFetish = p.persona.fetishes.filter((f) => f.known && f.name !== "none");
@@ -228,6 +282,17 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
             <button className="btn btn-primary flex-1" onClick={onClose}>Leave her be</button>
             <button className="btn" onClick={() => setEnded(false)}>Call her back</button>
           </div>
+        ) : null}
+        {!ended && replies.length && !busy ? (
+          <div className="flex flex-col gap-1.5 px-3 pt-3">
+            {replies.map((r) => <button key={r} className="choice !py-2" onClick={() => void carryOn(r)}><span className="block text-[13.5px] leading-snug">{r}</span></button>)}
+          </div>
+        ) : null}
+        {!ended ? (
+          <form className="flex gap-2 px-3 pt-3" onSubmit={(e) => { e.preventDefault(); const t = said.trim(); if (t) { setSaid(""); void carryOn(t); } }}>
+            <input className="flex-1 min-w-0" value={said} disabled={busy} onChange={(e) => setSaid(e.target.value)} placeholder={`Say or do something to ${p.name}`} />
+            <button className="btn btn-sm btn-primary" disabled={busy || !said.trim()}>Go</button>
+          </form>
         ) : null}
         {!ended && next.length ? (
           <div className="flex flex-wrap gap-2 px-3 pt-3">

@@ -4,6 +4,7 @@ import { useGame } from "../lib/game";
 import { Button, Card, Section } from "../lib/ui";
 import { grantAsk, refuseAsk, type Ask, type AskReply } from "../engine/asks";
 import { SlaveHead } from "./SlaveArt";
+import { Reaction } from "./MomentCard";
 
 export default function AskCard({ ask, onDone }: { ask: Ask; onDone?: () => void }) {
   const { save, mutate } = useGame();
@@ -35,6 +36,7 @@ export default function AskCard({ ask, onDone }: { ask: Ask; onDone?: () => void
           <div className="player-line !my-1">{reply.how === "yes" ? "You say yes." : reply.how === "no" ? "You say no." : "You put her in her place."}</div>
           {reply.what ? <p className="text-[13px] mid">{reply.what}</p> : null}
           {reply.said ? <p className="said-line fade-in">&ldquo;{reply.said}&rdquo;</p> : null}
+          <Reaction seed={{ person: ask.person, title: `${who.name}'s request`, source: "ask", you: `${ask.text}\n\n${reply.how === "yes" ? "You say yes." : reply.how === "no" ? "You say no." : "You put her in her place."}`, happened: [reply.what, reply.said ? `"${reply.said}"` : ""].filter(Boolean).join(" ") }} />
           {onDone ? <Button size="sm" kind="ghost" onClick={onDone}>done</Button> : null}
         </div>
       ) : (

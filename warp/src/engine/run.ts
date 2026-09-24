@@ -59,7 +59,8 @@ export const TWIST_BY_ID: Record<string, Twist> = Object.fromEntries(TWISTS.map(
 /** What the markets charge relative to normal, after the twists. */
 export function priceFactor(s: SaveState): number {
   const t = s.run?.twists ?? [];
-  return (t.includes("boom") ? 1.15 : 1) * (t.includes("flood") ? 0.65 : 1);
+  const econ = s.world ? s.world.economy.index / 100 : 1;
+  return (t.includes("boom") ? 1.15 : 1) * (t.includes("flood") ? 0.65 : 1) * econ;
 }
 
 /* ── ambitions ──────────────────────────────────────────────────────────────────────────────── */

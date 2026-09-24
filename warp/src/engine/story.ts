@@ -25,7 +25,7 @@ import { valuePerson } from "./economy";
 export type Role =
   | "creditor" | "deposed" | "captain" | "old_owner" | "rival_broker" | "sold_one" | "chair"
   | "sibling" | "journalist" | "zealot" | "collector" | "fixer" | "flame" | "auctioneer"
-  | "sister" | "doctor" | "rival_owner";
+  | "sister" | "doctor" | "rival_owner" | "insurgent" | "general" | "refugee" | "engineer" | "prophet" | "hacker";
 
 export interface NPC {
   role: Role;
@@ -53,10 +53,13 @@ const ROLE_WHAT: Record<Role, string> = {
   zealot: "preaches on the lower levels", collector: "collects beautiful things", fixer: "moves cargo nobody asks about",
   flame: "someone from before all this", auctioneer: "runs the Grand Exchange", sister: "is looking for her sister",
   doctor: "a ship's doctor", rival_owner: "owns the arcology next door",
+  insurgent: "leads the local Daughters of Liberty cell", general: "commands an Old World army", refugee: "speaks for the refugees", engineer: "an engineer who builds things that keep the sea out",
+  prophet: "preaches on the lower concourse that a slave's feet are holy",
+  hacker: "sells cyber-defense and can't spell",
 };
 
 /** Roles that are always a particular sex in the fiction, because the story needs it. */
-const ROLE_SEX: Partial<Record<Role, "he" | "she">> = { sold_one: "she", sister: "she", zealot: "he" };
+const ROLE_SEX: Partial<Record<Role, "he" | "she">> = { sold_one: "she", sister: "she", zealot: "he", insurgent: "she", refugee: "she", prophet: "she" };
 
 export function makeNpc(st: StoryState, role: Role): NPC {
   const r = rng(`npc:${st.seed}:${role}`);
@@ -65,7 +68,7 @@ export function makeNpc(st: StoryState, role: Role): NPC {
   const taken = new Set(Object.values(st.cast).map((n) => n.name.split(" ")[1]));
   const surname = r.pick(SURNAMES.filter((x) => !taken.has(x)));
   const name = `${first} ${surname}`;
-  const short = role === "zealot" ? `Brother ${first}` : role === "sibling" || role === "flame" || role === "sold_one" || role === "sister" ? first : surname;
+  const short = role === "prophet" ? `Sister ${first}` : role === "zealot" ? `Brother ${first}` : role === "sibling" || role === "flame" || role === "sold_one" || role === "sister" ? first : surname;
   return { role, name, short, pronoun, disposition: 0, status: "around", what: ROLE_WHAT[role] };
 }
 
@@ -98,6 +101,8 @@ export interface StoryState {
   next_draw: number;
   /** Whether the Supplicationism chain runs this game. Off unless chosen at the start. */
   supplication: boolean;
+  /** Whether the main plot (the original game's week-by-week chain) runs this game. */
+  plot?: boolean;
   ended?: { week: number; title: string; text: string };
 }
 
@@ -142,7 +147,11 @@ export interface BeatDef {
 export interface ArcDef {
   id: string;
   title: string;
-  kind: "origin" | "deck";
+  kind: "origin" | "deck" | "world" | "plot";
+  /** For plot arcs: the week the chapter opens, as in the original game's main plot. */
+  at?: number;
+  /** For world arcs: weeks after it last started before it may start again. Unset: once a run. */
+  repeat?: number;
   /** For origin arcs: which origin. */
   origin?: string;
   /** For deck arcs: whether it can start right now. */
@@ -316,12 +325,12 @@ export function storyOf(s: SaveState): StoryState | undefined {
 }
 
 /** A fresh story for a new game. The origin arc starts at once; the deck is shuffled by seed. */
-export function newStory(s: SaveState, origin: string, seed: string, supplication = false): StoryState {
+export function newStory(s: SaveState, origin: string, seed: string, supplication = false, plot = true): StoryState {
   const r = rng(`deck:${seed}`);
   const deck = r.shuffle(allArcs().filter((a) => a.kind === "deck").map((a) => a.id));
   const st: StoryState = {
     seed, origin, cast: {}, flags: {}, arcs: {}, deck, log: [],
-    next_draw: 3 + r.int(0, 3), supplication,
+    next_draw: 3 + r.int(0, 3), supplication, plot,
   };
   s.story = st;
   const o = allArcs().find((a) => a.kind === "origin" && a.origin === origin);
@@ -356,7 +365,7 @@ export function promote(s: SaveState): void {
   if (!st || st.pending) return;
   const due = Object.values(st.arcs)
     .filter((a) => !a.done && a.beat && a.due <= s.arcology.week)
-    .sort((a, b) => (arcDef(a.id)?.kind === "origin" ? -1 : 0) - (arcDef(b.id)?.kind === "origin" ? -1 : 0) || a.due - b.due);
+    .sort((a, b) => rank(arcDef(a.id)?.kind) - rank(arcDef(b.id)?.kind) || a.due - b.due);
   for (const a of due) {
     const def = arcDef(a.id);
     const beat = def?.beats[a.beat!];
@@ -367,6 +376,10 @@ export function promote(s: SaveState): void {
     st.pending = { arc: a.id, beat: a.beat! };
     return;
   }
+}
+
+function rank(kind?: ArcDef["kind"]): number {
+  return kind === "origin" ? 0 : kind === "plot" ? 1 : 2;
 }
 
 function isHere(s: SaveState, id: string): boolean {
@@ -380,13 +393,19 @@ export function tickStory(s: SaveState): { text: string; tone: "good" | "bad" | 
   const lines: { text: string; tone: "good" | "bad" | "neutral" | "warning"; weight: number }[] = [];
   if (!st || st.ended) return lines;
   const week = s.arcology.week;
+  // The main plot: each chapter opens on its week, one a week at most, whatever else is running.
+  if (st.plot) {
+    const chapter = allArcs().filter((a) => a.kind === "plot" && (a.at ?? 0) <= week && !st.arcs[a.id] && (!a.when || a.when(s, st)))
+      .sort((a, b) => (a.at ?? 0) - (b.at ?? 0))[0];
+    if (chapter) startArc(s, st, chapter);
+  }
   const running = Object.values(st.arcs).filter((a) => !a.done && arcDef(a.id)?.kind === "deck").length;
-  if (week >= st.next_draw && running < 2) {
+  if (week >= st.next_draw && running < 3) {
     const def = st.deck.map((id) => arcDef(id)).find((d) => d && (!d.when || d.when(s, st)));
     const r = rng(`draw:${st.seed}:${week}`);
     if (def) {
       startArc(s, st, def);
-      st.next_draw = week + 5 + r.int(0, 4);
+      st.next_draw = week + 3 + r.int(0, 3);
     } else st.next_draw = week + 2;
   }
   const before = st.pending;
@@ -422,7 +441,7 @@ export function pickable(s: SaveState, optionId: string): Person[] {
   return ownedAdults(s).filter((x) => o.pick!.filter(x, p.c));
 }
 
-export interface Answer { title: string; chose: string; text: string; consequences: string[]; ended?: string }
+export interface Answer { title: string; chose: string; text: string; consequences: string[]; ended?: string; person?: string }
 
 /** Answer the pending beat. */
 export function answer(s: SaveState, optionId: string, pickedId?: string): Answer | null {
@@ -450,7 +469,7 @@ export function answer(s: SaveState, optionId: string, pickedId?: string): Answe
   }
   // A beat due now follows straight on, so a scene with more than one turn in it plays through.
   promote(s);
-  return { title, chose, text: res.text, consequences: p.c.out, ended: res.end };
+  return { title, chose, text: res.text, consequences: p.c.out, ended: res.end, person: picked?.id ?? p.run.subject };
 }
 
 /* ── helpers the arcs share ─────────────────────────────────────────────────────────────────── */

@@ -18,6 +18,10 @@ import "./wardrobe.test.ts";
 import "./run.test.ts";
 import "./body.test.ts";
 import "./genitals.test.ts";
+import "./worldsim.test.ts";
+import "./moments.test.ts";
+import "./feet.test.ts";
+import "./plot.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);

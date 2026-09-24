@@ -17,6 +17,7 @@
  */
 
 import { SUPPLICATIONISM } from "./reversal";
+import { PODOLATRY } from "./podolatry";
 
 export type Axis =
   | "age"          // + mature, − young
@@ -28,6 +29,7 @@ export type Axis =
   | "gender"       // + radical (dick on a girl), − fundamental (women as women)
   | "breeding"     // + repopulation, − eugenics
   | "quality"      // + paternalist, − degradationist
+  | "feet"         // + bare, soft, painted, whole; − calloused, caned, clipped
   ;
 
 export interface Doctrine {
@@ -287,6 +289,8 @@ export const DOCTRINES: Doctrine[] = [
   // The one with a plot chain attached. Declared next door because the chain owns it; see
   // data/reversal.ts and engine/reversal.ts.
   SUPPLICATIONISM,
+  // The one the feet storyline grows; see data/podolatry.ts and data/story/feet.ts.
+  PODOLATRY,
 ];
 
 export const DOCTRINE_BY_ID: Record<string, Doctrine> = Object.fromEntries(DOCTRINES.map((d) => [d.id, d]));
@@ -308,4 +312,5 @@ export const AXIS_LABEL: Record<Axis, [string, string]> = {
   gender: ["conventional", "radical"],
   breeding: ["barren", "bearing"],
   quality: ["degraded", "cared for"],
+  feet: ["neglected feet", "sacred feet"],
 };

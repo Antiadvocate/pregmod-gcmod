@@ -49,6 +49,27 @@ export default function Doctrine() {
                       </Button>
                     ) : null}
                   </div>
+                  {d.policies?.length && d.id !== "supplication" ? (
+                    <div className="mt-3 space-y-1.5">
+                      {d.policies.map((pol) => {
+                        const on = !!st.policies[pol.id];
+                        return (
+                          <div key={pol.id} className="flex items-center gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[12.5px]">{pol.name}</div>
+                              <div className="text-[11px] dim">{pol.note}</div>
+                            </div>
+                            <Button size="sm" kind={on ? "primary" : undefined} disabled={!on && arc.cash < pol.cost}
+                              onClick={() => mutate((s) => {
+                                const ps = s.arcology.doctrines[id].policies;
+                                if (ps[pol.id]) delete ps[pol.id];
+                                else { s.arcology.cash -= pol.cost; ps[pol.id] = 1; }
+                              })}>{on ? "in force · repeal" : `enact · ¤${pol.cost.toLocaleString()}`}</Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                   <div className="text-[11px] dim mt-2">
                     {d.rep > 0 ? `+${d.rep} rep/wk at full adoption. ` : ""}
                     {d.cash < 0 ? `Costs ¤${Math.abs(d.cash)}/wk. ` : d.cash > 0 ? `Earns ¤${d.cash}/wk. ` : ""}

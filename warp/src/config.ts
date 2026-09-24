@@ -3,7 +3,7 @@
 const KEY = "warp-openrouter-key";
 const LOCAL = "warp-local-endpoint";
 
-export function getApiKey(): string { return localStorage.getItem(KEY) ?? ""; }
+export function getApiKey(): string { try { return localStorage.getItem(KEY) ?? ""; } catch { return ""; } }
 export function setApiKey(k: string): void { k ? localStorage.setItem(KEY, k.trim()) : localStorage.removeItem(KEY); }
 export function hasApiKey(): boolean { return !!getApiKey(); }
 

@@ -3,6 +3,7 @@
  *  Ordered by what is actually urgent rather than by category: events first because they expire,
  *  then problems, then the household's own state. The end-of-week button is the only irreversible
  *  control in the app and it says what it will cost before you press it. */
+import { Reaction as MomentReaction, OpenMoments } from "./MomentCard";
 import { useState } from "react";
 import { AlertTriangle, ChevronRight, Loader2 } from "lucide-react";
 import type { Route } from "../App";
@@ -15,6 +16,7 @@ import { generateDynamicEvent, resolveDynamic, dynamicReadiness } from "../engin
 import { voiceAsk } from "../engine/asks";
 import { AskList } from "./AskCard";
 import StoryCard from "./StoryCard";
+import WorldCard from "./WorldCard";
 import Ambitions from "./Ambitions";
 import { theKeeper } from "../engine/romance";
 import { nextEvent as chainEvent, resolveChain, reversalOf, subjectOf, GESTURES, gestureAvailable, doGesture, type Reaction } from "../engine/reversal";
@@ -26,10 +28,11 @@ import { band, wear } from "../engine/psyche";
 import { modelsAvailable } from "../config";
 
 export default function Penthouse({ go }: { go: (r: Route) => void }) {
+  const [outcomes, setOutcomes] = useState<{ id: string; chose: string; text: string; person?: string }[]>([]);
   const { save, mutate } = useGame();
   const [running, setRunning] = useState(false);
   const [inventing, setInventing] = useState(false);
-  const [aftermath, setAftermath] = useState<{ line: string; reactions: Reaction[] } | null>(null);
+  const [aftermath, setAftermath] = useState<{ line: string; reactions: Reaction[]; person?: string; title?: string; chose?: string; key?: number } | null>(null);
   const dyn = dynamicReadiness(save);
   const keeper = theKeeper(save);
   const arc = save.arcology;
@@ -86,6 +89,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
       {/* YOUR STORY FIRST. It is the thing that is only about you. */}
       <StoryCard />
 
+      <WorldCard />
+
       {/* SITUATIONS FIRST. A thread is the game telling you something it worked out about the last
           two months, which outranks anything that happened on Tuesday. */}
       {waiting.length ? (
@@ -110,7 +115,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
                   <div className="flex flex-wrap gap-2">
                     {beat.options?.map((o) => (
                       <Button key={o.id} size="sm" title={o.note} onClick={() => mutate((st) => {
-                        setAftermath({ line: answerThread(st, t.id, o.id).line, reactions: [] });
+                        setAftermath({ line: answerThread(st, t.id, o.id).line, reactions: [], person: Object.values(t.cast)[0], title: def.name, chose: o.label, key: Date.now() });
                       })}>{o.label}</Button>
                     ))}
                   </div>
@@ -185,6 +190,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
         <Section title="What came of it" right={<Button size="sm" kind="ghost" onClick={() => setAftermath(null)}>done</Button>}>
           <Card>
             <p className="font-prose text-[15px] leading-relaxed">{aftermath.line}</p>
+            {aftermath.person ? <MomentReaction key={aftermath.key} seed={{ person: aftermath.person, title: aftermath.title ?? "Afterwards", source: "thread", you: aftermath.chose, happened: aftermath.line }} /> : null}
             {aftermath.reactions.length ? (
               <ul className="mt-3 space-y-1.5 text-[13px]">
                 {aftermath.reactions.map((rx) => (
@@ -200,6 +206,19 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
       ) : null}
 
       <AskList asks={save.asks ?? []} title={keeper ? "What she wants from you" : "They want something"} />
+
+      <div className="mb-6"><OpenMoments title="Left unfinished" /></div>
+
+      {outcomes.map((o) => (
+        <Card key={o.id} className="mb-4 border-l-2 fade-in">
+          <div className="player-line !mt-0 !mb-3">{o.chose}</div>
+          <div className="space-y-3">
+            {o.text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[15px] leading-relaxed">{para}</p>)}
+          </div>
+          {o.person ? <MomentReaction seed={{ person: o.person, title: o.chose, source: "event", you: o.chose, happened: o.text }} /> : null}
+          <Button size="sm" kind="primary" className="mt-3" onClick={() => setOutcomes((xs) => xs.filter((x) => x.id !== o.id))}>Done</Button>
+        </Card>
+      ))}
 
       {save.events.length ? (
         <Section title="Waiting on you" right={
@@ -223,9 +242,11 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
                   <p className="font-prose text-[15px] leading-relaxed mb-3">{e.seed}</p>
                   <div className="flex flex-wrap gap-2">
                     {(e.kind === "dynamic" ? e.options : EVENT_BY_ID[e.kind]?.options ?? e.options).map((o) => (
-                      <Button key={o.id} size="sm" title={o.note} onClick={() => mutate((s) => {
-                        if (e.kind === "dynamic") resolveDynamic(s, e, o.id); else resolveEvent(s, e, o.id);
-                      })}>
+                      <Button key={o.id} size="sm" title={o.note} onClick={() => {
+                        let text = "";
+                        mutate((s) => { text = e.kind === "dynamic" ? resolveDynamic(s, e, o.id) : resolveEvent(s, e, o.id); });
+                        setOutcomes((xs) => [...xs, { id: e.id, chose: o.label, text, person: e.person }]);
+                      }}>
                         {o.label}
                       </Button>
                     ))}

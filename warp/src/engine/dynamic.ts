@@ -32,6 +32,7 @@ import { resolveAct } from "./intimacy";
 import { FETISH_BY_ID, ACT_BY_ID } from "../data/intimacy";
 import { condition } from "./prompts";
 import { describeGenitals, describeFeet } from "./genitals";
+import { worldBrief } from "./world";
 
 /** THE CLOSED TABLE. A generated option may name one of these and nothing else. */
 export const DYNAMIC_EFFECTS: Record<string, { note: string; run: (s: SaveState, p: Person, value?: string | number) => string }> = {
@@ -103,6 +104,7 @@ function dossier(s: SaveState, p: Person): string {
     p.persona.texture.length ? `LIKES AND DISLIKES: ${p.persona.texture.join("; ")}` : "",
     mem?.episodic.length ? `SHE REMEMBERS: ${mem.episodic.slice(-5).map((m) => `${m.content} (wk ${m.week})`).join(" | ")}` : "",
     p.acts && Object.keys(p.acts).length ? `WHAT HAS BEEN DONE TO HER: ${Object.entries(p.acts).map(([a, n]) => `${a} ×${n}`).join(", ")}` : "",
+    s.world ? `THE WORLD: ${worldBrief(s).replace(/\n/g, " ")}` : "",
     `THE PLACE: ${s.arcology.name}, week ${s.arcology.week}. ${Object.keys(s.arcology.doctrines).length ? `Its doctrine: ${Object.keys(s.arcology.doctrines).join(", ")}.` : "No doctrine adopted yet."}`,
   ];
   return lines.filter(Boolean).join("\n");

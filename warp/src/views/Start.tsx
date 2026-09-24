@@ -21,6 +21,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
   const [custom, setCustom] = useState("");
   const [origin, setOrigin] = useState<string>(() => ORIGINS[Math.floor(Math.random() * ORIGINS.length)].id);
   const [supplication, setSupplication] = useState(false);
+  const [plot, setPlot] = useState(true);
   const [kit, setKit] = useState<Kit | null>(null);
   const [twists, setTwists] = useState<string[]>([]);
   const [difficulty, setDifficulty] = useState<"generous" | "standard" | "hard">("standard");
@@ -32,7 +33,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
     setBusy(true);
     const s = newGame({
       arcology_name: name || undefined, player_name: player || undefined, difficulty, origin,
-      address: address === "custom" ? custom.trim() || "Master" : address, supplication, twists, kit: kit ?? undefined,
+      address: address === "custom" ? custom.trim() || "Master" : address, supplication, plot, twists, kit: kit ?? undefined,
     });
     await putSave(s);
     localStorage.setItem("warp-last", s.id);
@@ -98,6 +99,10 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
               }}><Dice5 size={12} /> roll</button>
             </div>
           </Field>
+          <label className="flex items-start gap-2.5 mt-1 cursor-pointer">
+            <input type="checkbox" className="!w-auto mt-0.5" checked={plot} onChange={(e) => setPlot(e.target.checked)} />
+            <span className="text-[12.5px] mid">Run the <span className="hi">main plot</span>: the original game's chain, from the strip club closing in week 6 to the coup in week 71.</span>
+          </label>
           <label className="flex items-start gap-2.5 mt-1 cursor-pointer">
             <input type="checkbox" className="!w-auto mt-0.5" checked={supplication} onChange={(e) => setSupplication(e.target.checked)} />
             <span className="text-[12.5px] mid">Also run <span className="hi">Supplicationism</span>: a long storyline where one of your slaves gradually comes to own you.</span>

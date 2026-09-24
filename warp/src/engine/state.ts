@@ -7,7 +7,9 @@
  * is a crash somewhere far away with no clue in it. Everything it fills is a default that a
  * running game would have produced anyway.
  */
+import { sane } from "./health";
 import { feetOf } from "./genitals";
+import { newWorld } from "./world";
 import type { Arcology, Facility, Person, SaveState, Sector, StandingOrder } from "./types";
 import { SCHEMA_VERSION, DEFAULT_MODELS } from "./types";
 import { FACILITIES } from "../data/facilities";
@@ -38,6 +40,8 @@ export interface NewGameOptions {
   address?: string;
   /** Run the Supplicationism chain as well. */
   supplication?: boolean;
+  /** The main plot; on unless turned off at the start. */
+  plot?: boolean;
   /** Up to two twists on the world. See engine/run.ts. */
   twists?: string[];
   /** What you have between your legs, which the scenes follow. The rest is shaped on the You screen. */
@@ -176,7 +180,7 @@ export function newGame(opts: NewGameOptions = {}): SaveState {
     if (difficulty === "hard") state.arcology.cash = Math.round(state.arcology.cash * 0.55);
   }
   newRun(state, seed, opts.twists ?? []);
-  newStory(state, origin?.id ?? "none", seed, opts.supplication ?? false);
+  newStory(state, origin?.id ?? "none", seed, opts.supplication ?? false, opts.plot ?? true);
   for (const p of Object.values(state.people)) refresh(p, state.memory[p.id]);
   // The city starts with its people housed. It used to start 1,200 against room for 400 and spend
   // the first months emptying out.
@@ -221,6 +225,8 @@ export function sanitize(raw: SaveState): SaveState {
         s.arcology.facilities[def.id] = { id: def.id, kind: def.id, name: def.name, level: 0, upgrades: {}, capacity: 0, workers: [], decoration: 0, settings: {} };
       }
     }
+    // Saves from before the world existed get one, starting from today.
+    if (!s.world) s.world = newWorld(s);
   }
 
   for (const p of Object.values(s.people)) {
@@ -235,6 +241,8 @@ export function sanitize(raw: SaveState): SaveState {
     feetOf(p);
     p.health.injuries = p.health.injuries ?? [];
     p.health.drugs = p.health.drugs ?? [];
+    // A missing or broken recovery count (older saves) must not become NaN and never count down.
+    p.health.recovery_weeks = sane(p.health.recovery_weeks);
     p.womb.fetuses = p.womb.fetuses ?? [];
     p.womb.sired_by = p.womb.sired_by ?? {};
     p.skills.management = p.skills.management ?? {};
@@ -252,7 +260,7 @@ export function sanitize(raw: SaveState): SaveState {
   }
   // A save from before the story existed keeps the plot chain it was playing and joins the deck
   // from here, with no origin arc — it already has a history.
-  if (!s.story && s.arcology) newStory(s, "none", s.id, true);
+  if (!s.story && s.arcology) newStory(s, "none", s.id, true, s.arcology.week < 6);
   if (!s.run && s.arcology) newRun(s, s.id, []);
 
   // A save written before the return rule existed has the old three orders and a household that

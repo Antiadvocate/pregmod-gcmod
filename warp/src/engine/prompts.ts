@@ -16,6 +16,7 @@
 import type { Person, SaveState } from "./types";
 import { band } from "./psyche";
 import { describeGenitals, describeFeet } from "./genitals";
+import { worldBrief } from "./world";
 import { read } from "./obedience";
 import { recall } from "./memory";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
@@ -139,6 +140,9 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   // Ongoing situations, so a scene played during one happens inside it.
   const threads = threadBrief(s);
   if (threads) out.push(`\n## ${threads}`);
+
+  const world = worldBrief(s);
+  if (world) out.push(`\n## THE WORLD THIS WEEK (background; mention only if it bears on the action)\n${world}`);
 
   out.push(`\n## WHERE AND WHEN`);
   out.push(`${s.scene.time}. ${s.scene.location}.`);

@@ -27,6 +27,7 @@ import { clamp, shove, tickWeek, tickEmotions, tickDischarge, addState, wear } f
 import { decayMemory, reflect, remember } from "./memory";
 import { coRegulate, diffuseRumors, tickProximity, startRumor, gossip } from "./social";
 import { tickSociety } from "./society";
+import { tickPodolatry } from "./podolatry";
 import { runOrders } from "./rules";
 import { selectEvents } from "./events";
 import { rollMarkets, recruitResult } from "./market";
@@ -40,6 +41,8 @@ import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf } from "./romance"
 import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
 import { tickStory } from "./story";
+import { ageMoments } from "./moments";
+import { tickWorld } from "./world";
 import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
 import { tickThreads } from "./threads";
@@ -272,6 +275,14 @@ export function endWeek(s: SaveState): WeekReport {
   const soc = tickSociety(s);
   led.entry("doctrine", "your citizens, on how you live", soc.cash, soc.rep);
   for (const l of soc.lines) push(l, "neutral", 6);
+  const feet = tickPodolatry(s);
+  if (feet.cash || feet.rep) led.entry("doctrine", "Podolatry: the washing and the tithe", feet.cash, feet.rep);
+  for (const l of feet.lines) push(l, "neutral", 4);
+
+  // THE WORLD: weather, climate, the economy, the regions. Before the money is settled, because the
+  // weather changes what the farms grew and what the power cost.
+  lines.push(...tickWorld(s, led));
+  ageMoments(s);
 
   arcologyMoney(s, led);
 
