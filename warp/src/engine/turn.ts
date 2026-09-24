@@ -62,7 +62,7 @@ export async function runTurn(
   s: SaveState,
   action: string,
   mode: ActionMode = "do",
-  opts?: { onDelta?: (c: string) => void; signal?: AbortSignal },
+  opts?: { onDelta?: (c: string) => void; onReset?: () => void; signal?: AbortSignal },
 ): Promise<TurnResult> {
   snapshot(s);
   const started = Date.now();
@@ -84,6 +84,7 @@ export async function runTurn(
       model: s.models.narrator_model,
       fallback: s.models.fallback_model,
       onDelta: opts?.onDelta,
+      onReset: opts?.onReset,
       signal: opts?.signal,
       maxTokens: 1200,
     });
@@ -168,7 +169,7 @@ export async function runActTurn(
   s: SaveState,
   personId: string,
   actId: string,
-  opts?: { onDelta?: (c: string) => void; onImage?: (url: string) => void; onProgress?: (n: string) => void; public?: boolean; signal?: AbortSignal; lead?: boolean },
+  opts?: { onDelta?: (c: string) => void; onReset?: () => void; onImage?: (url: string) => void; onProgress?: (n: string) => void; public?: boolean; signal?: AbortSignal; lead?: boolean },
 ): Promise<{ outcome: ActOutcome | { error: string }; prose: string; notes: string[]; written?: Written }> {
   const p = s.people[personId];
   if (!p) return { outcome: { error: "she is not here" }, prose: "", notes: [] };
@@ -194,6 +195,7 @@ export async function runActTurn(
       model: s.models.narrator_model,
       fallback: s.models.fallback_model,
       onDelta: opts?.onDelta,
+      onReset: opts?.onReset,
       signal: opts?.signal,
       maxTokens: 1100,
       temperature: 0.95,

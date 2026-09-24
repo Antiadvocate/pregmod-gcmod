@@ -61,7 +61,7 @@ export default function Scene() {
     setText("");
     setStreaming("");
     setNotes([]);
-    const res = await runTurn(save, action, mode, { onDelta: (c) => setStreaming((p) => p + c) });
+    const res = await runTurn(save, action, mode, { onDelta: (c) => setStreaming((p) => p + c), onReset: () => setStreaming("") });
     setStreaming("");
     setNotes(res.notes);
     mutate(() => {});

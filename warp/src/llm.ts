@@ -69,6 +69,17 @@ export interface CallOptions {
   signal?: AbortSignal;
   /** Called with each delta as it arrives. Streaming is used when this is present. */
   onDelta?: (chunk: string) => void;
+  /** Called when streamed text is thrown away (a refusal) before the next model tries. */
+  onReset?: () => void;
+}
+
+/** A model declining to write the scene instead of writing it. Checked on the opening of the reply
+ *  only, so a character saying "I can't" in the middle of a scene is not mistaken for one. */
+export function isRefusal(text: string): boolean {
+  const head = text.trim().slice(0, 320).toLowerCase().replace(/[‘’]/g, "'");
+  if (!head) return false;
+  return /^(i'm sorry|i am sorry|sorry,|i apologi[sz]e|i can(?:'|no)t (?:write|help|create|continue|produce|assist|generate|comply|provide|do that|engage)|i won't (?:write|be able|create|continue|produce)|i'm (?:not able|unable) to|i am (?:not able|unable) to|i must decline|i will not|as an ai|i do not (?:feel comfortable|create|write|produce)|i don't (?:feel comfortable|create|write|produce))/.test(head)
+    || /\b(?:i can(?:'|no)t|i won't|i'm unable to|i am unable to) (?:write|create|produce|generate|continue)[^.]{0,80}\b(?:explicit|sexual|non-?consensual|slave|minor|this (?:scene|content|request))/.test(head);
 }
 
 export async function call(opts: CallOptions): Promise<LLMResult> {
@@ -76,7 +87,16 @@ export async function call(opts: CallOptions): Promise<LLMResult> {
   let lastErr = "";
   for (const model of chain) {
     try {
-      return await once({ ...opts, model });
+      const res = await once({ ...opts, model });
+      // A refusal is not a scene. Try the fallback model; if that refuses too, the caller gets a
+      // failure and uses the game's own written version instead of printing the refusal.
+      if (!opts.json && isRefusal(res.text)) {
+        lastErr = `${model} refused to write this`;
+        logErr(model, new Error(`refused: ${res.text.slice(0, 160)}`));
+        opts.onReset?.();
+        continue;
+      }
+      return res;
     } catch (e) {
       lastErr = String((e as Error)?.message ?? e);
       logErr(model, e);
