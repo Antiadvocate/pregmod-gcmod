@@ -15,6 +15,7 @@ import { endWeek } from "../engine/week";
 import { read } from "../engine/obedience";
 import { reversalOf, nextEvent as chainEvent } from "../engine/reversal";
 import { CHAIN } from "../data/reversal";
+import PersonEditor from "./PersonEditor";
 
 export default function Cheats() {
   const { save, mutate } = useGame();
@@ -241,6 +242,13 @@ export default function Cheats() {
               reads: devotion {read(target, save.memory[target.id]).devotion} · trust {read(target, save.memory[target.id]).trust}
             </div>
           </Card>
+        </Section>
+      ) : null}
+
+      {target ? (
+        <Section title={`Everything about ${target.name}`}>
+          <div className="text-[11.5px] dim mb-2">Every field on her record. Changes apply as soon as you leave a field. Devotion and trust are worked out from bond, fear, resentment and hope, so edit those.</div>
+          <PersonEditor target={target} />
         </Section>
       ) : null}
 

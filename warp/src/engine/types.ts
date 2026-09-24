@@ -789,6 +789,8 @@ export interface SaveState {
   events: PendingEvent[];
   /** What the household is asking you for this week. See engine/asks.ts. */
   asks?: import("./asks").Ask[];
+  /** Scenes that grew out of a reaction, open until you close them. See engine/moments. */
+  moments?: import("./moments").Moment[];
   /** Twists, ambitions and the end of the run. See engine/run.ts. */
   run?: import("./run").RunState;
   /** Your origin, your cast, and the arcs this run has drawn. See engine/story.ts. */

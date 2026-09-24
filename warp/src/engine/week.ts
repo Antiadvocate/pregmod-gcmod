@@ -40,6 +40,7 @@ import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf } from "./romance"
 import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
 import { tickStory } from "./story";
+import { ageMoments } from "./moments";
 import { tickWorld } from "./world";
 import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
@@ -277,6 +278,7 @@ export function endWeek(s: SaveState): WeekReport {
   // THE WORLD: weather, climate, the economy, the regions. Before the money is settled, because the
   // weather changes what the farms grew and what the power cost.
   lines.push(...tickWorld(s, led));
+  ageMoments(s);
 
   arcologyMoney(s, led);
 

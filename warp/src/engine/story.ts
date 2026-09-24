@@ -425,7 +425,7 @@ export function pickable(s: SaveState, optionId: string): Person[] {
   return ownedAdults(s).filter((x) => o.pick!.filter(x, p.c));
 }
 
-export interface Answer { title: string; chose: string; text: string; consequences: string[]; ended?: string }
+export interface Answer { title: string; chose: string; text: string; consequences: string[]; ended?: string; person?: string }
 
 /** Answer the pending beat. */
 export function answer(s: SaveState, optionId: string, pickedId?: string): Answer | null {
@@ -453,7 +453,7 @@ export function answer(s: SaveState, optionId: string, pickedId?: string): Answe
   }
   // A beat due now follows straight on, so a scene with more than one turn in it plays through.
   promote(s);
-  return { title, chose, text: res.text, consequences: p.c.out, ended: res.end };
+  return { title, chose, text: res.text, consequences: p.c.out, ended: res.end, person: picked?.id };
 }
 
 /* ── helpers the arcs share ─────────────────────────────────────────────────────────────────── */

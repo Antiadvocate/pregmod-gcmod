@@ -27,6 +27,7 @@ import { getEdge } from "../engine/social";
 import Interact from "./Interact";
 import Dressing from "./Dressing";
 import Surgery from "./Surgery";
+import { OpenMoments } from "./MomentCard";
 import HerPanel from "./HerPanel";
 import { romanceOf, RUNG_BY_ID } from "../engine/romance";
 import { paintPortrait, paintRealistic } from "../engine/turn";
@@ -293,6 +294,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
       {tab === "read" && (
         <div className="space-y-4">
           <AskHer id={id} />
+          <OpenMoments person={id} title="Left unfinished with her" />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <Meter value={r.devotion} range={[-100, 100]} label={`devotion — ${r.label}`} />
             <Meter value={r.trust} range={[-100, 100]} label={`trust — ${r.trust_label}`} />

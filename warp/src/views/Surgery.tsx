@@ -5,6 +5,7 @@
  *  ever happen to her, and hiding that behind the button would make the choice meaningless. */
 import { useState } from "react";
 import { useGame } from "../lib/game";
+import { Reaction } from "./MomentCard";
 import { Button, Card, Empty, Section } from "../lib/ui";
 import { optionsFor, operate, theatreLevel } from "../engine/surgery";
 import type { Procedure } from "../data/surgery";
@@ -18,7 +19,7 @@ const GROUPS: { id: Procedure["group"]; label: string; note: string }[] = [
 
 export default function Surgery({ id }: { id: string }) {
   const { save, mutate } = useGame();
-  const [said, setSaid] = useState<{ line: string; reaction: string } | null>(null);
+  const [said, setSaid] = useState<{ line: string; reaction: string; ok?: boolean; proc?: string; key?: number } | null>(null);
   const p = save.people[id];
   if (!p) return null;
   const rows = optionsFor(save, p);
@@ -36,6 +37,7 @@ export default function Surgery({ id }: { id: string }) {
         <Card className="mb-4">
           <div className="text-[13px] mb-1.5">{said.line}</div>
           <p className="font-prose text-[15px] leading-relaxed">{said.reaction}</p>
+          {said.ok ? <Reaction key={said.key} seed={{ person: id, title: `After the ${said.proc?.toLowerCase()}`, source: "surgery", you: `You have her put under for: ${said.proc}.`, happened: `${said.line} ${said.reaction}` }} /> : null}
           <Button size="sm" kind="ghost" className="mt-2" onClick={() => setSaid(null)}>done</Button>
         </Card>
       ) : null}
@@ -74,7 +76,7 @@ export default function Surgery({ id }: { id: string }) {
                     <Button size="sm" className="mt-2.5" kind={felt.score < -20 ? "danger" : undefined} onClick={() => {
                       let out: ReturnType<typeof operate> = { ok: false };
                       mutate((s) => { out = operate(s, s.people[id], proc.id); });
-                      if (out.ok) setSaid({ line: out.line ?? "", reaction: out.reaction ?? "" });
+                      if (out.ok) setSaid({ line: out.line ?? "", reaction: out.reaction ?? "", ok: true, proc: proc.name, key: Date.now() });
                       else setSaid({ line: "Not done.", reaction: out.why ?? "" });
                     }}>do it</Button>
                   )}
