@@ -11,6 +11,7 @@
  * Nothing here is reversible by the same button that did it. Adding a cunt costs fifteen thousand;
  * taking one costs ten and she does not come back from it the same.
  */
+import { footSurgery } from "./podolatry";
 import { sane, recoveryNote } from "./health";
 import type { Person, ReportLine, SaveState } from "./types";
 import { PROCEDURE_BY_ID, type Procedure } from "../data/surgery";
@@ -100,6 +101,7 @@ export function operate(s: SaveState, p: Person, procId: string): SurgeryResult 
 
   s.arcology.cash -= proc.cost;
   proc.apply(p);
+  if (proc.group === "feet") footSurgery(s, p, proc.id);
   p.health.health = clamp(p.health.health + proc.damage, -100, 100);
   p.health.recovery_weeks = Math.max(p.health.recovery_weeks, proc.recovery);
   p.body.marks.push({ kind: "implant", where: proc.group, what: proc.name.toLowerCase(), week });

@@ -25,7 +25,7 @@ import { valuePerson } from "./economy";
 export type Role =
   | "creditor" | "deposed" | "captain" | "old_owner" | "rival_broker" | "sold_one" | "chair"
   | "sibling" | "journalist" | "zealot" | "collector" | "fixer" | "flame" | "auctioneer"
-  | "sister" | "doctor" | "rival_owner" | "insurgent" | "general" | "refugee" | "engineer";
+  | "sister" | "doctor" | "rival_owner" | "insurgent" | "general" | "refugee" | "engineer" | "prophet";
 
 export interface NPC {
   role: Role;
@@ -54,10 +54,11 @@ const ROLE_WHAT: Record<Role, string> = {
   flame: "someone from before all this", auctioneer: "runs the Grand Exchange", sister: "is looking for her sister",
   doctor: "a ship's doctor", rival_owner: "owns the arcology next door",
   insurgent: "leads the local Daughters of Liberty cell", general: "commands an Old World army", refugee: "speaks for the refugees", engineer: "an engineer who builds things that keep the sea out",
+  prophet: "preaches on the lower concourse that a slave's feet are holy",
 };
 
 /** Roles that are always a particular sex in the fiction, because the story needs it. */
-const ROLE_SEX: Partial<Record<Role, "he" | "she">> = { sold_one: "she", sister: "she", zealot: "he", insurgent: "she", refugee: "she" };
+const ROLE_SEX: Partial<Record<Role, "he" | "she">> = { sold_one: "she", sister: "she", zealot: "he", insurgent: "she", refugee: "she", prophet: "she" };
 
 export function makeNpc(st: StoryState, role: Role): NPC {
   const r = rng(`npc:${st.seed}:${role}`);
@@ -66,7 +67,7 @@ export function makeNpc(st: StoryState, role: Role): NPC {
   const taken = new Set(Object.values(st.cast).map((n) => n.name.split(" ")[1]));
   const surname = r.pick(SURNAMES.filter((x) => !taken.has(x)));
   const name = `${first} ${surname}`;
-  const short = role === "zealot" ? `Brother ${first}` : role === "sibling" || role === "flame" || role === "sold_one" || role === "sister" ? first : surname;
+  const short = role === "prophet" ? `Sister ${first}` : role === "zealot" ? `Brother ${first}` : role === "sibling" || role === "flame" || role === "sold_one" || role === "sister" ? first : surname;
   return { role, name, short, pronoun, disposition: 0, status: "around", what: ROLE_WHAT[role] };
 }
 
@@ -453,7 +454,7 @@ export function answer(s: SaveState, optionId: string, pickedId?: string): Answe
   }
   // A beat due now follows straight on, so a scene with more than one turn in it plays through.
   promote(s);
-  return { title, chose, text: res.text, consequences: p.c.out, ended: res.end, person: picked?.id };
+  return { title, chose, text: res.text, consequences: p.c.out, ended: res.end, person: picked?.id ?? p.run.subject };
 }
 
 /* ── helpers the arcs share ─────────────────────────────────────────────────────────────────── */

@@ -21,6 +21,7 @@
  *
  * Nothing here writes prose. It writes the facts the prose has to honour.
  */
+import { footAct } from "./podolatry";
 import { sane, recoveryNote } from "./health";
 import { erection, feetOf, mobility } from "./genitals";
 import type { Person, SaveState } from "./types";
@@ -48,6 +49,8 @@ export interface ActOutcome {
   discovered?: string;
   /** A flaw that wore down, or converted. */
   converted?: string;
+  /** What the foot-worshippers of the arcology made of it, when there are any. */
+  believers?: string;
   /** True the first time this has ever been done to her. */
   first: boolean;
   /** Skills that moved. */
@@ -266,6 +269,7 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
   }
   if (actId === "bastinado") p.health.health = clamp(p.health.health - 3, -100, 100);
   if (actId === "cbt") p.health.health = clamp(p.health.health - 2, -100, 100);
+  const believers = act.tags.includes("feet") ? footAct(s, p, actId, !!opts?.public) : undefined;
 
   moveEdge(s.edges, p.id, "owner", { warmth: bond, attraction: aff.score > 0.4 ? 2 : 0 });
   if (opts?.withId) moveEdge(s.edges, p.id, opts.withId, { warmth: landing === "hated" ? -3 : 1 });
@@ -274,7 +278,7 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
     act: actId, arousal: arousalDelta, relaxation, finished, landing,
     because: aff.why || "it doesn't match anything she's into",
     bond: +bond.toFixed(2), resentment: +resent.toFixed(2),
-    discovered, converted, first, trained, memory: memoryLine,
+    discovered, converted, first, trained, memory: memoryLine, believers,
   };
 }
 
@@ -286,6 +290,7 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
   const lines: string[] = [];
   lines.push(`## THE PLAYER'S ACTION: ${act.name.toUpperCase()} (${p.name})`);
   lines.push(`What that means: ${act.what}.`);
+  if (out.believers) lines.push(`The arcology holds slaves' feet sacred. ${out.believers} She knows it too, and it shows in how she takes it.`);
   lines.push(out.first ? `This is the first time you have done this with her.` : `You have done this with her ${times} time${times === 1 ? "" : "s"} before.`);
   lines.push(act.receives
     ? `WHO DOES WHAT: you do this TO ${p.name}. She is on the receiving end and you are serving her. She does not do it to you.`
