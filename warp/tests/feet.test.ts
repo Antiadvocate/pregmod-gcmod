@@ -61,6 +61,6 @@ function play(seed: string, weeks: number) {
   her.shoes = "heels"; f.soles = "calloused";
   const t = tickPodolatry(s);
   check("the barefoot law takes her shoes", her.shoes === "barefoot");
-  check("the washing softens her soles", f.soles === "normal");
+  check("the washing softens her soles", (f.soles as string) === "normal");
   check("the tithe pays", t.lines.some((l) => /tithe of kisses/.test(l)), t);
 }

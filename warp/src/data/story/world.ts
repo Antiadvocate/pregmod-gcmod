@@ -280,6 +280,8 @@ Back in ${regionName(c, "boats_region")}, his family waits for word that never c
 
 function libertyReady(s: import("../../engine/types").SaveState): boolean {
   if (s.arcology.week < 14) return false;
+  // With the main plot running, the Daughters of Liberty come through its chapters instead.
+  if (s.story?.plot) return false;
   const st = s.story;
   const house = ownedAdults(s);
   const resent = house.length ? house.reduce((n, p) => n + p.bond.resentment, 0) / house.length : 0;

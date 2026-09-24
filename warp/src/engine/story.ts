@@ -25,7 +25,7 @@ import { valuePerson } from "./economy";
 export type Role =
   | "creditor" | "deposed" | "captain" | "old_owner" | "rival_broker" | "sold_one" | "chair"
   | "sibling" | "journalist" | "zealot" | "collector" | "fixer" | "flame" | "auctioneer"
-  | "sister" | "doctor" | "rival_owner" | "insurgent" | "general" | "refugee" | "engineer" | "prophet";
+  | "sister" | "doctor" | "rival_owner" | "insurgent" | "general" | "refugee" | "engineer" | "prophet" | "hacker";
 
 export interface NPC {
   role: Role;
@@ -55,6 +55,7 @@ const ROLE_WHAT: Record<Role, string> = {
   doctor: "a ship's doctor", rival_owner: "owns the arcology next door",
   insurgent: "leads the local Daughters of Liberty cell", general: "commands an Old World army", refugee: "speaks for the refugees", engineer: "an engineer who builds things that keep the sea out",
   prophet: "preaches on the lower concourse that a slave's feet are holy",
+  hacker: "sells cyber-defense and can't spell",
 };
 
 /** Roles that are always a particular sex in the fiction, because the story needs it. */
@@ -100,6 +101,8 @@ export interface StoryState {
   next_draw: number;
   /** Whether the Supplicationism chain runs this game. Off unless chosen at the start. */
   supplication: boolean;
+  /** Whether the main plot (the original game's week-by-week chain) runs this game. */
+  plot?: boolean;
   ended?: { week: number; title: string; text: string };
 }
 
@@ -144,7 +147,9 @@ export interface BeatDef {
 export interface ArcDef {
   id: string;
   title: string;
-  kind: "origin" | "deck" | "world";
+  kind: "origin" | "deck" | "world" | "plot";
+  /** For plot arcs: the week the chapter opens, as in the original game's main plot. */
+  at?: number;
   /** For world arcs: weeks after it last started before it may start again. Unset: once a run. */
   repeat?: number;
   /** For origin arcs: which origin. */
@@ -320,12 +325,12 @@ export function storyOf(s: SaveState): StoryState | undefined {
 }
 
 /** A fresh story for a new game. The origin arc starts at once; the deck is shuffled by seed. */
-export function newStory(s: SaveState, origin: string, seed: string, supplication = false): StoryState {
+export function newStory(s: SaveState, origin: string, seed: string, supplication = false, plot = true): StoryState {
   const r = rng(`deck:${seed}`);
   const deck = r.shuffle(allArcs().filter((a) => a.kind === "deck").map((a) => a.id));
   const st: StoryState = {
     seed, origin, cast: {}, flags: {}, arcs: {}, deck, log: [],
-    next_draw: 3 + r.int(0, 3), supplication,
+    next_draw: 3 + r.int(0, 3), supplication, plot,
   };
   s.story = st;
   const o = allArcs().find((a) => a.kind === "origin" && a.origin === origin);
@@ -360,7 +365,7 @@ export function promote(s: SaveState): void {
   if (!st || st.pending) return;
   const due = Object.values(st.arcs)
     .filter((a) => !a.done && a.beat && a.due <= s.arcology.week)
-    .sort((a, b) => (arcDef(a.id)?.kind === "origin" ? -1 : 0) - (arcDef(b.id)?.kind === "origin" ? -1 : 0) || a.due - b.due);
+    .sort((a, b) => rank(arcDef(a.id)?.kind) - rank(arcDef(b.id)?.kind) || a.due - b.due);
   for (const a of due) {
     const def = arcDef(a.id);
     const beat = def?.beats[a.beat!];
@@ -371,6 +376,10 @@ export function promote(s: SaveState): void {
     st.pending = { arc: a.id, beat: a.beat! };
     return;
   }
+}
+
+function rank(kind?: ArcDef["kind"]): number {
+  return kind === "origin" ? 0 : kind === "plot" ? 1 : 2;
 }
 
 function isHere(s: SaveState, id: string): boolean {
@@ -384,6 +393,12 @@ export function tickStory(s: SaveState): { text: string; tone: "good" | "bad" | 
   const lines: { text: string; tone: "good" | "bad" | "neutral" | "warning"; weight: number }[] = [];
   if (!st || st.ended) return lines;
   const week = s.arcology.week;
+  // The main plot: each chapter opens on its week, one a week at most, whatever else is running.
+  if (st.plot) {
+    const chapter = allArcs().filter((a) => a.kind === "plot" && (a.at ?? 0) <= week && !st.arcs[a.id] && (!a.when || a.when(s, st)))
+      .sort((a, b) => (a.at ?? 0) - (b.at ?? 0))[0];
+    if (chapter) startArc(s, st, chapter);
+  }
   const running = Object.values(st.arcs).filter((a) => !a.done && arcDef(a.id)?.kind === "deck").length;
   if (week >= st.next_draw && running < 3) {
     const def = st.deck.map((id) => arcDef(id)).find((d) => d && (!d.when || d.when(s, st)));
