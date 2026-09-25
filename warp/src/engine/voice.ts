@@ -229,7 +229,11 @@ const LINES: Record<Register, Pool> = {
 };
 
 /** What she calls you, which moves with who is deciding. */
-export function addressFor(s: SaveState, reg: Register): string {
+export function addressFor(s: SaveState, reg: Register, p?: Person): string {
+  // A name you told her to use is the name she uses, whatever her register.
+  const told = p ? [...(p.agreements ?? [])].reverse().find((a) => a.calls && a.by === "you")?.calls : undefined;
+  if (told) return told;
+  if (p && s.player.owned_by === p.id && s.reign?.your_name) return s.reign.your_name;
   const title = s.player.address || "Master";
   if (reg === "commanding") return s.player.name && s.player.name !== "you" ? s.player.name : "pet";
   if (reg === "bratty" || reg === "crude") return s.player.name && s.player.name !== "you" ? s.player.name : title;
@@ -249,5 +253,5 @@ export function say(s: SaveState, p: Person, what: Said, r: Rng, extra: Record<s
   if (what === "liked" && !extra.liked) pool = pool.filter((l) => !l.includes("{liked}"));
   const line = r.pick(pool.length ? pool : LINES.proper[what]);
   const pname = s.player.name && s.player.name !== "you" ? s.player.name : addressFor(s, "proper");
-  return fill(line, { you: addressFor(s, reg), name: p.name, pname, ...extra });
+  return fill(line, { you: addressFor(s, reg, p), name: p.name, pname, ...extra });
 }

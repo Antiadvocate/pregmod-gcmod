@@ -108,7 +108,7 @@ function Court() {
             if (!l) return null;
             return (
               <div key={x.id} className="mb-2.5">
-                <div className="text-[13px]">{l.name} <span className="text-[11px] dim">since week {x.week} · {x.by === "you" ? "you signed it" : "passed by the court"}{x.exempt ? " · your household exempt" : ""}</span></div>
+                <div className="text-[13px]">{l.name} <span className="text-[11px] dim">since week {x.week} · {x.by === "you" ? "you signed it" : x.by === "keeper" ? "she signed it" : "passed by the court"}{x.exempt ? " · your household exempt" : ""}</span></div>
                 <div className="font-prose text-[13px] mid">{l.text}</div>
               </div>
             );

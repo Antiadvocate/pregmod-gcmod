@@ -113,7 +113,7 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
           </div>
           <form className="mt-2 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (text.trim()) void go(text.trim()); }}>
             <input className="flex-1 min-w-0" value={text} onChange={(e) => setText(e.target.value)} placeholder="Say or do something else" />
-            <Button size="sm" kind="primary" disabled={!text.trim()}>Go</Button>
+            <Button size="sm" kind="primary" disabled={!text.trim()} onClick={() => { if (text.trim()) void go(text.trim()); }}>Go</Button>
           </form>
           <div className="flex gap-2 mt-2">
             <Button size="sm" kind="ghost" onClick={() => { setFolded(true); onClose?.(); }}>Continue later</Button>

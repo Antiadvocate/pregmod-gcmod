@@ -50,6 +50,7 @@ import { ageMoments } from "./moments";
 import { tickDeeds } from "./deeds";
 import { tickCulture } from "./culture";
 import { tickCourt } from "./court";
+import { tickReign } from "./reign";
 import { tickWorld } from "./world";
 import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
@@ -300,6 +301,8 @@ export function endWeek(s: SaveState): WeekReport {
   // The city's habits move with what it saw you do this week, and the court writes them down.
   for (const l of tickCulture(s)) push(l, "neutral", 7);
   for (const l of tickCourt(s)) push(l, "warning", 7);
+  // If she holds your collar, the week is hers: her orders, her household, her laws.
+  for (const l of tickReign(s)) push(l.text, l.tone, l.weight, l.person);
 
   arcologyMoney(s, led);
   for (const l of tickCorp(s, led)) push(l, "bad", 8);

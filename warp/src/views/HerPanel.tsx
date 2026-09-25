@@ -15,6 +15,7 @@ import { generateAsk, voiceAsk } from "../engine/asks";
 import { AskList } from "./AskCard";
 import { runTurn } from "../engine/turn";
 import { modelsAvailable } from "../config";
+import { StandingOrders } from "./StandingOrders";
 
 export default function HerPanel({ id }: { id: string }) {
   const { save, mutate } = useGame();
@@ -51,6 +52,7 @@ export default function HerPanel({ id }: { id: string }) {
 
   return (
     <div className="space-y-4">
+      <StandingOrders person={id} />
       <Card>
         <div className="flex items-center gap-2 mb-3">
           <Heart size={14} className="acc" />

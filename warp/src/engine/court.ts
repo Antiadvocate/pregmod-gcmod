@@ -13,7 +13,7 @@ import { cultureOf, drivers, normLine, pushNorm, registerLawPull } from "./cultu
 import { LAWS, LAW_BY_ID, type LawDef } from "../data/laws";
 import { registerEvents, fireEvent, resolveEvent, type EventDef } from "./events";
 
-export interface LawInForce { id: string; week: number; exempt?: boolean; by: "you" | "court" }
+export interface LawInForce { id: string; week: number; exempt?: boolean; by: "you" | "court" | "keeper" }
 export interface CourtCase { week: number; law: string; kind: "enact" | "repeal"; outcome: string }
 export interface CourtState { last: number; record: CourtCase[]; vetoed: Record<string, number>; vetoes: number }
 
@@ -29,7 +29,7 @@ const std = (s: SaveState, by: number) => { s.arcology.public_standing = clamp(s
 const margin = (s: SaveState, l: LawDef) => (cultureOf(s).norms[l.norm] - l.at) * l.dir;
 const repealMargin = (s: SaveState, l: LawDef) => (l.repealAt - cultureOf(s).norms[l.norm]) * l.dir;
 
-function enact(s: SaveState, l: LawDef, by: "you" | "court", exempt = false): string {
+export function enact(s: SaveState, l: LawDef, by: LawInForce["by"], exempt = false): string {
   const struck = lawsOf(s).filter((x) => l.opposes?.includes(x.id)).map((x) => LAW_BY_ID[x.id]?.name ?? x.id);
   s.laws = lawsOf(s).filter((x) => !l.opposes?.includes(x.id) && x.id !== l.id);
   s.laws.push({ id: l.id, week: s.arcology.week, by, exempt });

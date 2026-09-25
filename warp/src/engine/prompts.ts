@@ -17,6 +17,9 @@ import { assWord } from "./generate";
 import { anusWord } from "./genitals";
 import { describeTraits } from "./fleshcraft";
 import { deedsBrief } from "./deeds";
+import { agreementsBrief, calledBy, houseRules } from "./agreements";
+import { reignCard, householdUnderHer, reignBrief } from "./reign";
+import { theKeeper } from "./romance";
 import { cultureBrief } from "./culture";
 import { lawsBrief } from "./court";
 import type { Person, SaveState } from "./types";
@@ -77,8 +80,11 @@ Shape:
  "facts_learned": [{"id":"p1","fact":"what she now knows"}],
  "body": [{"id":"p1","field":"appearance_now|clothes|collar","value":"..."}],
  "rumors": [{"content":"...","truth":"true|distorted|false","from":"p1"}],
- "canon_add": ["only genuinely world-scale facts; usually empty"]
+ "canon_add": ["only genuinely world-scale facts; usually empty"],
+ "agreements": [{"id":"p1 or household","rule":"what she now does, e.g. kneels when the owner enters, or calls the owner \"Rabi\"","calls":"the name, only if the rule is what she calls the owner"}],
+ "agreements_drop": [{"id":"p1","rule":"a standing order the owner explicitly cancelled"}]
 }
+agreements: record every standing instruction the owner gave in this turn about how she (or the whole household) is to address or treat the owner from now on, when she accepted it or did not refuse. Not one-off orders for this moment.
 Every id must be one given to you. Omit any key you have nothing for.`;
 
 /** How she is holding up, in the words the game would use. */
@@ -124,7 +130,11 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
   const between = deedsBrief(s, p.id);
   if (between) lines.push(`BETWEEN YOU AND HER (these happened; she has not forgotten):\n${between}`);
-  if (s.player.owned_by === p.id) lines.push(`SHE OWNS YOU: you gave yourself to her. She holds your collar and acts like it.`);
+  if (s.player.owned_by === p.id) lines.push(reignCard(s, p) || `SHE OWNS YOU: you gave yourself to her. She holds your collar and acts like it.`);
+  else if (s.reign && theKeeper(s) && s.reign.keeper !== p.id) lines.push(householdUnderHer(s, p));
+  const orders = agreementsBrief(s, p);
+  if (orders) lines.push(orders);
+  lines.push(`SHE CALLS YOU: ${s.player.owned_by === p.id ? (s.reign?.your_name ?? "whatever she likes") : calledBy(s, p)}${s.player.owned_by === p.id ? "" : " (always this; never another title unless she is defying you)"}.`);
   if (memories.length) lines.push(`REMEMBERS: ${memories.map((m) => `${m.content} (week ${m.week})`).join(" | ")}`);
   if (p.psyche.state !== "intact") lines.push(`She is ${p.psyche.state}${p.psyche.break_mode ? ` (${p.psyche.break_mode})` : ""}. Write her that way, not as fine.`);
   return lines.join("\n");
@@ -166,7 +176,11 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   out.push(`\n## WHERE AND WHEN`);
   out.push(`${s.scene.time}. ${s.scene.location}.`);
   const who = s.player.name && s.player.name !== "you" ? `${s.player.name}, ` : "";
-  out.push(`THE PLAYER (the owner, "you"): ${who}called ${s.player.address || "Master"} by slaves. ${describeYou(s)}. ${s.player.body.appearance_facts}`);
+  out.push(`THE PLAYER (the owner, "you"): ${who}called ${s.player.address || "Master"} by slaves unless a slave's card says otherwise. ${describeYou(s)}. ${s.player.body.appearance_facts}`);
+  const hers = reignBrief(s);
+  if (hers) out.push(hers);
+  const rules = houseRules(s);
+  if (rules.length) out.push(`STANDING ORDERS TO THE WHOLE HOUSEHOLD (every slave keeps these without being reminded): ${rules.map((r) => r.rule).join("; ")}.`);
   if (s.scene.arrivals_pending.length) out.push(`ARRIVING — write them coming in: ${s.scene.arrivals_pending.map((id) => s.people[id]?.name).filter(Boolean).join(", ")}`);
   if (s.scene.departures_pending.length) out.push(`LEAVING — write them going: ${s.scene.departures_pending.map((d) => `${d.name} (${d.why})`).join(", ")}`);
 
