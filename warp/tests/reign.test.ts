@@ -10,7 +10,7 @@ import { openMoment, playMoment } from "../src/engine/moments.ts";
 import { personCard, digest } from "../src/engine/prompts.ts";
 import { addressFor } from "../src/engine/voice.ts";
 import { applyDiff } from "../src/engine/turn.ts";
-import { romanceOf } from "../src/engine/romance.ts";
+import { romanceOf, inHousehold, isKeeper } from "../src/engine/romance.ts";
 import { styleOf, tickReign, reignOf } from "../src/engine/reign.ts";
 import { resolveEvent } from "../src/engine/events.ts";
 import { lawsOf } from "../src/engine/court.ts";
@@ -62,6 +62,8 @@ function hand(s: SaveState, h: Person) {
   check("she sets terms", !!r && s.events.some((e) => e.kind === "reign_terms"));
   check("her rules go on her record", agreementsOf(h).filter((x) => x.by === "her").length >= 4);
   check("and into her card", /SHE OWNS YOU/.test(personCard(s, h)) && /HER RULES FOR YOU/.test(personCard(s, h)));
+  check("she stops working her old job", h.assignment === "rest" && !h.facility);
+  check("and she's still on the roster, first", inHousehold(s, h) && isKeeper(s, h));
   check("and the scene knows what you're wearing", /THE PLAYER BELONGS TO/.test(digest(s)));
   resolveEvent(s, s.events.find((e) => e.kind === "reign_terms")!, "accept");
   check("accepting pleases her", r.favour > 30 && r.obeyed === 1);
@@ -105,5 +107,6 @@ function hand(s: SaveState, h: Person) {
   tickReign(s);
   resolveEvent(s, s.events.find((e) => e.kind === "reign_terms")!, "back");
   check("you can take it back", !s.player.owned_by && s.reign!.ended === "taken back" && romanceOf(h).standing !== "keeper");
+  check("once it's over she's no longer counted as living under her own rule", !isKeeper(s, h));
   check("and her rules come off", !agreementsOf(h).some((a) => a.by === "her"));
 }

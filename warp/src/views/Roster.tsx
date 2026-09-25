@@ -31,7 +31,7 @@ import FeetArt from "./FeetArt";
 import { IDOL_IMAGES, idolOf, type IdolImage } from "../engine/idols";
 import { OpenMoments, Reaction as MomentReaction } from "./MomentCard";
 import HerPanel from "./HerPanel";
-import { romanceOf, RUNG_BY_ID } from "../engine/romance";
+import { romanceOf, RUNG_BY_ID, inHousehold, isKeeper } from "../engine/romance";
 import { paintPortrait, paintRealistic } from "../engine/turn";
 import { getLocalImage, modelsAvailable } from "../config";
 import { POSES, restingPose, type Pose } from "../lib/rig";
@@ -52,7 +52,7 @@ export default function Roster() {
   const [dressId, setDressId] = useState<string | null>(null);
 
   const people = useMemo(() => {
-    const list = Object.values(save.people).filter((p) => p.status === "owned" || p.status === "indentured");
+    const list = Object.values(save.people).filter((p) => inHousehold(save, p));
     const filtered = q ? list.filter((p) => (p.name + " " + p.assignment + " " + p.origin.nationality).toLowerCase().includes(q.toLowerCase())) : list;
     const score = (p: Person) => {
       const r = read(p, save.memory[p.id]);
@@ -65,7 +65,8 @@ export default function Roster() {
         default: return -(r.flight_risk * 100 + (p.psyche.state !== "intact" ? 60 : 0) + Math.max(0, -p.health.health));
       }
     };
-    return [...filtered].sort((a, b) => (sort === "name" ? a.name.localeCompare(b.name) : score(a) - score(b)));
+    // She who holds your collar is always first.
+    return [...filtered].sort((a, b) => Number(isKeeper(save, b)) - Number(isKeeper(save, a)) || (sort === "name" ? a.name.localeCompare(b.name) : score(a) - score(b)));
   }, [save, q, sort]);
 
   return (
@@ -153,9 +154,10 @@ function RosterCard({ p, onOpen, onWith }: { p: Person; onOpen: () => void; onWi
           <div className="flex items-baseline gap-2">
             <span className="text-[14px]">{p.name}</span>
             <span className="text-[11px] dim font-mono">{p.age} · {p.origin.nationality}</span>
+            {isKeeper(save, p) ? <Chip tone="good">owns you</Chip> : null}
             {p.status === "indentured" ? <Chip>indentured {p.indenture_weeks}w</Chip> : null}
             {p.age < 18 ? <Chip>child</Chip> : null}
-            {p.romance && p.romance.standing !== "property" ? <Chip on>{RUNG_BY_ID[p.romance.standing].name.toLowerCase()}</Chip> : null}
+            {p.romance && p.romance.standing !== "property" && !isKeeper(save, p) ? <Chip on>{RUNG_BY_ID[p.romance.standing].name.toLowerCase()}</Chip> : null}
           </div>
           <div className="text-[11.5px] dim truncate mt-0.5">{fac ? fac.name : p.assignment}</div>
         </div>
@@ -196,6 +198,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
   const p = save.people[id];
   const r = read(p, save.memory[id]);
   const mem = save.memory[id];
+  const mine = isKeeper(save, p);
 
   return (
     <div>
@@ -281,18 +284,19 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
       ) : null}
 
       <div className="flex gap-2 mb-4">
-        {p.age >= 18 ? <Button kind="primary" className="flex-1" onClick={onWith}>Be with her</Button> : null}
-        <Button className="flex-1" onClick={onDress}>Dress her</Button>
+        {p.age >= 18 ? <Button kind="primary" className="flex-1" onClick={onWith}>{mine ? "Go to her" : "Be with her"}</Button> : null}
+        {mine ? null : <Button className="flex-1" onClick={onDress}>Dress her</Button>}
       </div>
+      {mine ? <div className="text-[12px] dim -mt-2 mb-4">She owns you. You can go to her, ask her things and see how she is; what she wears, where she works and what's done to her body are hers to decide.</div> : null}
 
       <div className="flex flex-wrap gap-1 mb-4">
-        {([["read", "how she is"], ["her", "you and her"], ["body", "body"], ["theatre", "surgery"], ["work", "work"], ["history", "history"]] as const).map(([t, label]) => (
+        {(([["read", "how she is"], ["her", "you and her"], ["body", "body"], ["theatre", "surgery"], ["work", "work"], ["history", "history"]] as const).filter(([t]) => !mine || !["theatre", "work"].includes(t))).map(([t, label]) => (
           <Button key={t} size="sm" kind={tab === t ? "primary" : "ghost"} onClick={() => setTab(t)}>{label}</Button>
         ))}
       </div>
 
       {tab === "her" && <HerPanel id={id} />}
-      {tab === "theatre" && <Surgery id={id} />}
+      {tab === "theatre" && !mine && <Surgery id={id} />}
 
       {tab === "read" && (
         <div className="space-y-4">
@@ -449,7 +453,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
         </div>
       )}
 
-      {tab === "work" && (
+      {tab === "work" && !mine && (
         <div className="space-y-4">
           {isMinor(p) ? (
             <Card className="text-[12px] mid">

@@ -20,7 +20,7 @@ import { AskList } from "./AskCard";
 import StoryCard from "./StoryCard";
 import WorldCard from "./WorldCard";
 import Ambitions from "./Ambitions";
-import { theKeeper } from "../engine/romance";
+import { theKeeper, inHousehold } from "../engine/romance";
 import { nextEvent as chainEvent, resolveChain, reversalOf, subjectOf, GESTURES, gestureAvailable, doGesture, type Reaction } from "../engine/reversal";
 import { liveThreads, answerThread, describeThread } from "../engine/threads";
 import { THREAD_BY_KIND } from "../data/threads";
@@ -38,7 +38,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
   const dyn = dynamicReadiness(save);
   const keeper = theKeeper(save);
   const arc = save.arcology;
-  const people = Object.values(save.people).filter((p) => p.status === "owned" || p.status === "indentured");
+  const people = Object.values(save.people).filter((p) => inHousehold(save, p));
   const lastReport = save.reports.at(-1);
   const rev = reversalOf(save);
   const chain = chainEvent(save);
