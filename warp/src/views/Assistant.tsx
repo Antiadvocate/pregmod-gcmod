@@ -109,7 +109,7 @@ export default function AssistantCard() {
       </div>
       <form className="flex gap-2 mt-2" onSubmit={(e) => { e.preventDefault(); void ask(q); }}>
         <input className="flex-1 min-w-0" value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Ask ${a.name} anything`} disabled={busy} />
-        <Button size="sm" kind="primary" disabled={busy || !q.trim()}>{busy ? "…" : "Ask"}</Button>
+        <Button size="sm" kind="primary" disabled={busy || !q.trim()} onClick={() => void ask(q)}>{busy ? "…" : "Ask"}</Button>
       </form>
       {open && log.length ? (
         <div className="mt-3 space-y-2">

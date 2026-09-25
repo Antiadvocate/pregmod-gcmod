@@ -19,6 +19,7 @@ import { rng } from "./rng";
 import { applyTreatment, refresh } from "./obedience";
 import { shove } from "./psyche";
 import { concludeMoment } from "./deeds";
+import { captureInstructions } from "./agreements";
 import { WALK_OPTIONS, WALK_SYSTEM, walkContext, walkOffline } from "./walk";
 
 export interface MomentLine { role: "you" | "scene"; text: string }
@@ -124,6 +125,8 @@ export async function playMoment(
   if (!m) return { ok: false, prose: "", error: "no such moment" };
   const p = m.person ? s.people[m.person] : undefined;
   if (reply) m.log.push({ role: "you", text: reply });
+  // What you tell her about how to treat you outlasts the scene.
+  if (reply) captureInstructions(s, reply, [p, ...(m.others ?? []).map((x) => s.people[x])].filter((x): x is Person => !!x));
   m.updated = s.arcology.week;
   m.open = true;
 

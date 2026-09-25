@@ -20,6 +20,7 @@
  * it likes about what is happening in the room and it still cannot invent a state change, break an
  * invariant, reach a person it was not given, or touch anybody the age gate excludes.
  */
+import { agreementsBrief, calledBy } from "./agreements";
 import { deedsBrief } from "./deeds";
 import type { PendingEvent, Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
@@ -93,6 +94,8 @@ function dossier(s: SaveState, p: Person): string {
     `BODY: ${p.body.appearance_facts} Currently: ${p.body.appearance_now}. Wearing ${p.clothes}.`,
     `GENITALS: ${describeGenitals(p)}`,
     `ANATOMY (hard rule): ${anatomyLock(p)}`,
+    agreementsBrief(s, p),
+    `SHE CALLS YOU: ${calledBy(s, p)}.`,
     `FEET: ${describeFeet(p)}`,
     p.womb.fetuses.length ? `${p.womb.weeks} weeks pregnant.` : "",
     p.body.lactation ? "Lactating." : "",

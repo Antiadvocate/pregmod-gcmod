@@ -11,6 +11,7 @@
  * from state — who is there, what their bodies are doing, what the action was — and the rest of the
  * pipeline runs identically. You lose the paragraph. You do not lose the game.
  */
+import { captureInstructions, keep, houseRules, agreementsOf } from "./agreements";
 import type { ActionMode, Person, SaveState, TurnEntry } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
@@ -43,6 +44,9 @@ export interface Diff {
   body?: { id: string; field: string; value: string }[];
   rumors?: { content: string; truth?: "true" | "distorted" | "false"; from?: string }[];
   canon_add?: string[];
+  /** Standing instructions she accepted about how she treats the owner. */
+  agreements?: { id: string; rule: string; calls?: string }[];
+  agreements_drop?: { id: string; rule: string }[];
 }
 
 export interface TurnResult {
@@ -72,6 +76,9 @@ export async function runTurn(
   // The scene's own clock ticks before anything is written: bodies drift toward their resting
   // point between beats, the same as they do between weeks.
   for (const p of present(s)) { p.psyche.prev_relaxation = p.psyche.relaxation; tickPsyche(p.psyche); }
+
+  // Anything you just told them about how to treat you is kept, whatever the narrator does with it.
+  if (mode === "say" || mode === "do") notes.push(...captureInstructions(s, action, present(s).filter((p) => p.status !== "free" || s.player.owned_by !== p.id)));
 
   let prose = "";
   let tokensIn = 0, tokensOut = 0, cost = 0;
@@ -383,6 +390,19 @@ export function applyDiff(s: SaveState, d: Diff, prose: string): string[] {
 
   for (const r of d.rumors ?? []) {
     startRumor(s, r.content.slice(0, 160), { truth: r.truth ?? "true", from: r.from && s.people[r.from] ? r.from : undefined });
+  }
+
+  // Standing orders she agreed to, kept for every scene after this one.
+  for (const a of (d.agreements ?? []).slice(0, 3)) {
+    if (!a?.rule) continue;
+    const rule = String(a.rule).slice(0, 140);
+    const calls = a.calls ? String(a.calls).slice(0, 32) : undefined;
+    if (a.id === "household") { keep(houseRules(s), { rule, week: s.arcology.week, by: "you", calls }); if (calls) s.player.address = calls; }
+    else if (s.people[a.id]) keep(agreementsOf(s.people[a.id]), { rule, week: s.arcology.week, by: "you", calls });
+  }
+  for (const a of d.agreements_drop ?? []) {
+    const list = a.id === "household" ? houseRules(s) : s.people[a.id] ? agreementsOf(s.people[a.id]) : null;
+    if (list) { const i = list.findIndex((x) => x.rule.toLowerCase().includes(String(a.rule).toLowerCase().slice(0, 20))); if (i >= 0) list.splice(i, 1); }
   }
 
   // Canon is a constraint on what may exist, so it is the one field a single turn cannot spray.

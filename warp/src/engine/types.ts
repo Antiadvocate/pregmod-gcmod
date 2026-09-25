@@ -460,6 +460,8 @@ export interface Person {
   feet_photos?: { model: string; week: number; top?: string; sole?: string; side?: string; error?: string };
   /** One of the hand-written unique slaves, by id. See data/heroes. */
   hero?: string;
+  /** What you told her about how you are to be treated, and (when she owns you) her rules for you. See engine/agreements. */
+  agreements?: import("./agreements").Agreement[];
   /** Gene treatments under way. See engine/fleshcraft. */
   growing?: import("./fleshcraft").Growing[];
   /** When she's been an idol. See engine/idols. */
@@ -829,6 +831,10 @@ export interface SaveState {
   assistant?: import("./assistant").Assistant;
   /** What ended scenes left behind. See engine/deeds. */
   deeds?: import("./deeds").Deed[];
+  /** Standing orders you gave the whole household. See engine/agreements. */
+  house_rules?: import("./agreements").Agreement[];
+  /** When a slave holds your collar: how she rules. See engine/reign. */
+  reign?: import("./reign").Reign;
   /** What the city has come to think is normal. See engine/culture. */
   culture?: import("./culture").Culture;
   /** Laws the court has passed, and the cases before it. See engine/court. */

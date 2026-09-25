@@ -6,6 +6,7 @@ import { householdRead, PLAYER_SKILLS } from "../engine/player";
 import { unrest } from "../engine/security";
 import { read } from "../engine/obedience";
 import YourBody from "./YourBody";
+import { ReignCard, StandingOrders } from "./StandingOrders";
 
 const TIGHTNESS = ["relaxed", "a little tense", "tense", "very tense", "guarded", "completely closed off"];
 
@@ -24,6 +25,8 @@ export default function You() {
         <Stat label="unrest" value={Math.round(u)} tone={u > 50 ? "bad" : undefined} sub="security doesn't reduce this" />
       </div>
 
+      <ReignCard />
+
       <Section title="What your slaves think of you">
         <Card>
           <p className="font-prose text-[15.5px] mb-3">You are {r.label}.</p>
@@ -37,13 +40,17 @@ export default function You() {
         <Card>
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Name"><input value={save.player.name} onChange={(e) => mutate((s) => { s.player.name = e.target.value; })} /></Field>
-            <Field label="What they call you"><input value={save.player.title} onChange={(e) => mutate((s) => { s.player.title = e.target.value; })} /></Field>
+            <Field label="What your slaves call you" hint="Unless one of them has agreed to something else."><input value={save.player.address ?? ""} placeholder="Master" onChange={(e) => mutate((s) => { s.player.address = e.target.value || undefined; })} /></Field>
           </div>
           <Field label="Your appearance" hint="The narrator uses this exactly as written.">
             <textarea rows={2} value={save.player.body.appearance_facts}
               onChange={(e) => mutate((s) => { s.player.body.appearance_facts = e.target.value; })} />
           </Field>
         </Card>
+      </Section>
+
+      <Section title="Standing orders">
+        <StandingOrders />
       </Section>
 
       <Section title="Your body">
