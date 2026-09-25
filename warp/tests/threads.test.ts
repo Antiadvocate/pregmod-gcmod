@@ -232,7 +232,7 @@ function house(seed: string, n = 6) {
   let bad: string | undefined;
   const s = house("render", 4);
   const [a, b] = Object.values(s.people);
-  const c = { s, who: { a: a.name, b: b.name, her: a.name, risen: a.name, passed: b.name, one: a.name, other: b.name }, weeks: 9, heat: 80, facts: ["Something got out."] };
+  const c = { s, who: { a: a.name, b: b.name, her: a.name, risen: a.name, passed: b.name, one: a.name, other: b.name, guard: a.name, ward: b.name, bully: a.name, target: b.name }, weeks: 9, heat: 80, facts: ["Something got out."] };
   for (const def of THREADS) {
     for (const beat of def.beats) {
       const line = beat.line(c);
@@ -246,4 +246,19 @@ function house(seed: string, n = 6) {
     if (bad) break;
   }
   check("every beat renders without a hole in it", bad === undefined, bad);
+}
+
+{
+  // The bonds: detectors find them, and answers write roles onto the edges.
+  const { tickThreads, threadsOf, answerThread } = await import("../src/engine/threads.ts");
+  const { ensureEdge } = await import("../src/engine/social.ts");
+  const s = house("bonds", 4);
+  const [a, b] = Object.values(s.people);
+  for (const p of [a, b]) { p.facility = undefined; p.assignment = "house servant"; p.bond.bond = 40; }
+  for (const [x, y] of [[a, b], [b, a]]) { const e = ensureEdge(s.edges, x.id, y.id); e.warmth = -60; e.weeks_known = 10; }
+  let found = false;
+  for (let w = 0; w < 14 && !found; w++) { s.arcology.week++; tickThreads(s); found = threadsOf(s).some((t) => t.kind === "rivals" && !t.ended); }
+  check("two women who hate each other become a story", found, threadsOf(s).map((t) => t.kind));
+  const t = threadsOf(s).find((x) => x.kind === "rivals")!;
+  if (t) { t.pending = 2; const r = answerThread(s, t.id, "pick"); check("a bond thread answers in full", r.line.length > 80 && !!t.ended); check("and leaves the relationship on record", s.edges.some((e) => e.roles.includes("rival"))); }
 }

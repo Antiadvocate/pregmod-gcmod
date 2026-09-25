@@ -28,7 +28,7 @@ import Interact from "./Interact";
 import Dressing from "./Dressing";
 import Surgery from "./Surgery";
 import FeetArt from "./FeetArt";
-import { OpenMoments } from "./MomentCard";
+import { OpenMoments, Reaction as MomentReaction } from "./MomentCard";
 import HerPanel from "./HerPanel";
 import { romanceOf, RUNG_BY_ID } from "../engine/romance";
 import { paintPortrait, paintRealistic } from "../engine/turn";
@@ -186,6 +186,7 @@ function RosterCard({ p, onOpen, onWith }: { p: Person; onOpen: () => void; onWi
 function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: () => void; onWith: () => void; onDress: () => void }) {
   const { save, mutate } = useGame();
   const [tab, setTab] = useState<"her" | "read" | "body" | "theatre" | "work" | "history">("read");
+  const [together, setTogether] = useState<string | null>(null);
   const [painting, setPainting] = useState(false);
   const [forging, setForging] = useState(false);
   const [pose, setPose] = useState<Pose | undefined>(undefined);
@@ -601,6 +602,10 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
               <Card><ul className="font-prose text-[14px] space-y-1.5">{mem.beliefs.map((b, i) => <li key={i}>&ldquo;{b.text}&rdquo; <span className="dim text-[11px] font-sans">({b.strength})</span></li>)}</ul></Card>
             </Section>
           ) : null}
+          {together && save.people[together] ? (
+            <MomentReaction key={together} auto label={`Call ${p.name} and ${save.people[together].name} in`} seed={{ person: id, others: [together], title: `${p.name} and ${save.people[together].name}`, source: "pair",
+              happened: `You call ${p.name} and ${save.people[together].name} into your office together. ${(() => { const e = save.edges.find((x) => x.from === id && x.to === together); return e?.roles.length ? `${p.name} is ${save.people[together].name}'s ${e.roles.join(", ")}.` : e && e.warmth > 30 ? "They're close." : e && e.warmth < -30 ? "They can't stand each other." : ""; })()} They stand in front of your desk, waiting.` }} />
+          ) : null}
           <Section title="Who she knows">
             {save.edges.filter((e) => e.from === id && (e.warmth || e.roles.length)).length ? (
               <div className="space-y-1.5">
@@ -609,6 +614,8 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
                     <span className="text-[12.5px] flex-1">{save.people[e.to]?.name ?? e.to}{e.roles.length ? ` — ${e.roles.join(", ")}` : ""}</span>
                     <div className="w-20"><Meter value={e.warmth} range={[-100, 100]} showValue={false} /></div>
                     <span className="text-[11px] dim font-mono w-8 text-right">{Math.round(e.warmth)}</span>
+                    {save.people[e.to] && (save.people[e.to].status === "owned" || save.people[e.to].status === "indentured") && save.people[e.to].age >= 18 && p.age >= 18
+                      ? <button className="btn btn-sm btn-ghost !px-2" title="Call them both in" onClick={() => setTogether(e.to)}>both</button> : null}
                   </div>
                 ))}
               </div>
