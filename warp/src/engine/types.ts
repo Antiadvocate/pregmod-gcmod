@@ -803,6 +803,8 @@ export interface SaveState {
   asks?: import("./asks").Ask[];
   /** Scenes that grew out of a reaction, open until you close them. See engine/moments. */
   moments?: import("./moments").Moment[];
+  /** The receivers and the schedule. See engine/fctv. */
+  fctv?: import("./fctv").FCTV;
   /** Your slave corporation. See engine/corp. */
   corp?: import("./corp").Corp;
   /** The arcology's AI. See engine/assistant. */

@@ -3,6 +3,7 @@
  *  Ordered by what is actually urgent rather than by category: events first because they expire,
  *  then problems, then the household's own state. The end-of-week button is the only irreversible
  *  control in the app and it says what it will cost before you press it. */
+import FCTVCard from "./FCTVCard";
 import AssistantCard from "./Assistant";
 import { Reaction as MomentReaction, OpenMoments } from "./MomentCard";
 import { useState } from "react";
@@ -93,6 +94,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
       <AssistantCard />
 
       <WorldCard />
+
+      <div className="mb-6"><FCTVCard /></div>
 
       {/* SITUATIONS FIRST. A thread is the game telling you something it worked out about the last
           two months, which outranks anything that happened on Tuesday. */}

@@ -59,3 +59,15 @@ import { foundCorp, expand, sellShares, drawSlave, corpValue } from "../src/engi
   check("you can take a slave from the pipeline", !!drawSlave(s) && Object.keys(s.people).length === n + 1);
   void before;
 }
+
+import { installFCTV, startShow } from "../src/engine/fctv.ts";
+{
+  const s = newGame({ seed: "fctv", starting_slaves: 3, plot: false } as never);
+  s.arcology.cash = 100000;
+  const star = Object.values(s.people).find((p) => p.status === "owned" && p.age >= 18)!;
+  check("FCTV installs", installFCTV(s));
+  startShow(s, star, "talk");
+  for (let w = 0; w < 5; w++) { endWeek(s); s.events = []; }
+  check("her show earns and gathers viewers", s.fctv!.show!.viewers > 200 && s.reports.at(-1)!.ledger.some((l) => l.category === "fctv" && l.cash > 0));
+  check("the week has a broadcast", (s.fctv!.last?.text.length ?? 0) > 0);
+}

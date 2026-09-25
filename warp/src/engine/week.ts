@@ -16,6 +16,7 @@
  * afterwards to work out what must have happened, which is how the old end-of-week text and the
  * old budget screen ended up describing two different weeks.
  */
+import { tickFCTV } from "./fctv";
 import { tickCorp } from "./corp";
 import { tickFlesh } from "./fleshcraft";
 import { tickIdol, secretaryRebate } from "./idols";
@@ -296,6 +297,7 @@ export function endWeek(s: SaveState): WeekReport {
 
   arcologyMoney(s, led);
   for (const l of tickCorp(s, led)) push(l, "bad", 8);
+  for (const l of tickFCTV(s, led)) push(l, "neutral", 3);
 
   const arc = s.arcology;
   const staff = alive(s).length;
