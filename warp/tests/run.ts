@@ -25,6 +25,7 @@ import "./plot.test.ts";
 import "./deeds.test.ts";
 import "./feetart.test.ts";
 import "./jobs.test.ts";
+import "./anatomy.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);

@@ -55,10 +55,25 @@ export function mixGenes(a: GeneRecord, b: GeneRecord, seed: string): GeneRecord
 }
 
 /** Can this week produce a pregnancy, and does it. `intensity` is roughly how many exposures. */
+/** Whether there is a womb to carry anything. A pussy built by surgery has none behind it; a body
+ *  with no pussy has one only if it was implanted. */
+export function hasWomb(p: Person): boolean {
+  const w = p.womb;
+  if (w.uterus === undefined) {
+    const built = p.body.marks.some((m) => m.kind === "implant" && /pussy|cunt|give her both/i.test(m.what));
+    w.uterus = p.body.vagina !== null && !built ? "natal" : "none";
+  }
+  if (w.uterus === "natal" && p.body.vagina === null) w.uterus = "none";
+  return w.uterus !== "none";
+}
+
 export function tryConception(state: SaveState, mother: Person, fatherId: string | null, intensity: number): Fetus | null {
   const w = mother.womb;
+  if (!hasWomb(mother)) return null;
   if (w.sterile || w.contraceptives || w.fetuses.length) return null;
-  if (mother.chastity.vagina) return null;
+  // She conceives through whichever hole leads to it, and a belt over that hole stops it.
+  if (w.uterus === "natal" && mother.chastity.vagina) return null;
+  if (w.uterus === "anal") { if (mother.chastity.anus) return null; intensity *= 0.7; }
   const fertileWindow = w.cycle_day >= 11 && w.cycle_day <= 17;
   const base = (w.fertility / 100) * (fertileWindow ? 0.35 : 0.04) * clamp(intensity, 0, 6);
   const health = clamp(1 + mother.health.health / 200, 0.5, 1.4);

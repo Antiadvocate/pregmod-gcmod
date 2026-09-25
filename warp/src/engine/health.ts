@@ -191,7 +191,7 @@ export const PROCEDURES: Procedure[] = [
   { id: "sterilise", name: "Sterilisation", cost: 4000, recovery: 1, toll: 8, resented: 8,
     apply: (p) => { p.womb.sterile = true; } },
   { id: "restore_fertility", name: "Fertility restoration", cost: 9000, recovery: 2, toll: 8, resented: 0,
-    apply: (p) => { p.womb.sterile = false; p.womb.fertility = Math.max(p.womb.fertility, 60); } },
+    apply: (p) => { if (p.womb.uterus === "none" || (p.body.vagina === null && p.womb.uterus !== "anal")) return; p.womb.sterile = false; p.womb.fertility = Math.max(p.womb.fertility, 60); } },
   { id: "eyes", name: "Prosthetic eyes", cost: 14000, recovery: 3, toll: 16, resented: 5,
     apply: (p) => { p.body.eyes = "prosthetic"; p.body.marks.push({ kind: "prosthetic", where: "eyes", what: "prosthetic eyes", week: 0 }); } },
   { id: "voice", name: "Voice surgery", cost: 6000, recovery: 2, toll: 10, resented: 5,

@@ -69,6 +69,8 @@ export interface Body {
   dick: number | null;
   /** Foreskin, on its own scale, because circumcision is a state you can be put into and the art
    *  pack has a whole parallel set of layers for it. null when there is nothing to have one. */
+  /** An inflatable implant: she gets hard on command at any size. */
+  penile_implant?: boolean;
   foreskin: number | null;
   /** 1 vestigial … 9 monstrous, 10+ hyper (the original runs to 125). */
   balls: number | null;
@@ -306,6 +308,10 @@ export interface Womb {
   fetuses: Fetus[];
   /** Weeks pregnant, derived from the oldest fetus. Kept for cheap reads. */
   weeks: number;
+  /** Where the womb is, if there is one: "natal" behind a natural pussy, "anal" implanted and
+   *  opening into her rectum (the original's anal pregnancy surgery), or "none". A built pussy has
+   *  no womb behind it. Older saves derive it; see hasWomb. */
+  uterus?: "natal" | "anal" | "none";
   /** Contraception and control. */
   contraceptives: boolean;
   sterile: boolean;

@@ -13,11 +13,13 @@
  * is something the engine can be held to — if the prose contradicts the card, the card is right and
  * the guards in turn.ts say so.
  */
+import { assWord } from "./generate";
+import { anusWord } from "./genitals";
 import { describeTraits } from "./fleshcraft";
 import { deedsBrief } from "./deeds";
 import type { Person, SaveState } from "./types";
 import { band } from "./psyche";
-import { describeGenitals, describeFeet } from "./genitals";
+import { describeGenitals, describeFeet, anatomyLock } from "./genitals";
 import { worldBrief } from "./world";
 import { read } from "./obedience";
 import { recall } from "./memory";
@@ -102,6 +104,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   const now = p.body.appearance_now && !/^wearing\b/i.test(p.body.appearance_now) ? `Right now: ${p.body.appearance_now}. ` : "";
   lines.push(`BODY: ${p.body.appearance_facts} ${now}Wearing ${p.clothes}.`);
   lines.push(`BETWEEN HER LEGS (fact; never contradict it): ${describeGenitals(p)}`);
+  lines.push(`ANATOMY (hard rule): ${anatomyLock(p)}`);
+  lines.push(`ASS: ${assWord(p.body.butt)}${p.body.butt_implant ? " (implants)" : ""}; asshole ${anusWord(p.body.anus)}.`);
   lines.push(`FEET: ${describeFeet(p)}`);
   if (p.body.traits?.length || p.growing?.length) lines.push(`ALTERED (fact; these are real and part of her body): ${describeTraits(p)}`);
   if (p.womb.fetuses.length) lines.push(`PREGNANT: ${p.womb.weeks} weeks, ${p.womb.fetuses.length > 1 ? `${p.womb.fetuses.length} babies` : "one baby"}.`);

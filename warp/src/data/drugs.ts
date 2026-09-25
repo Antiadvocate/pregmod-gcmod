@@ -150,6 +150,12 @@ export const DRUGS: DrugDef[] = [
     },
   },
   {
+    id: "erection pills", name: "Erection pills", cost: 70,
+    note: "she gets hard easily and stays hard, even when she's missing balls or on female hormones; a big cock gets two sizes more room to fill",
+    can: (p) => (!has(p.body.dick) ? "she has no cock" : null),
+    tick: (p, roll) => { if (roll() < 0.08) { p.psyche.arousal = Math.min(100, p.psyche.arousal + 15); return "the pills have her hard half the day"; } return null; },
+  },
+  {
     id: "hormone blockers", name: "Hormone blockers", cost: 60,
     note: "suppresses her hormones; she can't get hard at all",
     can: () => null,
