@@ -829,6 +829,11 @@ export interface SaveState {
   assistant?: import("./assistant").Assistant;
   /** What ended scenes left behind. See engine/deeds. */
   deeds?: import("./deeds").Deed[];
+  /** What the city has come to think is normal. See engine/culture. */
+  culture?: import("./culture").Culture;
+  /** Laws the court has passed, and the cases before it. See engine/court. */
+  laws?: import("./court").LawInForce[];
+  court?: import("./court").CourtState;
   /** Twists, ambitions and the end of the run. See engine/run.ts. */
   run?: import("./run").RunState;
   /** Your origin, your cast, and the arcs this run has drawn. See engine/story.ts. */

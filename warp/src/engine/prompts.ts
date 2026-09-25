@@ -17,6 +17,8 @@ import { assWord } from "./generate";
 import { anusWord } from "./genitals";
 import { describeTraits } from "./fleshcraft";
 import { deedsBrief } from "./deeds";
+import { cultureBrief } from "./culture";
+import { lawsBrief } from "./court";
 import type { Person, SaveState } from "./types";
 import { band } from "./psyche";
 import { describeGenitals, describeFeet, anatomyLock } from "./genitals";
@@ -141,6 +143,11 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   out.push(`You own ${Math.round(arc.ownership)}% of it outright and hold ${arc.sectors.filter((x) => x.owner === "you").length} sectors.`);
   if (doctrines.length) out.push(`DOCTRINE — what your citizens have decided is normal:\n${doctrines.map((d) => `· ${d}`).join("\n")}`);
   else out.push(`DOCTRINE: none adopted yet.`);
+
+  const norms = cultureBrief(s);
+  if (norms) out.push(`HOW CITIZENS BEHAVE NOW — show it in passing when people are around:\n${norms}`);
+  const laws = lawsBrief(s);
+  if (laws) out.push(`LAWS IN FORCE:\n${laws}`);
 
   const done = deedsBrief(s);
   if (done) out.push(`\n## WHAT YOU HAVE DONE — people remember these, and they shape how everyone treats you\n${done}`);

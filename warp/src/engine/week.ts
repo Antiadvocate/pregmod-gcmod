@@ -48,6 +48,8 @@ import { tickReversal } from "./reversal";
 import { tickStory } from "./story";
 import { ageMoments } from "./moments";
 import { tickDeeds } from "./deeds";
+import { tickCulture } from "./culture";
+import { tickCourt } from "./court";
 import { tickWorld } from "./world";
 import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
@@ -295,6 +297,9 @@ export function endWeek(s: SaveState): WeekReport {
   lines.push(...tickWorld(s, led));
   ageMoments(s);
   for (const e of tickDeeds(s)) push(e.text, "warning", 8, e.person);
+  // The city's habits move with what it saw you do this week, and the court writes them down.
+  for (const l of tickCulture(s)) push(l, "neutral", 7);
+  for (const l of tickCourt(s)) push(l, "warning", 7);
 
   arcologyMoney(s, led);
   for (const l of tickCorp(s, led)) push(l, "bad", 8);
