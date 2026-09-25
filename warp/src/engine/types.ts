@@ -796,6 +796,8 @@ export interface SaveState {
   asks?: import("./asks").Ask[];
   /** Scenes that grew out of a reaction, open until you close them. See engine/moments. */
   moments?: import("./moments").Moment[];
+  /** The arcology's AI. See engine/assistant. */
+  assistant?: import("./assistant").Assistant;
   /** What ended scenes left behind. See engine/deeds. */
   deeds?: import("./deeds").Deed[];
   /** Twists, ambitions and the end of the run. See engine/run.ts. */

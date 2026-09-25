@@ -3,6 +3,7 @@
  *  Ordered by what is actually urgent rather than by category: events first because they expire,
  *  then problems, then the household's own state. The end-of-week button is the only irreversible
  *  control in the app and it says what it will cost before you press it. */
+import AssistantCard from "./Assistant";
 import { Reaction as MomentReaction, OpenMoments } from "./MomentCard";
 import { useState } from "react";
 import { AlertTriangle, ChevronRight, Loader2 } from "lucide-react";
@@ -88,6 +89,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
 
       {/* YOUR STORY FIRST. It is the thing that is only about you. */}
       <StoryCard />
+
+      <AssistantCard />
 
       <WorldCard />
 

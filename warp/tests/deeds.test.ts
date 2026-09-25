@@ -59,3 +59,18 @@ import { digest, personCard } from "../src/engine/prompts.ts";
   const d = await concludeMoment(s, momentsOf(s).find((x) => x.id === id)!);
   check("a scene you never spoke in leaves nothing", d === null);
 }
+
+import { makeAssistant, askAssistant, briefWeek, facts } from "../src/engine/assistant.ts";
+{
+  const s = newGame({ seed: "pa", starting_slaves: 4, plot: false } as never);
+  makeAssistant(s, { name: "Vesna", look: "succubus", manner: "sardonic" });
+  endWeek(s);
+  const brief = await briefWeek(s);
+  check("the assistant briefs the week", brief.length > 40 && s.assistant!.brief!.week === s.reports[s.reports.length - 1].week, brief);
+  const money = await askAssistant(s, "How's the money?", "money");
+  check("her answers carry the real numbers", money.includes(Math.round(s.arcology.cash).toLocaleString()), money);
+  const her = Object.values(s.people).find((p) => p.status === "owned")!;
+  const about = await askAssistant(s, `What about ${her.name}?`);
+  check("she answers about a girl by name", about.includes(her.name), about);
+  check("every quick question has something to say", ["money", "danger", "loyal", "bonds", "coming", "city"].every((t) => facts(s, t).lines.length > 0));
+}
