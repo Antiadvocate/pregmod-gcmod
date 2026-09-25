@@ -7,6 +7,7 @@
  * transaction: `earn` and `spend` write a line, and the week's cash delta is the sum of the lines.
  * If the number on screen is wrong, the line that is wrong is on screen next to it.
  */
+import { jobMoney } from "./idols";
 import { DRUG_BY_ID } from "../data/drugs";
 import type { LedgerEntry, Person, SaveState } from "./types";
 import { FACILITY_BY_ID } from "../data/facilities";
@@ -85,6 +86,7 @@ export function weeklyMoney(state: SaveState, p: Person): { income: number; upke
   const society = 1 + clamp(societyScore(state, p).total, -0.8, 0.8) * 0.35;
 
   let income = 0, customers = 0, rep = 0;
+  const job = jobMoney(state, p);
   let note = "";
 
   if (facDef && facDef.income === "customers") {
@@ -108,6 +110,11 @@ export function weeklyMoney(state: SaveState, p: Person): { income: number; upke
       arc.food.production += food;
       note = `${Math.round(food)} units of food`;
     }
+  } else if (job) {
+    const j = job;
+    income = Math.round(j.income * society);
+    rep = j.rep;
+    note = j.note;
   } else if (def) {
     income = Math.round(def.base_income * appeal(p) * competence(p, "sex") * prosperity * society);
     rep = def.rep;

@@ -28,6 +28,7 @@ import Interact from "./Interact";
 import Dressing from "./Dressing";
 import Surgery from "./Surgery";
 import FeetArt from "./FeetArt";
+import { IDOL_IMAGES, idolOf, type IdolImage } from "../engine/idols";
 import { OpenMoments, Reaction as MomentReaction } from "./MomentCard";
 import HerPanel from "./HerPanel";
 import { romanceOf, RUNG_BY_ID } from "../engine/romance";
@@ -469,6 +470,21 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
               })}
             </select>
           </Field>
+          {p.assignment === "be an idol" || (p.idol && p.idol.fans > 0) ? (
+            <Card>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[13.5px]">Idol</span>
+                <span className="font-mono text-[13px]">{(p.idol?.fans ?? 0).toLocaleString()} fans</span>
+                <span className="text-[11px] dim">peak {(p.idol?.peak ?? 0).toLocaleString()} · {p.idol?.weeks ?? 0} weeks</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {(Object.keys(IDOL_IMAGES) as IdolImage[]).map((k) => (
+                  <button key={k} title={IDOL_IMAGES[k]} className={cx("chip !text-[12px]", (p.idol?.image ?? "sweet") === k && "on")} onClick={() => mutate((s) => { idolOf(s.people[id]).image = k; })}>{k}</button>
+                ))}
+              </div>
+              <div className="text-[11.5px] dim mt-1.5">{IDOL_IMAGES[p.idol?.image ?? "sweet"]}</div>
+            </Card>
+          ) : null}
           <Field label="Facility" hint="A facility overrides the assignment above with its own work.">
             <select value={p.facility ?? ""} onChange={(e) => mutate((s) => assignToFacility(s, s.people[id], e.target.value || undefined))}>
               <option value="">— none —</option>

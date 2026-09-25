@@ -427,6 +427,24 @@ export const EVENTS: EventDef[] = [
 
 export const EVENT_BY_ID: Record<string, EventDef> = Object.fromEntries(EVENTS.map((e) => [e.id, e]));
 
+/** Other systems add their own events here (idols, battles, the corporation, TV). */
+export function registerEvents(defs: EventDef[]): void {
+  for (const d of defs) if (!EVENT_BY_ID[d.id]) { EVENTS.push(d); EVENT_BY_ID[d.id] = d; }
+}
+
+/** Put one event in front of the player now, whatever the dice say. */
+export function fireEvent(s: SaveState, id: string, c: { person?: Person; facility?: string } = {}): PendingEvent | null {
+  const def = EVENT_BY_ID[id];
+  if (!def || s.events.some((e) => e.kind === id)) return null;
+  const e: PendingEvent = {
+    id: `e${s.arcology.week}-${id}`, kind: id, person: c.person?.id, facility: c.facility,
+    seed: def.seed(s, c), options: def.options.map((o) => ({ id: o.id, label: o.label, note: o.note })),
+    week: s.arcology.week, severity: def.severity,
+  };
+  s.events.push(e);
+  return e;
+}
+
 /** PRESSURE — how much the world is allowed to do to you this week.
  *  Rises with the tension dial, with quiet, and with genuine instability. */
 export function pressure(s: SaveState): number {

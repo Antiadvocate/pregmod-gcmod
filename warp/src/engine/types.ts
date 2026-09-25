@@ -337,7 +337,8 @@ export type Assignment =
   | "be your Concubine" | "live with your Head Girl" | "be the Wardeness" | "be the Madam"
   | "be the DJ" | "be the Nurse" | "be the Schoolteacher" | "be the Attendant"
   | "be the Stewardess" | "be the Milkmaid" | "be the Farmer" | "be the Matron"
-  | "be your Head Girl" | "be your agent" | "guard you" | "recruit girls" | "fight in the pit";
+  | "be your Head Girl" | "be your agent" | "guard you" | "recruit girls" | "fight in the pit"
+  | "be an idol" | "work in an office" | "be your secretary";
 
 /** The bond ledger — the accumulators devotion and trust are read off. Nothing here is displayed
  *  raw; obedience.ts turns them into the two numbers a player recognises. See that file for why
@@ -447,6 +448,8 @@ export interface Person {
   };
   /** Prestige and porn — reputation attaches to a person, not only to the arcology. */
   fame: { prestige: 0 | 1 | 2 | 3; why: string; porn_fame: number; porn_focus: string };
+  /** When she's been an idol. See engine/idols. */
+  idol?: import("./idols").Idol;
   /** Everything the week counted, so the report can say what actually happened to them. */
   counters: Record<string, number>;
   /** Everything that has been done to her, counted by act. The report, the fetish discovery and

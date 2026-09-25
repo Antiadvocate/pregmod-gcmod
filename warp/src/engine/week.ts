@@ -16,6 +16,7 @@
  * afterwards to work out what must have happened, which is how the old end-of-week text and the
  * old budget screen ended up describing two different weeks.
  */
+import { tickIdol, secretaryRebate } from "./idols";
 import type { Person, ReportLine, SaveState, WeekReport } from "./types";
 import { FACILITY_BY_ID } from "../data/facilities";
 import { ASSIGNMENT_BY_ID } from "../data/assignments";
@@ -98,6 +99,7 @@ export function endWeek(s: SaveState): WeekReport {
     const managedByThem = mgr && fac?.manager !== p.id;
 
     // MONEY
+    for (const l of tickIdol(s, p)) push(l, "good", 5, p.id);
     const money = weeklyMoney(s, p);
     if (managedByThem && mgr) money.income = Math.round(money.income * mgr.income);
     if (money.income) led.earn("slaves", `${p.name} — ${money.note || p.assignment}`, money.income, p.id);
@@ -272,6 +274,9 @@ export function endWeek(s: SaveState): WeekReport {
   lines.push(...tickReversal(s));
   for (const l of tickStory(s)) push(l.text, l.tone, l.weight);
   lines.push(...tickRun(s));
+
+  const secr = secretaryRebate(s, led.lines.filter((l) => l.category === "upkeep").reduce((n, l) => n - l.cash, 0));
+  if (secr.cash > 0 && secr.who) led.earn("savings", `${secr.who.name} caught overcharges in the accounts`, secr.cash, secr.who.id);
 
   const soc = tickSociety(s);
   led.entry("doctrine", "your citizens, on how you live", soc.cash, soc.rep);
