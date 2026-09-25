@@ -42,3 +42,20 @@ import { personCard } from "../src/engine/prompts.ts";
   check("it finishes and leaves a trait", (her.body.traits ?? []).includes("real cat ears") && her.look?.ears === "cat");
   check("the narrator knows", personCard(s, her).includes("real cat ears"));
 }
+
+import { foundCorp, expand, sellShares, drawSlave, corpValue } from "../src/engine/corp.ts";
+{
+  const s = newGame({ seed: "corp", starting_slaves: 3, plot: false } as never);
+  s.arcology.cash = 400000;
+  check("founding a corporation", foundCorp(s, "Test Holdings").ok && s.corp!.yours === 100);
+  s.corp!.cash = 200000;
+  check("training needs acquisition first", !expand(s, "training") && expand(s, "capture") && expand(s, "training"));
+  const before = s.arcology.cash;
+  for (let w = 0; w < 6; w++) { endWeek(s); s.events = []; }
+  check("it earns, and pays you a dividend", s.corp!.last!.profit > 0 && s.reports.at(-1)!.ledger.some((l) => l.category === "corporation" && l.cash > 0), s.corp!.last);
+  const got = sellShares(s);
+  check("selling shares gives cash and costs you stake", got > 0 && s.corp!.yours === 90 && corpValue(s) > 0);
+  const n = Object.keys(s.people).length;
+  check("you can take a slave from the pipeline", !!drawSlave(s) && Object.keys(s.people).length === n + 1);
+  void before;
+}

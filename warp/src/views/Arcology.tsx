@@ -1,5 +1,6 @@
 /** THE ARCOLOGY — the building, its money, and the three neighbours who have opinions about you. */
 import { useGame } from "../lib/game";
+import Corporation from "./Corporation";
 import { Button, Card, Chip, Empty, Meter, Money, Section, Stat } from "../lib/ui";
 import { FACILITIES, FACILITY_BY_ID } from "../data/facilities";
 import { POLICIES } from "../data/policies";
@@ -216,6 +217,8 @@ export default function ArcologyView() {
           </div>
         </Section>
       ) : <Section title="Debt"><Empty>You owe nobody anything.</Empty></Section>}
+
+      <Corporation />
     </>
   );
 }
