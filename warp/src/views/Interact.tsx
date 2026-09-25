@@ -114,7 +114,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     const m = ensureMoment();
     if (reply) { engaged.current = true; setLog((l) => [...l, { k: "you", text: reply }]); }
     setBusy(true); setStream(""); setReplies([]); setTray(false);
-    const res = await playMoment(save, m, reply, { onDelta: modelsAvailable() ? (c) => setStream((x) => x + c) : undefined });
+    const res = await playMoment(save, m, reply, { onDelta: modelsAvailable() ? (c) => setStream((x) => x + c) : undefined, onReset: () => setStream("") });
     mutate(() => {});
     setStream("");
     const entries: Entry[] = res.prose.split(/\n\n+/).filter(Boolean).map((t) => ({ k: "prose" as const, text: t }));
@@ -173,6 +173,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
       public: pub,
       lead: false,
       onDelta: modelsAvailable() ? (c) => setStream((x) => x + c) : undefined,
+      onReset: () => setStream(""),
     });
     mutate(() => {});
     setStream("");
@@ -191,6 +192,8 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
       if (res.written.said) entries.push({ k: "said", text: res.written.said });
     }
     if (res.written?.tags.length) entries.push({ k: "tags", tags: res.written.tags, tone: o.landing });
+    const refused = res.notes.find((n) => /refused/.test(n));
+    if (refused) entries.push({ k: "note", text: `${refused.replace(/^the narrator did not answer \((.*)\)$/, "$1")}; this is the game's own version. Pick a different narrator model in Settings.` });
     setLog((l) => [...l, ...entries]);
     record([{ role: "you", text: act.name }, { role: "scene", text: entries.filter((e) => e.k === "prose" || e.k === "said").map((e) => ("text" in e ? e.text : "")).join("\n\n") }]);
     setReplies([]);

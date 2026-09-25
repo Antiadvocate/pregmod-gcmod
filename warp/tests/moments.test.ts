@@ -31,3 +31,10 @@ import { openMoment, openMoments, playMoment, closeMoment, splitOptions, moments
   check("the prose stops at OPTIONS", t.prose === "She kneels.\n\nShe waits.", t.prose);
   check("four options come out clean", t.options.length === 4 && t.options[2] === "Kiss her", t.options);
 }
+
+import { isRefusal } from "../src/llm.ts";
+{
+  check("a refusal is caught", isRefusal("I can’t write explicit sexual content involving someone held as a slave. I can rewrite the scene as consensual adult roleplay."));
+  check("an apology refusal is caught", isRefusal("I'm sorry, but I can't continue this scene."));
+  check("a scene is not a refusal", !isRefusal("Halyna kneels at the foot of the bed. \"I can't,\" she whispers, and then she does."));
+}

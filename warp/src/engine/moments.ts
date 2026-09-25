@@ -109,7 +109,7 @@ export function splitOptions(text: string): { prose: string; options: string[] }
 /** One step: your reply (or none, to write out the opening), and what comes back. */
 export async function playMoment(
   s: SaveState, id: string, reply: string | null,
-  opts?: { onDelta?: (c: string) => void; signal?: AbortSignal },
+  opts?: { onDelta?: (c: string) => void; onReset?: () => void; signal?: AbortSignal },
 ): Promise<{ ok: boolean; prose: string; error?: string }> {
   const m = momentsOf(s).find((x) => x.id === id);
   if (!m) return { ok: false, prose: "", error: "no such moment" };
@@ -144,6 +144,7 @@ export async function playMoment(
       // Stream the prose only; the options list is not for reading as it arrives.
       if (!/\n\s*OPTIONS/i.test(shown)) opts.onDelta!(c);
     } : undefined,
+    onReset: () => { shown = ""; opts?.onReset?.(); },
   });
   if (!res.ok) {
     const prose = offlineAnswer(s, p, reply ?? "");

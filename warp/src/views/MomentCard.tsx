@@ -50,7 +50,7 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
   const go = async (reply: string | null) => {
     if (busy) return;
     setBusy(true); setStream(""); setErr("");
-    const res = await playMoment(save, id, reply, { onDelta: (c) => setStream((x) => x + c) });
+    const res = await playMoment(save, id, reply, { onDelta: (c) => setStream((x) => x + c), onReset: () => setStream("") });
     mutate(() => {});
     setStream(""); setBusy(false); setText("");
     if (!res.ok && res.error) setErr(res.error);
