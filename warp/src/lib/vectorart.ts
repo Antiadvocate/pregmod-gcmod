@@ -87,7 +87,7 @@ export interface Layer {
  * what the narrator needs. The art needs hex. These are the bridges, and an unrecognised value
  * falls through to a sane middle rather than to black. */
 
-const SKIN: [RegExp, string][] = [
+export const SKIN: [RegExp, string][] = [
   [/dyed pink/i, "#fe62b0"], [/dyed blue/i, "#5b8eb7"], [/dyed green/i, "#a6c373"], [/dyed purple/i, "#7a2391"],
   [/dyed red/i, "#bc4949"], [/dyed gray|dyed grey/i, "#bdbdbd"], [/dyed white/i, "#ffffff"], [/dyed black/i, "#1c1c1c"],
   [/tiger/i, "#e2d75d"],
@@ -122,13 +122,13 @@ const EYE: [RegExp, string][] = [
   [/brown/i, "#6b4423"],
 ];
 
-function match(table: [RegExp, string][], value: string, fallback: string): string {
+export function match(table: [RegExp, string][], value: string, fallback: string): string {
   for (const [re, hex] of table) if (re.test(value)) return hex;
   return fallback;
 }
 
 /** Darken a hex by a factor, for shadows and the areola. */
-function shade(hex: string, factor: number): string {
+export function shade(hex: string, factor: number): string {
   const n = parseInt(hex.slice(1), 16);
   const r = Math.max(0, Math.min(255, Math.round(((n >> 16) & 255) * factor)));
   const g = Math.max(0, Math.min(255, Math.round(((n >> 8) & 255) * factor)));

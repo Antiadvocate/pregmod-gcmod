@@ -40,6 +40,8 @@ const ENUMS: Record<string, readonly (string | number)[]> = {
   "body.prostate": [0, 1, 2, 3],
   "body.lactation": [0, 1, 2],
   "body.feet.arch": ["flat", "normal", "high"],
+  "body.feet.shape": ["egyptian", "greek", "roman", "germanic", "celtic"],
+  "body.feet.width": ["narrow", "average", "wide"],
   "body.feet.soles": ["soft", "normal", "calloused"],
   "body.feet.ticklish": [0, 1, 2, 3],
   "psyche.state": ["intact", "fracturing", "broken"],

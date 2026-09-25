@@ -27,6 +27,7 @@ import { getEdge } from "../engine/social";
 import Interact from "./Interact";
 import Dressing from "./Dressing";
 import Surgery from "./Surgery";
+import FeetArt from "./FeetArt";
 import { OpenMoments } from "./MomentCard";
 import HerPanel from "./HerPanel";
 import { romanceOf, RUNG_BY_ID } from "../engine/romance";
@@ -357,7 +358,8 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
             <div className="text-[10.5px] uppercase tracking-wider dim mb-1">Between her legs</div>
             <p className="font-prose text-[14px] leading-relaxed">{describeGenitals(p)}</p>
             <div className="text-[10.5px] uppercase tracking-wider dim mt-3 mb-1">Feet</div>
-            <p className="font-prose text-[14px] leading-relaxed">{describeFeet(p)}</p>
+            <FeetArt person={p} />
+            <p className="font-prose text-[14px] leading-relaxed mt-2">{describeFeet(p)}</p>
             {mobility(p).level ? <p className="text-[12.5px] mt-2" style={{ color: "var(--warn)" }}>Mobility: {mobility(p).note}.</p> : null}
           </Card>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

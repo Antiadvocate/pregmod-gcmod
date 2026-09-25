@@ -202,7 +202,23 @@ export function newFeet(r: Rng, heightCm: number, male: boolean): Feet {
 }
 
 /** Old saves have no feet record; give them one from the body they already have. */
+export const FOOT_SHAPES = ["egyptian", "greek", "roman", "germanic", "celtic"] as const;
+
+/** A stable number from her id, for the parts of her that are hers and nobody else's. */
+export function idHash(id: string, salt = ""): number {
+  let h = 2166136261;
+  for (const ch of salt + id) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+
 export function feetOf(p: Person): Feet {
+  if (p.body.feet && (!p.body.feet.shape || !p.body.feet.width)) {
+    const h = idHash(p.id, "foot-shape");
+    // Egyptian is the most common, then Roman and Greek; the other two are rare.
+    const roll = h % 100;
+    p.body.feet.shape ??= roll < 45 ? "egyptian" : roll < 70 ? "roman" : roll < 90 ? "greek" : roll < 96 ? "germanic" : "celtic";
+    p.body.feet.width ??= (["narrow", "average", "average", "wide"] as const)[(h >>> 9) % 4];
+  }
   if (!p.body.feet) {
     let h = 0;
     for (const ch of p.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -215,6 +231,7 @@ export function feetOf(p: Person): Feet {
       ticklish: pick([0, 1, 2, 3] as const, 11),
       toenails: "bare", heels_clipped: false, jewelry: [],
     };
+    return feetOf(p);
   }
   return p.body.feet;
 }
@@ -232,6 +249,14 @@ export function describeFeet(p: Person): string {
   if (p.body.marks.some((m) => m.kind === "prosthetic" && /feet|foot|leg/i.test(m.where))) return "She has prosthetic feet.";
   const out: string[] = [];
   out.push(`She has ${footSizeWord(f.size)} feet (EU ${f.size}) with ${f.arch === "high" ? "high, elegant arches" : f.arch === "flat" ? "flat arches" : "ordinary arches"} and ${f.soles === "soft" ? "soft, pampered soles" : f.soles === "calloused" ? "rough, calloused soles" : "ordinary soles"}.`);
+  const shape = {
+    egyptian: "Her big toe is the longest and each toe after it is a little shorter, in a clean slope.",
+    greek: "Her second toe is longer than her big toe.",
+    roman: "Her first three toes are almost the same length, which makes her feet look square across the front.",
+    germanic: "Her big toe is long and the other four are nearly even with each other.",
+    celtic: "Her second toe is the longest and her third drops away sharply after it.",
+  }[f.shape ?? "egyptian"];
+  out.push(`${shape} Her feet are ${f.width === "narrow" ? "narrow" : f.width === "wide" ? "wide across the toes" : "of average width"}.`);
   out.push(f.toenails === "bare" ? "Her toenails are unpainted." : `Her toenails are painted ${f.toenails}.`);
   if (f.jewelry.length) out.push(`She wears ${f.jewelry.join(" and ")}.`);
   out.push(["She isn't ticklish.", "She's a little ticklish.", "She's very ticklish.", "She's hopelessly ticklish; touching her soles reduces her to squealing."][f.ticklish]);

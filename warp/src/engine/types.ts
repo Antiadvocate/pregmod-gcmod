@@ -127,6 +127,11 @@ export interface Feet {
   heels_clipped: boolean;
   /** Anklets, toe rings. Cosmetic, read by the narrator. */
   jewelry: string[];
+  /** Which toe is longest: Egyptian (big toe, then each shorter), Greek (second toe longest),
+   *  Roman (first three about even), Germanic (big toe long, the rest even), Celtic (second long,
+   *  third short). Set once from her id; the art and the narrator both read it. */
+  shape?: "egyptian" | "greek" | "roman" | "germanic" | "celtic";
+  width?: "narrow" | "average" | "wide";
 }
 
 /** The cosmetic layer: what the salon and the wardrobe can change without surgery. */
