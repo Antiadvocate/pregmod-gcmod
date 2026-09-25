@@ -450,6 +450,8 @@ export interface Person {
   };
   /** Prestige and porn — reputation attaches to a person, not only to the arcology. */
   fame: { prestige: 0 | 1 | 2 | 3; why: string; porn_fame: number; porn_focus: string };
+  /** One of the hand-written unique slaves, by id. See data/heroes. */
+  hero?: string;
   /** Gene treatments under way. See engine/fleshcraft. */
   growing?: import("./fleshcraft").Growing[];
   /** When she's been an idol. See engine/idols. */
@@ -805,6 +807,8 @@ export interface SaveState {
   asks?: import("./asks").Ask[];
   /** Scenes that grew out of a reaction, open until you close them. See engine/moments. */
   moments?: import("./moments").Moment[];
+  /** Hero slaves who have already turned up this game. */
+  heroes_seen?: string[];
   /** Every attack on the arcology, newest last. See engine/battles. */
   battles?: import("./battles").Battle[];
   /** The receivers and the schedule. See engine/fctv. */

@@ -91,3 +91,18 @@ import { buildDefense, garrison } from "../src/engine/battles.ts";
   check("somebody comes for the arcology over a long game", attacks >= 2, attacks);
   check("a defended arcology can win", won >= 1, [won, attacks]);
 }
+
+import { HEROES } from "../src/data/heroes.ts";
+import { makeHero } from "../src/engine/heroes.ts";
+import { rollMarkets } from "../src/engine/market.ts";
+import { describeFeet } from "../src/engine/genitals.ts";
+{
+  const s = newGame({ seed: "heroes", starting_slaves: 2, plot: false } as never);
+  const all = HEROES.map((h) => makeHero(s, h));
+  check("every hero comes out as written", all.every((p, i) => p.name === HEROES[i].name && p.origin.career === HEROES[i].career && p.hero === HEROES[i].id));
+  check("the futa hero has both", !!all.find((p) => p.hero === "iolanthe")!.body.dick && all.find((p) => p.hero === "iolanthe")!.body.vagina !== null);
+  check("the ballerina has a dancer's feet", /Her big toe is the longest/.test(describeFeet(all.find((p) => p.hero === "mireille")!)));
+  let seen = 0;
+  for (let w = 4; w < 120; w++) { s.arcology.week = w; const m = rollMarkets(s); for (const list of Object.values(m.offers)) seen += list.filter((o) => o.person.hero).length; }
+  check("heroes turn up now and then, and never twice", seen >= 3 && seen <= HEROES.length && new Set(s.heroes_seen).size === s.heroes_seen!.length, seen);
+}
