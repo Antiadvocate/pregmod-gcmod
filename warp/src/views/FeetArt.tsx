@@ -118,7 +118,9 @@ function nailColour(g: FootGenes, toenails: string): { fill: string; painted: bo
 
 /* ── from above ─────────────────────────────────────────────────────────────────────────────── */
 
-function TopView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
+/** The outline of the foot seen straight on from above (or, mirrored, from below): the same
+ *  bones either way, so both views share it. */
+function plan(p: Person, g: FootGenes) {
   const f = feetOf(p);
   const L = 222 * (f.size / 41);
   const W = L * g.widthRatio;
@@ -126,10 +128,6 @@ function TopView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
   const top = 14 + (262 - L) / 2;
   const Y = (v: number) => top + (1 - v) * L;
   const X = (u: number) => cx + u * W;
-  const nail = nailColour(g, f.toenails);
-  const ring = f.jewelry.find((x) => /toe ring/i.test(x));
-  const anklet = f.jewelry.find((x) => /anklet|chain/i.test(x));
-  const tattoo = p.body.marks.find((m) => m.kind === "tattoo" && /foot|feet|ankle|toe/i.test(m.where));
 
   // Toes across the front, big toe on the inside, fitted to the width of the ball.
   const span = g.toeW.reduce((a, b) => a + b, 0) + g.gaps.reduce((a, b) => a + b, 0);
@@ -180,6 +178,16 @@ function TopView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
       [-0.34 * w, -F + 0.015 * V], [0, -F], [0.34 * w, -F + 0.015 * V], [0.52 * w * b, -s - 0.83 * V], [0.42 * w, -s - 0.62 * V], [0.47 * w, -s - 0.45 * V], [0.43 * w, -s - 0.2 * V], [0.5 * w, 6],
     ];
   };
+
+  return { f, L, W, X, Y, toes, med, lat, web, heelPt, body, toePts, emerge };
+}
+
+function TopView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
+  const { f, L, W, X, Y, toes, med, lat, web, heelPt, body, toePts, emerge } = plan(p, g);
+  const nail = nailColour(g, f.toenails);
+  const ring = f.jewelry.find((x) => /toe ring/i.test(x));
+  const anklet = f.jewelry.find((x) => /anklet|chain/i.test(x));
+  const tattoo = p.body.marks.find((m) => m.kind === "tattoo" && /foot|feet|ankle|toe/i.test(m.where));
 
   const shadow = shade(g.skin, 0.62);
   const line = shade(g.skin, 0.6);
@@ -291,6 +299,101 @@ function TopView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
         <ellipse cx={X(0.41)} cy={Y(0.165)} rx={W * 0.06 * g.ankle} ry={L * 0.028 * g.ankle} fill={lighten(g.skin, 0.12)} opacity={0.5} filter={`url(#${uid}-b1)`} />
       </g>
       {anklet ? <path d={smooth([[X(-0.44), Y(0.2)], [X(-0.2), Y(0.245)], [X(0.1), Y(0.245)], [X(0.44), Y(0.17)]], false)} fill="none" stroke={METAL(anklet)} strokeWidth={1.8} strokeDasharray="2.2 1.2" /> : null}
+    </svg>
+  );
+}
+
+/* ── from below ─────────────────────────────────────────────────────────────────────────────── */
+
+/** The sole, seen from underneath: the same outline mirrored (from below the big toe is on the
+ *  right), with the pads that carry her weight, the arch that doesn't touch the ground, the creases,
+ *  and whatever has been done to it. */
+function SoleView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
+  const { f, L, W, X, Y, toes, med, lat, web, heelPt, body, toePts } = plan(p, g);
+  const caned = Math.min(8, p.acts?.["bastinado"] ?? 0);
+  const nail = nailColour(g, f.toenails);
+  const rosy = mix(g.sole, "#e2877f", 0.2);
+  const pale = lighten(g.sole, 0.12);
+  const callus = "#d9c48e";
+  const hollow = Math.min(1, g.archH / 0.05);
+  const line = shade(g.sole, 0.72);
+  const E = (u: number, v: number, rx: number, ry: number, fill: string, op: number, blur = "b3", rot = 0) =>
+    <ellipse cx={X(u)} cy={Y(v)} rx={rx} ry={ry} fill={fill} opacity={op} filter={`url(#${uid}-${blur})`} transform={rot ? `rotate(${rot} ${X(u)} ${Y(v)})` : undefined} />;
+  return (
+    <svg viewBox="0 0 200 290" className="w-full h-auto" role="img" aria-label="the sole of her foot">
+      <defs>
+        <filter id={`${uid}-b1`} filterUnits="userSpaceOnUse" x="-20" y="-20" width="240" height="330"><feGaussianBlur stdDeviation="1.1" /></filter>
+        <filter id={`${uid}-b3`} filterUnits="userSpaceOnUse" x="-20" y="-20" width="240" height="330"><feGaussianBlur stdDeviation="3.5" /></filter>
+        <filter id={`${uid}-b6`} filterUnits="userSpaceOnUse" x="-20" y="-20" width="240" height="330"><feGaussianBlur stdDeviation="7" /></filter>
+        <clipPath id={`${uid}-sole`}><path d={body} /></clipPath>
+        <linearGradient id={`${uid}-stoe`} x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor={shade(g.sole, 0.86)} />
+          <stop offset="0.4" stopColor={pale} />
+          <stop offset="1" stopColor={shade(g.sole, 0.84)} />
+        </linearGradient>
+      </defs>
+      <g transform="translate(200 0) scale(-1 1)">
+        <ellipse cx={X(0.02)} cy={Y(0.45)} rx={W * 0.62} ry={L * 0.52} fill="#000" opacity={0.28} filter={`url(#${uid}-b6)`} />
+        <path d={body} fill={g.sole} />
+        <g clipPath={`url(#${uid}-sole)`}>
+          {/* the sole curls up at the edges into the side of the foot */}
+          <path d={body} fill="none" stroke={shade(g.skin, 0.9)} strokeWidth={W * 0.16} opacity={0.55} filter={`url(#${uid}-b3)`} />
+          {/* the arch: lifted off the ground, paler and smoother, with a soft edge where it rises */}
+          {E(-0.26, 0.42, W * 0.26, L * 0.16 * (0.6 + hollow * 0.4), pale, 0.5 + hollow * 0.4, "b6")}
+          {hollow > 0.3 ? <path d={smooth([[X(-0.05), Y(0.26)], [X(-0.02), Y(0.42)], [X(-0.1), Y(0.58)]], false)} fill="none" stroke={shade(g.sole, 0.82)} strokeWidth={4} opacity={0.35 * hollow} filter={`url(#${uid}-b3)`} /> : null}
+          {/* the pads that carry her: heel, the band down the outside, the ball */}
+          {E(0.01, 0.1, W * 0.3, L * 0.1, rosy, 0.75)}
+          <path d={smooth([[X(0.18), Y(0.16)], [X(0.3), Y(0.36)], [X(0.36), Y(0.56)]], false)} fill="none" stroke={rosy} strokeWidth={W * 0.2 * (1.3 - hollow * 0.4)} opacity={0.6} filter={`url(#${uid}-b3)`} />
+          {E(0.02, 0.665, W * 0.46, L * 0.065, rosy, 0.8)}
+          {E(-0.3, 0.68, W * 0.17, L * 0.06, rosy, 0.7)}
+          {E(0.3, 0.63, W * 0.13, L * 0.05, rosy, 0.55)}
+          {/* the crease between the ball and the toes */}
+          <path d={smooth([[X(-0.44), Y(0.735)], [X(-0.1), Y(0.72)], [X(0.2), Y(0.7)], [X(0.44), Y(0.675)]], false)} fill="none" stroke={line} strokeWidth={0.9} opacity={0.7} />
+          {/* fine creases in the arch */}
+          {[0.34, 0.4, 0.47].map((v, k) => <path key={k} d={`M${X(-0.38 + k * 0.03)},${Y(v)} q${W * 0.1},${-2} ${W * 0.2},${1}`} fill="none" stroke={line} strokeWidth={0.5} opacity={0.35} />)}
+          {f.soles === "calloused" ? <>
+            {E(0.01, 0.08, W * 0.22, L * 0.06, callus, 0.75, "b1")}
+            {E(-0.3, 0.68, W * 0.12, L * 0.04, callus, 0.7, "b1")}
+            {E(0.32, 0.63, W * 0.08, L * 0.03, callus, 0.6, "b1")}
+            {E(-0.47, 0.8, W * 0.05, L * 0.05, callus, 0.55, "b1")}
+          </> : f.soles === "soft" ? <>
+            {E(-0.05, 0.12, W * 0.12, L * 0.03, "#fff", 0.35, "b3")}
+            {E(-0.1, 0.67, W * 0.18, L * 0.025, "#fff", 0.3, "b3")}
+          </> : null}
+          {/* welts from the cane, across the tender parts */}
+          {Array.from({ length: caned }, (_, i) => { const v = [0.15, 0.5, 0.35, 0.62, 0.25, 0.42, 0.56, 0.08][i]; return <path key={i} d={smooth([[X(-0.42), Y(v + 0.01)], [X(0), Y(v)], [X(0.42), Y(v - 0.012)]], false)} fill="none" stroke="#b1323d" strokeWidth={2.2} opacity={0.6} filter={`url(#${uid}-b1)`} />; })}
+        </g>
+        <path d={smooth(med, false, 0.95)} fill="none" stroke={shade(g.skin, 0.62)} strokeWidth={0.9} />
+        <path d={smooth([...lat, ...heelPt, med[0]], false, 0.95)} fill="none" stroke={shade(g.skin, 0.62)} strokeWidth={0.9} />
+        {/* toes from underneath: pads, and a crease where each meets the foot */}
+        {[...toes].reverse().map((t) => {
+          const i = t.i;
+          const w = t.w * W;
+          const V = g.vis[i] * L;
+          const F = V + L * 0.05;
+          const s = F - V;
+          const pts = toePts(i, w, F, V);
+          const d = smooth(pts, false, 0.9);
+          return (
+            <g key={i} transform={`translate(${X(t.cx)},${Y(g.bases[i]) + s}) rotate(${g.angles[i]})`}>
+              <defs>
+                <linearGradient id={`${uid}-sf${i}`} gradientUnits="userSpaceOnUse" x1="0" y1={-s} x2="0" y2={-s - 0.34 * V}>
+                  <stop offset="0" stopColor="#fff" stopOpacity="0" /><stop offset="1" stopColor="#fff" stopOpacity="1" />
+                </linearGradient>
+                <mask id={`${uid}-sm${i}`} maskUnits="userSpaceOnUse" x={-w * 2} y={-F * 1.5} width={w * 4} height={F * 3}><rect x={-w * 2} y={-F * 1.5} width={w * 4} height={F * 3} fill={`url(#${uid}-sf${i})`} /></mask>
+              </defs>
+              {nail.painted && i < 3 ? <path d={`M${-w * 0.3},${-F + 1.2} Q0,${-F - 1.4} ${w * 0.3},${-F + 1.2}`} fill="none" stroke={nail.fill} strokeWidth={1.6} strokeLinecap="round" /> : null}
+              <path d={`${d} Z`} fill={`url(#${uid}-stoe)`} mask={`url(#${uid}-sm${i})`} />
+              <path d={smooth(pts.slice(1, -1), false, 0.9)} fill="none" stroke={shade(g.skin, 0.62)} strokeWidth={0.8} />
+              <ellipse cx={0} cy={-F + V * (i === 0 ? 0.32 : 0.28)} rx={w * 0.4} ry={V * (i === 0 ? 0.26 : 0.22)} fill={rosy} opacity={0.75} filter={`url(#${uid}-b1)`} />
+              <path d={`M${-w * 0.38},${-s - 0.26 * V} q${w * 0.38},${V * 0.06} ${w * 0.76},0`} fill="none" stroke={line} strokeWidth={0.7} opacity={0.75} />
+              {i === 0 ? <path d={`M${-w * 0.34},${-s - 0.55 * V} q${w * 0.34},${V * 0.05} ${w * 0.68},0`} fill="none" stroke={line} strokeWidth={0.6} opacity={0.6} /> : null}
+              {f.soles === "calloused" && i === 0 ? <ellipse cx={w * 0.3} cy={-s - 0.45 * V} rx={w * 0.15} ry={V * 0.2} fill={callus} opacity={0.5} filter={`url(#${uid}-b1)`} /> : null}
+            </g>
+          );
+        })}
+        {web.filter((_, k) => k % 2 === 1).map(([wx, wy], k) => <ellipse key={k} cx={wx} cy={wy - 1} rx={1.3} ry={2} fill={shade(g.skin, 0.55)} opacity={0.5} filter={`url(#${uid}-b1)`} />)}
+      </g>
     </svg>
   );
 }
@@ -411,10 +514,11 @@ export default function FeetArt({ person }: { person: Person }) {
   const label = { egyptian: "Egyptian", greek: "Greek", roman: "Roman", germanic: "Germanic", celtic: "Celtic" }[f.shape ?? "egyptian"];
   return (
     <div className="card-2 p-3">
-      <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 items-end">
+      <div className="grid grid-cols-2 gap-3 items-end">
         <div><TopView p={person} g={g} uid={uid} /><div className="text-[10.5px] dim text-center">from above</div></div>
-        <div><SideView p={person} g={g} uid={uid} /><div className="text-[10.5px] dim text-center">from the inside{f.heels_clipped ? " · tendons clipped" : ""}</div></div>
+        <div><SoleView p={person} g={g} uid={`${uid}s`} /><div className="text-[10.5px] dim text-center">the sole</div></div>
       </div>
+      <div className="mt-2"><SideView p={person} g={g} uid={uid} /><div className="text-[10.5px] dim text-center">from the inside{f.heels_clipped ? " · tendons clipped" : ""}</div></div>
       <div className="text-[11.5px] mid mt-2 text-center">
         EU {f.size} · {cm} cm · {label} toes · {f.width ?? "average"} · {f.arch} arch · {f.soles} soles{f.toenails !== "bare" ? ` · ${f.toenails} nails` : ""}
       </div>
