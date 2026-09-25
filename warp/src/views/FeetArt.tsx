@@ -19,9 +19,12 @@
  * lean, gaps, a bunion or none, a tucked little toe, instep, ankle bones, heel, nail shape, skin
  * tone within its family, veins and moles.
  */
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useGame } from "../lib/game";
+import { hasApiKey } from "../config";
+import { redraw, redrawPrompt, svgToPng, toJpeg } from "../lib/imagegen";
 import type { Person } from "../engine/types";
-import { feetOf, idHash } from "../engine/genitals";
+import { describeFeet, feetOf, idHash } from "../engine/genitals";
 import { rng } from "../engine/rng";
 import { SKIN, match, shade } from "../lib/vectorart";
 
@@ -507,18 +510,56 @@ function SideView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
 }
 
 export default function FeetArt({ person }: { person: Person }) {
+  const { save, mutate } = useGame();
   const f = feetOf(person);
+  const box = useRef<HTMLDivElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [showPhoto, setShowPhoto] = useState(true);
+  const photos = person.feet_photos;
+  const model = save.models.photo_model ?? "";
+  const photograph = async () => {
+    if (!box.current || busy || !model) return;
+    setBusy(true);
+    const views = ["top", "sole", "side"] as const;
+    const desc = describeFeet(person);
+    const results = await Promise.allSettled(views.map(async (v) => {
+      const svg = box.current!.querySelector<SVGSVGElement>(`[data-view="${v}"] svg`);
+      if (!svg) throw new Error("view not found");
+      const png = await svgToPng(svg, v === "side" ? 2.5 : 3);
+      return toJpeg(await redraw(model, png, redrawPrompt(v, desc)));
+    }));
+    mutate((s) => {
+      const p = s.people[person.id];
+      const got: Record<string, string> = {};
+      results.forEach((r, i) => { if (r.status === "fulfilled") got[views[i]] = r.value; });
+      const err = results.find((r) => r.status === "rejected") as PromiseRejectedResult | undefined;
+      p.feet_photos = { ...(p.feet_photos ?? {}), ...got, model, week: s.arcology.week, error: err ? String(err.reason?.message ?? err.reason) : undefined };
+    });
+    setShowPhoto(true);
+    setBusy(false);
+  };
+  const Photo = ({ v }: { v: "top" | "sole" | "side" }) => (showPhoto && photos?.[v] ? <img src={photos[v]} alt={`her foot, ${v}`} className="w-full h-auto rounded" /> : null);
   const g = useMemo(() => footGenes(person), [person.id, person.body.skin, person.body.weight, person.body.marks.length, f.shape, f.width, f.arch]);
   const uid = `ft${idHash(person.id, "uid").toString(36)}`;
   const cm = (f.size / 1.5 - 1.5).toFixed(1);
   const label = { egyptian: "Egyptian", greek: "Greek", roman: "Roman", germanic: "Germanic", celtic: "Celtic" }[f.shape ?? "egyptian"];
   return (
     <div className="card-2 p-3">
-      <div className="grid grid-cols-2 gap-3 items-end">
-        <div><TopView p={person} g={g} uid={uid} /><div className="text-[10.5px] dim text-center">from above</div></div>
-        <div><SoleView p={person} g={g} uid={`${uid}s`} /><div className="text-[10.5px] dim text-center">the sole</div></div>
+      <div ref={box}>
+        <div className="grid grid-cols-2 gap-3 items-end">
+          <div data-view="top"><Photo v="top" /><div className={showPhoto && photos?.top ? "hidden" : ""}><TopView p={person} g={g} uid={uid} /></div><div className="text-[10.5px] dim text-center">from above</div></div>
+          <div data-view="sole"><Photo v="sole" /><div className={showPhoto && photos?.sole ? "hidden" : ""}><SoleView p={person} g={g} uid={`${uid}s`} /></div><div className="text-[10.5px] dim text-center">the sole</div></div>
+        </div>
+        <div className="mt-2" data-view="side"><Photo v="side" /><div className={showPhoto && photos?.side ? "hidden" : ""}><SideView p={person} g={g} uid={uid} /></div><div className="text-[10.5px] dim text-center">from the inside{f.heels_clipped ? " · tendons clipped" : ""}</div></div>
       </div>
-      <div className="mt-2"><SideView p={person} g={g} uid={uid} /><div className="text-[10.5px] dim text-center">from the inside{f.heels_clipped ? " · tendons clipped" : ""}</div></div>
+      <div className="flex flex-wrap items-center gap-2 mt-2">
+        <button className="btn btn-sm" disabled={busy || !model || !hasApiKey()} title={!model ? "Choose a photo model in Settings" : undefined} onClick={() => void photograph()}>
+          {busy ? "redrawing…" : photos ? "Redraw as photos again" : "Redraw as photos"}
+        </button>
+        {photos ? <button className="btn btn-sm btn-ghost" onClick={() => setShowPhoto((x) => !x)}>{showPhoto ? "show the drawing" : "show the photos"}</button> : null}
+        {!model ? <span className="text-[11px] dim">Pick a photo model in Settings to redraw these as photographs.</span> : photos ? <span className="text-[11px] dim">{photos.model} · week {photos.week}</span> : null}
+        {photos?.error ? <span className="text-[11px] bad w-full">{photos.error}</span> : null}
+      </div>
       <div className="text-[11.5px] mid mt-2 text-center">
         EU {f.size} · {cm} cm · {label} toes · {f.width ?? "average"} · {f.arch} arch · {f.soles} soles{f.toenails !== "bare" ? ` · ${f.toenails} nails` : ""}
       </div>

@@ -456,6 +456,8 @@ export interface Person {
   };
   /** Prestige and porn — reputation attaches to a person, not only to the arcology. */
   fame: { prestige: 0 | 1 | 2 | 3; why: string; porn_fame: number; porn_focus: string };
+  /** Photographic redraws of her feet, from an image model. See lib/imagegen. */
+  feet_photos?: { model: string; week: number; top?: string; sole?: string; side?: string; error?: string };
   /** One of the hand-written unique slaves, by id. See data/heroes. */
   hero?: string;
   /** Gene treatments under way. See engine/fleshcraft. */
@@ -727,6 +729,8 @@ export interface ModelSettings {
   forge_model: string;
   fallback_model: string;
   image_model: string;
+  /** An OpenRouter model that outputs images, for the photographic redraws. */
+  photo_model?: string;
   context_memories_k: number;
   history_window: number;
   lean_mode: boolean;

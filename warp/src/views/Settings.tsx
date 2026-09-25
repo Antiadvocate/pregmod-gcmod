@@ -8,6 +8,7 @@ import { dynamicReadiness } from "../engine/dynamic";
 import { exportSave } from "../store";
 import { llmErrors, listOpenRouterModels, listLocalModels, type ModelInfo } from "../llm";
 import ModelPicker from "../lib/ModelPicker";
+import { imageModels } from "../lib/imagegen";
 
 
 export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
@@ -73,6 +74,9 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
               </Field>
             ))}
           </div>
+          <Field label="Photo model — redraws the drawn feet as photographs" hint={`${imageModels(models).length} OpenRouter models that output images. Each redraw is one image per view, billed by the model.`}>
+            <ModelPicker value={save.models.photo_model ?? ""} models={imageModels(models)} onChange={(id) => mutate((s) => { s.models.photo_model = id; })} />
+          </Field>
           <div className="flex items-center gap-2 text-[11.5px] dim">
             <span>{modelsState}</span>
             <Button size="sm" kind="ghost" onClick={() => loadModels(true)}>refresh list</Button>
