@@ -71,3 +71,23 @@ import { installFCTV, startShow } from "../src/engine/fctv.ts";
   check("her show earns and gathers viewers", s.fctv!.show!.viewers > 200 && s.reports.at(-1)!.ledger.some((l) => l.category === "fctv" && l.cash > 0));
   check("the week has a broadcast", (s.fctv!.last?.text.length ?? 0) > 0);
 }
+
+import { buildDefense, garrison } from "../src/engine/battles.ts";
+{
+  let attacks = 0, won = 0;
+  for (const seed of ["war-a", "war-b", "war-c"]) {
+    const s = newGame({ seed, starting_slaves: 4, plot: false } as never);
+    s.arcology.cash = 500000;
+    const g0 = garrison(s).total;
+    buildDefense(s, "walls"); buildDefense(s, "drones");
+    if (seed === "war-a") check("defenses add to the garrison", garrison(s).total > g0 + 2);
+    for (let w = 0; w < 80; w++) {
+      endWeek(s);
+      const e = s.events.find((x) => x.kind === "attack");
+      if (e) { attacks++; const line = resolveEvent(s, e, "meet"); if (s.battles!.at(-1)!.result === "won") won++; if (line.length < 60) check("battle outcome is a paragraph", false, line); }
+      s.events = []; if (s.story) s.story.pending = undefined;
+    }
+  }
+  check("somebody comes for the arcology over a long game", attacks >= 2, attacks);
+  check("a defended arcology can win", won >= 1, [won, attacks]);
+}

@@ -634,6 +634,8 @@ export interface Arcology {
   projects: Project[];
   /** The mercenary company, if you have one. */
   mercenaries: { hired: boolean; strength: number; loyalty: number; upkeep: number };
+  /** Walls, drone racks, armory: 0–3 each. See engine/battles. */
+  defenses?: Record<import("./battles").Defense, number>;
   /** Food, which the farmyard and the population both touch. Running out is a real failure state. */
   food: { stores: number; production: number; consumption: number };
   /** The city's opinion of you as a crowd, distinct from any individual's. −10 … +10. */
@@ -803,6 +805,8 @@ export interface SaveState {
   asks?: import("./asks").Ask[];
   /** Scenes that grew out of a reaction, open until you close them. See engine/moments. */
   moments?: import("./moments").Moment[];
+  /** Every attack on the arcology, newest last. See engine/battles. */
+  battles?: import("./battles").Battle[];
   /** The receivers and the schedule. See engine/fctv. */
   fctv?: import("./fctv").FCTV;
   /** Your slave corporation. See engine/corp. */
