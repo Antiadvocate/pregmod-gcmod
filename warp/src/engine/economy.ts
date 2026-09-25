@@ -92,7 +92,9 @@ export function weeklyMoney(state: SaveState, p: Person): { income: number; upke
   let note = "";
 
   if (facDef && facDef.income === "customers") {
-    const base = facDef.id === "arcade" ? 520 : facDef.id === "brothel" ? 1400 : facDef.id === "club" ? 1100 : facDef.id === "pit" ? 700 : 800;
+    // Balanced so a working brothel out-earns the rents, as the original's players asked: the
+    // slaves are the business, and the building is where it happens.
+    const base = facDef.id === "arcade" ? 650 : facDef.id === "brothel" ? 2000 : facDef.id === "club" ? 1500 : facDef.id === "pit" ? 850 : 900;
     const upg = 1 + Object.keys(fac!.upgrades ?? {}).length * 0.12 + (fac!.level - 1) * 0.05;
     const kind = facDef.id === "club" ? "entertain" : facDef.id === "pit" ? "fight" : "sex";
     const mult = appeal(p) * competence(p, kind) * prosperity * society * upg;
@@ -154,7 +156,7 @@ export function arcologyMoney(state: SaveState, led: Ledger): void {
 
   // Tariffs are on everything moving through the arcology, not only through what you own — a
   // landlord with 18% of the floors still takes a cut of the whole building.
-  const trade = arc.prosperity * arc.population * 0.06 * (0.25 + arc.ownership / 100);
+  const trade = arc.prosperity * arc.population * 0.045 * (0.25 + arc.ownership / 100);
   led.earn("trade", "tariffs on everything that moves through", trade);
 
   for (const f of Object.values(arc.facilities)) {
@@ -164,6 +166,14 @@ export function arcologyMoney(state: SaveState, led: Ledger): void {
     const idle = Math.max(0, f.capacity - f.workers.length);
     led.spend("facilities", `${def.name}: ${f.workers.length} working, ${idle} beds empty`, def.upkeep_per_slot * f.capacity * 0.35 + f.level * 400);
   }
+
+  // REPUTATION that accrues just from running a place people talk about: its size, its facilities,
+  // its famous slaves, how well it's doing. Without this a year of competent play left the elite
+  // auction out of reach, which is the complaint the original's players made most often.
+  const facilityLevels = Object.values(arc.facilities).reduce((n, f) => n + (f.level ?? 0), 0);
+  const famous = Object.values(state.people).filter((p) => p.status === "owned" && p.fame.prestige > 0).reduce((n, p) => n + p.fame.prestige, 0);
+  const renown = Math.round(arc.population / 60 + facilityLevels * 6 + famous * 8 + arc.prosperity / 10);
+  led.entry("standing", "people talk about the arcology", 0, renown);
 
   const sec = Math.round(arc.security * 12 + arc.population * 0.35);
   led.spend("security", "watch, drones and the doors", sec);

@@ -44,7 +44,7 @@ export const ASSIGNMENTS: AssignmentDef[] = [
     base_income: 0, rep: 0, psyche: { relaxation: 0.1, wear: -0.2, health: 0, energy: 30 },
     trains: {}, demands: ["walk", "hold", "see"] },
   { id: "whore", label: "Whore on the streets", group: "public", blurb: "She sells herself on the streets of the arcology.",
-    base_income: 900, rep: 3, psyche: { relaxation: -1.2, wear: -1.4, health: -4, energy: 50 },
+    base_income: 1150, rep: 3, psyche: { relaxation: -1.2, wear: -1.4, health: -4, energy: 50 },
     trains: { whoring: 1.8, oral: 1.2, vaginal: 1.2, anal: 0.8 }, demands: ["walk", "speak"] },
   { id: "public servant", label: "Serve the public", group: "public", blurb: "She's available free to any citizen, which improves your reputation.",
     base_income: 0, rep: 14, psyche: { relaxation: -1.0, wear: -1.2, health: -3, energy: 50 },
