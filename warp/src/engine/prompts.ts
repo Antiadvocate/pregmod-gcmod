@@ -13,6 +13,7 @@
  * is something the engine can be held to — if the prose contradicts the card, the card is right and
  * the guards in turn.ts say so.
  */
+import { deedsBrief } from "./deeds";
 import type { Person, SaveState } from "./types";
 import { band } from "./psyche";
 import { describeGenitals, describeFeet } from "./genitals";
@@ -113,6 +114,9 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(`HOW SHE IS DOING: ${condition(p)}; mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` On her mind: ${p.psyche.active_states.join(", ")}.` : ""}`);
   if (edge?.roles.length) lines.push(`ROLES: ${edge.roles.join(", ")}`);
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
+  const between = deedsBrief(s, p.id);
+  if (between) lines.push(`BETWEEN YOU AND HER (these happened; she has not forgotten):\n${between}`);
+  if (s.player.owned_by === p.id) lines.push(`SHE OWNS YOU: you gave yourself to her. She holds your collar and acts like it.`);
   if (memories.length) lines.push(`REMEMBERS: ${memories.map((m) => `${m.content} (week ${m.week})`).join(" | ")}`);
   if (p.psyche.state !== "intact") lines.push(`She is ${p.psyche.state}${p.psyche.break_mode ? ` (${p.psyche.break_mode})` : ""}. Write her that way, not as fine.`);
   return lines.join("\n");
@@ -132,6 +136,8 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   if (doctrines.length) out.push(`DOCTRINE — what your citizens have decided is normal:\n${doctrines.map((d) => `· ${d}`).join("\n")}`);
   else out.push(`DOCTRINE: none adopted yet.`);
 
+  const done = deedsBrief(s);
+  if (done) out.push(`\n## WHAT YOU HAVE DONE — people remember these, and they shape how everyone treats you\n${done}`);
   if (s.canon.length) out.push(`\n## WORLD FACTS (always true)\n${s.canon.map((c) => `· ${c}`).join("\n")}`);
   if (s.retcons.length) out.push(`\n## RETCONNED — these never happened; never refer to them\n${s.retcons.filter((x) => x.kind !== "correction").map((x) => `· ${x.text}`).join("\n")}`);
   const corrections = s.retcons.filter((x) => x.kind === "correction");

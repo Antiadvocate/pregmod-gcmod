@@ -20,6 +20,7 @@
  * it likes about what is happening in the room and it still cannot invent a state change, break an
  * invariant, reach a person it was not given, or touch anybody the age gate excludes.
  */
+import { deedsBrief } from "./deeds";
 import type { PendingEvent, Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable, isLocalModel } from "../config";
@@ -104,6 +105,7 @@ function dossier(s: SaveState, p: Person): string {
     p.persona.texture.length ? `LIKES AND DISLIKES: ${p.persona.texture.join("; ")}` : "",
     mem?.episodic.length ? `SHE REMEMBERS: ${mem.episodic.slice(-5).map((m) => `${m.content} (wk ${m.week})`).join(" | ")}` : "",
     p.acts && Object.keys(p.acts).length ? `WHAT HAS BEEN DONE TO HER: ${Object.entries(p.acts).map(([a, n]) => `${a} ×${n}`).join(", ")}` : "",
+    deedsBrief(s, p.id) ? `WHAT HAS HAPPENED BETWEEN YOU (build on this):\n${deedsBrief(s, p.id)}` : "",
     s.world ? `THE WORLD: ${worldBrief(s).replace(/\n/g, " ")}` : "",
     `THE PLACE: ${s.arcology.name}, week ${s.arcology.week}. ${Object.keys(s.arcology.doctrines).length ? `Its doctrine: ${Object.keys(s.arcology.doctrines).join(", ")}.` : "No doctrine adopted yet."}`,
   ];

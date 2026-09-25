@@ -10,7 +10,8 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, MessageCircle, X } from "lucide-react";
 import { useGame } from "../lib/game";
 import { Button, cx } from "../lib/ui";
-import { closeMoment, momentsOf, openMoment, playMoment } from "../engine/moments";
+import { momentsOf, openMoment, playMoment } from "../engine/moments";
+import { concludeMoment, deedsOf, DEED_TAGS } from "../engine/deeds";
 import { modelsAvailable } from "../config";
 import { SlaveHead } from "./SlaveArt";
 
@@ -45,6 +46,15 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
   const [text, setText] = useState("");
   const [err, setErr] = useState("");
   const [folded, setFolded] = useState(false);
+  const [ending, setEnding] = useState(false);
+  const end = async () => {
+    const mo = momentsOf(save).find((x) => x.id === id);
+    if (!mo || ending) return;
+    setEnding(true);
+    await concludeMoment(save, mo);
+    mutate(() => {});
+    setEnding(false);
+  };
   const ran = useRef(false);
 
   const go = async (reply: string | null) => {
@@ -107,11 +117,11 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
           </form>
           <div className="flex gap-2 mt-2">
             <Button size="sm" kind="ghost" onClick={() => { setFolded(true); onClose?.(); }}>Continue later</Button>
-            <Button size="sm" kind="ghost" onClick={() => { mutate((s) => closeMoment(s, id)); onClose?.(); }}>End it here</Button>
+            <Button size="sm" kind="ghost" disabled={ending} onClick={() => void end()}>{ending ? "…" : "End it here"}</Button>
           </div>
         </>
       ) : null}
-      {!m.open ? <div className="text-[12px] dim mt-3">That's where it ended.</div> : null}
+      {!m.open ? <DeedCard id={m.concluded} onClose={onClose} /> : null}
     </div>
   );
 }
@@ -133,6 +143,23 @@ export function OpenMoments({ person, title }: { person?: string; title?: string
             <span className="block text-[11px] dim truncate">{m.log[m.log.length - 1]?.text.slice(0, 120)}</span>
           </button>
         ))}
+    </div>
+  );
+}
+
+/** What an ended scene left behind: the line, the tags, and what they did. */
+export function DeedCard({ id, onClose }: { id?: string; onClose?: () => void }) {
+  const { save } = useGame();
+  const d = id ? deedsOf(save).find((x) => x.id === id) : undefined;
+  if (!d) return <div className="text-[12px] dim mt-3">That's where it ended. Nothing you said will change anything.</div>;
+  return (
+    <div className="card-2 p-3 mt-3 fade-in">
+      <div className="text-[10.5px] uppercase tracking-wider dim mb-1">What came of it</div>
+      <p className="font-prose text-[14.5px] leading-relaxed">{d.summary}</p>
+      {d.tags.length ? <div className="flex flex-wrap gap-1.5 mt-2">{d.tags.map((t) => <span key={t} className="chip">{DEED_TAGS[t]?.label ?? t}</span>)}</div> : null}
+      {d.effects.length ? <ul className="mt-2 space-y-0.5 text-[12.5px] mid">{d.effects.map((e, i) => <li key={i}>· {e}</li>)}</ul> : null}
+      {d.fact ? <div className="text-[12px] acc mt-2">{d.fact}</div> : null}
+      {onClose ? <Button size="sm" kind="ghost" className="mt-2" onClick={onClose}>done</Button> : null}
     </div>
   );
 }
