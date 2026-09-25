@@ -383,6 +383,16 @@ export function theKeeper(s: SaveState): Person | null {
   return p && p.romance?.standing === "keeper" ? p : null;
 }
 
+/** Everyone who lives in the penthouse: your slaves, and the free woman who holds your collar. */
+export function inHousehold(s: SaveState, p: Person): boolean {
+  return p.status === "owned" || p.status === "indentured" || (p.status === "free" && !!s.player.owned_by && s.player.owned_by === p.id);
+}
+
+/** She owns you: you can be with her, but you don't assign, sell, dress or operate on her. */
+export function isKeeper(s: SaveState, p: Person): boolean {
+  return !!s.player.owned_by && s.player.owned_by === p.id;
+}
+
 /** How much of the household she is already deciding, at the current dominion. Drives what the UI
  *  hands over and what the week does on her say-so rather than yours. */
 export function herReach(p: Person): { assignments: boolean; purchases: boolean; policy: boolean; everything: boolean } {

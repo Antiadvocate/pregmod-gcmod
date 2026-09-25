@@ -6,6 +6,7 @@
  * next thing you can do pinned to the bottom edge where a thumb already is. Nothing you tap sends
  * the answer somewhere you have to scroll to.
  */
+import { isKeeper } from "../engine/romance";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, Loader2, MessageCircle } from "lucide-react";
 import { useGame } from "../lib/game";
@@ -75,7 +76,10 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     const r = rng(`open:${id}:${save.turn}`);
     return [{ k: "prose", text: writeLead(save, p, r) }, { k: "said", text: say(save, p, "open", r) }];
   });
-  const [group, setGroup] = useState<string>("tenderness");
+  // When she owns you, you serve; the owner's moves are hers now, not yours.
+  const hers = !!p && isKeeper(save, p);
+  const groups = hers ? [...GROUPS.filter((g) => g.id === "hers"), ...GROUPS.filter((g) => ["tenderness", "feet", "play", "talk"].includes(g.id))] : GROUPS;
+  const [group, setGroup] = useState<string>(hers ? "hers" : "tenderness");
   const [busy, setBusy] = useState(false);
   const [stream, setStream] = useState("");
   const [next, setNext] = useState<Followup[]>([]);
@@ -329,7 +333,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
         ) : null}
         {ended ? null : <>
         <div className="flex gap-1.5 px-3 pt-3 pb-2 overflow-x-auto no-scrollbar">
-          {GROUPS.map((g) => (
+          {groups.map((g) => (
             <button key={g.id} onClick={() => { if (group === g.id) setTray((t) => !t); else { setGroup(g.id); setTray(true); } }}
               className={cx("chip shrink-0 !text-[12px] !py-1 !px-3", group === g.id && tray && "on")}>
               {g.id === "talk" ? <MessageCircle size={12} /> : null}{g.label}

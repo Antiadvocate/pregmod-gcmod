@@ -125,6 +125,14 @@ function writeRules(s: SaveState, her: Person, r: Reign) {
   for (const d of r.duties) keep(list, { rule: `you ${d}`, week, by: "her" });
 }
 
+/** She doesn't work a job while she runs the place. */
+function offDuty(s: SaveState, h: Person): void {
+  if (h.assignment === "rest" && !h.facility) return;
+  for (const f of Object.values(s.arcology.facilities)) { f.workers = f.workers.filter((w) => w !== h.id); if (f.manager === h.id) f.manager = undefined; }
+  h.facility = undefined;
+  h.assignment = "rest";
+}
+
 export function startReign(s: SaveState, her: Person): Reign {
   const style = styleOf(s, her);
   const g = her.persona.gregariousness ?? 0.5;
@@ -133,6 +141,7 @@ export function startReign(s: SaveState, her: Person): Reign {
     ...terms(s, her, style), favour: style === "vengeful" ? -30 : style === "doting" ? 30 : 0, obeyed: 0, defied: 0, log: [], laws: [], beats: [],
   };
   s.reign = r;
+  offDuty(s, her);
   writeRules(s, her, r);
   fireEvent(s, "reign_terms", { person: her });
   return r;
@@ -380,6 +389,7 @@ export function tickReign(s: SaveState): ReportLine[] {
     out.push(line(`${h.name} has written down her terms for you.`, "warning", 10, h.id));
     return out;
   }
+  offDuty(s, h);
   const week = s.arcology.week;
   const since = week - r.since;
   const rnd = rng(`reign:${week}:${h.id}`);

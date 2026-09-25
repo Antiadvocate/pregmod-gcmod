@@ -14,6 +14,7 @@
  * happen, and never refer to it. A weak model with authority to invent needs a player who can say
  * no and have it stick.
  */
+import { inHousehold } from "../engine/romance";
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Send, Undo2, X } from "lucide-react";
 import { useGame } from "../lib/game";
@@ -50,7 +51,7 @@ export default function Scene() {
 
   const turns = save.history.slice(-24);
   const present = save.scene.present.map((id) => save.people[id]).filter(Boolean);
-  const household = Object.values(save.people).filter((p) => p.status === "owned" || p.status === "indentured");
+  const household = Object.values(save.people).filter((p) => inHousehold(save, p));
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [save.history.length, streaming]);
 

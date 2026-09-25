@@ -42,7 +42,7 @@ import { tickPolicies } from "./policies";
 import { tickSecurity, unrest } from "./security";
 import { GARMENT_BY_NAME } from "../data/wardrobe";
 import { refreshPlayer, practise, skill } from "./player";
-import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf } from "./romance";
+import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf, inHousehold } from "./romance";
 import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
 import { tickStory } from "./story";
@@ -58,7 +58,8 @@ import { tickThreads } from "./threads";
 import { THREAD_BY_KIND } from "../data/threads";
 import { canSire } from "./you";
 
-const alive = (s: SaveState): Person[] => Object.values(s.people).filter((p) => p.status === "owned" || p.status === "indentured");
+// The woman who holds your collar is free, but she still lives here: her body, her mind and her memory keep going.
+const alive = (s: SaveState): Person[] => Object.values(s.people).filter((p) => inHousehold(s, p));
 
 export function endWeek(s: SaveState): WeekReport {
   const week = s.arcology.week;
