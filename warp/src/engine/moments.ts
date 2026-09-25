@@ -18,6 +18,7 @@ import { say } from "./voice";
 import { rng } from "./rng";
 import { applyTreatment, refresh } from "./obedience";
 import { shove } from "./psyche";
+import { concludeMoment } from "./deeds";
 
 export interface MomentLine { role: "you" | "scene"; text: string }
 
@@ -32,6 +33,8 @@ export interface Moment {
   options: string[];
   /** Still open: it can be picked up later. */
   open: boolean;
+  /** The deed it left behind, once it ended. */
+  concluded?: string;
   /** The first beat is a one-liner that hasn't been written out yet. */
   unexpanded?: boolean;
 }
@@ -84,7 +87,8 @@ export function noteMoment(s: SaveState, id: string, lines: MomentLine[]): void 
 
 /** Moments you walked away from a month ago are over. */
 export function ageMoments(s: SaveState): void {
-  for (const m of momentsOf(s)) if (m.open && s.arcology.week - m.updated > 4) m.open = false;
+  // A scene you walked away from for a month is over, and it still counts for what you said in it.
+  for (const m of momentsOf(s)) if (m.open && s.arcology.week - m.updated > 4) { m.open = false; void concludeMoment(s, m, { offline: true }); }
   s.moments = momentsOf(s).filter((m) => m.open || s.arcology.week - m.updated < 12);
 }
 
@@ -187,6 +191,10 @@ function offlineAnswer(s: SaveState, p: Person | undefined, reply: string): stri
   let what: Parameters<typeof say>[2] = "talk_open";
   let body = "";
   if (!reply) { body = `${p.name} waits to see what you'll do.`; what = "open"; }
+  else if (/enslave myself|be your slave|take my collar|collar me|belong to you|own me|i'm yours|i kneel|kneel (?:before|in front of|at)/.test(t)) {
+    applyTreatment(p, { kind: "recognition", size: 4, why: reply.slice(0, 60) }, week); shove(p.psyche, 0.6);
+    return `${p.name} stares at you on your knees in front of her. For a long moment she doesn't move at all. Then she reaches out, slowly, and puts her hand on your head, as if she's checking that it's real. ${r.pick([`"Say it again," she says.`, `"You mean that," she says. It isn't a question.`, `"Then look at me," she says, "and don't get up until I tell you."`])}`;
+  }
   else if (/hold|hug|kiss|sorry|thank|gentle|comfort|well done|good girl|stay/.test(t)) {
     applyTreatment(p, { kind: "kindness", size: 2, why: reply.slice(0, 60) }, week); shove(p.psyche, 0.3);
     body = r.pick([`${p.name} relaxes a little.`, `${p.name} looks surprised, then pleased.`, `${p.name} leans into you.`]); what = "tender";

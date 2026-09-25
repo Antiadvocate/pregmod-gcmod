@@ -42,6 +42,7 @@ import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
 import { tickStory } from "./story";
 import { ageMoments } from "./moments";
+import { tickDeeds } from "./deeds";
 import { tickWorld } from "./world";
 import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
@@ -283,6 +284,7 @@ export function endWeek(s: SaveState): WeekReport {
   // weather changes what the farms grew and what the power cost.
   lines.push(...tickWorld(s, led));
   ageMoments(s);
+  for (const e of tickDeeds(s)) push(e.text, "warning", 8, e.person);
 
   arcologyMoney(s, led);
 

@@ -10,6 +10,7 @@ import { arcDef, type NPC } from "../engine/story";
 import { ORIGIN_BY_ID } from "../data/story";
 import { SlaveHead } from "./SlaveArt";
 import Ambitions from "./Ambitions";
+import { deedsOf, DEED_TAGS } from "../engine/deeds";
 
 export default function Journal() {
   const { save } = useGame();
@@ -30,6 +31,24 @@ export default function Journal() {
 
       <Fold id="journal-ambitions" title="What you're after">
         <Ambitions />
+      </Fold>
+
+      <Fold id="journal-deeds" title="What you've done" count={deedsOf(save).length}>
+        {deedsOf(save).length ? (
+          <div className="space-y-1.5">
+            {[...deedsOf(save)].reverse().slice(0, 40).map((d) => {
+              const p = d.person ? save.people[d.person] : undefined;
+              return (
+                <div key={d.id} className="card-2 px-3 py-2">
+                  <div className="text-[11px] dim">week {d.week}{p ? ` · ${p.name}` : ""}{d.public ? " · everyone knows" : ""}</div>
+                  <div className="font-prose text-[14px] leading-snug">{d.summary}</div>
+                  {d.tags.length ? <div className="flex flex-wrap gap-1 mt-1">{d.tags.map((t) => <span key={t} className="chip !text-[10.5px]">{DEED_TAGS[t]?.label ?? t}</span>)}</div> : null}
+                  {d.follow && !d.follow.fired ? <div className="text-[11px] acc mt-1">comes back in week {d.follow.due}</div> : null}
+                </div>
+              );
+            })}
+          </div>
+        ) : <Empty>Nothing yet. End a scene you took part in and it shows up here.</Empty>}
       </Fold>
 
       <Fold id="journal-cast" title="The people in it" count={cast.length}>

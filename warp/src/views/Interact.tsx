@@ -21,7 +21,9 @@ import { rng } from "../engine/rng";
 import { writeLead } from "../engine/writer";
 import { POSE_BY_ID, poseForAct, restingPose, type Pose } from "../lib/rig";
 import { modelsAvailable } from "../config";
-import { closeMoment, noteMoment, openMoment, playMoment, type MomentLine } from "../engine/moments";
+import { closeMoment, momentsOf, noteMoment, openMoment, playMoment, type MomentLine } from "../engine/moments";
+import { concludeMoment } from "../engine/deeds";
+import { DeedCard } from "./MomentCard";
 import SlaveArt from "./SlaveArt";
 import type { Moment } from "../lib/expression";
 import { RoomBackdrop } from "../lib/rooms";
@@ -32,7 +34,8 @@ type Entry =
   | { k: "said"; text: string }
   | { k: "tags"; tags: string[]; tone?: ActOutcome["landing"] }
   | { k: "learned"; text: string }
-  | { k: "note"; text: string };
+  | { k: "note"; text: string }
+  | { k: "deed"; id: string };
 
 const GROUPS: { id: string; label: string }[] = [
   { id: "tenderness", label: "Tender" },
@@ -125,9 +128,27 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     setBusy(false);
   }
 
+  /** End the scene here: it's read back as a deed and starts changing things. */
+  async function endHere() {
+    const m = midRef.current;
+    const mo = m ? momentsOf(save).find((x) => x.id === m) : undefined;
+    if (!mo || busy) return;
+    setBusy(true); setReplies([]);
+    const d = await concludeMoment(save, mo);
+    mutate(() => {});
+    setBusy(false);
+    setLog((l) => [...l, d ? { k: "deed", id: d.id } : { k: "note", text: "That's where it ended." }]);
+    midRef.current = null; setMid(null); engaged.current = false;
+    history.current = [];
+    setEnded(true);
+  }
+
   // Walking out: a scene you took part in stays open for later; one you didn't is closed.
   useEffect(() => () => {
-    if (midRef.current && !engaged.current) { const m = midRef.current; mutate((s) => closeMoment(s, m)); }
+    if (!midRef.current) return;
+    const m = midRef.current;
+    // A scene you took part in stays open under "Left unfinished" until you end it.
+    if (!engaged.current) mutate((s) => closeMoment(s, m));
   }, []);
 
   // Keep the newest thing in view. This is the whole reason the screen exists.
@@ -295,6 +316,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
           <form className="flex gap-2 px-3 pt-3" onSubmit={(e) => { e.preventDefault(); const t = said.trim(); if (t) { setSaid(""); void carryOn(t); } }}>
             <input className="flex-1 min-w-0" value={said} disabled={busy} onChange={(e) => setSaid(e.target.value)} placeholder={`Say or do something to ${p.name}`} />
             <button className="btn btn-sm btn-primary" disabled={busy || !said.trim()}>Go</button>
+            {mid && engaged.current ? <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void endHere()} title="End the scene; what you did in it starts to count">End it here</button> : null}
           </form>
         ) : null}
         {!ended && next.length ? (
@@ -355,6 +377,7 @@ function LogEntry({ e }: { e: Entry }) {
     case "said": return <p className="said-line fade-in">&ldquo;{e.text.replace(/^"|"$/g, "")}&rdquo;</p>;
     case "learned": return <div className="text-[12px] good fade-in">You learned: {e.text}</div>;
     case "note": return <div className="text-[12px] bad fade-in">{e.text}</div>;
+    case "deed": return <DeedCard id={e.id} />;
     case "tags": return (
       <div className="flex flex-wrap gap-1.5 fade-in">
         {e.tags.map((t) => <span key={t} className={cx("chip", t === "she came" || t === "found out" ? "good" : t === "changed" ? "bad" : "")}>{t}</span>)}
