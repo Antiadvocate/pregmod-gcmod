@@ -100,7 +100,7 @@ export default function AssistantCard() {
             <button className="ml-auto text-[11px] dim underline" onClick={() => mutate((s) => { s.assistant = undefined; })}>change her</button>
           </div>
           <p className="font-prose text-[14.5px] leading-relaxed mt-1">
-            {a.brief?.week === lastWeek ? a.brief.text : lastWeek === undefined ? `${a.name} is watching. She'll brief you when the first week is done.` : <span className="dim"><Loader2 size={12} className="inline animate-spin" /> …</span>}
+            {a.brief && a.brief.week === lastWeek ? a.brief.text : lastWeek === undefined ? `${a.name} is watching. She'll brief you when the first week is done.` : <span className="dim"><Loader2 size={12} className="inline animate-spin" /> …</span>}
           </p>
         </div>
       </div>
