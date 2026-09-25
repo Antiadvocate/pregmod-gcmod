@@ -19,6 +19,7 @@ import { rng } from "./rng";
 import { applyTreatment, refresh } from "./obedience";
 import { shove } from "./psyche";
 import { concludeMoment } from "./deeds";
+import { WALK_OPTIONS, WALK_SYSTEM, walkContext, walkOffline } from "./walk";
 
 export interface MomentLine { role: "you" | "scene"; text: string }
 
@@ -39,6 +40,8 @@ export interface Moment {
   concluded?: string;
   /** The first beat is a one-liner that hasn't been written out yet. */
   unexpanded?: boolean;
+  /** A walk through the city: which place. See engine/walk. */
+  walk?: string;
 }
 
 export const MOMENT_SYSTEM = `You continue a scene in Free Cities, an adult text game about owning an arcology where slavery is legal. The player owns the slave in the scene.
@@ -124,10 +127,13 @@ export async function playMoment(
   m.updated = s.arcology.week;
   m.open = true;
 
+  const walking = m.source === "walk";
+  const fallback = () => (walking ? walkOffline(s, m.walk, reply ?? "") : offlineAnswer(s, p, reply ?? ""));
+  const fallbackOptions = () => (walking ? WALK_OPTIONS : offlineOptions(p, reply ?? ""));
   if (!modelsAvailable()) {
-    const prose = offlineAnswer(s, p, reply ?? "");
+    const prose = fallback();
     m.log.push({ role: "scene", text: prose });
-    m.options = offlineOptions(p, reply ?? "");
+    m.options = fallbackOptions();
     m.unexpanded = false;
     return { ok: true, prose };
   }
@@ -136,7 +142,8 @@ export async function playMoment(
   const others = (m.others ?? []).map((id) => s.people[id]).filter(Boolean) as Person[];
   const bond = (a: Person, b: Person) => { const e = s.edges.find((x) => x.from === a.id && x.to === b.id); return e ? `${a.name} toward ${b.name}: ${e.roles.length ? `${e.roles.join(", ")}; ` : ""}warmth ${Math.round(e.warmth)}` : ""; };
   const user = [
-    card ? `## THE SLAVE\n${card}` : "",
+    walking ? walkContext(s, m.walk) : "",
+    card ? `## ${walking ? "WITH THE PLAYER" : "THE SLAVE"}\n${card}` : "",
     ...others.map((o) => `## ALSO IN THE SCENE\n${personCard(s, o, m.title)}`),
     p && others.length ? `## BETWEEN THEM\n${others.flatMap((o) => [bond(p, o), bond(o, p)]).filter(Boolean).join("\n")}\nBoth of them talk and act in the scene, each in her own voice.` : "",
     s.world ? `## THE WORLD\n${worldBrief(s)}` : "",
@@ -146,7 +153,7 @@ export async function playMoment(
 
   let shown = "";
   const res = await call({
-    system: MOMENT_SYSTEM, user,
+    system: walking ? WALK_SYSTEM : MOMENT_SYSTEM, user,
     model: s.models.narrator_model, fallback: s.models.fallback_model,
     maxTokens: 1100, temperature: 0.95, signal: opts?.signal,
     onDelta: opts?.onDelta ? (c) => {
@@ -157,15 +164,15 @@ export async function playMoment(
     onReset: () => { shown = ""; opts?.onReset?.(); },
   });
   if (!res.ok) {
-    const prose = offlineAnswer(s, p, reply ?? "");
+    const prose = fallback();
     m.log.push({ role: "scene", text: prose });
-    m.options = offlineOptions(p, reply ?? "");
+    m.options = fallbackOptions();
     return { ok: false, prose, error: res.error };
   }
   const { prose: raw, options } = splitOptions(salvage(res.text));
   const prose = raw || res.text.trim();
   m.log.push({ role: "scene", text: prose });
-  m.options = options.length >= 2 ? options : offlineOptions(p, reply ?? "");
+  m.options = options.length >= 2 ? options : fallbackOptions();
   m.unexpanded = false;
 
   // The bookkeeper turns the prose into what changed, with the room set to just her.

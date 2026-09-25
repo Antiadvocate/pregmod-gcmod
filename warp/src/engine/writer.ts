@@ -9,7 +9,7 @@
  * A configured narrator model still writes over the top of this. This is the floor, and the floor
  * has to be a scene.
  */
-import { dickWord, ballsWord, feetOf, footSizeWord } from "./genitals";
+import { dickWord, ballsWord, feetOf, footSizeWord, erection } from "./genitals";
 import type { Person, SaveState } from "./types";
 import type { ActOutcome } from "./intimacy";
 import { ACT_BY_ID, FETISH_BY_ID } from "../data/intimacy";
@@ -39,6 +39,8 @@ export function bodyWords(p: Person): Record<string, string> {
   const herObj = p.pronouns === "he/him" ? "him" : p.pronouns === "they/them" ? "them" : "her";
   return {
     name: p.name, tits, ass, hair, cock, balls, feet, soles, build, belly, skin: `${b.skin} skin`,
+    // What arousal looks like on this body: wet only if there's a pussy to be wet.
+    wet: b.vagina !== null ? "wet" : cock ? (erection(p) === "full" ? "rock hard" : "leaking") : "flushed",
     eyes: `${b.eye_color} eyes`, she, She: cap(she), her, Her: cap(her), herObj,
   };
 }
@@ -557,7 +559,7 @@ const LANDED: Record<ActOutcome["landing"], string[]> = {
   wanted: [
     "She's into it from the first minute. Her breathing goes ragged and she pushes back for more.",
     "She stops pretending to be calm about it. Her toes curl.",
-    "She's wet before you've properly started, and she makes a noise she doesn't bother hiding.",
+    "She's {wet} before you've properly started, and she makes a noise she doesn't bother hiding.",
     "Her eyes close and her whole body goes loose under you.",
   ],
   willing: [
@@ -584,14 +586,14 @@ const LANDED: Record<ActOutcome["landing"], string[]> = {
 
 /** Being hurt or shown off lands differently from being fucked, so it gets its own words. */
 const PAIN_LANDED: Record<ActOutcome["landing"], string[]> = {
-  wanted: ["She arches into every stroke and makes a sound that isn't a complaint.", "By halfway she's pushing back for the next one.", "She's flushed and wet by the end of it, and not from crying."],
+  wanted: ["She arches into every stroke and makes a sound that isn't a complaint.", "By halfway she's pushing back for the next one.", "She's flushed and {wet} by the end of it, and not from crying."],
   willing: ["She takes it without fuss, breathing through each one.", "She holds position. She doesn't make you tell her twice."],
   endured: ["She takes it in silence, refusing to give you the satisfaction.", "She counts out loud, voice flat, and doesn't lose count."],
   hated: ["She cries by the end, quietly, and hates that you can see it.", "She flinches at every one and her hands keep trying to cover herself.", "About halfway through she stops reacting and just shakes."],
   nothing: ["She takes it without much reaction.", "She doesn't react much. It's hard to tell whether she feels it."],
 };
 const SHOWN_LANDED: Record<ActOutcome["landing"], string[]> = {
-  wanted: ["She's wet by the time the first stranger stops to look, and she doesn't hide it.", "The more of them look, the brighter her eyes get."],
+  wanted: ["She's {wet} by the time the first stranger stops to look, and she doesn't hide it.", "The more of them look, the brighter her eyes get."],
   willing: ["She holds her head up and lets them look.", "She's steadier about it than you expected."],
   endured: ["She fixes her eyes on a point on the far wall and keeps them there.", "She keeps her face carefully blank."],
   hated: ["She can't stop her face going red and her eyes going wet. Somebody laughs.", "She tries to hide behind her own hands and you don't let her."],

@@ -32,7 +32,7 @@ import { shiftDominion, romanceOf } from "./romance";
 import { resolveAct } from "./intimacy";
 import { FETISH_BY_ID, ACT_BY_ID } from "../data/intimacy";
 import { condition } from "./prompts";
-import { describeGenitals, describeFeet } from "./genitals";
+import { describeGenitals, describeFeet, anatomyLock } from "./genitals";
 import { worldBrief } from "./world";
 
 /** THE CLOSED TABLE. A generated option may name one of these and nothing else. */
@@ -92,6 +92,7 @@ function dossier(s: SaveState, p: Person): string {
     `HER: ${p.name}, ${p.age}, ${p.origin.nationality}. Was a ${p.origin.career}. ${p.origin.background}`,
     `BODY: ${p.body.appearance_facts} Currently: ${p.body.appearance_now}. Wearing ${p.clothes}.`,
     `GENITALS: ${describeGenitals(p)}`,
+    `ANATOMY (hard rule): ${anatomyLock(p)}`,
     `FEET: ${describeFeet(p)}`,
     p.womb.fetuses.length ? `${p.womb.weeks} weeks pregnant.` : "",
     p.body.lactation ? "Lactating." : "",

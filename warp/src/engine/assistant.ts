@@ -12,6 +12,8 @@ import { call } from "../llm";
 import { modelsAvailable } from "../config";
 import { HOUSE_STYLE, digest } from "./prompts";
 import { deedsBrief } from "./deeds";
+import { cultureBrief } from "./culture";
+import { lawsBrief } from "./court";
 import { read } from "./obedience";
 import { worldBrief, comingUp } from "./world";
 import { liveThreads, describeThread } from "./threads";
@@ -118,7 +120,7 @@ export function facts(s: SaveState, topic: string): Fact {
     case "city": {
       const rumors = [...s.rumors].sort((a, b) => b.salience - a.salience).slice(0, 3).map((r) => `"${r.content}"`);
       const deeds = (s.deeds ?? []).filter((d) => d.public).slice(-2).map((d) => d.summary);
-      return { topic, lines: [`Reputation ${Math.round(s.arcology.rep)}; the city's opinion of you is ${s.arcology.public_standing >= 3 ? "good" : s.arcology.public_standing <= -3 ? "poor" : "mixed"}.`, ...rumors.map((r) => `People are saying ${r}.`), ...deeds.map((d) => `Everyone knows: ${d}`)] };
+      return { topic, lines: [`Reputation ${Math.round(s.arcology.rep)}; the city's opinion of you is ${s.arcology.public_standing >= 3 ? "good" : s.arcology.public_standing <= -3 ? "poor" : "mixed"}.`, ...rumors.map((r) => `People are saying ${r}.`), ...deeds.map((d) => `Everyone knows: ${d}`), ...cultureBrief(s).split("\n").filter(Boolean), ...lawsBrief(s).split("\n").filter(Boolean)] };
     }
   }
   return { topic, lines: [] };

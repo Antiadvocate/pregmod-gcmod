@@ -7,6 +7,9 @@
  * is a crash somewhere far away with no clue in it. Everything it fills is a default that a
  * running game would have produced anyway.
  */
+import { hasWomb } from "./pregnancy";
+import { reconcileAnatomy } from "./genitals";
+import { assWord } from "./generate";
 import { sane } from "./health";
 import { feetOf } from "./genitals";
 import { newWorld } from "./world";
@@ -239,11 +242,15 @@ export function sanitize(raw: SaveState): SaveState {
     // Saves from before genital detail: the sack starts fitted, and feet are derived from the body.
     if (p.body.scrotum === undefined) p.body.scrotum = p.body.balls ?? 0;
     feetOf(p);
+    reconcileAnatomy(p);
+    if (p.body.appearance_facts && !/\bass\b/.test(p.body.appearance_facts)) p.body.appearance_facts = p.body.appearance_facts.replace(/\.\s*$/, `, ${assWord(p.body.butt)}.`);
     p.health.injuries = p.health.injuries ?? [];
     p.health.drugs = p.health.drugs ?? [];
     // A missing or broken recovery count (older saves) must not become NaN and never count down.
     p.health.recovery_weeks = sane(p.health.recovery_weeks);
     p.womb.fetuses = p.womb.fetuses ?? [];
+    // Nobody carries without a womb. Older saves could have got a cock-only slave pregnant.
+    if (!hasWomb(p) && p.womb.fetuses.length) { p.womb.fetuses = []; p.womb.weeks = 0; }
     p.womb.sired_by = p.womb.sired_by ?? {};
     p.skills.management = p.skills.management ?? {};
     p.persona.fetishes = p.persona.fetishes ?? [];

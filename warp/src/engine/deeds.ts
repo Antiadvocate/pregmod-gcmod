@@ -284,6 +284,7 @@ function offlineRead(m: Moment): Read {
   if (tags.includes("owner_enslaved")) { const i = tags.indexOf("owner_submitted"); if (i >= 0) tags.splice(i, 1); }
   const last = m.log.filter((l) => l.role === "you").slice(-1)[0]?.text ?? m.title;
   const who = m.person ? m.title.replace(/^With (\S+).*/, "$1") : "";
+  if (m.source === "walk") return { summary: `You went ${m.title.replace(/^Walking /, "down to ")}, and in front of everyone: "${last.replace(/"/g, "'").slice(0, 200)}"`, tags: tags.slice(0, 4), public: true };
   return { summary: `You said to ${who && who !== m.title ? who : "her"}: "${last.replace(/"/g, "'").slice(0, 200)}"`, tags: tags.slice(0, 4), public: false };
 }
 
@@ -314,7 +315,8 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
   const deed: Deed = {
     id: `deed-${s.arcology.week}-${deedsOf(s).length}`,
     week: s.arcology.week, person: p?.id, summary: String(r.summary).slice(0, 300), tags,
-    public: !!r.public || tags.includes("public_spectacle"),
+    // A walk through the city happens in front of everybody.
+    public: !!r.public || tags.includes("public_spectacle") || m.source === "walk",
     witnesses: (r.witnesses ?? []).map(String).slice(0, 6),
     effects: [], source: m.source,
     fact: r.lasting_fact ? String(r.lasting_fact).slice(0, 240) : undefined,

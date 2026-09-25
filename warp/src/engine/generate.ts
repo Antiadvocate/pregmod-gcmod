@@ -13,6 +13,7 @@
  * other direction and you get forty women who are all quietly "guarded but kind" with randomised
  * hair, which is what most character generators produce and why they all feel the same.
  */
+import { reconcileAnatomy } from "./genitals";
 import type { Body, Bond, Health, Person, Persona, Psyche, Skills, Womb, Pronouns } from "./types";
 import { NATIONS, CAREERS, ORIGINS, NATION_WEIGHT, type Nation } from "../data/people";
 import { newPsyche, clamp } from "./psyche";
@@ -122,6 +123,7 @@ export function generatePerson(opts: GenOptions = {}): Person {
     weeks: 0,
     contraceptives: false,
     sterile: !female || r.chance(0.05),
+    uterus: female ? "natal" : "none",
     births: age > 24 && r.chance(0.2) ? r.int(1, 2) : 0,
     miscarriages: 0,
     abortions: 0,
@@ -178,6 +180,7 @@ export function generatePerson(opts: GenOptions = {}): Person {
     central: opts.central ?? false,
   };
   finishGenitals(p);
+  reconcileAnatomy(p);
   return p;
 }
 
@@ -228,7 +231,7 @@ function generateBody(r: Rng, nation: Nation, age: number, sex: "female" | "male
     boob_implant: 0,
     nipples: r.pick(["cute", "cute", "tiny", "puffy", "huge", "inverted"] as const),
     areolae: r.int(0, 2) as 0 | 1 | 2,
-    butt: Math.round(clamp(r.normal(female ? 3 : 2, 1.4), 0, 10)),
+    butt: Math.round(clamp(r.normal(female ? 3 : 2, 1.4), 1, 10)),
     butt_implant: 0,
     hips: r.pick([-1, 0, 0, 1, 1, 2] as const),
     waist: Math.round(clamp(r.normal(female ? -20 : 10, 25), -100, 100)),
@@ -269,13 +272,19 @@ function generateBody(r: Rng, nation: Nation, age: number, sex: "female" | "male
 
 /** The bedrock look, as one sentence a narrator and a diffusion model can both use. Appended to,
  *  never rewritten — a permanent change adds a clause; nothing edits the original. */
+/** Her ass in a few words, on the original's scale. */
+export function assWord(butt: number): string {
+  return butt <= 1 ? "a small, tight ass" : butt <= 2 ? "a pert ass" : butt <= 3 ? "a nicely rounded ass" : butt <= 4 ? "a big, round ass"
+    : butt <= 5 ? "a huge ass" : butt <= 7 ? "an enormous ass" : "an ass so huge it's hard to believe";
+}
+
 export function describeBody(b: Body, nation: Nation, age: number): string {
   const w = buildOf(b.weight);
   const build = w === "slim" ? (b.muscle > 30 ? "visibly strong" : "average build")
     : { skinny: "skinny", thin: "thin", plump: "soft", chubby: "chubby", fat: "fat", obese: "very fat" }[w];
   const chest = b.boobs > 1200 ? "enormous breasts" : b.boobs > 700 ? "big breasts" : b.boobs > 350 ? "full breasts" : b.boobs > 100 ? "small breasts" : "flat-chested";
   const hair = b.hair_length > 60 ? `long ${b.hair_color} hair` : b.hair_length > 20 ? `${b.hair_color} hair to the shoulder` : `short ${b.hair_color} hair`;
-  return `${age}, ${nation.name}, ${b.height_cm}cm, ${build}. ${b.skin} skin, ${hair}, ${b.eye_color} eyes. ${chest}.`;
+  return `${age}, ${nation.name}, ${b.height_cm}cm, ${build}. ${b.skin} skin, ${hair}, ${b.eye_color} eyes. ${chest}, ${assWord(b.butt)}.`;
 }
 
 function generatePersona(r: Rng, career: (typeof CAREERS)[number], origin: (typeof ORIGINS)[number], q: number): Persona {

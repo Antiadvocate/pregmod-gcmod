@@ -184,9 +184,11 @@ export interface ModelInfo {
   price_out?: number;
   context?: number;
   local?: boolean;
+  /** What it can produce: "text", "image". From OpenRouter's architecture.output_modalities. */
+  output?: string[];
 }
 
-const MODEL_CACHE = "warp-openrouter-models";
+const MODEL_CACHE = "warp-openrouter-models-v2";
 const DAY = 24 * 60 * 60 * 1000;
 
 /** OpenRouter's public catalogue. It needs no key; cached for a day so Settings opens instantly. */
@@ -206,9 +208,10 @@ export async function listOpenRouterModels(force = false): Promise<ModelInfo[]> 
   const per = (x: unknown) => { const n = Number(x); return Number.isFinite(n) && n >= 0 ? +(n * 1e6).toFixed(3) : undefined; };
   const models: ModelInfo[] = (json?.data ?? [])
     .filter((m: { id?: string }) => m?.id)
-    .map((m: { id: string; name?: string; context_length?: number; pricing?: { prompt?: string; completion?: string } }) => ({
+    .map((m: { id: string; name?: string; context_length?: number; pricing?: { prompt?: string; completion?: string }; architecture?: { output_modalities?: string[] } }) => ({
       id: m.id, name: m.name ?? m.id, context: m.context_length,
       price_in: per(m.pricing?.prompt), price_out: per(m.pricing?.completion),
+      output: m.architecture?.output_modalities,
     }))
     .sort((a: ModelInfo, b: ModelInfo) => a.id.localeCompare(b.id));
   try { localStorage.setItem(MODEL_CACHE, JSON.stringify({ at: Date.now(), models })); } catch { /* fine */ }

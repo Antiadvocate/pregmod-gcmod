@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import {
-  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, MoreHorizontal, Globe2, BookOpen,
+  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, MoreHorizontal, Globe2, BookOpen, Scale,
 } from "lucide-react";
 import type { SaveState } from "./engine/types";
 import { GameProvider, useGame } from "./lib/game";
@@ -29,8 +29,9 @@ import You from "./views/You";
 import Journal from "./views/Journal";
 import Ending from "./views/Ending";
 import Cheats from "./views/Cheats";
+import Society from "./views/Society";
 
-export type Route = "penthouse" | "people" | "story" | "scene" | "city" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
+export type Route = "penthouse" | "people" | "story" | "scene" | "city" | "society" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
 
 const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "penthouse", label: "Penthouse", icon: Building2 },
@@ -38,6 +39,7 @@ const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "story", label: "Story", icon: BookOpen },
   { id: "scene", label: "Scene", icon: Play },
   { id: "city", label: "City", icon: Globe2 },
+  { id: "society", label: "Society", icon: Scale },
   { id: "arcology", label: "Arcology", icon: Landmark },
   { id: "doctrine", label: "Doctrine", icon: ScrollText },
   { id: "market", label: "Market", icon: ShoppingBag },
@@ -123,6 +125,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
             {route === "story" && <Journal />}
             {route === "scene" && <Scene />}
             {route === "city" && <City />}
+            {route === "society" && <Society />}
             {route === "arcology" && <ArcologyView />}
             {route === "doctrine" && <Doctrine />}
             {route === "market" && <Market />}

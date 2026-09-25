@@ -50,19 +50,29 @@ export type Erection = "none" | "soft" | "partial" | "full";
 /** Whether she can get hard, and how hard. Balls and hormones decide it, chastity stops it, and a
  *  cock past what her body can pump stays half-soft however turned on she is. */
 export function erection(p: Person): Erection {
+  return erectionWhy(p).state;
+}
+
+/** The state and the reason, so the card can say why and what would fix it. */
+export function erectionWhy(p: Person): { state: Erection; why: string; fix?: string } {
   const d = p.body.dick;
-  if (!has(d)) return "none";
-  if (p.chastity.penis) return "none";
+  if (!has(d)) return { state: "none", why: "she has no cock" };
+  if (p.chastity.penis) return { state: "none", why: "it's locked in a cage" };
   const drugs = p.health.drugs ?? [];
-  if (drugs.includes("hormone blockers")) return "soft";
+  const pills = drugs.includes("erection pills");
+  const implant = !!p.body.penile_implant;
+  if (drugs.includes("hormone blockers") && !implant) return { state: "soft", why: "the hormone blockers keep her soft", fix: "stop the blockers, or fit a penile implant" };
   const fem = drugs.includes("female hormones");
   const male = drugs.includes("male hormones");
-  if (!has(p.body.balls) && !male) return "soft";
-  if (fem && !male && (p.body.balls ?? 0) <= 2) return "soft";
-  const max = maxErection(p);
-  if (d > max + 2) return "soft";
-  if (d > max) return "partial";
-  return "full";
+  if (!has(p.body.balls) && !male && !pills && !implant) return { state: "soft", why: "with no balls she has no testosterone to get hard with", fix: "male hormones, erection pills, or a penile implant" };
+  if (fem && !male && (p.body.balls ?? 0) <= 2 && !pills && !implant) return { state: "soft", why: "female hormones and small balls have left her soft", fix: "erection pills, or stop the female hormones" };
+  // The original's rule: a cock past what her body can pump blood into won't fill. Pills buy two
+  // sizes; an implant makes her hard at any size, on command.
+  if (implant) return { state: "full", why: "her penile implant makes her hard on command" };
+  const max = maxErection(p) + (pills ? 2 : 0);
+  if (d > max + 3) return { state: "soft", why: "it's too big for her body to pump full of blood", fix: "a penile implant" + (pills ? "" : ", or erection pills for a little more") };
+  if (d > max) return { state: "partial", why: "it's bigger than her body can fill all the way", fix: pills ? "a penile implant" : "erection pills, or a penile implant" };
+  return { state: "full", why: pills ? "the pills help" : "" };
 }
 
 /* ── balls ────────────────────────────────────────────────────────────────────────────────── */
@@ -163,7 +173,8 @@ export function describeGenitals(p: Person): string {
     const cm = dickCM(b.dick);
     const cut = b.foreskin === 0 ? "circumcised" : "uncut";
     const e = erection(p);
-    const hard = e === "full" ? "She can get fully hard." : e === "partial" ? "It's too big for her to get more than half-hard." : e === "soft" ? "She can't get it up." : "It's locked in chastity.";
+    const ew = erectionWhy(p);
+    const hard = e === "full" ? `She can get fully hard${ew.why ? ` (${ew.why})` : ""}.` : e === "partial" ? `She only gets half-hard: ${ew.why}.` : e === "soft" ? `She can't get it up: ${ew.why}.` : "It's locked in chastity.";
     out.push(`She has a ${dickWord(b.dick)} ${cut} cock, about ${cm}cm (${inches(cm)}) long. ${hard}`);
     if (b.foreskin && b.foreskin - b.dick > 1) out.push("Her foreskin is loose and overhangs the head.");
     else if (b.foreskin && b.foreskin - b.dick < -1) out.push("Her foreskin is too tight to pull back over the head.");
@@ -179,6 +190,11 @@ export function describeGenitals(p: Person): string {
   }
   if (!has(b.dick) && b.vagina === null) out.push("She is a null: smooth and featureless between the legs, with only a urethra.");
   out.push(`Her asshole is ${anusWord(b.anus)}.`);
+  // Where she can carry, so nobody writes a pregnancy she can't have.
+  const u = p.womb.uterus ?? (b.vagina !== null ? "natal" : "none");
+  if (u === "anal") out.push("She has an implanted womb that opens into her rectum: she can be bred through her ass.");
+  else if (u === "none" && b.vagina !== null) out.push("Her pussy was built by a surgeon; there is no womb behind it and she cannot get pregnant.");
+  else if (u === "none") out.push("She has no womb and cannot get pregnant.");
   const locked = [p.chastity.penis ? "cock" : "", p.chastity.vagina ? "pussy" : "", p.chastity.anus ? "ass" : ""].filter(Boolean);
   if (locked.length) out.push(`Her ${locked.join(" and ")} ${locked.length > 1 ? "are" : "is"} locked in chastity.`);
   const m = mobility(p);
@@ -262,4 +278,32 @@ export function describeFeet(p: Person): string {
   out.push(["She isn't ticklish.", "She's a little ticklish.", "She's very ticklish.", "She's hopelessly ticklish; touching her soles reduces her to squealing."][f.ticklish]);
   if (f.heels_clipped) out.push("Her Achilles tendons have been clipped: she can't stand flat, and walks only in heels or crawls on all fours.");
   return out.join(" ");
+}
+
+/** A hard list of what she has and hasn't got, for every prompt. Models drift toward the default
+ *  body; this is the line that stops them writing a pussy onto a woman who has a cock and nothing
+ *  else, or getting her "wet". */
+export function anatomyLock(p: Person): string {
+  const b = p.body;
+  const hasCock = has(b.dick), hasPussy = b.vagina !== null;
+  const out: string[] = [];
+  out.push(`She has: ${[hasCock ? "a cock" : "", has(b.balls) ? "balls" : "", hasPussy ? "a pussy" : "", "an ass", b.boobs > 150 ? "breasts" : "a flat chest"].filter(Boolean).join(", ")}.`);
+  const not: string[] = [];
+  if (!hasPussy) not.push("a pussy, cunt, clit, labia or vagina (never write one; she doesn't get wet, she " + (hasCock ? "gets hard and leaks precum" : "flushes and trembles") + ")");
+  if (!hasCock) not.push("a cock");
+  if (!has(b.balls) && hasCock) not.push("balls");
+  if (not.length) out.push(`She does NOT have ${not.join("; ")}.`);
+  if (hasCock) { const e = erectionWhy(p); if (e.state !== "full") out.push(`Her cock ${e.state === "partial" ? "only gets half-hard" : "stays soft"}: ${e.why}.`); }
+  return out.join(" ");
+}
+
+/** Put right anything on her record that contradicts her body (after surgery, editing, old saves). */
+export function reconcileAnatomy(p: Person): void {
+  const b = p.body;
+  const hole = p.persona.preferred_hole;
+  if (hole && hole.hole === "vagina" && b.vagina === null) hole.hole = has(b.dick) ? "dick" : "anus";
+  if (hole && hole.hole === "dick" && !has(b.dick)) hole.hole = b.vagina !== null ? "vagina" : "anus";
+  if (b.vagina === null) { p.chastity.vagina = false; b.labia = 0; b.clit = 0; }
+  if (!has(b.dick)) p.chastity.penis = false;
+  if (!(b.butt > 0)) b.butt = 1;
 }

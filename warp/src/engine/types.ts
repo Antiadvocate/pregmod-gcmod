@@ -69,6 +69,8 @@ export interface Body {
   dick: number | null;
   /** Foreskin, on its own scale, because circumcision is a state you can be put into and the art
    *  pack has a whole parallel set of layers for it. null when there is nothing to have one. */
+  /** An inflatable implant: she gets hard on command at any size. */
+  penile_implant?: boolean;
   foreskin: number | null;
   /** 1 vestigial … 9 monstrous, 10+ hyper (the original runs to 125). */
   balls: number | null;
@@ -306,6 +308,10 @@ export interface Womb {
   fetuses: Fetus[];
   /** Weeks pregnant, derived from the oldest fetus. Kept for cheap reads. */
   weeks: number;
+  /** Where the womb is, if there is one: "natal" behind a natural pussy, "anal" implanted and
+   *  opening into her rectum (the original's anal pregnancy surgery), or "none". A built pussy has
+   *  no womb behind it. Older saves derive it; see hasWomb. */
+  uterus?: "natal" | "anal" | "none";
   /** Contraception and control. */
   contraceptives: boolean;
   sterile: boolean;
@@ -450,6 +456,8 @@ export interface Person {
   };
   /** Prestige and porn — reputation attaches to a person, not only to the arcology. */
   fame: { prestige: 0 | 1 | 2 | 3; why: string; porn_fame: number; porn_focus: string };
+  /** Photographic redraws of her feet, from an image model. See lib/imagegen. */
+  feet_photos?: { model: string; week: number; top?: string; sole?: string; side?: string; error?: string };
   /** One of the hand-written unique slaves, by id. See data/heroes. */
   hero?: string;
   /** Gene treatments under way. See engine/fleshcraft. */
@@ -721,6 +729,8 @@ export interface ModelSettings {
   forge_model: string;
   fallback_model: string;
   image_model: string;
+  /** An OpenRouter model that outputs images, for the photographic redraws. */
+  photo_model?: string;
   context_memories_k: number;
   history_window: number;
   lean_mode: boolean;
@@ -819,6 +829,11 @@ export interface SaveState {
   assistant?: import("./assistant").Assistant;
   /** What ended scenes left behind. See engine/deeds. */
   deeds?: import("./deeds").Deed[];
+  /** What the city has come to think is normal. See engine/culture. */
+  culture?: import("./culture").Culture;
+  /** Laws the court has passed, and the cases before it. See engine/court. */
+  laws?: import("./court").LawInForce[];
+  court?: import("./court").CourtState;
   /** Twists, ambitions and the end of the run. See engine/run.ts. */
   run?: import("./run").RunState;
   /** Your origin, your cast, and the arcs this run has drawn. See engine/story.ts. */
