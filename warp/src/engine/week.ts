@@ -16,6 +16,11 @@
  * afterwards to work out what must have happened, which is how the old end-of-week text and the
  * old budget screen ended up describing two different weeks.
  */
+import { tickBattles } from "./battles";
+import { tickFCTV } from "./fctv";
+import { tickCorp } from "./corp";
+import { tickFlesh } from "./fleshcraft";
+import { tickIdol, secretaryRebate } from "./idols";
 import type { Person, ReportLine, SaveState, WeekReport } from "./types";
 import { FACILITY_BY_ID } from "../data/facilities";
 import { ASSIGNMENT_BY_ID } from "../data/assignments";
@@ -98,6 +103,8 @@ export function endWeek(s: SaveState): WeekReport {
     const managedByThem = mgr && fac?.manager !== p.id;
 
     // MONEY
+    for (const l of tickIdol(s, p)) push(l, "good", 5, p.id);
+    for (const l of tickFlesh(s, p)) push(l, "neutral", 6, p.id);
     const money = weeklyMoney(s, p);
     if (managedByThem && mgr) money.income = Math.round(money.income * mgr.income);
     if (money.income) led.earn("slaves", `${p.name} — ${money.note || p.assignment}`, money.income, p.id);
@@ -273,6 +280,9 @@ export function endWeek(s: SaveState): WeekReport {
   for (const l of tickStory(s)) push(l.text, l.tone, l.weight);
   lines.push(...tickRun(s));
 
+  const secr = secretaryRebate(s, led.lines.filter((l) => l.category === "upkeep").reduce((n, l) => n - l.cash, 0));
+  if (secr.cash > 0 && secr.who) led.earn("savings", `${secr.who.name} caught overcharges in the accounts`, secr.cash, secr.who.id);
+
   const soc = tickSociety(s);
   led.entry("doctrine", "your citizens, on how you live", soc.cash, soc.rep);
   for (const l of soc.lines) push(l, "neutral", 6);
@@ -287,6 +297,9 @@ export function endWeek(s: SaveState): WeekReport {
   for (const e of tickDeeds(s)) push(e.text, "warning", 8, e.person);
 
   arcologyMoney(s, led);
+  for (const l of tickCorp(s, led)) push(l, "bad", 8);
+  for (const l of tickFCTV(s, led)) push(l, "neutral", 3);
+  for (const l of tickBattles(s)) push(l, "bad", 12);
 
   const arc = s.arcology;
   const staff = alive(s).length;

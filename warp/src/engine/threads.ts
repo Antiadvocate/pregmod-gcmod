@@ -101,6 +101,61 @@ function together(s: SaveState, a: Person, b: Person): boolean {
 
 const DETECTORS: Detector[] = [
   {
+    // RIVALS. Mutual dislike between two women who both have some standing with you, in the same
+    // rooms. Standing is what they're fighting over; without it they'd just avoid each other.
+    kind: "rivals", needs: 3,
+    find: (s, sig, all, only) => {
+      const people = only ? all.filter((p) => only.has(p.id)) : all;
+      const up = people.filter((p) => sig.get(p.id)!.dev > 15 || romanceOf(p).dominion > -60);
+      for (const a of up) for (const b of up) {
+        if (a.id >= b.id || !together(s, a, b)) continue;
+        const ab = getEdge(s.edges, a.id, b.id), ba = getEdge(s.edges, b.id, a.id);
+        if (!ab || !ba || ab.warmth > -25 || ba.warmth > -25) continue;
+        return { cast: { a: a.id, b: b.id }, fact: `${a.name} and ${b.name} have disliked each other for ${ab.weeks_known} weeks.` };
+      }
+      return null;
+    },
+  },
+  {
+    // A PROTECTOR. A settled woman who is fond of a frightened newcomer, in the same rooms.
+    kind: "protector", needs: 2,
+    find: (s, sig, all, only) => {
+      const people = only ? all.filter((p) => only.has(p.id)) : all;
+      for (const g of people) {
+        const gs = sig.get(g.id)!;
+        if (gs.dev < 25 || gs.fear > 50) continue;
+        for (const w of people) {
+          if (w.id === g.id || !together(s, g, w)) continue;
+          const ws = sig.get(w.id)!;
+          if (ws.fear < 45 || w.economics.weeks_owned > 14) continue;
+          const e = getEdge(s.edges, g.id, w.id);
+          if (!e || e.warmth < 18) continue;
+          return { cast: { guard: g.id, ward: w.id }, fact: `${g.name} has been looking out for ${w.name} since she arrived.` };
+        }
+      }
+      return null;
+    },
+  },
+  {
+    // A TORMENTOR. A woman with a cruel streak or power over another, and the other afraid of her.
+    kind: "tormentor", needs: 3,
+    find: (s, sig, all, only) => {
+      const people = only ? all.filter((p) => only.has(p.id)) : all;
+      for (const b of people) {
+        const cruel = b.persona.conscience < 0.35 || b.persona.fetishes.some((f) => (f.name === "sadist" || f.name === "dom") && f.strength > 45);
+        if (!cruel) continue;
+        for (const t of people) {
+          if (t.id === b.id || !together(s, b, t)) continue;
+          const bt = getEdge(s.edges, b.id, t.id), tb = getEdge(s.edges, t.id, b.id);
+          if (!tb || tb.warmth > -15) continue;
+          if ((bt?.power ?? 0) < 10 && sig.get(t.id)!.fear < 45) continue;
+          return { cast: { bully: b.id, target: t.id }, fact: `${t.name} is afraid of ${b.name}.` };
+        }
+      }
+      return null;
+    },
+  },
+  {
     // THE TALKERS. Both resentments climbing, both already high, and they share a room. The
     // conjunction is the whole point: either one alone is a bad week, both together is a position.
     kind: "talkers", needs: 4,
@@ -465,7 +520,14 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
   const cool = (n: number) => { t.heat = clamp(t.heat - n, 0, 100); };
   const nm = (role: string): string => P(role)?.name ?? "she";
 
-  switch (`${t.kind}:${optionId}`) {
+  // Threads that carry their own answers.
+  const opt = beat.options?.find((o) => o.id === optionId);
+  if (opt?.run) {
+    const out = opt.run({ s, P, nm, week });
+    line = out.line;
+    closes = !!out.closes;
+    if (out.cool) t.heat = clamp(t.heat - out.cool, 0, 100);
+  } else switch (`${t.kind}:${optionId}`) {
     /* the talkers */
     case "talkers:split": {
       const b = P("b");

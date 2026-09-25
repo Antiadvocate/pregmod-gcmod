@@ -7,6 +7,7 @@
  * transaction: `earn` and `spend` write a line, and the week's cash delta is the sum of the lines.
  * If the number on screen is wrong, the line that is wrong is on screen next to it.
  */
+import { jobMoney } from "./idols";
 import { DRUG_BY_ID } from "../data/drugs";
 import type { LedgerEntry, Person, SaveState } from "./types";
 import { FACILITY_BY_ID } from "../data/facilities";
@@ -50,6 +51,8 @@ export function appeal(p: Person): number {
   if (p.psyche.state === "broken") n *= 0.75;
   if (p.health.injuries.some((i) => !i.healed_week && i.severity !== "minor")) n *= 0.8;
   if (p.fame.prestige) n *= 1 + p.fame.prestige * 0.28;
+  // Grown changes are a novelty the customers pay for.
+  if (p.body.traits?.length) n *= 1 + Math.min(0.3, p.body.traits.length * 0.07);
   // What she is wearing is not decoration in an arcology; it is part of the offer.
   for (const worn of [p.clothes, p.collar, p.shoes]) {
     const g = GARMENT_BY_NAME[worn];
@@ -85,10 +88,13 @@ export function weeklyMoney(state: SaveState, p: Person): { income: number; upke
   const society = 1 + clamp(societyScore(state, p).total, -0.8, 0.8) * 0.35;
 
   let income = 0, customers = 0, rep = 0;
+  const job = jobMoney(state, p);
   let note = "";
 
   if (facDef && facDef.income === "customers") {
-    const base = facDef.id === "arcade" ? 520 : facDef.id === "brothel" ? 1400 : facDef.id === "club" ? 1100 : facDef.id === "pit" ? 700 : 800;
+    // Balanced so a working brothel out-earns the rents, as the original's players asked: the
+    // slaves are the business, and the building is where it happens.
+    const base = facDef.id === "arcade" ? 650 : facDef.id === "brothel" ? 2000 : facDef.id === "club" ? 1500 : facDef.id === "pit" ? 850 : 900;
     const upg = 1 + Object.keys(fac!.upgrades ?? {}).length * 0.12 + (fac!.level - 1) * 0.05;
     const kind = facDef.id === "club" ? "entertain" : facDef.id === "pit" ? "fight" : "sex";
     const mult = appeal(p) * competence(p, kind) * prosperity * society * upg;
@@ -108,6 +114,11 @@ export function weeklyMoney(state: SaveState, p: Person): { income: number; upke
       arc.food.production += food;
       note = `${Math.round(food)} units of food`;
     }
+  } else if (job) {
+    const j = job;
+    income = Math.round(j.income * society);
+    rep = j.rep;
+    note = j.note;
   } else if (def) {
     income = Math.round(def.base_income * appeal(p) * competence(p, "sex") * prosperity * society);
     rep = def.rep;
@@ -145,7 +156,7 @@ export function arcologyMoney(state: SaveState, led: Ledger): void {
 
   // Tariffs are on everything moving through the arcology, not only through what you own — a
   // landlord with 18% of the floors still takes a cut of the whole building.
-  const trade = arc.prosperity * arc.population * 0.06 * (0.25 + arc.ownership / 100);
+  const trade = arc.prosperity * arc.population * 0.045 * (0.25 + arc.ownership / 100);
   led.earn("trade", "tariffs on everything that moves through", trade);
 
   for (const f of Object.values(arc.facilities)) {
@@ -155,6 +166,14 @@ export function arcologyMoney(state: SaveState, led: Ledger): void {
     const idle = Math.max(0, f.capacity - f.workers.length);
     led.spend("facilities", `${def.name}: ${f.workers.length} working, ${idle} beds empty`, def.upkeep_per_slot * f.capacity * 0.35 + f.level * 400);
   }
+
+  // REPUTATION that accrues just from running a place people talk about: its size, its facilities,
+  // its famous slaves, how well it's doing. Without this a year of competent play left the elite
+  // auction out of reach, which is the complaint the original's players made most often.
+  const facilityLevels = Object.values(arc.facilities).reduce((n, f) => n + (f.level ?? 0), 0);
+  const famous = Object.values(state.people).filter((p) => p.status === "owned" && p.fame.prestige > 0).reduce((n, p) => n + p.fame.prestige, 0);
+  const renown = Math.round(arc.population / 60 + facilityLevels * 6 + famous * 8 + arc.prosperity / 10);
+  led.entry("standing", "people talk about the arcology", 0, renown);
 
   const sec = Math.round(arc.security * 12 + arc.population * 0.35);
   led.spend("security", "watch, drones and the doors", sec);

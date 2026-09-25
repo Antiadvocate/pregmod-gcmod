@@ -25,6 +25,8 @@ export interface MomentLine { role: "you" | "scene"; text: string }
 export interface Moment {
   id: string;
   person?: string;
+  /** Other slaves in the scene with her. */
+  others?: string[];
   title: string;
   source: string;
   week: number;
@@ -63,13 +65,13 @@ export function openMoments(s: SaveState, personId?: string): Moment[] {
 }
 
 /** Start a moment from something that just happened. Returns its id. */
-export function openMoment(s: SaveState, o: { person?: string; title: string; source: string; you?: string; happened: string }): string {
+export function openMoment(s: SaveState, o: { person?: string; others?: string[]; title: string; source: string; you?: string; happened: string }): string {
   const list = momentsOf(s);
   const id = `mo-${s.arcology.week}-${s.turn}-${list.length}`;
   const log: MomentLine[] = [];
   if (o.you) log.push({ role: "you", text: o.you });
   if (o.happened) log.push({ role: "scene", text: o.happened });
-  list.push({ id, person: o.person, title: o.title, source: o.source, week: s.arcology.week, updated: s.arcology.week, log, options: DEFAULT_OPTIONS, open: true, unexpanded: modelsAvailable() });
+  list.push({ id, person: o.person, others: o.others?.filter((x) => x && x !== o.person), title: o.title, source: o.source, week: s.arcology.week, updated: s.arcology.week, log, options: DEFAULT_OPTIONS, open: true, unexpanded: modelsAvailable() });
   // Keep the list from growing without end: close the oldest finished ones.
   if (list.length > 60) s.moments = list.slice(-60);
   return id;
@@ -131,8 +133,12 @@ export async function playMoment(
   }
 
   const card = p ? personCard(s, p, reply ?? m.title) : "";
+  const others = (m.others ?? []).map((id) => s.people[id]).filter(Boolean) as Person[];
+  const bond = (a: Person, b: Person) => { const e = s.edges.find((x) => x.from === a.id && x.to === b.id); return e ? `${a.name} toward ${b.name}: ${e.roles.length ? `${e.roles.join(", ")}; ` : ""}warmth ${Math.round(e.warmth)}` : ""; };
   const user = [
     card ? `## THE SLAVE\n${card}` : "",
+    ...others.map((o) => `## ALSO IN THE SCENE\n${personCard(s, o, m.title)}`),
+    p && others.length ? `## BETWEEN THEM\n${others.flatMap((o) => [bond(p, o), bond(o, p)]).filter(Boolean).join("\n")}\nBoth of them talk and act in the scene, each in her own voice.` : "",
     s.world ? `## THE WORLD\n${worldBrief(s)}` : "",
     `## THE SCENE SO FAR (${m.title})\n${transcript(m)}`,
     reply ? `## THE PLAYER'S REPLY\n${reply}` : `## WRITE THIS MOMENT OUT IN FULL, then offer the options.`,
@@ -172,7 +178,7 @@ export async function playMoment(
     const diff = book.ok ? parseJson<Diff>(book.text) : null;
     if (diff) {
       const before = s.scene.present;
-      s.scene.present = [p.id];
+      s.scene.present = [p.id, ...others.map((o) => o.id)];
       applyDiff(s, { ...diff, present_add: [], present_remove: [], location: undefined }, prose);
       s.scene.present = before;
       refresh(p, s.memory[p.id]);

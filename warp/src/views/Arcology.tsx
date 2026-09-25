@@ -1,5 +1,7 @@
 /** THE ARCOLOGY — the building, its money, and the three neighbours who have opinions about you. */
 import { useGame } from "../lib/game";
+import Corporation from "./Corporation";
+import { ATTACKERS, DEFENSES, buildDefense, defensesOf, garrison, lastBattles, type Defense } from "../engine/battles";
 import { Button, Card, Chip, Empty, Meter, Money, Section, Stat } from "../lib/ui";
 import { FACILITIES, FACILITY_BY_ID } from "../data/facilities";
 import { POLICIES } from "../data/policies";
@@ -49,6 +51,24 @@ export default function ArcologyView() {
             </div>
           </div>
         </Card>
+      </Section>
+
+      <Section title="Defenses" right={<span className="text-[11px] dim">garrison {garrison(save).total.toFixed(1)}</span>}>
+        <div className="text-[11.5px] dim mb-2">What stands between the arcology and whoever comes for it: {garrison(save).parts.join(", ") || "almost nothing"}.</div>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {(Object.keys(DEFENSES) as Defense[]).map((d) => { const lv = defensesOf(save)[d]; const cost = DEFENSES[d].cost * (lv + 1); return (
+            <Card key={d} className="py-3">
+              <div className="text-[13px]">{DEFENSES[d].name} <span className="text-[11px] dim">{lv}/3</span></div>
+              <div className="text-[11.5px] dim">{DEFENSES[d].note}</div>
+              {lv < 3 ? <Button size="sm" className="mt-2" disabled={arc.cash < cost} onClick={() => mutate((s) => { buildDefense(s, d); })}>{lv ? "improve" : "build"} · ¤{cost.toLocaleString()}</Button> : null}
+            </Card>
+          ); })}
+        </div>
+        {lastBattles(save).length ? (
+          <div className="mt-2 space-y-1">
+            {lastBattles(save).map((b, i) => <div key={i} className="text-[12px] mid">Week {b.week}: {ATTACKERS[b.attacker].name}, strength {b.size.toFixed(1)} — {b.result === "won" ? "beaten off" : b.result === "lost" ? "they broke in" : b.result === "paid" ? "paid off" : b.result === "held" ? "held at the spire" : "on the way"}</div>)}
+          </div>
+        ) : null}
       </Section>
 
       <Section title="Policies">
@@ -216,6 +236,8 @@ export default function ArcologyView() {
           </div>
         </Section>
       ) : <Section title="Debt"><Empty>You owe nobody anything.</Empty></Section>}
+
+      <Corporation />
     </>
   );
 }

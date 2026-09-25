@@ -3,6 +3,8 @@
  *  Ordered by what is actually urgent rather than by category: events first because they expire,
  *  then problems, then the household's own state. The end-of-week button is the only irreversible
  *  control in the app and it says what it will cost before you press it. */
+import FCTVCard from "./FCTVCard";
+import AssistantCard from "./Assistant";
 import { Reaction as MomentReaction, OpenMoments } from "./MomentCard";
 import { useState } from "react";
 import { AlertTriangle, ChevronRight, Loader2 } from "lucide-react";
@@ -32,7 +34,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
   const { save, mutate } = useGame();
   const [running, setRunning] = useState(false);
   const [inventing, setInventing] = useState(false);
-  const [aftermath, setAftermath] = useState<{ line: string; reactions: Reaction[]; person?: string; title?: string; chose?: string; key?: number } | null>(null);
+  const [aftermath, setAftermath] = useState<{ line: string; reactions: Reaction[]; person?: string; others?: string[]; title?: string; chose?: string; key?: number } | null>(null);
   const dyn = dynamicReadiness(save);
   const keeper = theKeeper(save);
   const arc = save.arcology;
@@ -89,7 +91,11 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
       {/* YOUR STORY FIRST. It is the thing that is only about you. */}
       <StoryCard />
 
+      <AssistantCard />
+
       <WorldCard />
+
+      <div className="mb-6"><FCTVCard /></div>
 
       {/* SITUATIONS FIRST. A thread is the game telling you something it worked out about the last
           two months, which outranks anything that happened on Tuesday. */}
@@ -115,7 +121,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
                   <div className="flex flex-wrap gap-2">
                     {beat.options?.map((o) => (
                       <Button key={o.id} size="sm" title={o.note} onClick={() => mutate((st) => {
-                        setAftermath({ line: answerThread(st, t.id, o.id).line, reactions: [], person: Object.values(t.cast)[0], title: def.name, chose: o.label, key: Date.now() });
+                        setAftermath({ line: answerThread(st, t.id, o.id).line, reactions: [], person: Object.values(t.cast)[0], others: Object.values(t.cast).slice(1), title: def.name, chose: o.label, key: Date.now() });
                       })}>{o.label}</Button>
                     ))}
                   </div>
@@ -190,7 +196,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
         <Section title="What came of it" right={<Button size="sm" kind="ghost" onClick={() => setAftermath(null)}>done</Button>}>
           <Card>
             <p className="font-prose text-[15px] leading-relaxed">{aftermath.line}</p>
-            {aftermath.person ? <MomentReaction key={aftermath.key} seed={{ person: aftermath.person, title: aftermath.title ?? "Afterwards", source: "thread", you: aftermath.chose, happened: aftermath.line }} /> : null}
+            {aftermath.person ? <MomentReaction key={aftermath.key} seed={{ person: aftermath.person, others: aftermath.others, title: aftermath.title ?? "Afterwards", source: "thread", you: aftermath.chose, happened: aftermath.line }} /> : null}
             {aftermath.reactions.length ? (
               <ul className="mt-3 space-y-1.5 text-[13px]">
                 {aftermath.reactions.map((rx) => (

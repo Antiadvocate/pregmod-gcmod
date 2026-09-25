@@ -15,7 +15,7 @@ import { concludeMoment, deedsOf, DEED_TAGS } from "../engine/deeds";
 import { modelsAvailable } from "../config";
 import { SlaveHead } from "./SlaveArt";
 
-export interface Seed { person?: string; title: string; source: string; you?: string; happened: string }
+export interface Seed { person?: string; others?: string[]; title: string; source: string; you?: string; happened: string }
 
 /** A moment that starts from something that just happened. */
 export function Reaction({ seed, className, auto = true, label = "Answer her" }: { seed: Seed; className?: string; auto?: boolean; label?: string }) {

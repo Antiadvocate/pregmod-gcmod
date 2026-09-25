@@ -539,8 +539,9 @@ ${c.arcology} wakes up to find out it nearly fell, and didn't, and who was on th
           } },
         { id: "flee", label: "Get to the roof and the helicopter",
           run: (c) => { c.set("plot_coup", "fled"); c.cash(-Math.round(c.s.arcology.cash * 0.3)); c.rep(-1500); c.standing(-4);
-            for (const p of ownedAdults(c.s).filter((x) => read(x).devotion < 0)) c.remove(p, "free", "freed by the Daughters of Liberty during the coup");
-            return { text: `You get to the roof with the slaves who'd follow you and lift off with the spire burning below. By the time your security forces take the arcology back three days later, the Daughters have freed every slave who didn't go with you and emptied a third of your accounts.
+            const house = ownedAdults(c.s).sort((a, b) => read(a).devotion - read(b).devotion);
+            for (const p of house.filter((x) => read(x).devotion < 0).slice(0, Math.ceil(house.length * 0.6))) c.remove(p, "free", "freed by the Daughters of Liberty during the coup");
+            return { text: `You get to the roof with the slaves who'd follow you and lift off with the spire burning below. By the time your security forces take the arcology back three days later, the Daughters have freed most of the slaves who didn't go with you and emptied a third of your accounts.
 
 You come back to an arcology that knows you left.`, next: "aftermath", after: 1 }; } },
       ],
@@ -568,7 +569,9 @@ ${c.He("rival_owner")} wanted ${c.arcology}, and funded the Daughters to take it
 
 function lost(c: Ctx) {
   c.cash(-Math.round(c.s.arcology.cash * 0.4)); c.rep(-2000); c.standing(-3); c.security(-20);
-  const gone = ownedAdults(c.s).filter((p) => read(p).devotion < 20);
+  // The Daughters take the ones who want to go most, not the whole house: the least devoted half.
+  const house = ownedAdults(c.s).sort((a, b) => read(a).devotion - read(b).devotion);
+  const gone = house.filter((p) => read(p).devotion < 20).slice(0, Math.floor(house.length / 2));
   for (const p of gone) c.remove(p, "free", "freed by the Daughters of Liberty in the coup");
   c.set("plot_coup_lost", true);
   return { text: `It goes badly. By dawn the men in grey hold the lower half of the spire, and the Daughters have gone through the slave quarters opening every door. ${gone.length ? `${gone.length} of your slaves walk out with them.` : "None of your slaves go with them."}

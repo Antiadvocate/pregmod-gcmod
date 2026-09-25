@@ -6,6 +6,7 @@
  * the whole game of buying: the old game rolled a slave and showed you her true stats, which made
  * purchase a shopping trip rather than a judgement.
  */
+import { heroOffer } from "./heroes";
 import { priceFactor } from "./run";
 import type { MarketOffer, MarketState, Person, SaveState } from "./types";
 import { generatePerson } from "./generate";
@@ -80,6 +81,8 @@ export function rollMarkets(state: SaveState): MarketState {
     }
     offers[m.id] = list;
   }
+  const hero = heroOffer(state);
+  if (hero) (offers[hero.market] ??= []).unshift(hero);
   return { week, offers, recruiting: state.market?.recruiting, orders: state.market?.orders ?? [] };
 }
 

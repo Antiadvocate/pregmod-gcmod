@@ -103,6 +103,8 @@ export interface Body {
   marks: { kind: "tattoo" | "scar" | "brand" | "piercing" | "implant" | "prosthetic"; where: string; what: string; week: number }[];
   /** Bedrock look, set once. Only permanent bodily events append; the engine never rewrites it. */
   appearance_facts: string;
+  /** Permanent grown changes: real ears, a tail, scales. See engine/fleshcraft. */
+  traits?: string[];
   /** Current presentation: clothes, grime, visible state. Rewritten freely. */
   appearance_now: string;
   /** The exact words that drew this person's portrait, reused verbatim so a diffusion model
@@ -127,6 +129,11 @@ export interface Feet {
   heels_clipped: boolean;
   /** Anklets, toe rings. Cosmetic, read by the narrator. */
   jewelry: string[];
+  /** Which toe is longest: Egyptian (big toe, then each shorter), Greek (second toe longest),
+   *  Roman (first three about even), Germanic (big toe long, the rest even), Celtic (second long,
+   *  third short). Set once from her id; the art and the narrator both read it. */
+  shape?: "egyptian" | "greek" | "roman" | "germanic" | "celtic";
+  width?: "narrow" | "average" | "wide";
 }
 
 /** The cosmetic layer: what the salon and the wardrobe can change without surgery. */
@@ -332,7 +339,8 @@ export type Assignment =
   | "be your Concubine" | "live with your Head Girl" | "be the Wardeness" | "be the Madam"
   | "be the DJ" | "be the Nurse" | "be the Schoolteacher" | "be the Attendant"
   | "be the Stewardess" | "be the Milkmaid" | "be the Farmer" | "be the Matron"
-  | "be your Head Girl" | "be your agent" | "guard you" | "recruit girls" | "fight in the pit";
+  | "be your Head Girl" | "be your agent" | "guard you" | "recruit girls" | "fight in the pit"
+  | "be an idol" | "work in an office" | "be your secretary";
 
 /** The bond ledger — the accumulators devotion and trust are read off. Nothing here is displayed
  *  raw; obedience.ts turns them into the two numbers a player recognises. See that file for why
@@ -442,6 +450,12 @@ export interface Person {
   };
   /** Prestige and porn — reputation attaches to a person, not only to the arcology. */
   fame: { prestige: 0 | 1 | 2 | 3; why: string; porn_fame: number; porn_focus: string };
+  /** One of the hand-written unique slaves, by id. See data/heroes. */
+  hero?: string;
+  /** Gene treatments under way. See engine/fleshcraft. */
+  growing?: import("./fleshcraft").Growing[];
+  /** When she's been an idol. See engine/idols. */
+  idol?: import("./idols").Idol;
   /** Everything the week counted, so the report can say what actually happened to them. */
   counters: Record<string, number>;
   /** Everything that has been done to her, counted by act. The report, the fetish discovery and
@@ -622,6 +636,8 @@ export interface Arcology {
   projects: Project[];
   /** The mercenary company, if you have one. */
   mercenaries: { hired: boolean; strength: number; loyalty: number; upkeep: number };
+  /** Walls, drone racks, armory: 0–3 each. See engine/battles. */
+  defenses?: Record<import("./battles").Defense, number>;
   /** Food, which the farmyard and the population both touch. Running out is a real failure state. */
   food: { stores: number; production: number; consumption: number };
   /** The city's opinion of you as a crowd, distinct from any individual's. −10 … +10. */
@@ -791,6 +807,16 @@ export interface SaveState {
   asks?: import("./asks").Ask[];
   /** Scenes that grew out of a reaction, open until you close them. See engine/moments. */
   moments?: import("./moments").Moment[];
+  /** Hero slaves who have already turned up this game. */
+  heroes_seen?: string[];
+  /** Every attack on the arcology, newest last. See engine/battles. */
+  battles?: import("./battles").Battle[];
+  /** The receivers and the schedule. See engine/fctv. */
+  fctv?: import("./fctv").FCTV;
+  /** Your slave corporation. See engine/corp. */
+  corp?: import("./corp").Corp;
+  /** The arcology's AI. See engine/assistant. */
+  assistant?: import("./assistant").Assistant;
   /** What ended scenes left behind. See engine/deeds. */
   deeds?: import("./deeds").Deed[];
   /** Twists, ambitions and the end of the run. See engine/run.ts. */

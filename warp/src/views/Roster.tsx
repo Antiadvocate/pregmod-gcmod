@@ -27,7 +27,9 @@ import { getEdge } from "../engine/social";
 import Interact from "./Interact";
 import Dressing from "./Dressing";
 import Surgery from "./Surgery";
-import { OpenMoments } from "./MomentCard";
+import FeetArt from "./FeetArt";
+import { IDOL_IMAGES, idolOf, type IdolImage } from "../engine/idols";
+import { OpenMoments, Reaction as MomentReaction } from "./MomentCard";
 import HerPanel from "./HerPanel";
 import { romanceOf, RUNG_BY_ID } from "../engine/romance";
 import { paintPortrait, paintRealistic } from "../engine/turn";
@@ -185,6 +187,7 @@ function RosterCard({ p, onOpen, onWith }: { p: Person; onOpen: () => void; onWi
 function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: () => void; onWith: () => void; onDress: () => void }) {
   const { save, mutate } = useGame();
   const [tab, setTab] = useState<"her" | "read" | "body" | "theatre" | "work" | "history">("read");
+  const [together, setTogether] = useState<string | null>(null);
   const [painting, setPainting] = useState(false);
   const [forging, setForging] = useState(false);
   const [pose, setPose] = useState<Pose | undefined>(undefined);
@@ -357,7 +360,8 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
             <div className="text-[10.5px] uppercase tracking-wider dim mb-1">Between her legs</div>
             <p className="font-prose text-[14px] leading-relaxed">{describeGenitals(p)}</p>
             <div className="text-[10.5px] uppercase tracking-wider dim mt-3 mb-1">Feet</div>
-            <p className="font-prose text-[14px] leading-relaxed">{describeFeet(p)}</p>
+            <FeetArt person={p} />
+            <p className="font-prose text-[14px] leading-relaxed mt-2">{describeFeet(p)}</p>
             {mobility(p).level ? <p className="text-[12.5px] mt-2" style={{ color: "var(--warn)" }}>Mobility: {mobility(p).note}.</p> : null}
           </Card>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -466,6 +470,21 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
               })}
             </select>
           </Field>
+          {p.assignment === "be an idol" || (p.idol && p.idol.fans > 0) ? (
+            <Card>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[13.5px]">Idol</span>
+                <span className="font-mono text-[13px]">{(p.idol?.fans ?? 0).toLocaleString()} fans</span>
+                <span className="text-[11px] dim">peak {(p.idol?.peak ?? 0).toLocaleString()} · {p.idol?.weeks ?? 0} weeks</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {(Object.keys(IDOL_IMAGES) as IdolImage[]).map((k) => (
+                  <button key={k} title={IDOL_IMAGES[k]} className={cx("chip !text-[12px]", (p.idol?.image ?? "sweet") === k && "on")} onClick={() => mutate((s) => { idolOf(s.people[id]).image = k; })}>{k}</button>
+                ))}
+              </div>
+              <div className="text-[11.5px] dim mt-1.5">{IDOL_IMAGES[p.idol?.image ?? "sweet"]}</div>
+            </Card>
+          ) : null}
           <Field label="Facility" hint="A facility overrides the assignment above with its own work.">
             <select value={p.facility ?? ""} onChange={(e) => mutate((s) => assignToFacility(s, s.people[id], e.target.value || undefined))}>
               <option value="">— none —</option>
@@ -599,6 +618,10 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
               <Card><ul className="font-prose text-[14px] space-y-1.5">{mem.beliefs.map((b, i) => <li key={i}>&ldquo;{b.text}&rdquo; <span className="dim text-[11px] font-sans">({b.strength})</span></li>)}</ul></Card>
             </Section>
           ) : null}
+          {together && save.people[together] ? (
+            <MomentReaction key={together} auto label={`Call ${p.name} and ${save.people[together].name} in`} seed={{ person: id, others: [together], title: `${p.name} and ${save.people[together].name}`, source: "pair",
+              happened: `You call ${p.name} and ${save.people[together].name} into your office together. ${(() => { const e = save.edges.find((x) => x.from === id && x.to === together); return e?.roles.length ? `${p.name} is ${save.people[together].name}'s ${e.roles.join(", ")}.` : e && e.warmth > 30 ? "They're close." : e && e.warmth < -30 ? "They can't stand each other." : ""; })()} They stand in front of your desk, waiting.` }} />
+          ) : null}
           <Section title="Who she knows">
             {save.edges.filter((e) => e.from === id && (e.warmth || e.roles.length)).length ? (
               <div className="space-y-1.5">
@@ -607,6 +630,8 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
                     <span className="text-[12.5px] flex-1">{save.people[e.to]?.name ?? e.to}{e.roles.length ? ` — ${e.roles.join(", ")}` : ""}</span>
                     <div className="w-20"><Meter value={e.warmth} range={[-100, 100]} showValue={false} /></div>
                     <span className="text-[11px] dim font-mono w-8 text-right">{Math.round(e.warmth)}</span>
+                    {save.people[e.to] && (save.people[e.to].status === "owned" || save.people[e.to].status === "indentured") && save.people[e.to].age >= 18 && p.age >= 18
+                      ? <button className="btn btn-sm btn-ghost !px-2" title="Call them both in" onClick={() => setTogether(e.to)}>both</button> : null}
                   </div>
                 ))}
               </div>

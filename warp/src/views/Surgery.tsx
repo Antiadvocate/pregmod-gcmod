@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { useGame } from "../lib/game";
 import { Reaction } from "./MomentCard";
+import { FLESH, FLESH_BY_ID, canGrow, fleshFelt, geneLab, startGrowing } from "../engine/fleshcraft";
 import { Button, Card, Empty, Section } from "../lib/ui";
 import { optionsFor, operate, theatreLevel } from "../engine/surgery";
 import type { Procedure } from "../data/surgery";
@@ -26,9 +27,9 @@ export default function Surgery({ id }: { id: string }) {
   const clinic = save.arcology.facilities["clinic"];
 
   if (!theatreLevel(save)) {
-    return <Empty>{clinic?.level
+    return <>{geneLab(save) ? <Fleshcraft id={id} /> : null}<Empty>{clinic?.level
       ? "The Clinic has no surgical theatre yet. Buy the Surgical theatre upgrade on the Clinic, on the Arcology screen."
-      : "No surgical theatre yet. Build the Clinic on the Arcology screen, then buy its Surgical theatre upgrade."}</Empty>;
+      : "No surgical theatre yet. Build the Clinic on the Arcology screen, then buy its Surgical theatre upgrade."}</Empty></>;
   }
 
   return (
@@ -86,6 +87,56 @@ export default function Surgery({ id }: { id: string }) {
           </Section>
         );
       })}
+      <Fleshcraft id={id} />
     </>
+  );
+}
+
+/** Grown changes: start a treatment, watch the ones under way. */
+function Fleshcraft({ id }: { id: string }) {
+  const { save, mutate } = useGame();
+  const [line, setLine] = useState("");
+  const p = save.people[id];
+  if (!p) return null;
+  if (!geneLab(save)) return <Section title="Fleshcraft"><div className="text-[11.5px] dim">Buy the Gene lab upgrade on the Clinic (level 2) for real ears and tails, scales, glowing eyes, milk and fertility genes, and slowed ageing.</div></Section>;
+  return (
+    <Section title="Fleshcraft">
+      <div className="text-[11.5px] dim mb-2">Gene treatments. Each takes weeks, costs her some health every week, and leaves a permanent change.</div>
+      {p.body.traits?.length ? <div className="flex flex-wrap gap-1.5 mb-2">{p.body.traits.map((t) => <span key={t} className="chip good">{t}</span>)}</div> : null}
+      {p.growing?.length ? (
+        <div className="space-y-1.5 mb-3">
+          {p.growing.map((g) => { const f = FLESH_BY_ID[g.id]; const done = save.arcology.week - g.started; return (
+            <div key={g.id} className="card-2 px-3 py-2">
+              <div className="text-[12.5px]">{f?.name} · week {done} of {g.weeks}</div>
+              <div className="meter mt-1"><div style={{ width: `${Math.min(100, (done / g.weeks) * 100)}%`, background: "var(--accent)" }} /></div>
+            </div>
+          ); })}
+        </div>
+      ) : null}
+      {line ? <Card className="mb-3"><p className="font-prose text-[14.5px] leading-relaxed">{line}</p></Card> : null}
+      <div className="grid gap-2 sm:grid-cols-2">
+        {FLESH.map((f) => {
+          const why = canGrow(save, p, f);
+          const felt = fleshFelt(p, f);
+          return (
+            <Card key={f.id} className="py-3">
+              <div className="flex items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13.5px]">{f.name}</div>
+                  <div className="font-prose text-[12.5px] dim">{f.what}</div>
+                </div>
+                <div className="text-right shrink-0 text-[11px] dim"><div>¤{f.cost.toLocaleString()}</div><div>{f.weeks} weeks</div></div>
+              </div>
+              <div className="text-[11.5px] mt-1.5" style={{ color: felt <= -4 ? "var(--danger)" : felt < 0 ? "var(--warn)" : felt > 2 ? "var(--good)" : undefined }}>
+                {felt <= -4 ? "She'll be frightened of it." : felt < 0 ? "She won't like it." : felt > 2 ? "She wants it." : "She won't mind much."}
+              </div>
+              {why ? <div className="text-[11px] dim mt-2">{why}</div> : (
+                <Button size="sm" className="mt-2" onClick={() => { let out = { ok: false, line: "" }; mutate((s) => { out = startGrowing(s, s.people[id], f.id); }); setLine(out.line); }}>start it</Button>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+    </Section>
   );
 }

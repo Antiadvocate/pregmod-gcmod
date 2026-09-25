@@ -39,6 +39,7 @@ export default function Market() {
                         <span className="text-[11px] dim font-mono">{p.age} · {p.origin.nationality}</span>
                         <span className="ml-auto font-mono text-[13px] acc">¤{askingPrice(save, o).toLocaleString()}</span>
                       </div>
+                      {o.person.hero ? <span className="chip good !text-[10.5px] mt-1.5">one of a kind</span> : null}
                       <div className="font-prose text-[13px] mid mt-1.5">&ldquo;{o.pitch}&rdquo;</div>
                       <div className="text-[11.5px] dim mt-1.5">{p.body.appearance_facts}</div>
                       <div className="flex flex-wrap gap-1.5 mt-2.5">

@@ -352,6 +352,27 @@ export function applyDeed(s: SaveState, deed: Deed, herMemory?: string): void {
     if (p && deed.tags.some((t) => ["owner_enslaved", "married_her", "elevated", "gift"].includes(t))) moveEdge(s.edges, h.id, p.id, { warmth: -2, power: 3 });
     refresh(h, s.memory[h.id]);
   }
+  // The people who love her, or hate her, take what you did to her personally.
+  if (p) {
+    const hurt = deed.tags.some((t) => ["cruelty", "humiliated_her", "punished", "threatened_sale", "promise_broken", "shared_her"].includes(t));
+    const kind = deed.tags.some((t) => ["freed_her", "married_her", "gift", "tenderness", "mercy", "gratitude", "elevated", "owner_enslaved", "feet_worship"].includes(t));
+    const close: string[] = [], glad: string[] = [];
+    for (const h of house) {
+      const e = s.edges.find((x) => x.from === h.id && x.to === p.id);
+      if (!e) continue;
+      const knows = hearers.includes(h) || e.warmth > 45 || e.roles.length > 0;
+      if (!knows) continue;
+      if (e.warmth > 40 || e.roles.some((r) => /lover|protect|student|trainer|more/.test(r))) {
+        if (hurt) { applyTreatment(h, { kind: "cruelty", size: 3, why: `what the owner did to ${p.name}` }, s.arcology.week); close.push(h.name); }
+        else if (kind) { applyTreatment(h, { kind: "recognition", size: 2, why: `what the owner did for ${p.name}` }, s.arcology.week); close.push(h.name); }
+      } else if (e.warmth < -35 || e.roles.some((r) => /rival|torment|owns her/.test(r))) {
+        if (hurt) { applyTreatment(h, { kind: "recognition", size: 1, why: `the owner put ${p.name} in her place` }, s.arcology.week); glad.push(h.name); }
+        else if (kind) { moveEdge(s.edges, h.id, p.id, { warmth: -4 }); glad.push(h.name); }
+      }
+    }
+    if (close.length) out.push(`${close.join(" and ")} ${hurt ? "won't forgive you for it" : "is glad for her"}`.replace(" is glad", close.length > 1 ? " are glad" : " is glad"));
+    if (glad.length) out.push(`${glad.join(" and ")} ${hurt ? "enjoyed hearing about it" : "hates her a little more for it"}`);
+  }
   if (hearers.length) out.push(`${hearers.length === house.length && house.length > 1 ? "the whole household" : hearers.map((h) => h.name).join(", ")} ${hearers.length === 1 ? "knows" : "know"}`);
   if (deed.public && !deed.tags.includes("public_spectacle")) startRumor(s, deed.summary.replace(/^You /, "the owner "), { about: p?.id, salience: 7 });
 
