@@ -16,6 +16,7 @@
  * afterwards to work out what must have happened, which is how the old end-of-week text and the
  * old budget screen ended up describing two different weeks.
  */
+import { tickFlesh } from "./fleshcraft";
 import { tickIdol, secretaryRebate } from "./idols";
 import type { Person, ReportLine, SaveState, WeekReport } from "./types";
 import { FACILITY_BY_ID } from "../data/facilities";
@@ -100,6 +101,7 @@ export function endWeek(s: SaveState): WeekReport {
 
     // MONEY
     for (const l of tickIdol(s, p)) push(l, "good", 5, p.id);
+    for (const l of tickFlesh(s, p)) push(l, "neutral", 6, p.id);
     const money = weeklyMoney(s, p);
     if (managedByThem && mgr) money.income = Math.round(money.income * mgr.income);
     if (money.income) led.earn("slaves", `${p.name} — ${money.note || p.assignment}`, money.income, p.id);

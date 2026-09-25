@@ -103,6 +103,8 @@ export interface Body {
   marks: { kind: "tattoo" | "scar" | "brand" | "piercing" | "implant" | "prosthetic"; where: string; what: string; week: number }[];
   /** Bedrock look, set once. Only permanent bodily events append; the engine never rewrites it. */
   appearance_facts: string;
+  /** Permanent grown changes: real ears, a tail, scales. See engine/fleshcraft. */
+  traits?: string[];
   /** Current presentation: clothes, grime, visible state. Rewritten freely. */
   appearance_now: string;
   /** The exact words that drew this person's portrait, reused verbatim so a diffusion model
@@ -448,6 +450,8 @@ export interface Person {
   };
   /** Prestige and porn — reputation attaches to a person, not only to the arcology. */
   fame: { prestige: 0 | 1 | 2 | 3; why: string; porn_fame: number; porn_focus: string };
+  /** Gene treatments under way. See engine/fleshcraft. */
+  growing?: import("./fleshcraft").Growing[];
   /** When she's been an idol. See engine/idols. */
   idol?: import("./idols").Idol;
   /** Everything the week counted, so the report can say what actually happened to them. */

@@ -189,6 +189,7 @@ export const FACILITIES: FacilityDef[] = [
       { id: "diagnostics", name: "Diagnostics", cost: 10000, note: "catches health problems early" },
       { id: "surgery", name: "Surgical theatre", cost: 16000, note: "unlocks surgery on each slave's surgery tab; level 2 unlocks the advanced procedures" },
       { id: "organ_farm", name: "Organ farm", cost: 22000, note: "grow the parts instead of buying them", needs_level: 2 },
+      { id: "gene_lab", name: "Gene lab", cost: 30000, note: "unlocks fleshcraft on the surgery tab: real ears and tails, scales, milk and fertility genes, slowed ageing", needs_level: 2 },
     ],
     pleases: ["paternalist", "transformation"],
   },

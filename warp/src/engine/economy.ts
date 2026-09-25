@@ -51,6 +51,8 @@ export function appeal(p: Person): number {
   if (p.psyche.state === "broken") n *= 0.75;
   if (p.health.injuries.some((i) => !i.healed_week && i.severity !== "minor")) n *= 0.8;
   if (p.fame.prestige) n *= 1 + p.fame.prestige * 0.28;
+  // Grown changes are a novelty the customers pay for.
+  if (p.body.traits?.length) n *= 1 + Math.min(0.3, p.body.traits.length * 0.07);
   // What she is wearing is not decoration in an arcology; it is part of the offer.
   for (const worn of [p.clothes, p.collar, p.shoes]) {
     const g = GARMENT_BY_NAME[worn];
