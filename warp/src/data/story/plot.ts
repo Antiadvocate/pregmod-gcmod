@@ -401,7 +401,7 @@ const fears: ArcDef = {
   beats: {
     fears: {
       title: "The citizens are afraid",
-      text: (c) => `After the bombing, the citizens' council asks for a meeting. They're afraid. There's talk in the bars that the bombing was a start and not an end, and that someone is going to try to take ${c.arcology} the way the raiders took that arcology across the sea.
+      text: (c) => `After the bombing, a delegation of citizens asks for an audience. They're afraid. There's talk in the bars that the bombing was a start and not an end, and that someone is going to try to take ${c.arcology} the way the raiders took that arcology across the sea.
 
 They want soldiers quartered in the residential rings where people can see them. They're willing to pay part of it.`,
       options: [
@@ -411,10 +411,10 @@ They want soldiers quartered in the residential rings where people can see them.
             return { text: `You put soldiers in the residential rings: a squad in every block, sleeping in empty apartments. The citizens bring them food. Some of the soldiers start dating the citizens' daughters, and that turns out to be good for morale too.`, end: "you quartered soldiers among the citizens" }; } },
         { id: "militia", label: "Tell them to join the militia", show: (c) => has(c, "plot_militia"),
           run: (c) => { c.security(4); c.set("plot_militia_grown", true);
-            return { text: `You tell the council that the militia's armory is open, and they should send anyone who wants to feel safer. Four hundred more citizens sign up.`, end: "you grew the militia" }; } },
+            return { text: `You tell the delegation that the militia's armory is open, and they should send anyone who wants to feel safer. Four hundred more citizens sign up.`, end: "you grew the militia" }; } },
         { id: "reassure", label: "Tell them there's nothing to worry about",
           run: (c) => { c.standing(-1);
-            return { text: `You tell the council ${c.arcology} is perfectly safe. They don't believe you, and they go back down to the bars and say so.`, end: "you told the citizens not to worry" }; } },
+            return { text: `You tell the delegation ${c.arcology} is perfectly safe. They don't believe you, and they go back down to the bars and say so.`, end: "you told the citizens not to worry" }; } },
       ],
     },
   },
@@ -436,10 +436,10 @@ const knights: ArcDef = {
             return { text: `You grant ${c.n("captain")} and ${c.his("captain")} officers apartments, titles and incomes. They swear an oath to you in the atrium, kneeling. ${c.arcology} has knights now.`, end: "your mercenaries became knights" }; } },
         { id: "evocati", label: "Evocati: make the veterans full citizens with a reserve duty",
           run: (c) => { c.set("plot_knights", "evocati"); c.standing(2); c.security(6); pop(c, 300);
-            return { text: `The veterans become citizens, with the right to vote in the council and a duty to answer when called. Their families move into the arcology too.`, end: "your mercenaries became citizen reservists" }; } },
+            return { text: `The veterans become citizens, with full rights in the arcology and a duty to answer when called. Their families move into the arcology too.`, end: "your mercenaries became citizen reservists" }; } },
         { id: "eagles", label: "Black Eagles: an elite guard, loyal only to you",
           run: (c) => { c.set("plot_knights", "eagles"); c.security(12); c.cash(-4000); c.standing(-1);
-            return { text: `The best of them are issued black uniforms and quartered in the spire, one floor below your penthouse. They answer to you, not to the council. The citizens find them a little frightening, which is the idea.`, end: "your mercenaries became the Black Eagles" }; } },
+            return { text: `The best of them are issued black uniforms and quartered in the spire, one floor below your penthouse. They answer to you and nobody else. The citizens find them a little frightening, which is the idea.`, end: "your mercenaries became the Black Eagles" }; } },
         { id: "shorn", label: "Shorn Ones: fanatics who shave their heads and fear nothing",
           run: (c) => { c.set("plot_knights", "shorn"); c.security(10); c.rep(300); c.crime(-6);
             return { text: `${c.n("captain")} turns the company into something close to a religious order. They shave their heads, take vows, and train in the parking levels at night with knives. Crime in the lower levels stops almost completely.`, end: "your mercenaries became the Shorn Ones" }; } },
