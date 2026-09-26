@@ -35,3 +35,15 @@ import type { SaveState } from "../src/engine/types.ts";
   const { WALK_SYSTEM } = await import("../src/engine/walk.ts");
   check("the scene, walk and bookkeeper prompts all carry the rule", [HOUSE_STYLE, WALK_SYSTEM].every((x) => /Never invent clauses, subsections/.test(x)) && /Never record a new clause/.test(BOOKKEEPER_SYSTEM));
 }
+
+{
+  // Your forces obey you; robot guards obey nobody else.
+  const { buildDefense, garrison } = await import("../src/engine/battles.ts");
+  const { HOUSE_STYLE } = await import("../src/engine/prompts.ts");
+  const s = newGame({ seed: "bots", starting_slaves: 2, plot: false } as never) as SaveState;
+  s.arcology.cash = 200000;
+  const g0 = garrison(s).total;
+  check("you can build a robot guard corps", buildDefense(s, "sentinels") && garrison(s).total > g0 + 1.5);
+  check("every scene knows they're at your side and can't refuse", /ROBOT GUARDS[\s\S]*never hesitate, question or refuse[\s\S]*nobody else/.test(digest(s)));
+  check("and that every soldier and guard obeys you at once", /security forces[\s\S]*never ignore, stall, question, argue with or refuse an order from the owner/.test(HOUSE_STYLE));
+}

@@ -76,7 +76,7 @@ function enactEvent(l: LawDef): EventDef {
   return {
     id: `court_enact_${l.id}`, severity: "notable", endogenous: true,
     candidates: () => [], weight: () => 0,
-    seed: (s) => `The court has a case before it. ${cap(l.petitioners)} have drafted the ${l.name}: "${l.text}"\n\nThey say the city already lives this way. ${normLine(l.norm, cultureOf(s).norms[l.norm])}${citation(s, l)}\n\nThe arcology's charter gives you the last word. If you say nothing, the court rules in two weeks.`,
+    seed: (s) => `The court has a case before it. ${cap(l.petitioners)} have drafted the ${l.name}: "${l.text}"\n\nThey say the city already lives this way. ${normLine(l.norm, cultureOf(s).norms[l.norm])}${citation(s, l)}\n\nNothing happens without your word. The court only advises; the decision is yours.`,
     options: [
       { id: "sign", label: "Sign it into law",
         resolve: (s) => { const extra = enact(s, l, "you"); std(s, 1); s.arcology.rep += 120; record(s, l, "enact", "you signed it"); return `You sign the ${l.name}. It is read out in the civic hall the same afternoon and posted at every lift.${extra}\n\nThe petitioners are in the plaza by evening, drinking to you.`; } },
@@ -112,7 +112,7 @@ function repealEvent(l: LawDef): EventDef {
   return {
     id: `court_repeal_${l.id}`, severity: "notable", endogenous: true,
     candidates: () => [], weight: () => 0,
-    seed: (s) => `A petition to repeal the ${l.name} is before the court. The city doesn't live by it any more: ${normLine(l.norm, cultureOf(s).norms[l.norm]).replace(/^./, (x) => x.toLowerCase())}\n\nIf you say nothing, the court rules in two weeks.`,
+    seed: (s) => `A petition to repeal the ${l.name} is before the court. The city doesn't live by it any more: ${normLine(l.norm, cultureOf(s).norms[l.norm]).replace(/^./, (x) => x.toLowerCase())}\n\nThe law stands unless you strike it.`,
     options: [
       { id: "repeal", label: "Strike it from the books",
         resolve: (s) => { s.laws = lawsOf(s).filter((x) => x.id !== l.id); std(s, 0.5); record(s, l, "repeal", "you struck it"); return `You strike the ${l.name}. The notices come down from the lifts the same night, and by the end of the week people have stopped mentioning it.`; } },
@@ -144,10 +144,14 @@ export function tickCourt(s: SaveState): string[] {
     if (line) out.push(line);
   }
 
+  // The court is yours: a case waits for your word. One left unanswered for eight weeks lapses,
+  // and nothing changes.
   for (const e of [...s.events]) {
-    if (!e.kind.startsWith("court_") || week - e.week < 2) continue;
-    const line = resolveEvent(s, e, "court");
-    if (line) out.push(`You didn't answer the court. ${line.split("\n")[0]}`);
+    if (!e.kind.startsWith("court_") || week - e.week < 8) continue;
+    s.events = s.events.filter((x) => x.id !== e.id);
+    const id = e.kind.replace(/^court_(enact|repeal)_/, "");
+    const l = LAW_BY_ID[id];
+    if (l) { courtOf(s).vetoed[e.kind.startsWith("court_repeal_") ? `repeal:${id}` : id] = week; out.push(`The petition ${e.kind.startsWith("court_repeal_") ? `to repeal the ${l.name}` : `for the ${l.name}`} lapsed without your word. Nothing changes.`); }
   }
 
   if (week - c.last < 4 || s.events.some((e) => e.kind.startsWith("court_"))) return out;

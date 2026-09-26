@@ -13,6 +13,7 @@
  * is something the engine can be held to — if the prose contradicts the card, the card is right and
  * the guards in turn.ts say so.
  */
+import { sentinelsLine } from "./battles";
 import { othersBrief } from "./household";
 import { memoryLine, dedupeLines } from "./memory";
 import { assWord } from "./generate";
@@ -41,7 +42,7 @@ import { describeYou } from "./you";
  */
 export const HOUSE_STYLE = `HOW FREE CITIES WRITES. Match the original game's voice. It is second person and present tense, addressed to the player as "you". It is plain, direct, matter-of-fact and a little dry, and it is explicit: it says who does what to whom with which body part, using ordinary crude words (cock, pussy, ass, tits, cum, fuck) and never a metaphor in their place. It states what a slave thinks and feels whenever that matters ("She's nervous, but she's glad you asked"; "She clearly hates it"; "She's too tired to argue"). Slaves call the player Master or Mistress unless their card says otherwise. Sentences are ordinary sentences a person would write, of ordinary length.
 
-HOW THE ARCOLOGY IS GOVERNED. The owner rules it absolutely, as a private dictatorship: there is no council, parliament, senate, election or vote, and nobody can overrule the owner. Citizens can petition, complain, protest or plot; the arcology's court only hears petitions and rules on what the owner leaves to it; the owner's word is law. The laws in force are exactly as written, word for word. Never invent clauses, subsections, articles, exemptions, amendments, penalties, loopholes or technicalities, and never attribute any provision to a law that isn't in its text. Only the owner changes a law.
+HOW THE ARCOLOGY IS GOVERNED. The owner rules it absolutely, as a private dictatorship: there is no council, parliament, senate, election or vote, and nobody can overrule the owner. Citizens can petition, complain, protest or plot; the arcology's court only hears petitions and rules on what the owner leaves to it; the owner's word is law. The owner's security forces (patrols, guards, the security chief, the militia, mercenaries, knights, any soldier) obey the owner's orders at once and completely: they never ignore, stall, question, argue with or refuse an order from the owner, and they enforce the owner's laws. (If a slave holds the owner's collar, they obey her first.) The laws in force are exactly as written, word for word. Never invent clauses, subsections, articles, exemptions, amendments, penalties, loopholes or technicalities, and never attribute any provision to a law that isn't in its text. Only the owner changes a law.
 
 Examples of the voice:
 - "You tell her she'll be sleeping in your bed tonight. She's surprised, and a little suspicious, but she strips and climbs in beside you without being told twice."
@@ -183,6 +184,8 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   out.push(`${s.scene.time}. ${s.scene.location}.`);
   const who = s.player.name && s.player.name !== "you" ? `${s.player.name}, ` : "";
   out.push(`THE PLAYER (the owner, "you"): ${who}called ${s.player.address || "Master"} by slaves unless a slave's card says otherwise. ${describeYou(s)}. ${s.player.body.appearance_facts}`);
+  const bots = sentinelsLine(s);
+  if (bots) out.push(bots);
   const hers = reignBrief(s);
   if (hers) out.push(hers);
   const rules = houseRules(s);

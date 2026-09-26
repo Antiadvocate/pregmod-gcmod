@@ -18,11 +18,12 @@ import { refresh } from "./obedience";
 import { startRumor } from "./social";
 import { registerEvents, fireEvent, type EventDef } from "./events";
 
-export type Defense = "walls" | "drones" | "armory";
+export type Defense = "walls" | "drones" | "armory" | "sentinels";
 export const DEFENSES: Record<Defense, { name: string; note: string; cost: number; power: number }> = {
   walls: { name: "Walls and gates", note: "the outer rings can be sealed; defending costs you less", cost: 25000, power: 1.2 },
   drones: { name: "Drone racks", note: "armed drones over every concourse", cost: 30000, power: 1.5 },
   armory: { name: "Armory", note: "rifles and armour for anyone who'll fight", cost: 20000, power: 1.0 },
+  sentinels: { name: "Robot guard corps", note: "machines keyed to your voice alone: they carry out your orders instantly and literally, can't refuse, can't be bribed or turned, and obey nobody else, even someone who holds your collar. A squad escorts you in public", cost: 40000, power: 1.8 },
 };
 
 export type Attacker = "raiders" | "militia" | "mercs" | "freed" | "pirates";
@@ -37,7 +38,9 @@ export const ATTACKERS: Record<Attacker, { name: string; desc: string; base: num
 export interface Battle { attacker: Attacker; size: number; week: number; result?: "won" | "lost" | "paid" | "held" }
 
 export function defensesOf(s: SaveState): Record<Defense, number> {
-  return (s.arcology.defenses ??= { walls: 0, drones: 0, armory: 0 });
+  const d = (s.arcology.defenses ??= { walls: 0, drones: 0, armory: 0, sentinels: 0 } as Record<Defense, number>);
+  d.sentinels ??= 0;
+  return d;
 }
 
 export function buildDefense(s: SaveState, d: Defense): boolean {
@@ -48,6 +51,13 @@ export function buildDefense(s: SaveState, d: Defense): boolean {
   defensesOf(s)[d] = lv + 1;
   s.arcology.security = clamp(s.arcology.security + 4, 0, 100);
   return true;
+}
+
+/** For every prompt: your robots, if you have any. */
+export function sentinelsLine(s: SaveState): string {
+  const n = defensesOf(s).sentinels;
+  if (!n) return "";
+  return `THE OWNER'S ROBOT GUARDS (${n * 12} units, keyed to the owner's voice alone): a squad is always at the owner's side in public. They carry out any order the owner gives, instantly and literally, including force; they never hesitate, question or refuse, can't be bribed, reasoned with or turned, and take orders from nobody else, whoever that is.`;
 }
 
 /** Your strength, in the same units as an attacker's size. */
@@ -61,6 +71,7 @@ export function garrison(s: SaveState): { total: number; parts: string[] } {
     ["walls", d.walls * DEFENSES.walls.power],
     ["drones", d.drones * DEFENSES.drones.power + (f["plot_drones"] ? 1 : 0)],
     ["armory", d.armory * DEFENSES.armory.power],
+    ["robot guards", d.sentinels * DEFENSES.sentinels.power],
     ["militia", f["plot_militia"] ? 1.5 : 0],
     ["knights", f["plot_knights"] ? 1.5 : 0],
     ["bodyguard", guardStrength(s)],
