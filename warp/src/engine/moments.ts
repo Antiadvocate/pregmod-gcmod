@@ -231,7 +231,7 @@ export async function playMoment(
 /** What a scene with citizens needs to know: the city, its laws, what you've done, what's said. */
 function cityContext(s: SaveState): string {
   const deeds = (s.deeds ?? []).filter((d) => d.public).slice(-4).map((d) => `· ${d.summary}`).join("\n");
-  const rumors = [...s.rumors].sort((a, b) => b.salience - a.salience).slice(0, 3).map((r) => `· "${r.content}"`).join("\n");
+  const rumors = [...s.rumors].filter((r) => !r.where).sort((a, b) => b.salience - a.salience).slice(0, 3).map((r) => `· "${r.content}"`).join("\n");
   return [
     `## THE ARCOLOGY\n${s.arcology.name}, week ${s.arcology.week}. Reputation ${Math.round(s.arcology.rep)}; the city's opinion of the player is ${s.arcology.public_standing >= 3 ? "good" : s.arcology.public_standing <= -3 ? "poor" : "mixed"}.${s.player.owned_by ? ` The player wears the collar of ${s.people[s.player.owned_by]?.name ?? "a slave"}, and people know it.` : ""}`,
     cultureBrief(s) ? `HOW CITIZENS BEHAVE:\n${cultureBrief(s)}` : "",

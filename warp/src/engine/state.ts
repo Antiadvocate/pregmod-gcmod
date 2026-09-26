@@ -212,6 +212,10 @@ export function sanitize(raw: SaveState): SaveState {
   if (Array.isArray(s.canon) && Array.isArray(s.deeds)) {
     const walkFacts = s.deeds.filter((d) => d.source === "walk" && d.fact).map((d) => d.fact as string);
     if (walkFacts.length) s.canon = s.canon.filter((c) => !walkFacts.includes(c));
+    // Rumours that retell a walk are local gossip: tag them with the place (or "a walk" when the
+    // save predates places), so they stop turning up everywhere.
+    const walks = s.deeds.filter((d) => d.source === "walk");
+    for (const r of s.rumors ?? []) if (!r.where) { const d = walks.find((w) => similar(w.summary.replace(/^You /, "the owner "), r.content)); if (d) r.where = d.where ?? "walk"; }
   }
   s.edges = s.edges ?? [];
   s.rumors = s.rumors ?? [];

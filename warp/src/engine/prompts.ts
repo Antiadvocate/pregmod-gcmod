@@ -205,7 +205,7 @@ export function digest(s: SaveState, action = "", focus?: string): string {
     out.push(nearby.map((p) => `· ${p.name} [${p.id}] — ${p.assignment}${p.facility ? `, ${arc.facilities[p.facility]?.name}` : ""}`).join("\n"));
   }
 
-  const heard = dedupeLines(s.rumors.filter((r) => r.salience > 3).map((r) => `${r.content} (${r.truth})`)).slice(0, 4);
+  const heard = dedupeLines(s.rumors.filter((r) => r.salience > 3 && !r.where).map((r) => `${r.content} (${r.truth})`)).slice(0, 4);
   if (heard.length) out.push(`\n## WHAT PEOPLE ARE SAYING\n${heard.map((r) => `· ${r}`).join("\n")}`);
 
   const corr = s.corrections;

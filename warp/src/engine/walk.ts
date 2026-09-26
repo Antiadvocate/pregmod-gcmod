@@ -192,7 +192,7 @@ function youLines(s: SaveState, escort?: Person): Vignette[] {
       : `People see your collar. Someone has chalked a cartoon on a wall of you on your knees in front of ${keeper?.name ?? "a slave"}, and a group of teenagers are laughing at it.` });
   }
   for (const d of (s.deeds ?? []).filter((x) => x.public).slice(-3)) out.push({ w: 3, text: `People here know what you did. ${d.summary}` });
-  const r = [...s.rumors].sort((a, b) => b.salience - a.salience)[0];
+  const r = [...s.rumors].filter((x) => !x.where).sort((a, b) => b.salience - a.salience)[0];
   if (r) out.push({ w: 2, text: `At the lift, you overhear someone: "${r.content.replace(/^"|"$/g, "")}"` });
   const famous = Object.values(s.people).filter((p) => p.status === "owned" && (p.assignment === "be an idol" || (p.fame?.prestige ?? 0) >= 2));
   for (const p of famous.slice(0, 2)) out.push({ w: 2, text: `${p.name}'s face is on a screen above the plaza. Two girls are copying her hair.` });
@@ -317,7 +317,7 @@ export function walkContext(s: SaveState, placeId?: string): string {
   // What you did on other walks happened somewhere else, with other people: only what you did here
   // comes back here, with its lasting fact. Your other public deeds are known everywhere.
   const deeds = (s.deeds ?? []).filter((d) => d.public && (d.source !== "walk" || d.where === place.id)).slice(-5).map((d) => `· ${d.summary}${d.source === "walk" && d.fact ? ` (${d.fact})` : ""}`).join("\n");
-  const rumors = [...s.rumors].sort((a, b) => b.salience - a.salience).slice(0, 3).map((r) => `· "${r.content}"`).join("\n");
+  const rumors = [...s.rumors].filter((r) => !r.where || r.where === place.id).sort((a, b) => b.salience - a.salience).slice(0, 3).map((r) => `· "${r.content}"`).join("\n");
   return [
     `## WHERE\n${place.name}: ${place.blurb}${place.condition <= 35 ? " It is run down." : ""}`,
     `## THE CITY'S HABITS\n${cultureBrief(s) || "Nothing settled yet; citizens behave in all sorts of ways."}`,
