@@ -222,6 +222,27 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
 }
 
 {
+  // A law the city's habits are against is still kept when the city likes you and the patrols are out.
+  const { writeLaw } = await import("../src/engine/court.ts");
+  const { lawPulse, compliance } = await import("../src/engine/lawlife.ts");
+  const { LAW_BY_ID } = await import("../src/data/laws.ts");
+  const s = game("soc-lawlove");
+  s.arcology.rep = 20000; s.arcology.security = 100; s.arcology.public_standing = 5;
+  s.arcology.policies["curfew"] = 1; s.arcology.policies["surveillance"] = 1;
+  writeLaw(s, { name: "No Respite", text: "Slaves work every hour the owner's household is awake.", push: [{ norm: "personhood", dir: -1 }], effects: ["subsidy"] });
+  pushNorm(s, "personhood", 60, "the city values its slaves");
+  const l = LAW_BY_ID[lawsOf(s).find((x) => x.id.startsWith("custom_"))!.id];
+  check("the city's habits are against it", compliance(s, l).norms < 0, compliance(s, l));
+  check("but it's kept, because they like you", compliance(s, l).total > 0, compliance(s, l));
+  s.arcology.week += 1;
+  const lines = lawPulse(s);
+  check("and the report doesn't say it's defied", lines.length > 0 && !lines.some((x) => /ignored|defaced|defying/.test(x)), lines);
+  const before = compliance(s, l).norms;
+  for (let w = 0; w < 6; w++) { s.arcology.week++; lawPulse(s); }
+  check("the city comes round to it over time", compliance(s, l).norms > before, { before, after: compliance(s, l).norms });
+}
+
+{
   // On a walk, your laws are always being lived: done to your slave if they're about slaves.
   const { writeLaw } = await import("../src/engine/court.ts");
   const { walkContext } = await import("../src/engine/walk.ts");
