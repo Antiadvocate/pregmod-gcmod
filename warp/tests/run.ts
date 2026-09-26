@@ -32,6 +32,7 @@ import "./tokens.test.ts";
 import "./household.test.ts";
 import "./llm.test.ts";
 import "./lawguard.test.ts";
+import "./research.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);

@@ -846,6 +846,8 @@ export interface SaveState {
   reign?: import("./reign").Reign;
   /** Laws you wrote yourself. See data/customlaws. */
   custom_laws?: import("../data/customlaws").CustomLaw[];
+  /** Research you have finished. See engine/research. */
+  research?: import("./research").ResearchState;
   /** Campaigns you are paying for, and the last week you spoke. See engine/civic. */
   campaigns?: import("./civic").Campaign[];
   last_speech?: number;

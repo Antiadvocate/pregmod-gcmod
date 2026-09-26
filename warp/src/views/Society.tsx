@@ -4,6 +4,7 @@
  * Eight habits of the city, each with what moved it and how far; the doctrines; what people think
  * of you; the laws in force and the cases before the court; and a way down to the street to see it.
  */
+import { RESEARCH, canStart, researchOf, slots, startResearch, weeksFor } from "../engine/research";
 import { stripLawInventions } from "../engine/lawguard";
 import { useState } from "react";
 import { Footprints } from "lucide-react";
@@ -275,6 +276,35 @@ function Shape() {
   );
 }
 
+function Research() {
+  const { save, mutate } = useGame();
+  const [said, setSaid] = useState("");
+  const done = researchOf(save).done;
+  const running = save.arcology.projects.filter((p) => p.on_complete.effect === "research");
+  const rows = RESEARCH.map((r) => ({ r, why: canStart(save, r.id), run: running.find((p) => p.on_complete.payload?.id === r.id), has: done.includes(r.id) }));
+  const order = (x: (typeof rows)[number]) => (x.run ? 0 : !x.has && !x.why ? 1 : x.has ? 3 : 2);
+  return (
+    <Section title="Research">
+      <div className="text-[11.5px] dim mb-2">Projects your city makes possible. Most open up only when the city's habits, your laws or your doctrines call for them. {slots(save) > 1 ? "Two can run at once." : "One at a time; a science laboratory allows two."}</div>
+      {said ? <Card className="mb-2"><p className="font-prose text-[14px]">{said}</p></Card> : null}
+      <div className="grid gap-2 sm:grid-cols-2">
+        {[...rows].sort((a, b) => order(a) - order(b)).map(({ r, why, run, has }) => (
+          <Card key={r.id} className={has ? "opacity-70" : !run && why && why !== "a project is already running (a science laboratory lets you run two)" && why !== "two projects are already running" ? "opacity-60" : ""}>
+            <div className="flex items-baseline gap-2">
+              <span className="text-[13px] flex-1">{r.name}</span>
+              <span className="text-[11px] dim">{has ? "done" : run ? `${run.weeks_left} weeks left` : `¤${r.cost.toLocaleString()} · ${weeksFor(save, r)} wk`}</span>
+            </div>
+            <div className="text-[12px] mid mt-1">{r.what}</div>
+            {!has && !run ? (why
+              ? <div className="text-[11.5px] dim mt-1.5">{why.startsWith("needs") || why.startsWith("only") || why.includes(", or ") ? `Needs ${why.replace(/^needs /, "")}.` : `${why.charAt(0).toUpperCase()}${why.slice(1)}.`}</div>
+              : <Button size="sm" kind="primary" className="mt-2" onClick={() => { let t = ""; mutate((s) => { t = startResearch(s, r.id); }); setSaid(t); }}>Start</Button>) : null}
+          </Card>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 function Walk() {
   const { save, mutate } = useGame();
   const [escort, setEscort] = useState("");
@@ -346,6 +376,8 @@ export default function Society() {
       </Section>
 
       <Shape />
+
+      <Research />
 
       <Court />
 

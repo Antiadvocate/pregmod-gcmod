@@ -179,7 +179,7 @@ export function tickCampaigns(s: SaveState): { lines: string[]; cash: number } {
     const c = CAMPAIGN_BY_ID[k.id];
     if (!c) continue;
     cash -= c.cost;
-    pushNorm(s, c.norm, c.dir * 2.5, `your campaign: ${c.name}`);
+    pushNorm(s, c.norm, c.dir * 2.5 * (s.research?.done.includes("propaganda_net") ? 1.5 : 1), `your campaign: ${c.name}`);
     if (c.id === "patrols") s.arcology.crime = clamp(s.arcology.crime - 1, 0, 100);
     if (c.id === "open_city") s.arcology.crime = clamp(s.arcology.crime + 0.5, 0, 100);
   }
@@ -200,7 +200,7 @@ export function speech(s: SaveState, norm: Norm, dir: 1 | -1): string {
   s.last_speech = s.arcology.week;
   const d = NORMS[norm];
   const against = (n(s, norm) * dir) < -30;
-  pushNorm(s, norm, dir * 5, `your speech: slaves' lives should be more ${dir > 0 ? d.high : d.low}`);
+  pushNorm(s, norm, dir * (s.research?.done.includes("propaganda_net") ? 8 : 5), `your speech: slaves' lives should be more ${dir > 0 ? d.high : d.low}`);
   if (against) std(s, -0.5);
   else s.arcology.rep += 100;
   return `You speak from the balcony over the plaza about ${d.name.toLowerCase()}, and say the city should be more ${dir > 0 ? d.high : d.low}. ${against ? "Half the plaza boos. The other half remembers it." : "The plaza is with you, and it's all anyone talks about for days."}`;

@@ -16,6 +16,7 @@
  * afterwards to work out what must have happened, which is how the old end-of-week text and the
  * old budget screen ended up describing two different weeks.
  */
+import { completeResearch, tickResearch } from "./research";
 import { lawPulse } from "./lawlife";
 import { tickHousehold } from "./household";
 import { tickBattles } from "./battles";
@@ -305,6 +306,8 @@ export function endWeek(s: SaveState): WeekReport {
   // The city's habits move with what it saw you do this week, and the court writes them down.
   // What they did with each other this week, and a dispute for you now and then.
   for (const l of tickHousehold(s)) push(l, "neutral", 4);
+  const res = tickResearch(s);
+  if (res) led.entry("research", "what your research brings in", res);
   const camp = tickCampaigns(s);
   if (camp.cash) led.entry("doctrine", "your campaigns", camp.cash);
   for (const l of camp.lines) push(l, "neutral", 4);
@@ -443,6 +446,11 @@ function applyProjectEffect(s: SaveState, effect: { effect: string; payload?: Re
     }
     case "security": arc.security = clamp(arc.security + Number(effect.payload?.amount ?? 10), 0, 100); break;
     case "prosperity": arc.prosperity = clamp(arc.prosperity + Number(effect.payload?.amount ?? 5), 0, 200); break;
+    case "research": {
+      const line = completeResearch(s, String(effect.payload?.id ?? ""));
+      if (line) s.notifications.push({ id: `n-research-${String(effect.payload?.id)}-${arc.week}`, week: arc.week, text: line, kind: "good", seen: false });
+      break;
+    }
     case "doctrine_research": {
       const id = String(effect.payload?.doctrine ?? "");
       if (arc.doctrines[id]) arc.doctrines[id].research = true;

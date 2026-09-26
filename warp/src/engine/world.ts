@@ -111,7 +111,7 @@ export function tickWorld(s: SaveState, led: Ledger): ReportLine[] {
   const works = districts.filter((d) => d.kind === "industrial" && d.level > 0).reduce((n, d) => n + d.level, 0);
   const cleaner = arc.policies["sanitation"] ? 0.6 : 1;
   const flags = s.story?.flags ?? {};
-  const scrubbed = flags["scrubbers"] ? 0.4 : 1;
+  const scrubbed = (flags["scrubbers"] ? 0.4 : 1) * (s.research?.done.includes("recyclers") ? 0.6 : 1) * (s.research?.done.includes("reclamation") ? 0.5 : 1) * (s.research?.done.includes("climate_shield") ? 0.8 : 1);
   w.pollution = clamp(w.pollution * 0.9 + works * 2.2 * cleaner * scrubbed + (arc.facilities["dairy"]?.level ?? 0) * 0.4, 0, 100);
   w.strain = clamp(w.strain + 0.3 + w.pollution / 400, 0, 100);
 
