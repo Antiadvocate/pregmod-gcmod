@@ -12,6 +12,7 @@
  * about her, story flags count them (`deed_<tag>`), the household hears about public ones, and the
  * world arcs and follow-up events read them.
  */
+import { inventsLaw } from "./lawguard";
 import { dedupeLines } from "./memory";
 import type { PendingEvent, Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
@@ -325,7 +326,7 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
     public: !!r.public || tags.includes("public_spectacle") || m.source === "walk",
     witnesses: (r.witnesses ?? []).map(String).slice(0, 6),
     effects: [], source: m.source, where: m.walk,
-    fact: r.lasting_fact ? String(r.lasting_fact).slice(0, 240) : undefined,
+    fact: r.lasting_fact && !inventsLaw(s, String(r.lasting_fact)) ? String(r.lasting_fact).slice(0, 240) : undefined,
   };
   const fu = r.follow_up;
   const options = (fu?.options ?? []).filter((o) => o?.label && o.effect && DYNAMIC_EFFECTS[String(o.effect)]).slice(0, 4)
@@ -437,5 +438,5 @@ export function deedsBrief(s: SaveState, personId?: string): string {
   if (!list.length) return "";
   const weighty = list.filter((d) => d.public || d.tags.length >= 2 || d.tags.some((t) => ["owner_enslaved", "freed_her", "married_her", "cruelty", "promise_broken"].includes(t)));
   const pick = [...new Set([...weighty.slice(-6), ...list.slice(-4)])].slice(-8);
-  return dedupeLines(pick.map((d) => `week ${d.week}: ${d.summary}${d.where ? ` (on a walk through ${d.where === "concourse" ? "the concourse" : `the ${d.where} district`}; the people and places in it belong there)` : ""}${d.public ? " (everyone knows)" : ""}`)).map((l) => `· ${l}`).join("\n");
+  return dedupeLines(pick.filter((d) => !inventsLaw(s, d.summary)).map((d) => `week ${d.week}: ${d.summary}${d.where ? ` (on a walk through ${d.where === "concourse" ? "the concourse" : `the ${d.where} district`}; the people and places in it belong there)` : ""}${d.public ? " (everyone knows)" : ""}`)).map((l) => `· ${l}`).join("\n");
 }

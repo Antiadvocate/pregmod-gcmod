@@ -11,6 +11,7 @@
  * from state — who is there, what their bodies are doing, what the action was — and the rest of the
  * pipeline runs identically. You lose the paragraph. You do not lose the game.
  */
+import { inventsLaw } from "./lawguard";
 import { captureInstructions, keep, houseRules, agreementsOf } from "./agreements";
 import type { ActionMode, Person, SaveState, TurnEntry } from "./types";
 import { call, parseJson } from "../llm";
@@ -296,6 +297,14 @@ function present(s: SaveState): Person[] {
 
 export function applyDiff(s: SaveState, d: Diff, prose: string): string[] {
   const notes: string[] = [];
+  // Nothing that adds clauses, exemptions or amendments to a law gets recorded as true.
+  d = {
+    ...d,
+    canon_add: d.canon_add?.filter((c) => !inventsLaw(s, c)),
+    rumors: d.rumors?.filter((r) => !inventsLaw(s, r.content)),
+    memories: d.memories?.filter((m) => !inventsLaw(s, m.content)),
+    facts_learned: d.facts_learned?.filter((f) => !inventsLaw(s, f.fact)),
+  };
   const wasPresent = new Set(s.scene.present);
 
   // LOCATION

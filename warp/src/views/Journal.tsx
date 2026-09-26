@@ -61,6 +61,7 @@ export default function Journal() {
       <Fold id="journal-canon" title="What the narrator treats as always true" count={save.canon.length}>
         {save.canon.length ? (
           <div className="space-y-1">
+            <button className="text-[11px] dim underline" title="Remove every world fact; the narrator is told none of them happened" onClick={() => mutate((s) => { for (const c of s.canon) s.retcons.push({ text: c, week: s.arcology.week, kind: "veto" }); s.canon = []; })}>remove all</button>
             {save.canon.map((c, i) => (
               <div key={i} className="card-2 px-3 py-1.5 flex gap-2 items-baseline">
                 <span className="font-prose text-[13.5px] flex-1">{c}</span>
