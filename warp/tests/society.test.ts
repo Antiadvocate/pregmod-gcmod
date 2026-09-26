@@ -243,6 +243,28 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
 }
 
 {
+  // Propaganda for a law: the more you spend, the further it goes; a million swings a habit end to end.
+  const { writeLaw } = await import("../src/engine/court.ts");
+  const { propaganda, compliance } = await import("../src/engine/lawlife.ts");
+  const { LAW_BY_ID } = await import("../src/data/laws.ts");
+  const s = game("soc-propaganda");
+  s.arcology.rep = 9000;
+  writeLaw(s, { name: "Cock Forward", text: "Every slave presents herself when a citizen asks.", push: [{ norm: "exposure", dir: 1 }], effects: [] });
+  const id = lawsOf(s).find((x) => x.id.startsWith("custom_"))!.id;
+  pushNorm(s, "exposure", -300, "the city is prudish");
+  s.arcology.cash = 500;
+  check("you need the cash", /you have/i.test(propaganda(s, id, 1000000)) && cultureOf(s).norms.exposure === -100);
+  s.arcology.cash = 50000;
+  const small = propaganda(s, id, 50000);
+  check("a small campaign moves it a little", Math.round(cultureOf(s).norms.exposure) === -90 && s.arcology.cash === 0, { small, n: cultureOf(s).norms.exposure });
+  const before = compliance(s, LAW_BY_ID[id]).total;
+  s.arcology.cash = 2000000;
+  propaganda(s, id, 1000000);
+  check("a million one-shots it", cultureOf(s).norms.exposure === 100 && s.arcology.cash === 1000000, cultureOf(s).norms.exposure);
+  check("and the city keeps it", compliance(s, LAW_BY_ID[id]).total > before + 100, compliance(s, LAW_BY_ID[id]));
+}
+
+{
   // On a walk, your laws are always being lived: done to your slave if they're about slaves.
   const { writeLaw } = await import("../src/engine/court.ts");
   const { walkContext } = await import("../src/engine/walk.ts");

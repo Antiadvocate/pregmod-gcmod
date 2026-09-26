@@ -10,8 +10,8 @@
  */
 import type { Person, SaveState } from "./types";
 import { clamp } from "./psyche";
-import { cultureOf, pushNorm, type Norm } from "./culture";
-import { inForce, lawsOf, repealByDecree } from "./court";
+import { cultureOf, pushNorm, NORMS, type Norm } from "./culture";
+import { inForce, lawsOf, repealByDecree, type LawInForce } from "./court";
 import { LAW_BY_ID, type LawDef } from "../data/laws";
 import { registerEvents, fireEvent, type EventDef } from "./events";
 import { applyTreatment } from "./obedience";
@@ -45,6 +45,7 @@ export function compliance(s: SaveState, l: LawDef): { total: number; norms: num
   let goodwill = clamp(a.rep / 20000, 0, 1) * 25 + a.public_standing * 2;
   for (const e of effects) goodwill += e === "subsidy" || e === "care" || e === "hope" || e === "prestige" ? 6 : e === "tax" || e === "unrest" ? -6 : 0;
   if (x?.exempt) goodwill -= 10;
+  goodwill += propagandaNow(s, x);
   let force = clamp((a.security - 50) / 5, -10, 10);
   if (effects.includes("enforcement")) force += 6;
   if (inForce(s, "curfew")) force += 5;
@@ -53,6 +54,51 @@ export function compliance(s: SaveState, l: LawDef): { total: number; norms: num
   force = clamp(force, -10, 25);
   const habit = x ? clamp((a.week - x.week) / 4, 0, 10) : 0;
   return { total: norms + goodwill + force + habit, norms, goodwill, force, habit };
+}
+
+/** What's left of the last propaganda push for a law. */
+const propagandaNow = (s: SaveState, x?: LawInForce) => (x?.propaganda ? x.propaganda.size * 0.85 ** Math.max(0, s.arcology.week - x.propaganda.week) : 0);
+
+/** Propaganda moves each habit the law pushes one point per this many credits. ¤1,000,000 swings a habit end to end. */
+export const PROPAGANDA_PER_POINT = 5000;
+/** The goodwill it buys, one point per this many credits, to a ceiling. */
+const PROPAGANDA_PER_GOODWILL = 20000;
+const PROPAGANDA_MAX_GOODWILL = 40;
+
+/** What spending `amount` on propaganda for a law would do. */
+export function propagandaPreview(s: SaveState, id: string, amount: number): { points: number; goodwill: number; norms: { norm: Norm; from: number; to: number }[] } {
+  const l = LAW_BY_ID[id];
+  const x = lawsOf(s).find((y) => y.id === id);
+  const spend = Math.max(0, Math.floor(amount));
+  const points = spend / PROPAGANDA_PER_POINT;
+  const goodwill = Math.min(PROPAGANDA_MAX_GOODWILL, propagandaNow(s, x) + spend / PROPAGANDA_PER_GOODWILL);
+  const norms = cultureOf(s).norms;
+  return { points, goodwill, norms: l ? (Object.entries(l.pull) as [Norm, number][]).map(([norm, v]) => ({ norm, from: norms[norm], to: clamp(norms[norm] + Math.sign(v) * points, -100, 100) })) : [] };
+}
+
+/** Pay for posters, broadcasts, paid speakers and parades in the law's favour. The more you spend, the further it goes. */
+export function propaganda(s: SaveState, id: string, amount: number): string {
+  const l = LAW_BY_ID[id];
+  const x = lawsOf(s).find((y) => y.id === id);
+  const spend = Math.floor(amount);
+  if (!l || !x) return "";
+  if (!(spend >= 1000)) return "A campaign needs at least ¤1,000.";
+  if (spend > s.arcology.cash) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}; the campaign would cost ¤${spend.toLocaleString()}.`;
+  const pv = propagandaPreview(s, id, spend);
+  s.arcology.cash -= spend;
+  pushWithLaw(s, l, pv.points, `you paid ¤${spend.toLocaleString()} for propaganda for the ${l.name}`);
+  x.propaganda = { week: s.arcology.week, size: pv.goodwill };
+  std(s, Math.min(2, spend / 250000));
+  startRumor(s, `the ${l.name} is on every screen in the arcology`, { salience: Math.min(9, 4 + Math.round(spend / 100000)), charge: 1 });
+  const how = spend >= 1000000
+    ? `For a week there's nothing else. The ${l.name} is on every screen, every lift door and every coffee cup; children sing it in the schoolrooms, the FCTV anchors read it out between every segment, and paid speakers stand on crates at every junction from the spire to the verge. By Sunday people who hated it can't remember why.`
+    : spend >= 200000
+      ? `The campaign runs for a fortnight: posters on every floor, a jingle on FCTV, a parade down the main concourse with the ${l.name} on a banner the width of the street. People start quoting it without meaning to.`
+      : spend >= 30000
+        ? `Posters for the ${l.name} go up at every lift, and FCTV runs a spot about it before the evening news. It gets talked about.`
+        : `A few hundred posters for the ${l.name} go up on the busier floors. Some of them stay up.`;
+  const moved = pv.norms.map((n) => `${NORMS[n.norm].name.toLowerCase()} ${Math.round(n.from)} → ${Math.round(n.to)}`).join(", ");
+  return `${how}\n\n¤${spend.toLocaleString()} spent.${moved ? ` The city moves: ${moved}.` : ""} Goodwill toward the law: +${Math.round(pv.goodwill)}, fading over the next few months.`;
 }
 
 /** Push every habit the law pushes, by `by` in the law's direction (negative undoes it). */

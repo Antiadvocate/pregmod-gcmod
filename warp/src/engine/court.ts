@@ -15,7 +15,9 @@ import { LAWS, LAW_BY_ID, type LawDef } from "../data/laws";
 import { customLawDef, CUSTOM_EFFECTS, type CustomLaw } from "../data/customlaws";
 import { registerEvents, fireEvent, resolveEvent, type EventDef } from "./events";
 
-export interface LawInForce { id: string; week: number; exempt?: boolean; by: "you" | "court" | "keeper" }
+export interface LawInForce { id: string; week: number; exempt?: boolean; by: "you" | "court" | "keeper";
+  /** The last propaganda push for it: how big, and when. It fades by 15% a week. */
+  propaganda?: { week: number; size: number } }
 export interface CourtCase { week: number; law: string; kind: "enact" | "repeal"; outcome: string }
 export interface CourtState { last: number; record: CourtCase[]; vetoed: Record<string, number>; vetoes: number;
   /** Laws you put before the court yourself, by week: your backing counts for 25 points of the city's opinion. */
