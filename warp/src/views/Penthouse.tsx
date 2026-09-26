@@ -204,7 +204,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
         <Section title="What came of it" right={<Button size="sm" kind="ghost" onClick={() => setAftermath(null)}>done</Button>}>
           <Card>
             <p className="font-prose text-[15px] leading-relaxed">{aftermath.line}</p>
-            {aftermath.person ? <MomentReaction key={aftermath.key} seed={{ person: aftermath.person, others: aftermath.others, title: aftermath.title ?? "Afterwards", source: "thread", you: aftermath.chose, happened: aftermath.line }} /> : null}
+            {aftermath.person || modelsAvailable() ? <MomentReaction key={aftermath.key} seed={{ person: aftermath.person, others: aftermath.others, title: aftermath.title ?? "Afterwards", source: "thread", you: aftermath.chose, happened: aftermath.line }} /> : null}
             {aftermath.reactions.length ? (
               <ul className="mt-3 space-y-1.5 text-[13px]">
                 {aftermath.reactions.map((rx) => (
@@ -230,7 +230,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             {o.text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[15px] leading-relaxed">{para}</p>)}
           </div>
           <div className="flex items-center gap-2">
-            {o.person ? <MomentReaction seed={{ person: o.person, others: o.others, title: o.chose, source: "event", you: o.chose, happened: o.text }} onOpen={(mid) => setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, moment: mid } : x)))} /> : null}
+            {o.person || modelsAvailable() ? <MomentReaction seed={{ person: o.person, others: o.others, title: o.chose, source: "event", you: o.chose, happened: o.text }} onOpen={(mid) => setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, moment: mid } : x)))} /> : null}
             <Button size="sm" kind="primary" className="mt-3" onClick={() => void finish(o)}>Done</Button>
           </div>
         </Card>
