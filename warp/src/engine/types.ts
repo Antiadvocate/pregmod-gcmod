@@ -458,6 +458,8 @@ export interface Person {
   fame: { prestige: 0 | 1 | 2 | 3; why: string; porn_fame: number; porn_focus: string };
   /** Photographic redraws of her feet, from an image model. See lib/imagegen. */
   feet_photos?: { model: string; week: number; top?: string; sole?: string; side?: string; error?: string };
+  /** Photo portraits redrawn from her drawing by the image model. See lib/portrait. */
+  photo_portrait?: { model: string; week: number; face?: string; body?: string; error?: string };
   /** One of the hand-written unique slaves, by id. See data/heroes. */
   hero?: string;
   /** What you told her about how you are to be treated, and (when she owns you) her rules for you. See engine/agreements. */
