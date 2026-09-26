@@ -371,3 +371,25 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   check("'may not wear clothing' is naked", said("Slaves may not wear clothing on the concourse.").slave === "naked");
   check("'nobody may be dressed' covers citizens and slaves", said("Nobody may be dressed above the tenth floor.").citizen === "naked" && said("Nobody may be dressed above the tenth floor.").slave === "naked");
 }
+
+{
+  // Dress codes: earned from laws, doctrines and habits together, and the page says which.
+  const { dressCodeFor } = await import("../src/data/dresscodes.ts");
+  const { LAW_BY_ID } = await import("../src/data/laws.ts");
+  const { societies, household } = await import("../src/engine/compare.ts");
+  const { decreeLaw } = await import("../src/engine/court.ts");
+  const flat = { cruelty: 0, exposure: 0, personhood: 0, reversal: 0, feet: 0, manumission: 0, modification: 0, order: 0 };
+  const office = dressCodeFor({ laws: ["decency_statute"], doctrines: ["professionalism"], norms: { ...flat, exposure: -30 }, prosperity: 60 });
+  check("a law, a doctrine and a habit add up to one look", office.code.id === "office" && office.because.length === 3, office.because);
+  const mixed = dressCodeFor({ laws: ["welfare_code"], doctrines: ["degradationist"], norms: flat, prosperity: 60 });
+  check("a law outweighs a doctrine, and the doctrine still pulls", mixed.code.id === "livery" && mixed.runnerUp?.code.id === "chattel", mixed);
+  check("nothing shaping a city means street clothes", dressCodeFor({ laws: [], doctrines: [], norms: flat, prosperity: 40 }).code.id === "street");
+  const s = game("soc-dress");
+  const near = societies(s).filter((x) => x.kind === "neighbour");
+  check("every neighbour's laws come from its own habits", near.every((x) => x.lawIds.every((id) => { const l = LAW_BY_ID[id]; return (x.norms[l.norm] - l.at) * l.dir >= 0; })), near.map((x) => x.lawIds));
+  check("and they have some", near.some((x) => x.laws.length > 0), near.map((x) => x.laws.map((l) => l.name)));
+  s.arcology.rep = 20000;
+  decreeLaw(s, "nudity_ordinance");
+  const mine = household(societies(s)[0]);
+  check("a law you pass changes how your city dresses", mine.dress?.code.id === "open" && mine.dress.because.includes("the Nudity Ordinance"), mine.dress);
+}

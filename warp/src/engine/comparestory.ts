@@ -20,7 +20,6 @@ import { call, parseJson } from "../llm";
 import { compliance } from "./lawlife";
 import { lawsOf } from "./court";
 import { LAW_BY_ID, type LawDef } from "../data/laws";
-import { DOCTRINE_BY_ID } from "../data/doctrines";
 
 export interface Cast {
   wife: string;
@@ -76,9 +75,11 @@ function street(s: SaveState, x: Society, c: Cast): string {
   out.push(n.order >= 40 ? `A patrol checks ${c.wife}'s papers at the lift, as it does every morning; she has the card out before they ask.` : n.order <= -25 ? `Nobody checks anything at the lift. ${c.wife} holds the doors for a woman with a pram.` : `There's a patrol at the lift, but they wave her through.`);
   if (x.crime >= 45) out.push("Someone was robbed on her floor last week, and she walks the long way, past the cameras.");
   const hh = household(x);
+  if (hh.dress && hh.dress.score > 0) out.push(`${x.name} dresses by ${hh.dress.code.name.toLowerCase()}: ${hh.dress.code.look.charAt(0).toLowerCase()}${hh.dress.code.look.slice(1)}`);
   if (hh.citizen.clothes === "no clothing") out.push(hh.slave && hh.slave.clothes !== "no clothing"
     ? `Every citizen on the concourse is naked, because the law says so; the slaves are the ones in clothes, carrying the shopping in ${hh.slave.clothes}. ${c.wife} stopped noticing her own nakedness years ago; she notices the tourists noticing it.`
     : `Nobody on the concourse is dressed, citizens included: the law says so. ${c.wife} stopped noticing her own nakedness years ago; she notices the tourists noticing it.`);
+  else if (hh.dress && hh.dress.score > 0) { if (n.exposure >= 50) out.push("A couple of slaves are being used against the railing by the fountain. Nobody slows down to watch."); }
   else out.push(n.exposure >= 50 ? "On the concourse, half the slaves she passes are naked, and a couple are being used against the railing by the fountain. Nobody slows down to watch."
     : n.exposure >= 15 ? "On the concourse, slaves in short uniforms carry their owners' shopping, and a naked one stands on a plinth outside the clothes shop as an advertisement."
     : n.exposure <= -25 ? "On the concourse, every slave is covered to the wrist and ankle. A girl with a bare shoulder gets a look from a patrol." : "On the concourse, slaves go about their owners' errands in plain uniforms.");
@@ -91,8 +92,10 @@ function street(s: SaveState, x: Society, c: Cast): string {
         : `Someone has scratched half the notice of the ${l.name} off the wall by the lift. ${c.wife} keeps it while a patrol is in sight.`);
     }
   } else {
-    const d = x.doctrines.map((id) => DOCTRINE_BY_ID[id]).find(Boolean);
-    if (d) out.push(`A banner hangs the length of the concourse in ${x.name}'s own words: "${d.creed}"`);
+    const l = x.laws.length ? x.laws[(s.arcology.week + x.name.length) % x.laws.length] : undefined;
+    const d = x.beliefs[0];
+    if (l) out.push(`The ${l.name} is posted at every lift in ${x.name}: "${l.text}"${d ? ` Above it, a banner in the city's own words: "${d.text}"` : ""}`);
+    else if (d) out.push(`A banner hangs the length of the concourse in ${x.name}'s own words: "${d.text}"`);
   }
   return out.join(" ");
 }
@@ -174,11 +177,15 @@ function facts(s: SaveState, x: Society): string[] {
     const st = s.arcology.public_standing;
     out.push(`THE CITY'S OPINION OF THE OWNER: ${st >= 3 ? "good" : st <= -3 ? "poor" : "mixed"}; reputation ${Math.round(s.arcology.rep)}.`);
   } else if (x.kind === "neighbour") {
-    out.push(`WHAT THE CITY BELIEVES (its doctrines, in its own words): ${x.laws.map((l) => `${l.name}: "${l.text}"`).join(" | ")}`);
+    out.push(x.laws.length ? `LAWS IN FORCE, WORD FOR WORD (binding; passed by its court):\n${x.laws.map((l) => `- The ${l.name}: "${l.text}"`).join("\n")}` : "LAWS IN FORCE: none worth naming.");
+    out.push(`WHAT THE CITY BELIEVES (its doctrines, in its own words): ${x.beliefs.map((l) => `${l.name}: "${l.text}"`).join(" | ")}`);
     out.push(`ITS FEELING TOWARD THE PLAYER'S ARCOLOGY: ${(x.attitude ?? 0) <= -30 ? "hostile" : (x.attitude ?? 0) >= 30 ? "friendly" : "wary"}.`);
   } else {
     out.push(`THE OLD WORLD'S LAWS: ${x.laws.map((l) => `${l.name}: ${l.text}`).join(" | ")}`);
   }
+  const dc = household({ ...x, written: undefined }).dress;
+  if (dc) out.push(`THE DRESS CODE THE CITY HAS COME TO: ${dc.code.name}: ${dc.code.look}${dc.because.length ? ` (from ${dc.because.join(", ")})` : " (nothing has shaped it yet)"}${dc.runnerUp ? `. Also pulling at it: ${dc.runnerUp.code.name} (${dc.runnerUp.because.join(", ")}).` : ""} The laws still win over it.`);
+  if (x.kind === "yours" && x.beliefs.length) out.push(`WHAT THE CITY BELIEVES (its doctrines): ${x.beliefs.map((l) => `${l.name}: "${l.text}"`).join(" | ")}`);
   out.push(`HOW PEOPLE BEHAVE (habits, −100…+100): ${NORM_IDS.map((n) => `${NORMS[n].name} ${Math.round(x.norms[n])}: ${normLine(n, x.norms[n])}`).join(" | ")}`);
   out.push(`PROSPERITY ${Math.round(x.prosperity)} of 200; CRIME ${Math.round(x.crime)} of 100; SECURITY ${Math.round(x.security)} of 100.`);
   return out;

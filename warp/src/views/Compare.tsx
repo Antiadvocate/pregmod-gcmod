@@ -19,6 +19,8 @@ import { castOf, dayInTheLife, moving, writeDay } from "../engine/comparestory";
 const inflight = new Set<string>();
 import SlaveArt from "./SlaveArt";
 
+const listed = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
+
 function Score({ v, mine }: { v: number; mine?: boolean }) {
   return (
     <div className="flex items-center gap-1.5">
@@ -161,7 +163,14 @@ function HouseholdCard({ x, other, yours, compact }: { x: Society; other: Societ
         <div className={cx("text-[15px]", x.kind === "yours" && "acc")}>{x.name}</div>
         <div className="text-[11px] dim">{x.kind === "yours" ? "yours" : x.where}</div>
       </div>
-      {x.doctrines.length ? <div className="text-[11px] dim mb-2">{x.doctrines.map((d) => DOCTRINE_BY_ID[d]?.noun ?? d).join(" · ")}</div> : null}
+      {x.doctrines.length ? <div className="text-[11px] dim mb-0.5">{x.doctrines.map((d) => DOCTRINE_BY_ID[d]?.noun ?? d).join(" · ")}</div> : null}
+      {x.kind !== "oldworld" ? <div className="text-[11px] dim mb-0.5">Laws: {x.laws.length ? x.laws.map((l) => l.name).join(" · ") : "none"}</div> : null}
+      {h.dress ? (
+        <div className="text-[11.5px] mb-2">
+          <span className="acc">{h.dress.code.name}</span>
+          <span className="dim">{h.dress.because.length ? `, from ${listed(h.dress.because)}` : ", because nothing has shaped it yet"}{h.dress.runnerUp ? `. ${h.dress.runnerUp.code.name} pulls too (${listed(h.dress.runnerUp.because)}).` : "."}{x.written ? " The narrator has dressed them by the laws." : ""}</span>
+        </div>
+      ) : null}
       {ph?.url ? <img src={ph.url} alt={`a household in ${x.name}`} className="w-full max-h-[26rem] object-contain rounded-lg mb-2" /> : (
         <div className="flex justify-center gap-3 card-2 py-2 mb-2">
           {figure(citizen, refC, cast.wife)}
@@ -222,7 +231,7 @@ export default function Compare() {
           {others.map((x) => <button key={x.id} className={cx("chip !text-[11.5px]", x.id === other.id && "on")} onClick={() => setPick(x.id)}>{x.name}</button>)}
         </div>
       }>
-        <p className="text-[12.5px] dim mb-2.5">One ordinary household in each, on the same day this week, told from what the game knows: the city's habits, the laws in force, prosperity, crime and the patrols. {other.kind === "oldworld" ? "The Old World is judged by how stable its regions are." : `${other.name} is judged by its doctrines.`}</p>
+        <p className="text-[12.5px] dim mb-2.5">One ordinary household in each, on the same day this week, told from what the game knows: the city's habits, the laws in force, prosperity, crime and the patrols. {other.kind === "oldworld" ? "The Old World is judged by how stable its regions are." : `${other.name} is judged by its doctrines and the laws its court has passed from them.`}</p>
         <div className="grid gap-2.5 md:grid-cols-2">
           <HouseholdCard x={yours} other={other} yours={yours} />
           <HouseholdCard key={other.id} x={other} other={yours} yours={yours} />

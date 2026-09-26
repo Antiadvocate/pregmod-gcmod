@@ -4,7 +4,8 @@
  * Everything here is read from the save: your culture's eight habits, the laws and policies in
  * force, prosperity, crime and security. A neighbour's habits come from its doctrines, pulled the
  * way tickCulture pulls yours; a neighbour that has never declared any is given two, seeded from
- * the save and its name, so it keeps the same character every time you look. The Old World is
+ * the save and its name, so it keeps the same character every time you look; its court passes the
+ * built-in laws its habits have reached, by the same marks yours uses. The Old World is
  * fixed: slavery is illegal there, and it is only as prosperous and safe as its regions are stable.
  *
  * From those numbers come a typical household (a citizen woman and the slave who serves her, with
@@ -14,7 +15,8 @@ import type { Person, SaveState } from "./types";
 import { clamp } from "./psyche";
 import { cultureOf, DOCTRINE_PULL, NORMS, NORM_IDS, normLine, type Norm } from "./culture";
 import { lawsOf } from "./court";
-import { LAW_BY_ID } from "../data/laws";
+import { LAWS, LAW_BY_ID } from "../data/laws";
+import { dressCodeFor, type DressChoice } from "../data/dresscodes";
 import { POLICY_BY_ID } from "../data/policies";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { generatePerson } from "./generate";
@@ -32,8 +34,12 @@ export interface Society {
   crime: number;        // 0–100
   security: number;     // 0–100
   doctrines: string[];
-  /** Laws and policies, as a citizen would describe them. */
+  /** Laws and policies in force, as a citizen would describe them. */
   laws: { name: string; text: string }[];
+  /** Their ids: law ids, and `policy:<id>` for policies. */
+  lawIds: string[];
+  /** What the city believes: its doctrines, in their own words. */
+  beliefs: { name: string; text: string }[];
   /** A neighbour's feeling toward you, −100 … +100. */
   attitude?: number;
   /** What the narrator model dressed this household in, read from its laws; used while it still matches. */
@@ -45,7 +51,7 @@ export interface Outfits { citizen_clothes: string; citizen_shoes: string; husba
 
 /** What a society's laws and habits are, for telling whether a written household is still true. */
 export function fingerprint(x: Society): string {
-  return JSON.stringify([x.laws.map((l) => l.name + l.text), x.doctrines, NORM_IDS.map((n) => Math.round(x.norms[n] / 10)), Math.round(x.prosperity / 20)]);
+  return JSON.stringify([x.laws.map((l) => l.name + l.text), x.doctrines, x.lawIds, NORM_IDS.map((n) => Math.round(x.norms[n] / 10)), Math.round(x.prosperity / 20)]);
 }
 
 /** Where a free city sits before anything pulls it: the numbers a new game starts at. */
@@ -76,22 +82,26 @@ function normsFrom(doctrines: string[]): Record<Norm, number> {
 
 export function societies(s: SaveState): Society[] {
   const a = s.arcology;
+  const beliefsOf = (ds: string[]) => ds.map((d) => DOCTRINE_BY_ID[d]).filter(Boolean).map((d) => ({ name: d.noun, text: d.creed }));
+  const myLaws = lawsOf(s).map((x) => LAW_BY_ID[x.id]).filter(Boolean);
+  const myPolicies = Object.keys(a.policies).filter((id) => a.policies[id] && POLICY_BY_ID[id]);
+  const myDoctrines = Object.entries(a.doctrines).filter(([, d]) => d.adoption >= 30).sort((x, y) => y[1].adoption - x[1].adoption).map(([id]) => id);
   const yours: Society = {
     id: "yours", name: a.name, kind: "yours", where: "yours",
     norms: { ...cultureOf(s).norms }, prosperity: a.prosperity, crime: a.crime, security: a.security,
-    doctrines: Object.entries(a.doctrines).filter(([, d]) => d.adoption >= 30).sort((x, y) => y[1].adoption - x[1].adoption).map(([id]) => id),
-    laws: [
-      ...lawsOf(s).map((x) => LAW_BY_ID[x.id]).filter(Boolean).map((l) => ({ name: l.name, text: l.text })),
-      ...Object.keys(a.policies).filter((id) => a.policies[id] && POLICY_BY_ID[id]).map((id) => ({ name: POLICY_BY_ID[id].name, text: POLICY_BY_ID[id].blurb })),
-    ],
+    doctrines: myDoctrines, beliefs: beliefsOf(myDoctrines),
+    laws: [...myLaws.map((l) => ({ name: l.name, text: l.text })), ...myPolicies.map((id) => ({ name: POLICY_BY_ID[id].name, text: POLICY_BY_ID[id].blurb }))],
+    lawIds: [...myLaws.map((l) => l.id), ...myPolicies.map((id) => `policy:${id}`)],
   };
   const near = a.neighbours.map((n): Society => {
     const doctrines = neighbourDoctrines(s, n);
     const norms = normsFrom(doctrines);
+    // A neighbour's court passes what its city has come to, by the same marks yours uses.
+    const laws = LAWS.filter((l) => (norms[l.norm] - l.at) * l.dir >= 0);
     return {
       id: n.id, name: n.name, kind: "neighbour", where: `the arcology to the ${n.direction}`,
       norms, prosperity: n.prosperity, crime: Math.round(clamp(32 - norms.order * 0.25, 5, 70)), security: Math.round(clamp(45 + norms.order * 0.4, 10, 95)),
-      doctrines, laws: doctrines.map((d) => DOCTRINE_BY_ID[d]).filter(Boolean).map((d) => ({ name: d.noun, text: d.creed })), attitude: n.attitude,
+      doctrines, beliefs: beliefsOf(doctrines), laws: laws.map((l) => ({ name: l.name, text: l.text })), lawIds: laws.map((l) => l.id), attitude: n.attitude,
     };
   });
   const regions = Object.values(s.world?.regions ?? {});
@@ -99,7 +109,7 @@ export function societies(s: SaveState): Society[] {
   const old: Society = {
     id: "oldworld", name: "The Old World", kind: "oldworld", where: "the countries outside the Free Cities",
     norms: { ...OLD_WORLD }, prosperity: Math.round(20 + stable * 0.5), crime: Math.round(clamp(75 - stable * 0.6, 10, 90)), security: Math.round(clamp(stable * 0.7, 10, 80)),
-    doctrines: [],
+    doctrines: [], beliefs: [], lawIds: [],
     laws: [
       { name: "Abolition", text: "Owning a person is a crime. Debt bondage and trafficking go on anyway, out of sight." },
       { name: "Citizenship", text: "Everyone born there has a vote, a passport and a right to a trial, for what those are still worth." },
@@ -144,9 +154,10 @@ export interface Household {
   /** Slaves in a middling citizen household. */
   slaves: number;
   family: string;
+  /** The dress code the city has earned, and what earned it. Absent in the Old World. */
+  dress?: DressChoice;
 }
 
-const has = (x: Society, d: string) => x.doctrines.includes(d);
 
 export function household(x: Society): Household {
   const h = householdByHabit(x);
@@ -179,31 +190,24 @@ function householdByHabit(x: Society): Household {
       family: "A couple and their children in a rented flat. Nobody in the family owns anybody. Some of the people who clean their building are paying off a debt to whoever smuggled them in, and nobody asks.",
     };
   }
-  const rich = x.prosperity >= 90;
-  const citizenClothes = has(x, "roman") ? "a toga" : has(x, "chattel_religion") ? "a habit" : has(x, "egyptian") ? "silks"
-    : n.exposure >= 70 ? "slutty business attire" : n.exposure >= 45 ? "a mini dress" : n.exposure <= -25 || has(x, "professionalism") ? "conservative clothing"
-    : rich ? "nice business attire" : "a t-shirt and jeans";
-  const slaveClothes = has(x, "chattel_religion") && n.exposure < 50 ? "a penitent nun's habit" : has(x, "roman") && n.exposure < 50 ? "a skimpy loincloth" : has(x, "egyptian") && n.exposure < 50 ? "silks"
-    : n.exposure >= 50 ? (has(x, "hedonist") ? "body oil" : "no clothing")
-    : n.cruelty >= 55 && n.personhood <= -35 ? "chains"
-    : n.personhood >= 35 || has(x, "professionalism") ? (n.exposure >= 20 ? "a nice nurse outfit" : "household uniform")
-    : n.exposure >= 15 ? "a slutty maid outfit"
-    : n.exposure <= -20 ? "a plain shift" : "household uniform";
-  const collar = n.personhood >= 45 ? "a silk ribbon" : n.cruelty >= 55 ? "a cruel leather collar" : n.order >= 45 ? "a shock collar" : has(x, "neo_imperial") || rich && n.personhood > 0 ? "a jewelled collar" : n.cruelty >= 25 ? "a heavy steel collar" : "a plain collar";
-  const slaveShoes = n.feet >= 30 || n.cruelty >= 40 || slaveClothes === "no clothing" || slaveClothes === "body oil" || slaveClothes === "chains" ? "barefoot" : "flats";
-  const citizenShoes = n.exposure >= 35 ? "heels" : rich ? "pumps" : "flats";
+  const dress = dressCodeFor({ laws: x.lawIds, doctrines: x.doctrines, norms: n, prosperity: x.prosperity });
+  const code = dress.code;
+  const citizenClothes = code.citizen, citizenShoes = code.citizenShoes;
+  const slaveClothes = code.slave;
+  const collar = code.collar ?? "a plain collar";
+  const slaveShoes = code.slaveShoes ?? "flats";
   const slaves = Math.round(clamp(x.prosperity / 45 - n.personhood / 50 + (n.cruelty > 30 ? 0.5 : 0), 0, 5));
   const slaveWord = slaves === 1 ? "one slave" : `${slaves} slaves`;
   const kept = n.personhood >= 35 ? "who has a room of her own and a day off a week" : n.personhood <= -35 ? "who sleeps on a mat by the kitchen door" : "who sleeps in the servants' room";
   return {
     citizen: { clothes: citizenClothes, shoes: citizenShoes, line: `A citizen woman in ${citizenClothes}${citizenShoes === "heels" ? " and heels" : ""}.` },
-    husband: citizenClothes === "a toga" ? "a toga with a purple stripe" : citizenClothes === "a habit" ? "a priest's black cassock" : citizenClothes === "silks" ? "a linen kilt and a gold collar of office"
-      : citizenClothes === "a t-shirt and jeans" ? "a jacket and jeans" : n.exposure >= 45 ? "an open-necked shirt and tailored trousers" : "a dark suit",
+    husband: code.husband,
     slave: { clothes: slaveClothes, collar, shoes: slaveShoes, line: `Her slave, ${slaveClothes === "no clothing" ? "naked" : `in ${slaveClothes}`}, wearing ${collar}${slaveShoes === "barefoot" ? ", barefoot" : ""}.` },
     slaves,
     family: slaves
       ? `A citizen couple, their children, and ${slaveWord} ${slaves === 1 ? kept : kept.replace("who has a room", "who each have a room").replace("sleeps", "sleep")}. ${n.reversal >= 30 ? "One of the couple kneels to the household's favourite slave in private, and the neighbours find it romantic." : n.reversal <= -40 ? "Nobody in the family would dream of serving a slave." : ""}`.trim()
       : "A citizen couple and their children, too poor to keep a slave of their own. They rent one by the hour when they have guests.",
+    dress,
   };
 }
 
