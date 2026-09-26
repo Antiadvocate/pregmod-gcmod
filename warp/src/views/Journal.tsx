@@ -13,7 +13,7 @@ import Ambitions from "./Ambitions";
 import { deedsOf, DEED_TAGS } from "../engine/deeds";
 
 export default function Journal() {
-  const { save } = useGame();
+  const { save, mutate } = useGame();
   const st = save.story;
   if (!st) return <Empty>No story in this save.</Empty>;
   const origin = ORIGIN_BY_ID[st.origin];
@@ -40,7 +40,14 @@ export default function Journal() {
               const p = d.person ? save.people[d.person] : undefined;
               return (
                 <div key={d.id} className="card-2 px-3 py-2">
-                  <div className="text-[11px] dim">week {d.week}{p ? ` · ${p.name}` : ""}{d.public ? " · everyone knows" : ""}</div>
+                  <div className="text-[11px] dim flex gap-2">
+                    <span>week {d.week}{p ? ` · ${p.name}` : ""}{d.where ? ` · on a walk (${d.where})` : ""}{d.public ? " · everyone knows" : ""}</span>
+                    <button className="ml-auto underline" title="The narrator stops bringing this up; anything it set in motion that hasn't happened yet is cancelled" onClick={() => mutate((s) => {
+                      s.deeds = (s.deeds ?? []).filter((x) => x.id !== d.id);
+                      if (d.fact) s.canon = s.canon.filter((c) => c !== d.fact);
+                      s.retcons.push({ text: d.summary, week: s.arcology.week, kind: "veto" });
+                    })}>forget</button>
+                  </div>
                   <div className="font-prose text-[14px] leading-snug">{d.summary}</div>
                   {d.tags.length ? <div className="flex flex-wrap gap-1 mt-1">{d.tags.map((t) => <span key={t} className="chip !text-[10.5px]">{DEED_TAGS[t]?.label ?? t}</span>)}</div> : null}
                   {d.follow && !d.follow.fired ? <div className="text-[11px] acc mt-1">comes back in week {d.follow.due}</div> : null}
@@ -49,6 +56,20 @@ export default function Journal() {
             })}
           </div>
         ) : <Empty>Nothing yet. End a scene you took part in and it shows up here.</Empty>}
+      </Fold>
+
+      <Fold id="journal-canon" title="What the narrator treats as always true" count={save.canon.length}>
+        {save.canon.length ? (
+          <div className="space-y-1">
+            <button className="text-[11px] dim underline" title="Remove every world fact; the narrator is told none of them happened" onClick={() => mutate((s) => { for (const c of s.canon) s.retcons.push({ text: c, week: s.arcology.week, kind: "veto" }); s.canon = []; })}>remove all</button>
+            {save.canon.map((c, i) => (
+              <div key={i} className="card-2 px-3 py-1.5 flex gap-2 items-baseline">
+                <span className="font-prose text-[13.5px] flex-1">{c}</span>
+                <button className="text-[11px] dim underline shrink-0" title="Remove it; the narrator is told it never happened" onClick={() => mutate((s) => { s.canon = s.canon.filter((x) => x !== c); s.retcons.push({ text: c, week: s.arcology.week, kind: "veto" }); })}>remove</button>
+              </div>
+            ))}
+          </div>
+        ) : <Empty>Nothing yet.</Empty>}
       </Fold>
 
       <Fold id="journal-cast" title="The people in it" count={cast.length}>

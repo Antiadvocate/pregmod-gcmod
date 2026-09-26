@@ -4,6 +4,7 @@
  * Eight habits of the city, each with what moved it and how far; the doctrines; what people think
  * of you; the laws in force and the cases before the court; and a way down to the street to see it.
  */
+import { stripLawInventions } from "../engine/lawguard";
 import { useState } from "react";
 import { Footprints } from "lucide-react";
 import { useGame } from "../lib/game";
@@ -116,6 +117,12 @@ function Court() {
               </div>
             );
           }) : <div className="text-[12.5px] dim">None yet. The court writes laws when the city's habits go far enough one way.</div>}
+          {laws.length ? (
+            <button className="text-[11.5px] acc underline mt-1" title="Removes every clause, exemption, amendment or technicality the game recorded about your laws (world facts, rumours, memories, recent turns), and tells the narrator each law is only its text"
+              onClick={() => { let n = 0; mutate((s) => { n = stripLawInventions(s); }); setSaid((xs) => [...xs, n ? `Stripped ${n} thing${n > 1 ? "s" : ""} the game had added to your laws. From now on each law is only its text.` : "Nothing had been added to your laws. The narrator has been told again that each law is only its text."]); }}>
+              Strip everything the game added to these laws
+            </button>
+          ) : null}
         </Card>
         <Card>
           <div className="text-[11px] uppercase tracking-wider dim mb-2">Being talked about</div>

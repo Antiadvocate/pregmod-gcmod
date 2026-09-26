@@ -41,7 +41,7 @@ import { describeYou } from "./you";
  */
 export const HOUSE_STYLE = `HOW FREE CITIES WRITES. Match the original game's voice. It is second person and present tense, addressed to the player as "you". It is plain, direct, matter-of-fact and a little dry, and it is explicit: it says who does what to whom with which body part, using ordinary crude words (cock, pussy, ass, tits, cum, fuck) and never a metaphor in their place. It states what a slave thinks and feels whenever that matters ("She's nervous, but she's glad you asked"; "She clearly hates it"; "She's too tired to argue"). Slaves call the player Master or Mistress unless their card says otherwise. Sentences are ordinary sentences a person would write, of ordinary length.
 
-HOW THE ARCOLOGY IS GOVERNED. The owner rules it absolutely, as a private dictatorship: there is no council, parliament, senate, election or vote, and nobody can overrule the owner. Citizens can petition, complain, protest or plot; the arcology's court only hears petitions and rules on what the owner leaves to it; the owner's word is law.
+HOW THE ARCOLOGY IS GOVERNED. The owner rules it absolutely, as a private dictatorship: there is no council, parliament, senate, election or vote, and nobody can overrule the owner. Citizens can petition, complain, protest or plot; the arcology's court only hears petitions and rules on what the owner leaves to it; the owner's word is law. The laws in force are exactly as written, word for word. Never invent clauses, subsections, articles, exemptions, amendments, penalties, loopholes or technicalities, and never attribute any provision to a law that isn't in its text. Only the owner changes a law.
 
 Examples of the voice:
 - "You tell her she'll be sleeping in your bed tonight. She's surprised, and a little suspicious, but she strips and climbs in beside you without being told twice."
@@ -89,7 +89,7 @@ Shape:
  "agreements_drop": [{"id":"p1","rule":"a standing order the owner explicitly cancelled"}]
 }
 agreements: record every standing instruction the owner gave in this turn about how she (or the whole household) is to address or treat the owner from now on, when she accepted it or did not refuse. Not one-off orders for this moment.
-Every id must be one given to you. Omit any key you have nothing for.`;
+Every id must be one given to you. Omit any key you have nothing for. Never record a new clause, exemption, amendment or technicality of a law as a fact, rumour or memory: laws are only what their text says.`;
 
 /** How she is holding up, in the words the game would use. */
 export function condition(p: Person): string {
@@ -163,7 +163,7 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   const norms = cultureBrief(s);
   if (norms) out.push(`HOW CITIZENS BEHAVE NOW — show it in passing when people are around:\n${norms}`);
   const laws = lawsBrief(s);
-  if (laws) out.push(`LAWS IN FORCE (people obey these in every scene; when one applies to someone present, including a slave, show it being kept or broken):\n${laws}`);
+  if (laws) out.push(`LAWS IN FORCE (people obey these in every scene; when one applies to someone present, including a slave, show it happening, spelled out plainly: who does exactly what, to whom):\n${laws}`);
 
   const done = deedsBrief(s);
   if (done) out.push(`\n## WHAT YOU HAVE DONE — people remember these, and they shape how everyone treats you\n${done}`);
@@ -205,7 +205,7 @@ export function digest(s: SaveState, action = "", focus?: string): string {
     out.push(nearby.map((p) => `· ${p.name} [${p.id}] — ${p.assignment}${p.facility ? `, ${arc.facilities[p.facility]?.name}` : ""}`).join("\n"));
   }
 
-  const heard = dedupeLines(s.rumors.filter((r) => r.salience > 3).map((r) => `${r.content} (${r.truth})`)).slice(0, 4);
+  const heard = dedupeLines(s.rumors.filter((r) => r.salience > 3 && !r.where).map((r) => `${r.content} (${r.truth})`)).slice(0, 4);
   if (heard.length) out.push(`\n## WHAT PEOPLE ARE SAYING\n${heard.map((r) => `· ${r}`).join("\n")}`);
 
   const corr = s.corrections;

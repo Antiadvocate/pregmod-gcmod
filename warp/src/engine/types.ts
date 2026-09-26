@@ -539,6 +539,8 @@ export interface Edge {
 export interface Rumor {
   id: string;
   content: string;
+  /** Local gossip from a walk: which place. It's only talked about there. */
+  where?: string;
   truth: "true" | "distorted" | "false";
   salience: number;
   charge: -1 | 0 | 1;
