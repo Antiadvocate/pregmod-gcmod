@@ -18,6 +18,7 @@ import { LAW_BY_ID } from "../data/laws";
 import { POLICY_BY_ID } from "../data/policies";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { generatePerson } from "./generate";
+import { garment } from "../data/wardrobe";
 import { rng } from "./rng";
 
 export interface Society {
@@ -35,6 +36,16 @@ export interface Society {
   laws: { name: string; text: string }[];
   /** A neighbour's feeling toward you, −100 … +100. */
   attitude?: number;
+  /** What the narrator model dressed this household in, read from its laws; used while it still matches. */
+  written?: Outfits;
+}
+
+/** A household's clothes as the narrator chose them, from the wardrobe's own names. */
+export interface Outfits { citizen_clothes: string; citizen_shoes: string; husband: string; slave_clothes?: string; slave_collar?: string; slave_shoes?: string; slaves?: number }
+
+/** What a society's laws and habits are, for telling whether a written household is still true. */
+export function fingerprint(x: Society): string {
+  return JSON.stringify([x.laws.map((l) => l.name + l.text), x.doctrines, NORM_IDS.map((n) => Math.round(x.norms[n] / 10)), Math.round(x.prosperity / 20)]);
 }
 
 /** Where a free city sits before anything pulls it: the numbers a new game starts at. */
@@ -95,7 +106,31 @@ export function societies(s: SaveState): Society[] {
       { name: "Welfare", text: "Public hospitals and schools, underfunded and closing a district at a time." },
     ],
   };
-  return [yours, ...near, old];
+  const all = [yours, ...near, old];
+  for (const x of all) { const w = s.compare_written?.[x.id]; if (w && w.fp === fingerprint(x)) x.written = w.outfits; }
+  return all;
+}
+
+/**
+ * What the laws themselves say about clothes. The habits say how people dress by choice; a law that
+ * says citizens go naked, or that slaves are covered, beats them. Read from the law's own words.
+ */
+export function lawDress(x: Society): { citizen?: "naked" | "covered"; slave?: "naked" | "covered"; barefoot?: boolean } {
+  const out: ReturnType<typeof lawDress> = {};
+  const NAKED = /\b((?:nobody|no one|no citizens?|no slaves?)\s+(?:may|shall|can|is allowed to|are allowed to)\s+(?:be\s+(?:dressed|clothed)|wear(?!\s+(?:shoes|heels|boots|sandals|collars?|jewel\w*|make-?up|hats?|gloves|veils?|masks?)\b))|naked|nude|nudity|unclothed|undressed|bare[- ]skinned|no cloth\w*|without cloth\w*|(?:may|must|can|shall)\s*not\s+(?:be\s+(?:dressed|clothed)|wear(?!\s+(?:shoes|heels|boots|sandals|collars?|jewel\w*|make-?up|hats?|gloves|veils?|masks?)\b))|cannot\s+(?:be\s+(?:dressed|clothed)|wear(?!\s+(?:shoes|heels|boots|sandals|collars?|jewel\w*|make-?up|hats?|gloves|veils?|masks?)\b))|forbidden\s+(?:to\s+wear|clothing)|clothing\s+is\s+(?:banned|forbidden|illegal))/i;
+  const COVER = /\b(covered|modest\w*|must\s+(?:be\s+)?(?:dressed|clothed|wear)|decen\w+|uniform)/i;
+  for (const l of x.laws) {
+    for (const sentence of l.text.split(/(?<=[.;!?])\s+/)) {
+      const everyone = /\b(everyone|everybody|all (?:people|persons|residents)|no one|nobody|anyone)\b/i.test(sentence);
+      const citizens = everyone || /\bcitizens?\b|\bresidents?\b|\bfree (?:men|women|people)\b/i.test(sentence);
+      const slaves = everyone || /\bslaves?\b|\bchattel\b/i.test(sentence);
+      const how = NAKED.test(sentence) ? "naked" : COVER.test(sentence) ? "covered" : undefined;
+      if (how && citizens) out.citizen = how;
+      if (how && slaves) out.slave = how;
+      if (/\bbarefoot|bare feet|no shoes\b|not\s+wear\s+(?:shoes|heels|boots|sandals)/i.test(sentence) && slaves) out.barefoot = true;
+    }
+  }
+  return out;
 }
 
 /* ── the household ───────────────────────────────────────────────────────────────────────────── */
@@ -114,6 +149,27 @@ export interface Household {
 const has = (x: Society, d: string) => x.doctrines.includes(d);
 
 export function household(x: Society): Household {
+  const h = householdByHabit(x);
+  const law = lawDress(x);
+  if (law.citizen === "naked") { h.citizen.clothes = "no clothing"; h.citizen.shoes = "barefoot"; h.husband = "nothing at all, as the law requires"; }
+  else if (law.citizen === "covered" && GARMENT_KIND(h.citizen.clothes) !== "modest") h.citizen.clothes = "conservative clothing";
+  if (h.slave && law.slave === "naked") { h.slave.clothes = "no clothing"; h.slave.shoes = "barefoot"; }
+  else if (h.slave && law.slave === "covered" && ["bare", "lingerie", "swim"].includes(GARMENT_KIND(h.slave.clothes) ?? "")) h.slave.clothes = "household uniform";
+  if (h.slave && law.barefoot) h.slave.shoes = "barefoot";
+  const w = x.written;
+  if (w) {
+    h.citizen.clothes = w.citizen_clothes; h.citizen.shoes = w.citizen_shoes; h.husband = w.husband;
+    if (h.slave && w.slave_clothes) { h.slave.clothes = w.slave_clothes; h.slave.collar = w.slave_collar ?? h.slave.collar; h.slave.shoes = w.slave_shoes ?? h.slave.shoes; }
+    if (w.slaves !== undefined && x.kind !== "oldworld") h.slaves = w.slaves;
+  }
+  h.citizen.line = h.citizen.clothes === "no clothing" ? "A citizen woman, naked." : `A citizen woman in ${h.citizen.clothes}${h.citizen.shoes === "heels" ? " and heels" : ""}.`;
+  if (h.slave) h.slave.line = `Her slave, ${h.slave.clothes === "no clothing" ? "naked" : `in ${h.slave.clothes}`}, wearing ${h.slave.collar}${h.slave.shoes === "barefoot" ? ", barefoot" : ""}.`;
+  return h;
+}
+
+const GARMENT_KIND = (name: string) => garment(name)?.kind;
+
+function householdByHabit(x: Society): Household {
   const n = x.norms;
   if (x.kind === "oldworld") {
     return {

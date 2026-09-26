@@ -13,7 +13,10 @@
 import type { Person, SaveState } from "./types";
 import { rng } from "./rng";
 import { generatePerson } from "./generate";
-import { figureFor, household, METRICS, type Society } from "./compare";
+import { figureFor, household, METRICS, type Outfits, type Society } from "./compare";
+import { NORMS, NORM_IDS, normLine } from "./culture";
+import { WARDROBE } from "../data/wardrobe";
+import { call, parseJson } from "../llm";
 import { compliance } from "./lawlife";
 import { lawsOf } from "./court";
 import { LAW_BY_ID, type LawDef } from "../data/laws";
@@ -72,7 +75,11 @@ function street(s: SaveState, x: Society, c: Cast): string {
   }
   out.push(n.order >= 40 ? `A patrol checks ${c.wife}'s papers at the lift, as it does every morning; she has the card out before they ask.` : n.order <= -25 ? `Nobody checks anything at the lift. ${c.wife} holds the doors for a woman with a pram.` : `There's a patrol at the lift, but they wave her through.`);
   if (x.crime >= 45) out.push("Someone was robbed on her floor last week, and she walks the long way, past the cameras.");
-  out.push(n.exposure >= 50 ? "On the concourse, half the slaves she passes are naked, and a couple are being used against the railing by the fountain. Nobody slows down to watch."
+  const hh = household(x);
+  if (hh.citizen.clothes === "no clothing") out.push(hh.slave && hh.slave.clothes !== "no clothing"
+    ? `Every citizen on the concourse is naked, because the law says so; the slaves are the ones in clothes, carrying the shopping in ${hh.slave.clothes}. ${c.wife} stopped noticing her own nakedness years ago; she notices the tourists noticing it.`
+    : `Nobody on the concourse is dressed, citizens included: the law says so. ${c.wife} stopped noticing her own nakedness years ago; she notices the tourists noticing it.`);
+  else out.push(n.exposure >= 50 ? "On the concourse, half the slaves she passes are naked, and a couple are being used against the railing by the fountain. Nobody slows down to watch."
     : n.exposure >= 15 ? "On the concourse, slaves in short uniforms carry their owners' shopping, and a naked one stands on a plinth outside the clothes shop as an advertisement."
     : n.exposure <= -25 ? "On the concourse, every slave is covered to the wrist and ankle. A girl with a bare shoulder gets a look from a patrol." : "On the concourse, slaves go about their owners' errands in plain uniforms.");
   if (x.kind === "yours") {
@@ -152,21 +159,91 @@ export function dayInTheLife(s: SaveState, x: Society, other: Society, yours: So
   return [morning(x, c), street(s, x, c), slaveDay(x, c), dinner(s, x, c, yours), letter(x, other, c)].filter(Boolean);
 }
 
-/** For the narrator model: the same facts, and what to do with them. */
-export function storyBrief(s: SaveState, x: Society, other: Society, yours: Society): { system: string; user: string } {
-  const c = castOf(x), h = household(x);
+/* ── the narrator's telling ─────────────────────────────────────────────────────────────────── */
+
+const names = (slot: string) => WARDROBE.filter((g) => g.slot === slot).map((g) => g.name);
+
+/** Everything the game knows about a place, as the narrator should read it: the laws word for word. */
+function facts(s: SaveState, x: Society): string[] {
+  const out: string[] = [];
+  if (x.kind === "yours") {
+    const laws = lawsOf(s).map((l) => LAW_BY_ID[l.id]).filter((l): l is LawDef => !!l);
+    out.push(laws.length ? `LAWS IN FORCE, WORD FOR WORD (binding; everyone in the city lives by them):\n${laws.map((l) => `- The ${l.name}: "${l.text}" (${compliance(s, l).total > 30 ? "kept willingly" : compliance(s, l).total > 0 ? "kept, grudgingly" : "often broken where patrols can't see"})`).join("\n")}` : "LAWS IN FORCE: none beyond the owner's word.");
+    const pol = x.laws.filter((l) => !laws.some((k) => k.name === l.name));
+    if (pol.length) out.push(`POLICIES: ${pol.map((l) => `${l.name}: ${l.text}`).join(" | ")}`);
+    const st = s.arcology.public_standing;
+    out.push(`THE CITY'S OPINION OF THE OWNER: ${st >= 3 ? "good" : st <= -3 ? "poor" : "mixed"}; reputation ${Math.round(s.arcology.rep)}.`);
+  } else if (x.kind === "neighbour") {
+    out.push(`WHAT THE CITY BELIEVES (its doctrines, in its own words): ${x.laws.map((l) => `${l.name}: "${l.text}"`).join(" | ")}`);
+    out.push(`ITS FEELING TOWARD THE PLAYER'S ARCOLOGY: ${(x.attitude ?? 0) <= -30 ? "hostile" : (x.attitude ?? 0) >= 30 ? "friendly" : "wary"}.`);
+  } else {
+    out.push(`THE OLD WORLD'S LAWS: ${x.laws.map((l) => `${l.name}: ${l.text}`).join(" | ")}`);
+  }
+  out.push(`HOW PEOPLE BEHAVE (habits, −100…+100): ${NORM_IDS.map((n) => `${NORMS[n].name} ${Math.round(x.norms[n])}: ${normLine(n, x.norms[n])}`).join(" | ")}`);
+  out.push(`PROSPERITY ${Math.round(x.prosperity)} of 200; CRIME ${Math.round(x.crime)} of 100; SECURITY ${Math.round(x.security)} of 100.`);
+  return out;
+}
+
+export interface Written { outfits: Outfits; story: string[] }
+
+/** The request: the facts, the family, the wardrobe, and the shape of the answer. */
+export function writeBrief(s: SaveState, x: Society, other: Society): { system: string; user: string } {
+  const c = castOf(x), h = household({ ...x, written: undefined });
+  const slaves = x.kind !== "oldworld";
   return {
-    system: "You write short literary fiction set in a dark future of arcology city-states where slavery is legal. Plain, concrete prose; specific objects and actions; no moralising; no summary at the end. Every character is an adult except the children, who appear only as children at breakfast and school, never in anything sexual. Write about 450 words in five short paragraphs: morning, the street, the slave's day, dinner, and a letter from a cousin. Keep every fact you are given.",
+    system: [
+      "You write short literary fiction set in a dark future of arcology city-states where slavery is legal, and you answer only with JSON.",
+      "The laws you are given are binding and literal. Everything you write must obey them: what people wear, what they do in public, how slaves are treated. If a law says citizens may not be dressed, the citizens in your story are naked, the husband too. If a law contradicts a habit, the law wins where patrols can see and the habit shows where they can't.",
+      "Never invent a law, clause, exemption, amendment or penalty. Quote a law only as given.",
+      "Plain, concrete prose: specific objects and actions, no moralising, no summary lines. Every character is an adult except the children, who appear only as children, dressed, at breakfast or school, and never in a sentence with anything sexual.",
+    ].join(" "),
     user: [
-      `THE PLACE: ${x.name}${x.kind === "yours" ? ", the arcology the player owns" : x.kind === "neighbour" ? `, ${x.where}` : ", the countries outside the Free Cities"}.`,
-      `THE FAMILY: ${c.wife} ${c.surname} (34) and her husband ${c.husband} (37), and ${kidsWord(c.kids)}. She wears ${h.citizen.clothes}; he wears ${h.husband}.`,
-      h.slave ? `THEIR SLAVE: ${c.slave}, 22. ${h.slave.line} The household keeps ${h.slaves}.` : `THE WOMAN WHO CLEANS THEIR STAIRWELL: ${c.slave}, a trafficked debt worker.`,
-      `THE SCENES AS THE GAME SEES THEM (keep these facts; tell them better):`,
-      ...dayInTheLife(s, x, other, yours).map((p, i) => `${i + 1}. ${p}`),
-      x.laws.length ? `LAWS AND BELIEFS IN FORCE: ${x.laws.slice(0, 5).map((l) => `${l.name}: ${l.text}`).join(" | ")}` : "",
-      `THE COUSIN WRITES FROM: ${other.name}.`,
-    ].filter(Boolean).join("\n"),
+      `THE PLACE: ${x.name}${x.kind === "yours" ? ", the arcology the player owns" : x.kind === "neighbour" ? `, ${x.where}` : ", the countries outside the Free Cities, where slavery is illegal"}.`,
+      ...facts(s, x),
+      `THE FAMILY: ${c.wife} ${c.surname} (34), her husband ${c.husband} (37), and ${kidsWord(c.kids)}.`,
+      slaves ? `THEIR SLAVE: ${c.slave}, 22, an adult woman.` : `THE WOMAN WHO CLEANS THEIR STAIRWELL: ${c.slave}, a trafficked debt worker.`,
+      x.written
+        ? `WHAT THEY WEAR (already settled; keep it, and return it unchanged): citizen ${x.written.citizen_clothes}, ${x.written.citizen_shoes}; husband ${x.written.husband}${x.written.slave_clothes ? `; slave ${x.written.slave_clothes}, ${x.written.slave_collar}, ${x.written.slave_shoes}` : ""}.`
+        : `HOW THE GAME WOULD DRESS THEM (a starting point: change anything the laws or habits contradict): citizen ${h.citizen.clothes}, ${h.citizen.shoes}; husband ${h.husband}${h.slave ? `; slave ${h.slave.clothes}, ${h.slave.collar}, ${h.slave.shoes}` : ""}.`,
+      `THE COUSIN WRITES FROM: ${other.name}. What life is like there: ${other.kind === "oldworld" ? "no slavery; poorer and less safe" : NORM_IDS.filter((n) => Math.abs(other.norms[n] - x.norms[n]) >= 25).map((n) => normLine(n, other.norms[n])).join(" ") || "much the same"}`,
+      ``,
+      `WARDROBE (choose exact names): clothes: ${names("clothes").join("; ")}. collars: ${names("collar").join("; ")}. shoes: ${names("shoes").join("; ")}.`,
+      ``,
+      `Answer with this JSON and nothing else:`,
+      `{"citizen_clothes": "<clothes name>", "citizen_shoes": "<shoes name>", "husband": "<what he wears, a few words, or 'nothing'>",${slaves ? ` "slave_clothes": "<clothes name>", "slave_collar": "<collar name>", "slave_shoes": "<shoes name>", "slaves": <how many slaves the household keeps, 0-5>,` : ""} "story": ["<morning>", "<the street, with a law in force being kept or broken>", "<${slaves ? "the slave's day" : `${c.slave}'s day`}>", "<dinner, and what they say about ${x.kind === "yours" ? "the owner" : "the player's arcology"}>", "<a letter from the cousin in ${other.name}>"]}`,
+      `Each story entry is one paragraph of 60 to 110 words.`,
+    ].join("\n"),
   };
+}
+
+/** Check a narrator's answer against the wardrobe; anything it made up falls back to the game's choice. */
+export function readWritten(x: Society, text: string): Written | null {
+  const j = parseJson<Record<string, unknown>>(text);
+  if (!j || !Array.isArray(j.story)) return null;
+  const story = (j.story as unknown[]).filter((p): p is string => typeof p === "string" && p.trim().length > 20).map((p) => p.trim());
+  if (story.length < 3) return null;
+  const base = household({ ...x, written: undefined });
+  const pick = (v: unknown, slot: string, dflt: string) => (typeof v === "string" && names(slot).includes(v) ? v : dflt);
+  const outfits: Outfits = {
+    citizen_clothes: pick(j.citizen_clothes, "clothes", base.citizen.clothes),
+    citizen_shoes: pick(j.citizen_shoes, "shoes", base.citizen.shoes),
+    husband: typeof j.husband === "string" && j.husband.trim() ? j.husband.trim().slice(0, 80) : base.husband,
+  };
+  if (base.slave) {
+    outfits.slave_clothes = pick(j.slave_clothes, "clothes", base.slave.clothes);
+    outfits.slave_collar = pick(j.slave_collar, "collar", base.slave.collar);
+    outfits.slave_shoes = pick(j.slave_shoes, "shoes", base.slave.shoes);
+    if (typeof j.slaves === "number") outfits.slaves = Math.max(0, Math.min(5, Math.round(j.slaves)));
+  }
+  return { outfits, story };
+}
+
+/** Ask the narrator for the household and its day. Records the outfits against the society and the story against the pair. */
+export async function writeDay(s: SaveState, x: Society, other: Society, model: string, fallback?: string): Promise<{ ok: boolean; written?: Written; model?: string; error?: string }> {
+  const res = await call({ ...writeBrief(s, x, other), model, fallback, json: true, maxTokens: 1800, temperature: 0.85 });
+  if (!res.ok) return { ok: false, error: res.error ?? "the narrator didn't answer" };
+  const w = readWritten(x, res.text);
+  return w ? { ok: true, written: w, model: res.model } : { ok: false, error: "the narrator's answer couldn't be read" };
 }
 
 /** A family moving from one place to the other, in a paragraph: what they'd gain and what they'd lose. */

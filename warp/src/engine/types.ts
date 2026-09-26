@@ -847,9 +847,11 @@ export interface SaveState {
   /** Laws you wrote yourself. See data/customlaws. */
   custom_laws?: import("../data/customlaws").CustomLaw[];
   /** Photographs of a typical household in each society on the Compare screen, by society id. */
-  compare_photos?: Record<string, { model: string; week: number; url?: string; error?: string }>;
+  compare_photos?: Record<string, { model: string; week: number; url?: string; error?: string; fp?: string }>;
   /** The narrator's telling of a household's day, by "society:other". */
-  compare_stories?: Record<string, { model: string; week: number; text: string }>;
+  compare_stories?: Record<string, { model: string; week: number; text: string; fp?: string }>;
+  /** The narrator's outfits for each society's household, while its laws and habits still match `fp`. */
+  compare_written?: Record<string, { model: string; week: number; fp: string; outfits: import("./compare").Outfits }>;
   /** Campaigns you are paying for, and the last week you spoke. See engine/civic. */
   campaigns?: import("./civic").Campaign[];
   last_speech?: number;

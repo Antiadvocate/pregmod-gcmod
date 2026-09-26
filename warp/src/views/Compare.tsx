@@ -5,16 +5,18 @@
  * household in yours and in the one you pick, drawn with the game's own figures in what each would
  * wear; where each is ahead; and a photograph of either household, redrawn from the drawn figures.
  */
-import { useMemo, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Section, cx } from "../lib/ui";
 import { hasApiKey, modelsAvailable } from "../config";
 import { frameFigures, redraw, svgToPng, toJpeg } from "../lib/imagegen";
 import { NORMS, NORM_IDS } from "../engine/culture";
-import { citizenLife, contrast, figureFor, household, METRICS, settingFor, slaveLife, societies, type Society } from "../engine/compare";
+import { citizenLife, contrast, figureFor, fingerprint, household, METRICS, settingFor, slaveLife, societies, type Society } from "../engine/compare";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
-import { castOf, dayInTheLife, moving, storyBrief } from "../engine/comparestory";
-import { call } from "../llm";
+import { castOf, dayInTheLife, moving, writeDay } from "../engine/comparestory";
+
+/** Days being written right now, so a re-render or a second mount doesn't pay for the same one twice. */
+const inflight = new Set<string>();
 import SlaveArt from "./SlaveArt";
 
 function Score({ v, mine }: { v: number; mine?: boolean }) {
@@ -98,25 +100,38 @@ function HouseholdCard({ x, other, yours, compact }: { x: Society; other: Societ
   const refS = useRef<SVGSVGElement>(null);
   const [busy, setBusy] = useState(false);
   const model = save.models.photo_model ?? "";
-  const ph = save.compare_photos?.[x.id];
+  const phAll = save.compare_photos?.[x.id];
+  const dressed = JSON.stringify(household(x));
+  const ph = phAll && (!phAll.fp || phAll.fp === dressed) ? phAll : phAll?.error ? { ...phAll, url: undefined } : undefined;
   const cast = castOf(x);
   const key = `${x.id}:${other.id}`;
+  const fp = fingerprint(x) + fingerprint(other);
   const told = save.compare_stories?.[key];
-  const [telling, setTelling] = useState("");
+  const fresh = !!told && told.fp === fp;
+  const [writing, setWriting] = useState(false);
   const [tellErr, setTellErr] = useState("");
   const [plain, setPlain] = useState(false);
   const story = dayInTheLife(save, x, other, yours);
-  const tell = async () => {
-    if (telling) return;
-    setTelling(" "); setTellErr("");
-    const b = storyBrief(save, x, other, yours);
-    let acc = "";
-    const res = await call({ ...b, model: save.models.narrator_model, fallback: save.models.fallback_model, maxTokens: 900, temperature: 0.9, onDelta: (d) => { acc += d; setTelling(acc); }, onReset: () => { acc = ""; setTelling(" "); } });
-    if (res.ok && res.text.trim()) { const text = res.text.trim(); mutate((s) => { (s.compare_stories ??= {})[key] = { model: res.model, week: s.arcology.week, text }; }); setPlain(false); }
-    else setTellErr(res.error ?? "The narrator returned nothing.");
-    setTelling("");
+  const write = async () => {
+    if (inflight.has(key)) return;
+    inflight.add(key); setWriting(true); setTellErr("");
+    try {
+      const res = await writeDay(save, x, other, save.models.narrator_model, save.models.fallback_model);
+      if (res.ok && res.written) {
+        const w = res.written;
+        mutate((s) => {
+          (s.compare_stories ??= {})[key] = { model: res.model ?? "", week: s.arcology.week, text: w.story.join("\n\n"), fp };
+          // The first telling settles what they wear; later tellings for other comparisons keep it.
+          const was = s.compare_written?.[x.id];
+          if (!was || was.fp !== fingerprint(x)) (s.compare_written ??= {})[x.id] = { model: res.model ?? "", week: s.arcology.week, fp: fingerprint(x), outfits: w.outfits };
+        });
+        setPlain(false);
+      } else setTellErr(res.error ?? "The narrator returned nothing.");
+    } finally { inflight.delete(key); setWriting(false); }
   };
-  const paras = telling.trim() ? telling.split(/\n\s*\n/) : told && !plain ? told.text.split(/\n\s*\n/) : story;
+  // The narrator writes each day once, and again only when the laws or the habits change.
+  useEffect(() => { if (modelsAvailable() && !fresh && !tellErr) void write(); }, [fp]);
+  const paras = fresh && !plain ? told!.text.split(/\n\s*\n/) : story;
 
   const photograph = async () => {
     const svgs = [refC.current, slave ? refS.current : null].filter(Boolean) as SVGSVGElement[];
@@ -125,7 +140,7 @@ function HouseholdCard({ x, other, yours, compact }: { x: Society; other: Societ
     try {
       const framed = await frameFigures(await Promise.all(svgs.map((s) => svgToPng(s, 2.5))));
       const url = await toJpeg(await redraw(model, framed, photoPrompt(x)), 1100, 0.86);
-      mutate((s) => { (s.compare_photos ??= {})[x.id] = { model, week: s.arcology.week, url }; });
+      mutate((s) => { (s.compare_photos ??= {})[x.id] = { model, week: s.arcology.week, url, fp: dressed }; });
     } catch (e) {
       const msg = (e as Error).message;
       mutate((s) => { (s.compare_photos ??= {})[x.id] = { ...(s.compare_photos?.[x.id] ?? { model, week: s.arcology.week }), error: msg.slice(0, 220) }; });
@@ -163,8 +178,10 @@ function HouseholdCard({ x, other, yours, compact }: { x: Society; other: Societ
       <div className="text-[10.5px] uppercase tracking-wider dim mb-1">{x.kind === "oldworld" ? `A day with the ${cast.surname} family` : `A day in the ${cast.surname} household`}</div>
       <div className="font-prose text-[14px] leading-relaxed space-y-2 mb-2">{paras.map((para, i) => <p key={i}>{para}</p>)}</div>
       <div className="flex items-center gap-2 flex-wrap mb-2">
-        {modelsAvailable() ? <Button size="sm" kind="ghost" disabled={!!telling} onClick={() => void tell()} title="Hands this day to the narrator model to tell in full, keeping every fact">{telling ? "telling…" : told ? "tell it again" : "tell it in full"}</Button> : null}
-        {told && !telling ? <button className="text-[11px] dim underline" onClick={() => setPlain(!plain)}>{plain ? "the narrator's version" : "the game's version"}</button> : null}
+        {writing ? <span className="text-[11.5px] dim">The narrator is writing this day from the laws…</span> : null}
+        {modelsAvailable() && !writing ? <Button size="sm" kind="ghost" onClick={() => void write()} title="The narrator reads every law word for word and writes the day, and dresses the household by them">{fresh ? "write it again" : "write it from the laws"}</Button> : null}
+        {fresh && !writing ? <button className="text-[11px] dim underline" onClick={() => setPlain(!plain)}>{plain ? "the narrator's version" : "the game's rough version"}</button> : null}
+        {!modelsAvailable() ? <span className="text-[11px] dim">Set a narrator model in Settings to have this day written from your laws.</span> : null}
         {tellErr ? <span className="text-[11.5px] warn">{tellErr.slice(0, 160)}</span> : null}
       </div>
       <details className="text-[12px] mb-2">

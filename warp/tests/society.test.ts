@@ -321,7 +321,7 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
 {
   // The Compare screen tells each household's day as a story, from the same numbers.
   const { societies } = await import("../src/engine/compare.ts");
-  const { dayInTheLife, castOf, moving, storyBrief } = await import("../src/engine/comparestory.ts");
+  const { dayInTheLife, castOf, moving } = await import("../src/engine/comparestory.ts");
   const { writeLaw } = await import("../src/engine/court.ts");
   const s = game("soc-story");
   s.arcology.rep = 9000;
@@ -339,6 +339,35 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   pushNorm(s, "cruelty", 200, "the city turns cruel");
   check("a cruel city's morning has the cane in it", /cane/.test(dayInTheLife(s, societies(s)[0], near, yours)[0]));
   check("moving reads as a sentence", /^If the .+ packed up and moved from /.test(moving(near, yours)), moving(near, yours));
-  const b = storyBrief(s, yours, near, yours);
-  check("the narrator gets the facts and the family", b.user.includes(c.wife) && b.user.includes("Open Hands") && /children/.test(b.system));
+  const { writeBrief, readWritten } = await import("../src/engine/comparestory.ts");
+  const b = writeBrief(s, yours, near);
+  check("the narrator gets every law word for word, and the family", b.user.includes(c.wife) && b.user.includes('"A slave may not be struck in a public place."') && /binding and literal/.test(b.system) && /children/.test(b.system));
+  const w = readWritten(yours, JSON.stringify({ citizen_clothes: "no clothing", citizen_shoes: "barefoot", husband: "nothing", slave_clothes: "a ballgown of stars", slave_collar: "a silk ribbon", slave_shoes: "barefoot", slaves: 9, story: ["one paragraph of the morning, long enough", "the street, where the law is kept by all", "the slave's day, with her errands and the grocer", "dinner", "a letter"] }));
+  check("the narrator's clothes are used when they're in the wardrobe", w?.outfits.citizen_clothes === "no clothing" && w?.outfits.slave_collar === "a silk ribbon", w);
+  check("and anything it made up falls back to the game's choice", !!w && w.outfits.slave_clothes !== "a ballgown of stars" && w.outfits.slaves === 5, w?.outfits);
+  check("a garbled answer is refused", readWritten(yours, "I'd rather not.") === null);
+}
+
+{
+  // The laws' own words beat the habits: a law that says citizens can't be dressed undresses them.
+  const { societies, household, figureFor } = await import("../src/engine/compare.ts");
+  const { dayInTheLife } = await import("../src/engine/comparestory.ts");
+  const { writeLaw } = await import("../src/engine/court.ts");
+  const s = game("soc-lawdress");
+  s.arcology.rep = 9000;
+  pushNorm(s, "exposure", -200, "the city is prudish");
+  check("a prudish city dresses its citizens", household(societies(s)[0]).citizen.clothes !== "no clothing");
+  writeLaw(s, { name: "Open Skin", text: "Citizens cannot be dressed in public.", push: [], effects: ["prestige"] });
+  const x = societies(s)[0];
+  check("until a law says they can't be", household(x).citizen.clothes === "no clothing" && figureFor(x, "citizen")!.clothes === "no clothing", household(x).citizen);
+  check("the husband too", /nothing/.test(household(x).husband));
+  check("and the story says so", /(Nobody on the concourse is dressed, citizens included|Every citizen on the concourse is naked)/.test(dayInTheLife(s, x, societies(s)[1], x)[1]));
+  writeLaw(s, { name: "Covered Chattel", text: "Every slave must be covered from neck to knee.", push: [], effects: ["prestige"] });
+  pushNorm(s, "exposure", 400, "the city goes open");
+  check("a law covering slaves beats an open city's habits", household(societies(s)[0]).slave?.clothes !== "no clothing", household(societies(s)[0]).slave);
+  const { lawDress } = await import("../src/engine/compare.ts");
+  const said = (text: string) => lawDress({ ...societies(s)[0], laws: [{ name: "T", text }] });
+  check("'may not wear shoes' is bare feet, not bare skin", said("Slaves may not wear shoes.").slave === undefined && said("Slaves may not wear shoes.").barefoot === true);
+  check("'may not wear clothing' is naked", said("Slaves may not wear clothing on the concourse.").slave === "naked");
+  check("'nobody may be dressed' covers citizens and slaves", said("Nobody may be dressed above the tenth floor.").citizen === "naked" && said("Nobody may be dressed above the tenth floor.").slave === "naked");
 }
