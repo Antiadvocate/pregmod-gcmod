@@ -208,6 +208,36 @@ function youLines(s: SaveState, escort?: Person): Vignette[] {
 }
 
 /** The opening of a walk: what you see there this week. */
+/** How far the city is going along with a law: + keeping it, − against it. */
+function lawSupport(s: SaveState, l: { pull: Partial<Record<Norm, number>> }): number {
+  const c = cultureOf(s);
+  const e = Object.entries(l.pull) as [Norm, number][];
+  return e.length ? e.reduce((n, [k, v]) => n + c.norms[k] * Math.sign(v), 0) / e.length : 0;
+}
+
+/** Your law, happening in front of you: people doing what it says (to your slave, if she's with
+ *  you and it's about slaves), or not doing it and being made to. */
+function lawInAction(s: SaveState, l: { name: string; text: string; pull: Partial<Record<Norm, number>> }, escort: Person | undefined, r: ReturnType<typeof rng>): string {
+  const sup = lawSupport(s, l);
+  const aboutSlaves = /slave|household|owner'?s|collar/i.test(l.text);
+  const q = `"${l.text.replace(/"/g, "'")}"`;
+  if (sup >= -10) {
+    if (escort && aboutSlaves) return r.pick([
+      `Your ${l.name} is in force here: ${q} When ${escort.name} walks past a café, a man at one of the tables does exactly what it requires, for her, without being told. ${escort.name} stops and looks at you, not sure what she's supposed to do with it.`,
+      `Because of the ${l.name} (${q}) people change what they're doing when they see ${escort.name}. A woman with shopping bags does what the law says, right there on the tiles, and then waits for ${escort.name} to pass before she gets up. Other people are watching to see if she does it properly.`,
+      `A shopkeeper sees ${escort.name}'s collar, then your face, and hurries out to do what the ${l.name} requires of him: ${q} He's done it before; you can tell from how he does it. ${escort.name} doesn't know where to look.`,
+    ]);
+    return r.pick([
+      `Your ${l.name} is being kept all over the concourse: ${q} You watch three different people do it inside a minute: a shopkeeper, a woman with a pram, and an old man who does it slowly because his knees are bad.`,
+      `Nobody here needs to be told about the ${l.name}. ${q} People do it as if it had always been the rule, and a child is explaining it to a younger one.`,
+    ]);
+  }
+  return r.pick([
+    `The ${l.name} says ${q} Most people here aren't doing it. A patrol stops one man and makes him do it while a crowd watches, and the moment the patrol moves on, the others go back to ignoring it.${escort && aboutSlaves ? ` Nobody does it for ${escort.name}, though some of them see her collar and know they should.` : ""}`,
+    `Someone has scrawled "your law, not ours" across the notice of the ${l.name}. Under it, a few people are doing what it says (${q}) with their eyes on the patrol, and a few more very pointedly aren't.`,
+  ]);
+}
+
 export function walkScene(s: SaveState, place: Place, escort?: Person): string {
   const r = rng(`walk:${s.arcology.week}:${place.id}:${s.turn}:${escort?.id ?? ""}`);
   const c = cultureOf(s);
@@ -221,11 +251,7 @@ export function walkScene(s: SaveState, place: Place, escort?: Person): string {
     if (LAW_LINES[law.id]) pool.push({ w: 2.5, text: LAW_LINES[law.id] });
     else if (LAW_BY_ID[law.id]) {
       const l = LAW_BY_ID[law.id];
-      const keep = Object.entries(l.pull).reduce((n, [k, v]) => n + c.norms[k as Norm] * Math.sign(v as number), 0) >= 0;
-      pool.push({ w: 3, text: `A notice by the lift, with your seal on it, announces the ${l.name}: "${l.text}" Two citizens are arguing in front of it.` });
-      pool.push({ w: 4, text: keep
-        ? `You see the ${l.name} being kept without anyone watching: people doing exactly what it says, as if it had always been the rule. "${l.text}" A child is explaining it to a younger one.`
-        : `You see the ${l.name} being broken in plain sight, a few steps from a patrol who pretends not to notice. Someone has scrawled "your law, not ours" across its notice.` });
+      pool.push({ w: 1.5, text: `A notice by the lift, with your seal on it, announces the ${l.name}: "${l.text}" Two citizens are arguing in front of it.` });
     }
   }
   for (const [id, st] of Object.entries(s.arcology.doctrines)) {
@@ -243,8 +269,11 @@ export function walkScene(s: SaveState, place: Place, escort?: Person): string {
   else if (wx === "heatwave") pool.push({ w: 2, text: "The cooling is struggling with the heat. Slaves are fanning their owners at the café tables." });
 
   const picked: string[] = [r.pick(PLACE_LINES[place.kind] ?? PLACE_LINES.concourse)];
+  // Your own laws always show: they're the thing you changed, and people are living under them.
+  const yours = lawsOf(s).filter((x) => x.id.startsWith("custom_")).map((x) => LAW_BY_ID[x.id]).filter(Boolean).slice(-2).reverse();
+  for (const l of yours) picked.push(lawInAction(s, l, escort, r));
   const left = [...pool];
-  for (let i = 0; i < 4 && left.length; i++) {
+  for (let i = 0; i < 4 - yours.length && left.length; i++) {
     const v = r.weighted(left, (x) => x.w);
     picked.push(v.text);
     left.splice(left.indexOf(v), 1);
@@ -269,9 +298,16 @@ export function startWalk(s: SaveState, placeId: string, escortId?: string): str
 
 export const WALK_SYSTEM = `You write a walk through the player's arcology in Free Cities, an adult text game about owning an arcology where slavery is legal. The player owns the arcology and is out in public.
 
-Show the city as it is now, through what citizens and slaves are doing: how owners treat their slaves, how slaves carry themselves, what people say to each other and about the player. Everything you show must fit the CITY'S HABITS, the LAWS and what people know the player did. Name people with ordinary names and give them a line or two of their own. Two to four paragraphs. If the player does something, write it happening and write how the people around react; everyone can see. Do not write the player's feelings. Do not end the walk; stop where the player can act.
+Show the city as it is now, through what citizens and slaves are doing: how owners treat their slaves, how slaves carry themselves, what people say to each other and about the player. Everything you show must fit the CITY'S HABITS, the LAWS and what people know the player did. The laws are real and people live under them: show citizens doing what THE OWNER'S OWN LAWS require, here, in front of the player, and when a law applies to someone present (the player's slave included) show it being done to or by them. If the city is against a law, show it being dodged and enforced, not ignored by the story. Name people with ordinary names and give them a line or two of their own. Two to four paragraphs. If the player does something, write it happening and write how the people around react; everyone can see. Do not write the player's feelings. Do not end the walk; stop where the player can act.
 
 Then, on its own line, write OPTIONS: and under it exactly four lines, each starting with "- ", giving four different things the player could do next, in the player's voice and under twelve words each: one that talks to someone you described, one that intervenes, one that uses the moment for the player's pleasure or power, and one that moves on to somewhere else or goes home.`;
+
+function ownLaws(s: SaveState): string {
+  return lawsOf(s).filter((x) => x.id.startsWith("custom_")).map((x) => LAW_BY_ID[x.id]).filter(Boolean).map((l) => {
+    const sup = lawSupport(s, l);
+    return `· the ${l.name}: ${l.text} (${sup > 30 ? "kept by everyone without thinking" : sup >= -10 ? "kept, some of it grudgingly" : sup > -40 ? "kept only where patrols are watching" : "openly defied, and enforced by patrols"})`;
+  }).join("\n");
+}
 
 /** What the narrator is told about the city for a walk. */
 export function walkContext(s: SaveState, placeId?: string): string {
@@ -282,6 +318,7 @@ export function walkContext(s: SaveState, placeId?: string): string {
   return [
     `## WHERE\n${place.name}: ${place.blurb}${place.condition <= 35 ? " It is run down." : ""}`,
     `## THE CITY'S HABITS\n${cultureBrief(s) || "Nothing settled yet; citizens behave in all sorts of ways."}`,
+    ownLaws(s) ? `## THE OWNER'S OWN LAWS (people here obey these; show at least one of them happening in this scene, applied to whoever it applies to)\n${ownLaws(s)}` : "",
     lawsBrief(s) ? `## LAWS IN FORCE\n${lawsBrief(s)}` : "",
     docs ? `## DOCTRINES\n${docs}` : "",
     `## THE PLAYER\nOwner of the arcology. Reputation ${Math.round(s.arcology.rep)}; the city's opinion of them is ${s.arcology.public_standing >= 3 ? "good" : s.arcology.public_standing <= -3 ? "poor" : "mixed"}.${s.player.owned_by ? ` Wears the collar of their slave ${s.people[s.player.owned_by]?.name ?? ""}, and people can see it.` : ""}`,

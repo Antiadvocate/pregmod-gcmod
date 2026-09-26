@@ -211,3 +211,26 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   check("the week after, the city answers it with an event", kinds.size >= 1, [...kinds]);
   check("the report says how the city is keeping it", lines.some((l) => /Sole Tithe/.test(l)), lines.filter((l) => /Sole|law/i.test(l)).slice(0, 4));
 }
+
+{
+  // On a walk, your laws are always being lived: done to your slave if they're about slaves.
+  const { writeLaw } = await import("../src/engine/court.ts");
+  const { walkContext } = await import("../src/engine/walk.ts");
+  const s = game("soc-walklaw");
+  s.arcology.rep = 9000;
+  writeLaw(s, { name: "Kneeling Act", text: "Every citizen kneels when a slave of the owner's household passes.", push: [{ norm: "reversal", dir: 1 }], effects: [] });
+  cultureOf(s).norms.reversal = 40;
+  const her = Object.values(s.people).find((p) => p.status === "owned" && p.age >= 18)!;
+  let every = true, toHer = true;
+  for (let i = 0; i < 6; i++) {
+    s.turn++;
+    const scene = walkScene(s, places(s)[0], her);
+    if (!/Kneeling Act/.test(scene)) every = false;
+    if (!new RegExp(`${her.name}[^.]*(?:stops|look|know)|for her|${her.name} walks|when they see ${her.name}|${her.name}'s collar`).test(scene)) toHer = false;
+  }
+  check("every walk shows your law being kept", every);
+  check("and applied to the slave with you", toHer);
+  check("the walk narrator is told to show it", /THE OWNER'S OWN LAWS[\s\S]*Kneeling Act/.test(walkContext(s, "concourse")));
+  cultureOf(s).norms.reversal = -80;
+  check("a law the city hates is shown dodged and enforced", /patrol|your law, not ours/.test(walkScene(s, places(s)[0], her)));
+}
