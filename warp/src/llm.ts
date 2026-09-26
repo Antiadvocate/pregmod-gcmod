@@ -89,12 +89,30 @@ export function isRefusal(text: string): boolean {
     || /\b(?:i can(?:'|no)t|i won't|i'm unable to|i am unable to) (?:write|create|produce|generate|continue)[^.]{0,80}\b(?:explicit|sexual|non-?consensual|slave|minor|this (?:scene|content|request))/.test(head);
 }
 
+/** One call at a time, a moment apart. The game used to fire the week summary, the assistant's
+ *  brief and the scene's bookkeeper at the same instant; bursts like that are what a provider
+ *  rate-limits first. Queued calls still honour Stop. */
+let queue: Promise<unknown> = Promise.resolve();
+let lastStart = 0;
+function queued<T>(fn: () => Promise<T>, signal?: AbortSignal): Promise<T> {
+  const run = async () => {
+    if (signal?.aborted) throw Object.assign(new Error("aborted"), { name: "AbortError" });
+    const gap = 400 - (Date.now() - lastStart);
+    if (gap > 0) await sleep(gap, signal);
+    lastStart = Date.now();
+    return fn();
+  };
+  const p = queue.then(run, run);
+  queue = p.catch(() => undefined);
+  return p;
+}
+
 export async function call(opts: CallOptions): Promise<LLMResult> {
   const chain = [opts.model, opts.fallback].filter(Boolean) as string[];
   let lastErr = "";
   for (const model of chain) {
     try {
-      const res = await once({ ...opts, model });
+      const res = await queued(() => once({ ...opts, model }), opts.signal);
       // A refusal is not a scene. Try the fallback model; if that refuses too, the caller gets a
       // failure and uses the game's own written version instead of printing the refusal.
       if (!opts.json && isRefusal(res.text)) {
@@ -121,7 +139,7 @@ function retryDelay(res: Response, tries: number): number {
   if (after > 0) return Math.min(20000, after * 1000);
   const reset = Number(res.headers.get("x-ratelimit-reset"));
   if (reset > 1e12) return Math.min(20000, Math.max(1000, reset - Date.now()));
-  return tries === 0 ? 3000 : 8000;
+  return [3000, 8000, 15000][tries] ?? 15000;
 }
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
@@ -158,7 +176,7 @@ async function once(opts: CallOptions): Promise<LLMResult> {
     res = await send();
   }
   // Rate-limited or overloaded: wait what the server asks (up to 20 seconds) and try again, twice.
-  for (let tries = 0; !res.ok && [429, 502, 503].includes(res.status) && tries < 2; tries++) {
+  for (let tries = 0; !res.ok && [429, 502, 503].includes(res.status) && tries < 3; tries++) {
     const wait = retryDelay(res, tries);
     opts.onWait?.(wait, res.status);
     for (const fn of waitListeners) fn(wait, res.status, opts.model);
@@ -166,8 +184,17 @@ async function once(opts: CallOptions): Promise<LLMResult> {
     res = await send();
   }
   if (!res.ok) {
-    const detail = (await res.text()).slice(0, 200);
-    if (res.status === 429) throw new Error(`rate limited on ${opts.model}. ${/:free\b/.test(opts.model) ? "Free (:free) models on OpenRouter allow about 20 requests a minute and a small daily allowance; the paid version of the same model has much higher limits. " : "The provider is limiting requests right now. "}Setting a different fallback model, or a different bookkeeper model, spreads the load. (${detail})`);
+    const raw = await res.text();
+    const detail = raw.slice(0, 300);
+    if (res.status === 429) {
+      // OpenRouter says which provider refused and passes on what that provider said.
+      let who = "", said = "";
+      try { const j = JSON.parse(raw); who = j?.error?.metadata?.provider_name ?? ""; said = String(j?.error?.metadata?.raw ?? j?.error?.message ?? "").slice(0, 200); } catch { said = detail; }
+      const free = /:free\b/.test(opts.model);
+      throw new Error(`rate limited on ${opts.model}${who ? ` by ${who}` : ""}: ${said || detail}. ${free
+        ? "Free (:free) models on OpenRouter allow about 20 requests a minute and a small daily allowance. "
+        : who ? `That's ${who}, the company running the model, saying it's busy, not your account. On the model's OpenRouter page you can see which other providers host it. ` : "The provider running this model is limiting requests right now, not your account. "}A fallback model in Settings takes over when this happens.`);
+    }
     throw new Error(`${res.status} ${detail}`);
   }
 

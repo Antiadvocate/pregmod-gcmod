@@ -40,7 +40,7 @@ reject400 = false;
 const ctl = new AbortController(); ctl.abort();
 const m = bodies.length;
 const stopped = await call({ system: "s", user: "u", model: "some/flash", fallback: "other/model", signal: ctl.signal });
-check("stopping doesn't fall through to the fallback model", !stopped.ok && stopped.error === "stopped" && bodies.length === m + 1, bodies.length - m);
+check("stopping doesn't fall through to the fallback model", !stopped.ok && stopped.error === "stopped" && bodies.length <= m + 1, bodies.length - m);
 
 // Rate limits: wait and retry, then say what happened.
 {
@@ -51,6 +51,18 @@ check("stopping doesn't fall through to the fallback model", !stopped.ok && stop
   hits = -10;
   const r2 = await call({ system: "s", user: "u", model: "mistral/small:free" });
   check("and when it keeps failing, it says why", !r2.ok && /rate limited on mistral\/small:free[\s\S]*Free \(:free\) models/.test(r2.error ?? ""), r2.error);
+}
+
+// Calls wait their turn: two at once reach the server one after the other.
+{
+  const starts: number[] = [];
+  let open = 0, most = 0;
+  g.fetch = async () => { starts.push(Date.now()); open++; most = Math.max(most, open); await new Promise((r) => setTimeout(r, 30)); open--; return new Response(JSON.stringify({ choices: [{ message: { content: "Fine." } }] }), { status: 200 }); };
+  await Promise.all([call({ system: "s", user: "a", model: "m/x" }), call({ system: "s", user: "b", model: "m/x" })]);
+  check("calls are sent one at a time, a moment apart", most === 1 && starts[1] - starts[0] >= 350, { most, gap: starts[1] - starts[0] });
+  g.fetch = async () => new Response(JSON.stringify({ error: { message: "Provider returned error", metadata: { provider_name: "Mistral", raw: "Rate limit exceeded" } } }), { status: 429, headers: { "retry-after": "0.01" } });
+  const r = await call({ system: "s", user: "u", model: "mistralai/mistral-small" });
+  check("a paid model's rate limit names the provider refusing", /by Mistral: Rate limit exceeded[\s\S]*not your account/.test(r.error ?? ""), r.error);
 }
 
 g.fetch = oldFetch;
