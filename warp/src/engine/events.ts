@@ -428,8 +428,13 @@ export const EVENTS: EventDef[] = [
 export const EVENT_BY_ID: Record<string, EventDef> = Object.fromEntries(EVENTS.map((e) => [e.id, e]));
 
 /** Other systems add their own events here (idols, battles, the corporation, TV). */
-export function registerEvents(defs: EventDef[]): void {
-  for (const d of defs) if (!EVENT_BY_ID[d.id]) { EVENTS.push(d); EVENT_BY_ID[d.id] = d; }
+export function registerEvents(defs: EventDef[], replace = false): void {
+  for (const d of defs) {
+    if (EVENT_BY_ID[d.id] && !replace) continue;
+    const i = EVENTS.findIndex((x) => x.id === d.id);
+    if (i >= 0) EVENTS[i] = d; else EVENTS.push(d);
+    EVENT_BY_ID[d.id] = d;
+  }
 }
 
 /** Put one event in front of the player now, whatever the dice say. */

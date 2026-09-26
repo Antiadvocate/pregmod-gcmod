@@ -16,6 +16,7 @@
  * afterwards to work out what must have happened, which is how the old end-of-week text and the
  * old budget screen ended up describing two different weeks.
  */
+import { lawPulse } from "./lawlife";
 import { tickHousehold } from "./household";
 import { tickBattles } from "./battles";
 import { tickFCTV } from "./fctv";
@@ -309,6 +310,7 @@ export function endWeek(s: SaveState): WeekReport {
   for (const l of camp.lines) push(l, "neutral", 4);
   for (const l of tickCulture(s)) push(l, "neutral", 7);
   for (const l of tickCourt(s)) push(l, "warning", 7);
+  for (const l of lawPulse(s)) push(l, "neutral", 6);
   // If she holds your collar, the week is hers: her orders, her household, her laws.
   for (const l of tickReign(s)) push(l.text, l.tone, l.weight, l.person);
 

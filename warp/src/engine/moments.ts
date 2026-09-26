@@ -8,6 +8,7 @@
  * on the Penthouse, and picks up where it left off. With no model, the written game answers in her
  * voice and still offers you the next thing to say.
  */
+import { lawsLine } from "./lawlife";
 import type { Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
@@ -167,6 +168,7 @@ export async function playMoment(
     ...others.map((o) => `## ALSO IN THE SCENE\n${personCard(s, o, m.title)}`),
     p && others.length ? `## BETWEEN THEM\n${others.flatMap((o) => [bond(p, o), bond(o, p)]).filter(Boolean).join("\n")}\nBoth of them talk and act in the scene, each in her own voice.` : "",
     s.world ? `## THE WORLD\n${worldBrief(s)}` : "",
+    walking ? "" : lawsLine(s),
     `## THE SCENE SO FAR (${m.title})\n${transcript(m)}`,
     reply ? `## THE PLAYER'S REPLY\n${reply}` : `## WRITE THIS MOMENT OUT IN FULL, then offer the options.`,
   ].filter(Boolean).join("\n\n");

@@ -7,6 +7,7 @@
  * swings back, the same law comes up for repeal. The petition names what moved the city, and when
  * that was you, it says so. A case you ignore for two weeks is decided without you.
  */
+import { lawPassed } from "./lawlife";
 import type { SaveState } from "./types";
 import { clamp } from "./psyche";
 import { type Norm, cultureOf, drivers, normLine, pushNorm, registerLawPull } from "./culture";
@@ -28,11 +29,12 @@ export function courtOf(s: SaveState): CourtState {
 /** Laws you wrote are registered next to the built-in ones, so everything that reads a law reads them. */
 function registerCustom(s: SaveState) {
   for (const c of s.custom_laws ?? []) {
-    if (LAW_BY_ID[c.id]) continue;
+    // The registry is shared by every save in this session: re-register if a different law has the id.
+    if (LAW_BY_ID[c.id] && LAW_BY_ID[c.id].name === c.name && LAW_BY_ID[c.id].text === c.text) continue;
     const def = customLawDef(c);
     LAW_BY_ID[c.id] = def;
     registerLawPull(c.id, def.pull, def.name);
-    registerEvents([repealEvent(def)]);
+    registerEvents([repealEvent(def)], true);
   }
 }
 export const lawsOf = (s: SaveState) => { registerCustom(s); return (s.laws ??= []); };
@@ -50,6 +52,7 @@ export function enact(s: SaveState, l: LawDef, by: LawInForce["by"], exempt = fa
   const struck = lawsOf(s).filter((x) => l.opposes?.includes(x.id)).map((x) => LAW_BY_ID[x.id]?.name ?? x.id);
   s.laws = lawsOf(s).filter((x) => !l.opposes?.includes(x.id) && x.id !== l.id);
   s.laws.push({ id: l.id, week: s.arcology.week, by, exempt });
+  lawPassed(s, l);
   return struck.length ? ` It replaces the ${struck.join(" and the ")}.` : "";
 }
 
@@ -236,7 +239,7 @@ export function writeLaw(s: SaveState, draft: { name: string; text: string; push
   const need = customLawRep(s);
   if (s.arcology.rep < need) return { ok: false, line: `You need ${need.toLocaleString()} reputation to write a law; you have ${Math.round(s.arcology.rep).toLocaleString()}.` };
   const cost = customLawCost(s, draft.push);
-  const c: CustomLaw = { id: `custom_${s.arcology.week}_${(s.custom_laws ?? []).length}`, name, text, push: draft.push.slice(0, 2), effects: draft.effects.filter((e) => CUSTOM_EFFECTS[e]).slice(0, 2), week: s.arcology.week };
+  const c: CustomLaw = { id: `custom_${s.arcology.week}_${(s.custom_laws ?? []).length}_${Date.now().toString(36)}`, name, text, push: draft.push.slice(0, 2), effects: draft.effects.filter((e) => CUSTOM_EFFECTS[e]).slice(0, 2), week: s.arcology.week };
   (s.custom_laws ??= []).push(c);
   registerCustom(s);
   const def = LAW_BY_ID[c.id];
@@ -245,5 +248,6 @@ export function writeLaw(s: SaveState, draft: { name: string; text: string; push
   std(s, -cost.standing);
   for (const p of c.push) pushNorm(s, p.norm, p.dir * 6, `you wrote the ${name}`);
   record(s, def, "enact", "you wrote it");
+  lawPassed(s, def);
   return { ok: true, line: `The ${name} is law from Monday: "${text}" It's posted at every lift by the evening.${cost.standing ? " The city didn't ask for it, and it lets you know." : ""}` };
 }
