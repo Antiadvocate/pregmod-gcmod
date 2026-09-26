@@ -217,7 +217,10 @@ export function walkScene(s: SaveState, place: Place, escort?: Person): string {
     const lines = v >= 25 ? NORM_LINES[n].hi : v <= -25 ? NORM_LINES[n].lo : MIXED_LINES[n];
     for (const t of lines) pool.push({ w: Math.abs(v) >= 25 ? Math.abs(v) / 20 : 0.8, text: t });
   }
-  for (const law of lawsOf(s)) if (LAW_LINES[law.id]) pool.push({ w: 2.5, text: LAW_LINES[law.id] });
+  for (const law of lawsOf(s)) {
+    if (LAW_LINES[law.id]) pool.push({ w: 2.5, text: LAW_LINES[law.id] });
+    else if (LAW_BY_ID[law.id]) pool.push({ w: 3, text: `A notice by the lift, with your seal on it, announces the ${LAW_BY_ID[law.id].name}: "${LAW_BY_ID[law.id].text}" Two citizens are arguing in front of it.` });
+  }
   for (const [id, st] of Object.entries(s.arcology.doctrines)) {
     const d = DOCTRINE_BY_ID[id];
     if (d && st.adoption >= 40) pool.push({ w: 1, text: `A preacher on a crate is telling a small crowd about ${d.noun}. More of them are nodding than you'd expect.` });

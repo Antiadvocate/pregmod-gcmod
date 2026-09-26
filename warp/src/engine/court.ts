@@ -9,8 +9,9 @@
  */
 import type { SaveState } from "./types";
 import { clamp } from "./psyche";
-import { cultureOf, drivers, normLine, pushNorm, registerLawPull } from "./culture";
+import { type Norm, cultureOf, drivers, normLine, pushNorm, registerLawPull } from "./culture";
 import { LAWS, LAW_BY_ID, type LawDef } from "../data/laws";
+import { customLawDef, CUSTOM_EFFECTS, type CustomLaw } from "../data/customlaws";
 import { registerEvents, fireEvent, resolveEvent, type EventDef } from "./events";
 
 export interface LawInForce { id: string; week: number; exempt?: boolean; by: "you" | "court" | "keeper" }
@@ -24,7 +25,17 @@ for (const l of LAWS) registerLawPull(l.id, l.pull, l.name);
 export function courtOf(s: SaveState): CourtState {
   return (s.court ??= { last: 0, record: [], vetoed: {}, vetoes: 0 });
 }
-export const lawsOf = (s: SaveState) => (s.laws ??= []);
+/** Laws you wrote are registered next to the built-in ones, so everything that reads a law reads them. */
+function registerCustom(s: SaveState) {
+  for (const c of s.custom_laws ?? []) {
+    if (LAW_BY_ID[c.id]) continue;
+    const def = customLawDef(c);
+    LAW_BY_ID[c.id] = def;
+    registerLawPull(c.id, def.pull, def.name);
+    registerEvents([repealEvent(def)]);
+  }
+}
+export const lawsOf = (s: SaveState) => { registerCustom(s); return (s.laws ??= []); };
 export const inForce = (s: SaveState, id: string) => lawsOf(s).some((l) => l.id === id);
 
 const std = (s: SaveState, by: number) => { s.arcology.public_standing = clamp(s.arcology.public_standing + by, -10, 10); };
@@ -199,4 +210,40 @@ export function repealByDecree(s: SaveState, id: string): string {
   pushNorm(s, l.norm, -l.dir * 5, `you struck the ${l.name}`);
   record(s, l, "repeal", "you struck it by decree");
   return `You strike the ${l.name} by decree.${against ? " The city was living by it, and it notices." : ""}`;
+}
+
+/* ── laws you write ─────────────────────────────────────────────────────────────────────────── */
+
+/** Reputation you need to write a law: more for every law of yours already in force. */
+export function customLawRep(s: SaveState): number {
+  const mine = (s.custom_laws ?? []).filter((c) => inForce(s, c.id)).length;
+  return 2000 + mine * 1500;
+}
+
+/** What it costs, beyond the reputation you need: some of it, and standing if the city is against it. */
+export function customLawCost(s: SaveState, push: CustomLaw["push"]): { rep: number; standing: number; against: Norm[] } {
+  const norms = cultureOf(s).norms;
+  const against = push.filter((p) => norms[p.norm] * p.dir < -30).map((p) => p.norm);
+  return { rep: 600 + against.length * 400, standing: against.length, against };
+}
+
+export function writeLaw(s: SaveState, draft: { name: string; text: string; push: CustomLaw["push"]; effects: string[] }): { ok: boolean; line: string } {
+  // The game says "the X Act" itself; a name that starts with "The" would read "the The".
+  const name = draft.name.trim().replace(/^the\s+/i, "").slice(0, 60);
+  const text = draft.text.trim().slice(0, 300);
+  if (!name || !text) return { ok: false, line: "A law needs a name and something it says." };
+  if (!draft.push.length && !draft.effects.length) return { ok: false, line: "Choose at least one thing it does." };
+  const need = customLawRep(s);
+  if (s.arcology.rep < need) return { ok: false, line: `You need ${need.toLocaleString()} reputation to write a law; you have ${Math.round(s.arcology.rep).toLocaleString()}.` };
+  const cost = customLawCost(s, draft.push);
+  const c: CustomLaw = { id: `custom_${s.arcology.week}_${(s.custom_laws ?? []).length}`, name, text, push: draft.push.slice(0, 2), effects: draft.effects.filter((e) => CUSTOM_EFFECTS[e]).slice(0, 2), week: s.arcology.week };
+  (s.custom_laws ??= []).push(c);
+  registerCustom(s);
+  const def = LAW_BY_ID[c.id];
+  lawsOf(s).push({ id: c.id, week: s.arcology.week, by: "you" });
+  s.arcology.rep -= cost.rep;
+  std(s, -cost.standing);
+  for (const p of c.push) pushNorm(s, p.norm, p.dir * 6, `you wrote the ${name}`);
+  record(s, def, "enact", "you wrote it");
+  return { ok: true, line: `The ${name} is law from Monday: "${text}" It's posted at every lift by the evening.${cost.standing ? " The city didn't ask for it, and it lets you know." : ""}` };
 }

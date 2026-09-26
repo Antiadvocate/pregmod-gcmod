@@ -9,6 +9,8 @@ import { Footprints } from "lucide-react";
 import { useGame } from "../lib/game";
 import { Button, Card, Meter, Section, Stat, cx } from "../lib/ui";
 import { cultureOf, drivers, normLine, NORMS, NORM_IDS, type Norm } from "../engine/culture";
+import { customLawCost, customLawRep, writeLaw } from "../engine/court";
+import { CUSTOM_EFFECTS, suggestPush, type CustomLaw } from "../data/customlaws";
 import { courtOf, lawsOf, backLaw, decreeLaw, decreeCost, repealByDecree, backedNow, cityMargin } from "../engine/court";
 import { CAMPAIGNS, CAMPAIGN_BY_ID, MAX_CAMPAIGNS, campaignsOf, canSpeak, speech, startCampaign, stopCampaign } from "../engine/civic";
 import { LAWS, LAW_BY_ID } from "../data/laws";
@@ -109,7 +111,7 @@ function Court() {
             if (!l) return null;
             return (
               <div key={x.id} className="mb-2.5">
-                <div className="text-[13px]">{l.name} <span className="text-[11px] dim">since week {x.week} · {x.by === "you" ? "you signed it" : x.by === "keeper" ? "she signed it" : "passed by the court"}{x.exempt ? " · your household exempt" : ""}</span></div>
+                <div className="text-[13px]">{l.name} <span className="text-[11px] dim">since week {x.week} · {x.id.startsWith("custom_") ? "you wrote it" : x.by === "you" ? "you signed it" : x.by === "keeper" ? "she signed it" : "passed by the court"}{x.exempt ? " · your household exempt" : ""}</span></div>
                 <div className="font-prose text-[13px] mid">{l.text}</div>
               </div>
             );
@@ -135,6 +137,65 @@ function Court() {
         </Card>
       </div>
     </Section>
+  );
+}
+
+function OwnLaw() {
+  const { save, mutate } = useGame();
+  const [name, setName] = useState("");
+  const [text, setText] = useState("");
+  const [push, setPush] = useState<CustomLaw["push"]>([]);
+  const [effects, setEffects] = useState<string[]>([]);
+  const [said, setSaid] = useState("");
+  const need = customLawRep(save);
+  const enough = save.arcology.rep >= need;
+  const cost = customLawCost(save, push);
+  const setPushAt = (i: number, v: string) => {
+    const next = [...push];
+    if (!v) next.splice(i, 1);
+    else { const [norm, d] = v.split(":"); next[i] = { norm: norm as Norm, dir: d === "+" ? 1 : -1 }; }
+    setPush(next.filter((x, k, all) => all.findIndex((y) => y.norm === x.norm) === k).slice(0, 2));
+  };
+  const toggle = (id: string) => setEffects((xs) => (xs.includes(id) ? xs.filter((x) => x !== id) : xs.length >= 2 ? xs : [...xs, id]));
+  const enact = () => {
+    let res = { ok: false, line: "" };
+    mutate((s) => { res = writeLaw(s, { name, text, push, effects }); });
+    setSaid(res.line);
+    if (res.ok) { setName(""); setText(""); setPush([]); setEffects([]); }
+  };
+  const pushSelect = (i: number) => (
+    <select className="flex-1 min-w-0" value={push[i] ? `${push[i].norm}:${push[i].dir > 0 ? "+" : "-"}` : ""} onChange={(e) => setPushAt(i, e.target.value)}>
+      <option value="">{i === 0 ? "pushes the city… (optional)" : "and also… (optional)"}</option>
+      {NORM_IDS.flatMap((n) => [<option key={`${n}+`} value={`${n}:+`}>{NORMS[n].name}: more {NORMS[n].high}</option>, <option key={`${n}-`} value={`${n}:-`}>{NORMS[n].name}: more {NORMS[n].low}</option>])}
+    </select>
+  );
+  return (
+    <Card className="mt-2.5">
+      <div className="text-[11px] uppercase tracking-wider dim mb-1">Your own law</div>
+      <div className="text-[11.5px] dim mb-2">
+        Write it in your words; choose what it does. Needs {need.toLocaleString()} reputation (you have {Math.round(save.arcology.rep).toLocaleString()}), and more for every law of yours in force. The city repeals it through the court if it turns hard enough against it.
+      </div>
+      <input className="mb-2" value={name} onChange={(e) => setName(e.target.value)} placeholder="Its name, e.g. The Kneeling Act" maxLength={60} />
+      <textarea className="mb-2" rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="What it says, e.g. Every citizen kneels when a slave of the owner's household passes." maxLength={300} />
+      <div className="flex gap-2 mb-1">{pushSelect(0)}{pushSelect(1)}</div>
+      {text.trim() && !push.length && suggestPush(text).length ? (
+        <button className="text-[11.5px] acc underline mb-2" onClick={() => setPush(suggestPush(text))}>
+          From the wording: {suggestPush(text).map((p) => `${NORMS[p.norm].name.toLowerCase()} → more ${p.dir > 0 ? NORMS[p.norm].high : NORMS[p.norm].low}`).join("; ")}
+        </button>
+      ) : null}
+      <div className="text-[11px] uppercase tracking-wider dim mt-2 mb-1">Every week it… (up to two)</div>
+      <div className="flex flex-wrap gap-1.5 mb-2">
+        {Object.entries(CUSTOM_EFFECTS).map(([id, e]) => (
+          <button key={id} title={e.note} className={cx("chip !text-[11.5px]", effects.includes(id) && "on")} onClick={() => toggle(id)}>{e.name}</button>
+        ))}
+      </div>
+      {effects.length ? <div className="text-[11.5px] dim mb-2">{effects.map((e) => CUSTOM_EFFECTS[e].note).join("; ")}.</div> : null}
+      <div className="flex items-center gap-2">
+        <Button size="sm" kind="primary" disabled={!enough || !name.trim() || !text.trim() || (!push.length && !effects.length)} onClick={enact}>Make it law · −{cost.rep} rep{cost.standing ? `, −${cost.standing} standing` : ""}</Button>
+        {cost.against.length ? <span className="text-[11.5px] warn">The city leans the other way on {cost.against.map((n) => NORMS[n as Norm].name.toLowerCase()).join(" and ")}.</span> : null}
+      </div>
+      {said ? <p className="font-prose text-[14px] mt-2">{said}</p> : null}
+    </Card>
   );
 }
 
@@ -203,6 +264,7 @@ function Shape() {
           )) : <div className="text-[12px] dim">No laws in force.</div>}
         </Card>
       </div>
+      <OwnLaw />
     </Section>
   );
 }

@@ -165,3 +165,27 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   const said = speech(t, "cruelty", -1);
   check("a speech moves the city and waits a fortnight", !!said && !canSpeak(t));
 }
+
+{
+  // Laws you write.
+  const { writeLaw, customLawRep, lawsBrief: brief } = await import("../src/engine/court.ts");
+  const { suggestPush } = await import("../src/data/customlaws.ts");
+  const s = game("soc-custom");
+  s.arcology.rep = 500;
+  const draft = { name: "The Kneeling Act", text: "Every citizen kneels when a slave of the owner's household passes, and washes her feet if she asks.", push: [{ norm: "reversal" as const, dir: 1 as const }, { norm: "feet" as const, dir: 1 as const }], effects: ["prestige", "tax"] };
+  check("you need the reputation", !writeLaw(s, draft).ok);
+  s.arcology.rep = 5000;
+  const res = writeLaw(s, draft);
+  check("with it, you can write a law", res.ok && lawsOf(s).some((l) => l.id.startsWith("custom_")) && !/[Tt]he The/.test(res.line), res.line);
+  check("the wording suggests which way it leans", suggestPush(draft.text).some((p) => p.norm === "feet"));
+  check("the narrator reads it", /The Kneeling Act/.test(brief(s)) && /The Kneeling Act/.test(digest(s)));
+  check("the next one needs more", customLawRep(s) > 2000);
+  const before = { rev: cultureOf(s).norms.reversal, cash: s.arcology.cash };
+  for (let w = 0; w < 6; w++) { s.arcology.week++; tickCulture(s); tickCourt(s); }
+  check("it pulls the city and runs every week", cultureOf(s).norms.reversal > before.rev && s.arcology.cash > before.cash, { rev: cultureOf(s).norms.reversal, cash: s.arcology.cash - before.cash });
+  check("it's on the street", places(s).some((pl) => { for (let i = 0; i < 8; i++) { s.turn++; if (/Kneeling Act/.test(walkScene(s, pl))) return true; } return false; }));
+  pushNorm(s, "reversal", -300, "the city turned against it");
+  courtOf(s).last = -99; s.events = [];
+  tickCourt(s);
+  check("if the city turns hard against it, the court hears a repeal", s.events.some((e) => e.kind.startsWith("court_repeal_custom_")), s.events.map((e) => e.kind));
+}
