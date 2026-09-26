@@ -178,7 +178,7 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   const res = writeLaw(s, draft);
   check("with it, you can write a law", res.ok && lawsOf(s).some((l) => l.id.startsWith("custom_")) && !/[Tt]he The/.test(res.line), res.line);
   check("the wording suggests which way it leans", suggestPush(draft.text).some((p) => p.norm === "feet"));
-  check("the narrator reads it", /The Kneeling Act/.test(brief(s)) && /The Kneeling Act/.test(digest(s)));
+  check("the narrator reads it", /Kneeling Act: Every citizen kneels/.test(brief(s)) && /Kneeling Act/.test(digest(s)), brief(s));
   check("the next one needs more", customLawRep(s) > 2000);
   const before = { rev: cultureOf(s).norms.reversal, cash: s.arcology.cash };
   for (let w = 0; w < 6; w++) { s.arcology.week++; tickCulture(s); tickCourt(s); }
