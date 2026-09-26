@@ -33,6 +33,8 @@ export interface Society {
   doctrines: string[];
   /** Laws and policies, as a citizen would describe them. */
   laws: { name: string; text: string }[];
+  /** A neighbour's feeling toward you, −100 … +100. */
+  attitude?: number;
 }
 
 /** Where a free city sits before anything pulls it: the numbers a new game starts at. */
@@ -54,9 +56,9 @@ function neighbourDoctrines(s: SaveState, n: SaveState["arcology"]["neighbours"]
 function normsFrom(doctrines: string[]): Record<Norm, number> {
   const out = {} as Record<Norm, number>;
   for (const n of NORM_IDS) {
-    let target = FREE_CITY[n], weight = 1;
-    for (const d of doctrines) { const v = DOCTRINE_PULL[d]?.[n]; if (v !== undefined) { target += v * 1.5; weight += 1.5; } }
-    out[n] = Math.round(clamp(target / weight, -100, 100));
+    // A doctrine is what a city is; the free-city start is only what's left where no doctrine reaches.
+    const pulls = doctrines.map((d) => DOCTRINE_PULL[d]?.[n]).filter((v): v is number => v !== undefined);
+    out[n] = Math.round(clamp(pulls.length ? FREE_CITY[n] * 0.3 + pulls.reduce((a, b) => a + b, 0) * 0.9 : FREE_CITY[n], -100, 100));
   }
   return out;
 }
@@ -78,7 +80,7 @@ export function societies(s: SaveState): Society[] {
     return {
       id: n.id, name: n.name, kind: "neighbour", where: `the arcology to the ${n.direction}`,
       norms, prosperity: n.prosperity, crime: Math.round(clamp(32 - norms.order * 0.25, 5, 70)), security: Math.round(clamp(45 + norms.order * 0.4, 10, 95)),
-      doctrines, laws: doctrines.map((d) => DOCTRINE_BY_ID[d]).filter(Boolean).map((d) => ({ name: d.noun, text: d.creed })),
+      doctrines, laws: doctrines.map((d) => DOCTRINE_BY_ID[d]).filter(Boolean).map((d) => ({ name: d.noun, text: d.creed })), attitude: n.attitude,
     };
   });
   const regions = Object.values(s.world?.regions ?? {});
@@ -100,6 +102,8 @@ export function societies(s: SaveState): Society[] {
 
 export interface Household {
   citizen: { clothes: string; shoes: string; line: string };
+  /** What her husband wears, in words: the art draws only women, so he lives in the text and the photo prompt. */
+  husband: string;
   /** Undefined in the Old World, where there are no slaves to draw. */
   slave?: { clothes: string; collar: string; shoes: string; line: string };
   /** Slaves in a middling citizen household. */
@@ -114,6 +118,7 @@ export function household(x: Society): Household {
   if (x.kind === "oldworld") {
     return {
       citizen: { clothes: "a t-shirt and jeans", shoes: "flats", line: "A woman in jeans and a t-shirt, on her way to a job that pays less every year." },
+      husband: "a worn work jacket and jeans",
       slaves: 0,
       family: "A couple and their children in a rented flat. Nobody in the family owns anybody. Some of the people who clean their building are paying off a debt to whoever smuggled them in, and nobody asks.",
     };
@@ -122,7 +127,7 @@ export function household(x: Society): Household {
   const citizenClothes = has(x, "roman") ? "a toga" : has(x, "chattel_religion") ? "a habit" : has(x, "egyptian") ? "silks"
     : n.exposure >= 70 ? "slutty business attire" : n.exposure >= 45 ? "a mini dress" : n.exposure <= -25 || has(x, "professionalism") ? "conservative clothing"
     : rich ? "nice business attire" : "a t-shirt and jeans";
-  const slaveClothes = has(x, "chattel_religion") ? "a penitent nun's habit" : has(x, "roman") && n.exposure < 50 ? "a skimpy loincloth" : has(x, "egyptian") && n.exposure < 50 ? "silks"
+  const slaveClothes = has(x, "chattel_religion") && n.exposure < 50 ? "a penitent nun's habit" : has(x, "roman") && n.exposure < 50 ? "a skimpy loincloth" : has(x, "egyptian") && n.exposure < 50 ? "silks"
     : n.exposure >= 50 ? (has(x, "hedonist") ? "body oil" : "no clothing")
     : n.cruelty >= 55 && n.personhood <= -35 ? "chains"
     : n.personhood >= 35 || has(x, "professionalism") ? (n.exposure >= 20 ? "a nice nurse outfit" : "household uniform")
@@ -136,6 +141,8 @@ export function household(x: Society): Household {
   const kept = n.personhood >= 35 ? "who has a room of her own and a day off a week" : n.personhood <= -35 ? "who sleeps on a mat by the kitchen door" : "who sleeps in the servants' room";
   return {
     citizen: { clothes: citizenClothes, shoes: citizenShoes, line: `A citizen woman in ${citizenClothes}${citizenShoes === "heels" ? " and heels" : ""}.` },
+    husband: citizenClothes === "a toga" ? "a toga with a purple stripe" : citizenClothes === "a habit" ? "a priest's black cassock" : citizenClothes === "silks" ? "a linen kilt and a gold collar of office"
+      : citizenClothes === "a t-shirt and jeans" ? "a jacket and jeans" : n.exposure >= 45 ? "an open-necked shirt and tailored trousers" : "a dark suit",
     slave: { clothes: slaveClothes, collar, shoes: slaveShoes, line: `Her slave, ${slaveClothes === "no clothing" ? "naked" : `in ${slaveClothes}`}, wearing ${collar}${slaveShoes === "barefoot" ? ", barefoot" : ""}.` },
     slaves,
     family: slaves
@@ -147,7 +154,7 @@ export function household(x: Society): Household {
 /** A person for the art to draw: the same body every time for the same society and role, dressed for it. */
 export function figureFor(x: Society, role: "citizen" | "slave"): Person | null {
   const h = household(x);
-  const p = generatePerson({ seed: `compare:${x.id}:${role}`, sex: "female", age: role === "citizen" ? 34 : 22 });
+  const p = generatePerson({ seed: `${x.name} ${role} ${x.id} household`, sex: "female", age: role === "citizen" ? 34 : 22 });
   if (role === "citizen") { p.clothes = h.citizen.clothes; p.collar = "no collar"; p.shoes = h.citizen.shoes; return p; }
   if (!h.slave) return null;
   p.clothes = h.slave.clothes; p.collar = h.slave.collar; p.shoes = h.slave.shoes;

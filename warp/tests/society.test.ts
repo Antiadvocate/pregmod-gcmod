@@ -317,3 +317,28 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   const c = contrast(societies(s)[0], all.at(-1)!);
   check("beside the Old World, the citizen comparison still runs", c.ours.length + c.theirs.length > 0 && ![...c.ours, ...c.theirs].some((l) => /Their slaves/.test(l)), c);
 }
+
+{
+  // The Compare screen tells each household's day as a story, from the same numbers.
+  const { societies } = await import("../src/engine/compare.ts");
+  const { dayInTheLife, castOf, moving, storyBrief } = await import("../src/engine/comparestory.ts");
+  const { writeLaw } = await import("../src/engine/court.ts");
+  const s = game("soc-story");
+  s.arcology.rep = 9000;
+  writeLaw(s, { name: "Open Hands", text: "A slave may not be struck in a public place.", push: [{ norm: "cruelty", dir: -1 }], effects: [] });
+  const all = societies(s);
+  const [yours, near, old] = [all[0], all[1], all.at(-1)!];
+  const day = dayInTheLife(s, yours, near, yours);
+  const c = castOf(yours);
+  check("five scenes, with the family named", day.length === 5 && day.join(" ").includes(c.wife) && day.join(" ").includes(c.slave), day);
+  check("your own law is on the street", /Open Hands/.test(day[1]), day[1]);
+  check("the cousin writes from the other place", day.at(-1)!.includes(near.name), day.at(-1));
+  check("the same day tells the same story", JSON.stringify(dayInTheLife(s, yours, near, yours)) === JSON.stringify(day));
+  const ow = dayInTheLife(s, old, yours, yours);
+  check("the Old World has no slave, only a debt worker", /owes the man who brought her/.test(ow.join(" ")) && !/her owners/.test(ow.join(" ")), ow);
+  pushNorm(s, "cruelty", 200, "the city turns cruel");
+  check("a cruel city's morning has the cane in it", /cane/.test(dayInTheLife(s, societies(s)[0], near, yours)[0]));
+  check("moving reads as a sentence", /^If the .+ packed up and moved from /.test(moving(near, yours)), moving(near, yours));
+  const b = storyBrief(s, yours, near, yours);
+  check("the narrator gets the facts and the family", b.user.includes(c.wife) && b.user.includes("Open Hands") && /children/.test(b.system));
+}

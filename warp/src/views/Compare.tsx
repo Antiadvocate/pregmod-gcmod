@@ -8,11 +8,13 @@
 import { useMemo, useRef, useState, type RefObject } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Section, cx } from "../lib/ui";
-import { hasApiKey } from "../config";
+import { hasApiKey, modelsAvailable } from "../config";
 import { frameFigures, redraw, svgToPng, toJpeg } from "../lib/imagegen";
 import { NORMS, NORM_IDS } from "../engine/culture";
 import { citizenLife, contrast, figureFor, household, METRICS, settingFor, slaveLife, societies, type Society } from "../engine/compare";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
+import { castOf, dayInTheLife, moving, storyBrief } from "../engine/comparestory";
+import { call } from "../llm";
 import SlaveArt from "./SlaveArt";
 
 function Score({ v, mine }: { v: number; mine?: boolean }) {
@@ -74,19 +76,20 @@ function Habits({ yours, other }: { yours: Society; other: Society }) {
 
 function photoPrompt(x: Society): string {
   const h = household(x);
+  const c = castOf(x);
   const setting = settingFor(x);
   if (!h.slave) {
     return `This image is a stylised 3D-style character from a video game, drawn full-length. Redraw it as a single photorealistic full-length photograph of the same adult woman as a real person, standing in ${setting}. She is an ordinary citizen of the Old World, about 34, wearing ${h.citizen.clothes}. Keep her body shape, skin tone, hair and pose as in the drawing.
-Show her whole body, from the top of her head to her feet, with the ground visible under her feet. Do not crop at the waist or knees. Nobody else in the frame. Natural light. No text.`;
+Show her whole body, from the top of her head to her feet, with the ground visible under her feet. Do not crop at the waist or knees. A step behind her stands her husband, ${c.husband}, an adult man of about 37 in ${h.husband}. Nobody else in the frame. Natural light. No text.`;
   }
   const slave = h.slave.clothes === "no clothing" ? "naked" : h.slave.clothes === "body oil" ? "naked, her skin oiled" : `wearing ${h.slave.clothes}`;
   return `This image shows two stylised 3D-style characters from an adult video game, drawn full-length side by side. Redraw it as a single photorealistic full-length photograph of the same two adult women as real people, standing side by side in ${setting}.
-On the left: a free citizen of ${x.name}, about 34, wearing ${h.citizen.clothes}${h.citizen.shoes === "heels" ? " and heels" : ""}, standing easily.
-On the right: her household slave, an adult woman of about 22, ${slave}, wearing ${h.slave.collar}${h.slave.shoes === "barefoot" ? ", barefoot" : ""}. Her posture shows how slaves are kept there: ${x.norms.personhood >= 30 ? "upright and at ease, a half step behind her owner" : x.norms.personhood <= -30 ? "eyes lowered, hands clasped, a step behind" : "attentive, a step behind her owner"}.
-Keep each woman's body shape, skin tone, hair and pose, and exactly what each is wearing or not wearing, as in the drawing. Both are adults. Show both of them entirely, from the top of the head to the feet, with the floor visible under their feet. Do not crop at the waist or knees. Nobody else in the frame. Natural light. No text.`;
+On the left: ${c.wife}, a free citizen of ${x.name}, about 34, wearing ${h.citizen.clothes}${h.citizen.shoes === "heels" ? " and heels" : ""}, standing easily.
+On the right: ${c.slave}, her household slave, an adult woman of about 22, ${slave}, wearing ${h.slave.collar}${h.slave.shoes === "barefoot" ? ", barefoot" : ""}. Her posture shows how slaves are kept there: ${x.norms.personhood >= 30 ? "upright and at ease, a half step behind her owner" : x.norms.personhood <= -30 ? "eyes lowered, hands clasped, a step behind" : "attentive, a step behind her owner"}.
+Keep each woman's body shape, skin tone, hair and pose, and exactly what each is wearing or not wearing, as in the drawing. Both are adults. Show both of them entirely, from the top of the head to the feet, with the floor visible under their feet. Do not crop at the waist or knees. Just behind them, and not blocking either woman, stands the citizen's husband, an adult man of about 37 in ${h.husband}. Nobody else in the frame. Natural light. No text.`;
 }
 
-function HouseholdCard({ x, compact }: { x: Society; compact?: boolean }) {
+function HouseholdCard({ x, other, yours, compact }: { x: Society; other: Society; yours: Society; compact?: boolean }) {
   const { save, mutate } = useGame();
   const h = household(x);
   const citizen = useMemo(() => figureFor(x, "citizen"), [x.id, h.citizen.clothes, h.citizen.shoes]);
@@ -96,6 +99,24 @@ function HouseholdCard({ x, compact }: { x: Society; compact?: boolean }) {
   const [busy, setBusy] = useState(false);
   const model = save.models.photo_model ?? "";
   const ph = save.compare_photos?.[x.id];
+  const cast = castOf(x);
+  const key = `${x.id}:${other.id}`;
+  const told = save.compare_stories?.[key];
+  const [telling, setTelling] = useState("");
+  const [tellErr, setTellErr] = useState("");
+  const [plain, setPlain] = useState(false);
+  const story = dayInTheLife(save, x, other, yours);
+  const tell = async () => {
+    if (telling) return;
+    setTelling(" "); setTellErr("");
+    const b = storyBrief(save, x, other, yours);
+    let acc = "";
+    const res = await call({ ...b, model: save.models.narrator_model, fallback: save.models.fallback_model, maxTokens: 900, temperature: 0.9, onDelta: (d) => { acc += d; setTelling(acc); }, onReset: () => { acc = ""; setTelling(" "); } });
+    if (res.ok && res.text.trim()) { const text = res.text.trim(); mutate((s) => { (s.compare_stories ??= {})[key] = { model: res.model, week: s.arcology.week, text }; }); setPlain(false); }
+    else setTellErr(res.error ?? "The narrator returned nothing.");
+    setTelling("");
+  };
+  const paras = telling.trim() ? telling.split(/\n\s*\n/) : told && !plain ? told.text.split(/\n\s*\n/) : story;
 
   const photograph = async () => {
     const svgs = [refC.current, slave ? refS.current : null].filter(Boolean) as SVGSVGElement[];
@@ -128,8 +149,8 @@ function HouseholdCard({ x, compact }: { x: Society; compact?: boolean }) {
       {x.doctrines.length ? <div className="text-[11px] dim mb-2">{x.doctrines.map((d) => DOCTRINE_BY_ID[d]?.noun ?? d).join(" · ")}</div> : null}
       {ph?.url ? <img src={ph.url} alt={`a household in ${x.name}`} className="w-full max-h-[26rem] object-contain rounded-lg mb-2" /> : (
         <div className="flex justify-center gap-3 card-2 py-2 mb-2">
-          {figure(citizen, refC, "citizen")}
-          {figure(slave, refS, "her slave")}
+          {figure(citizen, refC, cast.wife)}
+          {figure(slave, refS, `${cast.slave}, her slave`)}
         </div>
       )}
       {/* The drawn figures stay mounted behind a photo, so a retake has something to redraw. */}
@@ -139,13 +160,23 @@ function HouseholdCard({ x, compact }: { x: Society; compact?: boolean }) {
           {slave ? <SlaveArt person={slave} height={280} animate={false} svgRef={refS} /> : null}
         </div>
       ) : null}
-      <p className="text-[12px] mb-0.5">{h.citizen.line}</p>
-      {h.slave ? <p className="text-[12px] mb-1.5">{h.slave.line}</p> : null}
-      <p className="font-prose text-[13.5px] leading-snug mb-2">{h.family}</p>
-      <div className="text-[10.5px] uppercase tracking-wider dim mb-0.5">A citizen's life</div>
-      <ul className="text-[12px] leading-snug mb-2 list-disc pl-4">{citizenLife(x).map((l, i) => <li key={i}>{l}</li>)}</ul>
-      <div className="text-[10.5px] uppercase tracking-wider dim mb-0.5">{h.slave ? "A slave's life" : "Slaves"}</div>
-      <ul className="text-[12px] leading-snug mb-2 list-disc pl-4">{slaveLife(x).map((l, i) => <li key={i}>{l}</li>)}</ul>
+      <div className="text-[10.5px] uppercase tracking-wider dim mb-1">{x.kind === "oldworld" ? `A day with the ${cast.surname} family` : `A day in the ${cast.surname} household`}</div>
+      <div className="font-prose text-[14px] leading-relaxed space-y-2 mb-2">{paras.map((para, i) => <p key={i}>{para}</p>)}</div>
+      <div className="flex items-center gap-2 flex-wrap mb-2">
+        {modelsAvailable() ? <Button size="sm" kind="ghost" disabled={!!telling} onClick={() => void tell()} title="Hands this day to the narrator model to tell in full, keeping every fact">{telling ? "telling…" : told ? "tell it again" : "tell it in full"}</Button> : null}
+        {told && !telling ? <button className="text-[11px] dim underline" onClick={() => setPlain(!plain)}>{plain ? "the narrator's version" : "the game's version"}</button> : null}
+        {tellErr ? <span className="text-[11.5px] warn">{tellErr.slice(0, 160)}</span> : null}
+      </div>
+      <details className="text-[12px] mb-2">
+        <summary className="dim cursor-pointer">The facts behind it</summary>
+        <p className="mt-1.5 mb-0.5">{h.citizen.line} Her husband wears {h.husband}.</p>
+        {h.slave ? <p className="mb-1.5">{h.slave.line}</p> : null}
+        <p className="mb-2">{h.family}</p>
+        <div className="text-[10.5px] uppercase tracking-wider dim mb-0.5">A citizen's life</div>
+        <ul className="leading-snug mb-2 list-disc pl-4">{citizenLife(x).map((l, i) => <li key={i}>{l}</li>)}</ul>
+        <div className="text-[10.5px] uppercase tracking-wider dim mb-0.5">{h.slave ? "A slave's life" : "Slaves"}</div>
+        <ul className="leading-snug list-disc pl-4">{slaveLife(x).map((l, i) => <li key={i}>{l}</li>)}</ul>
+      </details>
       {model && hasApiKey() ? (
         <div className="flex items-center gap-2 flex-wrap">
           <Button size="sm" kind="ghost" disabled={busy} onClick={() => void photograph()} title="Redraws the drawn figures as one full-length photograph, in the city's own setting. One image, billed by the photo model in Settings">{busy ? "photographing…" : ph?.url ? "retake the photograph" : "photograph this household"}</Button>
@@ -164,46 +195,43 @@ export default function Compare() {
   const others = all.slice(1);
   const [pick, setPick] = useState(others[0]?.id ?? "");
   const other = others.find((x) => x.id === pick) ?? others[0];
-  const c = other ? contrast(yours, other) : { theirs: [], ours: [] };
+  if (!other) return null;
+  const c = contrast(yours, other);
 
   return (
     <>
-      <Section title="Your arcology, beside the others">
-        <p className="text-[12.5px] dim mb-2.5">Read from the city as it is this week: its habits, its laws and policies, prosperity, crime and security. Neighbours are judged by their doctrines; the Old World by how stable its regions are.</p>
-        <Scorecard all={all} />
+      <Section title={`${yours.name} and ${other.name}`} right={
+        <div className="flex flex-wrap gap-1.5">
+          {others.map((x) => <button key={x.id} className={cx("chip !text-[11.5px]", x.id === other.id && "on")} onClick={() => setPick(x.id)}>{x.name}</button>)}
+        </div>
+      }>
+        <p className="text-[12.5px] dim mb-2.5">One ordinary household in each, on the same day this week, told from what the game knows: the city's habits, the laws in force, prosperity, crime and the patrols. {other.kind === "oldworld" ? "The Old World is judged by how stable its regions are." : `${other.name} is judged by its doctrines.`}</p>
+        <div className="grid gap-2.5 md:grid-cols-2">
+          <HouseholdCard x={yours} other={other} yours={yours} />
+          <HouseholdCard key={other.id} x={other} other={yours} yours={yours} />
+        </div>
       </Section>
 
-      {other ? (
-        <>
-          <Section title="A typical household" right={
-            <div className="flex flex-wrap gap-1.5">
-              {others.map((x) => <button key={x.id} className={cx("chip !text-[11.5px]", x.id === other.id && "on")} onClick={() => setPick(x.id)}>{x.name}</button>)}
-            </div>
-          }>
-            <div className="grid gap-2.5 md:grid-cols-2">
-              <HouseholdCard x={yours} />
-              <HouseholdCard key={other.id} x={other} />
-            </div>
-          </Section>
+      <Section title="If they moved">
+        <Card>
+          <p className="font-prose text-[14px] leading-relaxed mb-2">{moving(other, yours)}</p>
+          <p className="font-prose text-[14px] leading-relaxed">{moving(yours, other)}</p>
+          {c.ours.length || c.theirs.length ? (
+            <details className="text-[12px] mt-2">
+              <summary className="dim cursor-pointer">By the numbers</summary>
+              <ul className="leading-snug list-disc pl-4 mt-1">{[...c.ours, ...c.theirs].map((l, i) => <li key={i}>{l}</li>)}</ul>
+            </details>
+          ) : null}
+        </Card>
+      </Section>
 
-          <Section title={`How ${yours.name} and ${other.name} live`}>
-            <Habits yours={yours} other={other} />
-          </Section>
+      <Section title={`How ${yours.name} and ${other.name} live`}>
+        <Habits yours={yours} other={other} />
+      </Section>
 
-          <Section title="Who's ahead">
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <Card>
-                <div className="text-[11px] uppercase tracking-wider acc mb-1">Where {yours.name} is ahead</div>
-                {c.ours.length ? <ul className="text-[12.5px] leading-snug list-disc pl-4">{c.ours.map((l, i) => <li key={i}>{l}</li>)}</ul> : <div className="text-[12px] dim">Nowhere by much.</div>}
-              </Card>
-              <Card>
-                <div className="text-[11px] uppercase tracking-wider dim mb-1">Where {other.name} is ahead</div>
-                {c.theirs.length ? <ul className="text-[12.5px] leading-snug list-disc pl-4">{c.theirs.map((l, i) => <li key={i}>{l}</li>)}</ul> : <div className="text-[12px] dim">Nowhere by much.</div>}
-              </Card>
-            </div>
-          </Section>
-        </>
-      ) : null}
+      <Section title="Everywhere, side by side">
+        <Scorecard all={all} />
+      </Section>
     </>
   );
 }
