@@ -42,6 +42,8 @@ export interface Deed {
   /** Something that happens later because of this. */
   follow?: { due: number; situation: string; options: { label: string; effect: string; value?: string | number }[]; fired?: boolean };
   source: string;
+  /** For a walk: which place it happened in. What happened there stays there. */
+  where?: string;
 }
 
 type Ctx = { s: SaveState; d: Deed; p?: Person; out: string[] };
@@ -322,7 +324,7 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
     // A walk through the city happens in front of everybody.
     public: !!r.public || tags.includes("public_spectacle") || m.source === "walk",
     witnesses: (r.witnesses ?? []).map(String).slice(0, 6),
-    effects: [], source: m.source,
+    effects: [], source: m.source, where: m.walk,
     fact: r.lasting_fact ? String(r.lasting_fact).slice(0, 240) : undefined,
   };
   const fu = r.follow_up;
@@ -382,7 +384,9 @@ export function applyDeed(s: SaveState, deed: Deed, herMemory?: string): void {
   if (hearers.length) out.push(`${hearers.length === house.length && house.length > 1 ? "the whole household" : hearers.map((h) => h.name).join(", ")} ${hearers.length === 1 ? "knows" : "know"}`);
   if (deed.public && !deed.tags.includes("public_spectacle")) startRumor(s, deed.summary.replace(/^You /, "the owner "), { about: p?.id, salience: 7 });
 
-  if (deed.fact) { s.canon.push(deed.fact); if (s.canon.length > 60) s.canon.splice(0, s.canon.length - 60); out.push("it's part of the arcology's story now"); }
+  // A walk's lasting fact belongs to that place (it's kept on the deed and shown when you go back
+  // there), not to the whole world: one restaurant shouldn't follow you into every district.
+  if (deed.fact && deed.source !== "walk") { s.canon.push(deed.fact); if (s.canon.length > 60) s.canon.splice(0, s.canon.length - 60); out.push("it's part of the arcology's story now"); }
 
   // Story flags, so arcs and events can read what you did.
   const st = s.story;
@@ -433,5 +437,5 @@ export function deedsBrief(s: SaveState, personId?: string): string {
   if (!list.length) return "";
   const weighty = list.filter((d) => d.public || d.tags.length >= 2 || d.tags.some((t) => ["owner_enslaved", "freed_her", "married_her", "cruelty", "promise_broken"].includes(t)));
   const pick = [...new Set([...weighty.slice(-6), ...list.slice(-4)])].slice(-8);
-  return dedupeLines(pick.map((d) => `week ${d.week}: ${d.summary}${d.public ? " (everyone knows)" : ""}`)).map((l) => `· ${l}`).join("\n");
+  return dedupeLines(pick.map((d) => `week ${d.week}: ${d.summary}${d.where ? ` (on a walk through ${d.where === "concourse" ? "the concourse" : `the ${d.where} district`}; the people and places in it belong there)` : ""}${d.public ? " (everyone knows)" : ""}`)).map((l) => `· ${l}`).join("\n");
 }

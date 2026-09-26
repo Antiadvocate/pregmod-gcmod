@@ -163,7 +163,7 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   const norms = cultureBrief(s);
   if (norms) out.push(`HOW CITIZENS BEHAVE NOW — show it in passing when people are around:\n${norms}`);
   const laws = lawsBrief(s);
-  if (laws) out.push(`LAWS IN FORCE (people obey these in every scene; when one applies to someone present, including a slave, show it being kept or broken):\n${laws}`);
+  if (laws) out.push(`LAWS IN FORCE (people obey these in every scene; when one applies to someone present, including a slave, show it happening, spelled out plainly: who does exactly what, to whom):\n${laws}`);
 
   const done = deedsBrief(s);
   if (done) out.push(`\n## WHAT YOU HAVE DONE — people remember these, and they shape how everyone treats you\n${done}`);

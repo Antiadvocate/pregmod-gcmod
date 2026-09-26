@@ -207,6 +207,12 @@ export function sanitize(raw: SaveState): SaveState {
   // Rumors that say the same thing are one rumor.
   if (Array.isArray(s.rumors)) s.rumors = s.rumors.filter((r, i, all) => !all.slice(0, i).some((o) => similar(o.content, r.content)));
   if (Array.isArray(s.canon)) s.canon = s.canon.filter((c, i, all) => !all.slice(0, i).some((o) => similar(o, c)));
+  // Facts from walks used to go into canon, so one place followed you everywhere. They live on
+  // their deed now; take them back out.
+  if (Array.isArray(s.canon) && Array.isArray(s.deeds)) {
+    const walkFacts = s.deeds.filter((d) => d.source === "walk" && d.fact).map((d) => d.fact as string);
+    if (walkFacts.length) s.canon = s.canon.filter((c) => !walkFacts.includes(c));
+  }
   s.edges = s.edges ?? [];
   s.rumors = s.rumors ?? [];
   s.history = s.history ?? [];

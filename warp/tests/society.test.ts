@@ -234,3 +234,17 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   cultureOf(s).norms.reversal = -80;
   check("a law the city hates is shown dodged and enforced", /patrol|your law, not ours/.test(walkScene(s, places(s)[0], her)));
 }
+
+{
+  // What happens on one walk stays in that place.
+  const { applyDeed } = await import("../src/engine/deeds.ts");
+  const { walkContext } = await import("../src/engine/walk.ts");
+  const { digest: dg } = await import("../src/engine/prompts.ts");
+  const s = game("soc-walkfacts");
+  const pl = places(s);
+  const here = pl[0].id, there = (pl[1] ?? pl[0]).id;
+  applyDeed(s, { id: "dw", week: 1, summary: "You ate at Luigi's on the concourse and tipped the waiter Marco in front of everyone.", tags: [], public: true, witnesses: [], effects: [], source: "walk", where: here, fact: "Luigi's restaurant on the concourse serves the owner for free." });
+  check("a walk's lasting fact doesn't become a world fact", !s.canon.some((c) => /Luigi/.test(c)) && !/Luigi's restaurant on the concourse serves/.test(dg(s)));
+  check("it comes back when you walk there again", /Luigi/.test(walkContext(s, here)));
+  if (there !== here) check("but not when you walk somewhere else", !/Luigi/.test(walkContext(s, there)));
+}
