@@ -44,14 +44,58 @@ export function remember(mem: PersonMemory, m: RecordMemory): EpisodicMemory {
     who: m.who,
     core: m.core,
   };
-  // A memory that duplicates one from the same week is the bookkeeper filing the same beat twice.
-  const dup = mem.episodic.find((x) => x.week === e.week && similar(x.content, e.content));
-  if (dup) { dup.importance = Math.max(dup.importance, e.importance); return dup; }
+  // The same beat filed again, this week or in the last couple of months, is one memory that
+  // happened more than once, not a second line in every prompt.
+  const dup = mem.episodic.find((x) => e.week - (x.last_week ?? x.week) <= 8 && similar(x.content, e.content));
+  if (dup) {
+    if (dup.week !== e.week || (dup.last_week ?? dup.week) !== e.week) dup.times = (dup.times ?? 1) + 1;
+    dup.last_week = e.week;
+    dup.importance = Math.max(dup.importance, e.importance);
+    dup.decay = 1;
+    if (e.core) dup.core = true;
+    return dup;
+  }
   mem.episodic.push(e);
   return e;
 }
 
-function similar(a: string, b: string): boolean {
+/** Merge memories that say the same thing into one with a count. Run weekly and on load. */
+export function compactMemory(mem: PersonMemory): number {
+  const out: EpisodicMemory[] = [];
+  let merged = 0;
+  for (const e of [...mem.episodic].sort((a, b) => a.week - b.week)) {
+    const same = out.find((x) => similar(x.content, e.content));
+    if (same) {
+      same.times = (same.times ?? 1) + (e.times ?? 1);
+      same.last_week = Math.max(same.last_week ?? same.week, e.last_week ?? e.week);
+      same.importance = Math.max(same.importance, e.importance);
+      same.decay = Math.max(same.decay, e.decay);
+      if (e.core) same.core = true;
+      merged++;
+    } else out.push(e);
+  }
+  mem.episodic = out;
+  return merged;
+}
+
+/** How a memory reads in a prompt: once, with how often and when. */
+export function memoryLine(e: EpisodicMemory): string {
+  const n = e.times ?? 1;
+  return n > 1 ? `${e.content} (${n} times, weeks ${e.week}–${e.last_week ?? e.week})` : `${e.content} (week ${e.week})`;
+}
+
+/** Collapse near-identical lines ("he served her", "he served her again") into one with a count. */
+export function dedupeLines(lines: string[]): string[] {
+  const out: { text: string; n: number }[] = [];
+  for (const l of lines) {
+    const same = out.find((x) => similar(x.text, l));
+    if (same) same.n++;
+    else out.push({ text: l, n: 1 });
+  }
+  return out.map((x) => (x.n > 1 ? `${x.text} (×${x.n})` : x.text));
+}
+
+export function similar(a: string, b: string): boolean {
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, "").split(/\s+/).filter((w) => w.length > 3);
   const A = new Set(norm(a)), B = norm(b);
   if (!A.size || !B.length) return false;
@@ -64,6 +108,7 @@ function similar(a: string, b: string): boolean {
  *  bound over a two-hundred-week campaign. */
 export function decayMemory(mem: PersonMemory, week: number, cap = 60): string[] {
   const dropped: string[] = [];
+  compactMemory(mem);
   for (const e of mem.episodic) {
     if (e.core) continue;
     const age = week - e.week;

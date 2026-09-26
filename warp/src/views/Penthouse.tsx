@@ -3,6 +3,8 @@
  *  Ordered by what is actually urgent rather than by category: events first because they expire,
  *  then problems, then the household's own state. The end-of-week button is the only irreversible
  *  control in the app and it says what it will cost before you press it. */
+import { momentsOf } from "../engine/moments";
+import { concludeMoment } from "../engine/deeds";
 import FCTVCard from "./FCTVCard";
 import AssistantCard from "./Assistant";
 import { Reaction as MomentReaction, OpenMoments } from "./MomentCard";
@@ -30,7 +32,13 @@ import { band, wear } from "../engine/psyche";
 import { modelsAvailable } from "../config";
 
 export default function Penthouse({ go }: { go: (r: Route) => void }) {
-  const [outcomes, setOutcomes] = useState<{ id: string; chose: string; text: string; person?: string }[]>([]);
+  const [outcomes, setOutcomes] = useState<{ id: string; chose: string; text: string; person?: string; others?: string[]; moment?: string }[]>([]);
+  /** Done: the card goes, and a scene played out under it ends where it is. */
+  const finish = async (o: { id: string; moment?: string }) => {
+    const m = o.moment ? momentsOf(save).find((x) => x.id === o.moment) : undefined;
+    setOutcomes((xs) => xs.filter((x) => x.id !== o.id));
+    if (m?.open) { await concludeMoment(save, m); mutate(() => {}); }
+  };
   const { save, mutate } = useGame();
   const [running, setRunning] = useState(false);
   const [inventing, setInventing] = useState(false);
@@ -221,8 +229,10 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
           <div className="space-y-3">
             {o.text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[15px] leading-relaxed">{para}</p>)}
           </div>
-          {o.person ? <MomentReaction seed={{ person: o.person, title: o.chose, source: "event", you: o.chose, happened: o.text }} /> : null}
-          <Button size="sm" kind="primary" className="mt-3" onClick={() => setOutcomes((xs) => xs.filter((x) => x.id !== o.id))}>Done</Button>
+          <div className="flex items-center gap-2">
+            {o.person ? <MomentReaction seed={{ person: o.person, others: o.others, title: o.chose, source: "event", you: o.chose, happened: o.text }} onOpen={(mid) => setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, moment: mid } : x)))} /> : null}
+            <Button size="sm" kind="primary" className="mt-3" onClick={() => void finish(o)}>Done</Button>
+          </div>
         </Card>
       ))}
 
@@ -251,7 +261,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
                       <Button key={o.id} size="sm" title={o.note} onClick={() => {
                         let text = "";
                         mutate((s) => { text = e.kind === "dynamic" ? resolveDynamic(s, e, o.id) : resolveEvent(s, e, o.id); });
-                        setOutcomes((xs) => [...xs, { id: e.id, chose: o.label, text, person: e.person }]);
+                        setOutcomes((xs) => [...xs, { id: e.id, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined }]);
                       }}>
                         {o.label}
                       </Button>

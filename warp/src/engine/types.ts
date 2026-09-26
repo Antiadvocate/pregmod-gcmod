@@ -505,6 +505,9 @@ export interface EpisodicMemory {
   who?: string[];
   /** Set when this memory is one of the ones that made the person. Never decays. */
   core?: boolean;
+  /** The same thing, filed again: how many times, and the last week it happened. */
+  times?: number;
+  last_week?: number;
 }
 
 export interface Belief { text: string; strength: number; week: number }
@@ -784,6 +787,8 @@ export interface PendingEvent {
   kind: string;                 // key into data/events.ts
   person?: string;
   facility?: string;
+  /** A second person the event is about, when it's between two of them. */
+  other?: string;
   /** The situation, in one sentence, handed to the narrator as the seed of the scene. */
   seed: string;
   /** What the player can do about it without opening a scene — always at least one exit. */
@@ -835,6 +840,11 @@ export interface SaveState {
   house_rules?: import("./agreements").Agreement[];
   /** When a slave holds your collar: how she rules. See engine/reign. */
   reign?: import("./reign").Reign;
+  /** Laws you wrote yourself. See data/customlaws. */
+  custom_laws?: import("../data/customlaws").CustomLaw[];
+  /** Campaigns you are paying for, and the last week you spoke. See engine/civic. */
+  campaigns?: import("./civic").Campaign[];
+  last_speech?: number;
   /** What the city has come to think is normal. See engine/culture. */
   culture?: import("./culture").Culture;
   /** Laws the court has passed, and the cases before it. See engine/court. */

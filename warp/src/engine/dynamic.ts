@@ -20,6 +20,7 @@
  * it likes about what is happening in the room and it still cannot invent a state change, break an
  * invariant, reach a person it was not given, or touch anybody the age gate excludes.
  */
+import { memoryLine } from "./memory";
 import { agreementsBrief, calledBy } from "./agreements";
 import { deedsBrief } from "./deeds";
 import type { PendingEvent, Person, SaveState } from "./types";
@@ -107,7 +108,7 @@ function dossier(s: SaveState, p: Person): string {
     `TALKS LIKE: ${p.persona.speech_pattern}`,
     `TRAITS: ${p.persona.core_traits.join("; ")}`,
     p.persona.texture.length ? `LIKES AND DISLIKES: ${p.persona.texture.join("; ")}` : "",
-    mem?.episodic.length ? `SHE REMEMBERS: ${mem.episodic.slice(-5).map((m) => `${m.content} (wk ${m.week})`).join(" | ")}` : "",
+    mem?.episodic.length ? `SHE REMEMBERS: ${mem.episodic.slice(-5).map(memoryLine).join(" | ")}` : "",
     p.acts && Object.keys(p.acts).length ? `WHAT HAS BEEN DONE TO HER: ${Object.entries(p.acts).map(([a, n]) => `${a} ×${n}`).join(", ")}` : "",
     deedsBrief(s, p.id) ? `WHAT HAS HAPPENED BETWEEN YOU (build on this):\n${deedsBrief(s, p.id)}` : "",
     s.world ? `THE WORLD: ${worldBrief(s).replace(/\n/g, " ")}` : "",
@@ -173,14 +174,33 @@ export async function generateDynamicEvent(s: SaveState, subject?: Person): Prom
 
 /** Resolve a generated option. The id carries the effect and its value, so nothing has to be
  *  stored alongside the event and a save that reloads mid-event still resolves correctly. */
+/** A follow-up with nobody of yours in it: what the effect means for the city and your name. */
+function npcEffect(s: SaveState, effect: string, value: string | undefined, seed: string): string {
+  const std = (n: number) => { s.arcology.public_standing = clamp(s.arcology.public_standing + n, -10, 10); };
+  const who = seed.match(/\b([A-Z][a-z]+(?: [A-Z][a-z]+)?)\b/)?.[1] ?? "them";
+  switch (effect) {
+    case "cash": { const n = Number(value) || -2000; s.arcology.cash += n; return `¤${Math.abs(n).toLocaleString()} ${n < 0 ? "spent" : "made"}.`; }
+    case "rep": { const n = Number(value) || -200; s.arcology.rep = Math.max(0, s.arcology.rep + n); return `Your standing ${n >= 0 ? "rises" : "falls"} (${n >= 0 ? "+" : ""}${n}).`; }
+    case "rumor": startRumor(s, String(value ?? seed.slice(0, 120))); return "Everyone's heard about it by morning.";
+    case "promise_kept": s.arcology.rep += 250; std(1); startRumor(s, `the owner kept their word to ${who}`, { salience: 6, charge: 1 }); return `You kept your word to ${who}, and people hear about it. (+250 reputation)`;
+    case "promise_broken": s.arcology.rep = Math.max(0, s.arcology.rep - 300); std(-1); startRumor(s, `the owner went back on their word to ${who}`, { salience: 7, charge: -1 }); return `You went back on your word to ${who}. It gets around. (−300 reputation)`;
+    case "kindness": case "recognition": s.arcology.rep += 120; std(0.5); return `${who} won't forget how you treated them. (+120 reputation)`;
+    case "cruelty": case "coercion": s.arcology.rep = Math.max(0, s.arcology.rep - 100); s.arcology.crime = clamp(s.arcology.crime - 1, 0, 100); return `${who} learns what crossing you costs. People are a little more careful around you.`;
+    case "nothing": return "You let it go.";
+    default: return `You deal with ${who} and it's done.`;
+  }
+}
+
 export function resolveDynamic(s: SaveState, e: PendingEvent, optionId: string): string {
   const p = e.person ? s.people[e.person] : undefined;
   const [, effect, value] = optionId.split(":");
   const def = DYNAMIC_EFFECTS[effect];
-  if (!p || !def) return "";
-  const line = def.run(s, p, value || undefined);
+  if (!def) return "";
+  // Not every follow-up is about a slave: a promise to a citizen, a trader, a stranger comes back
+  // too. Then the effect lands on your name in the city instead of on her.
+  const line = p ? def.run(s, p, value || undefined) : npcEffect(s, effect, value, e.seed);
   s.events = s.events.filter((x) => x.id !== e.id);
-  s.notifications.push({ id: `n-${e.id}`, week: s.arcology.week, text: `${p.name}: ${line}`, kind: "info", person: p.id, seen: false });
+  s.notifications.push({ id: `n-${e.id}`, week: s.arcology.week, text: p ? `${p.name}: ${line}` : line, kind: "info", person: p?.id, seen: false });
   return line;
 }
 

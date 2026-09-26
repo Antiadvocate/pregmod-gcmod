@@ -12,6 +12,7 @@
  * about her, story flags count them (`deed_<tag>`), the household hears about public ones, and the
  * world arcs and follow-up events read them.
  */
+import { dedupeLines } from "./memory";
 import type { PendingEvent, Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
@@ -249,8 +250,11 @@ export const CONSEQUENCE_SYSTEM = `You read a finished scene from Free Cities, a
 
 Only tag what actually happened in the scene. Tag the player's actions, not what they considered. public is true only if citizens, guests or other slaves saw it or will obviously hear. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.`;
 
+/** For reading the consequences: everything the player said (that's what the deed is made of),
+ *  and the prose only from the last few beats. */
 function transcript(m: Moment): string {
-  return m.log.map((l) => (l.role === "you" ? `PLAYER: ${l.text}` : l.text)).join("\n\n").slice(-9000);
+  const lastScenes = new Set(m.log.map((l, i) => (l.role === "scene" ? i : -1)).filter((i) => i >= 0).slice(-3));
+  return m.log.map((l, i) => (l.role === "you" ? `PLAYER: ${l.text}` : lastScenes.has(i) || i === 1 ? l.text : "")).filter(Boolean).join("\n\n").slice(-6000);
 }
 
 interface Read {
@@ -429,5 +433,5 @@ export function deedsBrief(s: SaveState, personId?: string): string {
   if (!list.length) return "";
   const weighty = list.filter((d) => d.public || d.tags.length >= 2 || d.tags.some((t) => ["owner_enslaved", "freed_her", "married_her", "cruelty", "promise_broken"].includes(t)));
   const pick = [...new Set([...weighty.slice(-6), ...list.slice(-4)])].slice(-8);
-  return pick.map((d) => `· week ${d.week}: ${d.summary}${d.public ? " (everyone knows)" : ""}`).join("\n");
+  return dedupeLines(pick.map((d) => `week ${d.week}: ${d.summary}${d.public ? " (everyone knows)" : ""}`)).map((l) => `· ${l}`).join("\n");
 }

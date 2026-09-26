@@ -24,7 +24,7 @@ import { useGame } from "../lib/game";
 import { hasApiKey } from "../config";
 import { redraw, redrawPrompt, svgToPng, toJpeg } from "../lib/imagegen";
 import type { Person } from "../engine/types";
-import { describeFeet, feetOf, idHash } from "../engine/genitals";
+import { describeFeet, feetOf, idHash, soleDirt } from "../engine/genitals";
 import { rng } from "../engine/rng";
 import { SKIN, match, shade } from "../lib/vectorart";
 
@@ -75,6 +75,23 @@ export interface FootGenes {
   archH: number; instep: number; ankle: number; achilles: number; heelRound: number; toeLift: number;
   skin: string; sole: string; veins: number; tendons: number; moles: { t: number; x: number; r: number }[];
   prosthetic: boolean;
+  /** How dirty the soles are, from her job and her shoes; see soleDirt. */
+  dirt: number; dirtColour: string; seed: number;
+}
+
+const DIRT = { earth: "#4a3826", grime: "#34302c", dust: "#7a6b5a" } as const;
+
+/** Blotchy dirt: noise, coloured, kept only where the shapes it's applied to are. */
+function DirtFilter({ uid, colour, seed }: { uid: string; colour: string; seed: number }) {
+  const c = [1, 3, 5].map((i) => parseInt(colour.slice(i, i + 2), 16) / 255);
+  return (
+    <filter id={`${uid}-dirt`} filterUnits="userSpaceOnUse" x="-20" y="-20" width="240" height="330">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="area" />
+      <feTurbulence type="fractalNoise" baseFrequency="0.05 0.08" numOctaves="4" seed={seed} result="n" />
+      <feColorMatrix in="n" type="matrix" values={`0 0 0 0 ${c[0]}  0 0 0 0 ${c[1]}  0 0 0 0 ${c[2]}  0 0 0 2.2 -0.55`} result="c" />
+      <feComposite in="c" in2="area" operator="in" />
+    </filter>
+  );
 }
 
 export function footGenes(p: Person): FootGenes {
@@ -82,7 +99,8 @@ export function footGenes(p: Person): FootGenes {
   const r = rng(idHash(p.id, "feet-art"));
   const j = (s: number) => (r() - 0.5) * 2 * s;
   const tips = (TIPS[f.shape ?? "egyptian"] ?? TIPS.egyptian).map((t, i) => t + (i ? j(0.008) : 0));
-  const pinkyTuck = r() < 0.35 ? 0.4 + r() * 0.6 : r() * 0.25;
+  // A tucked little toe, but never so far that it disappears behind the fourth.
+  const pinkyTuck = r() < 0.3 ? 0.3 + r() * 0.35 : r() * 0.2;
   tips[4] -= pinkyTuck * 0.02;
   // How much of each toe shows past the web: big toe long, the rest short and stubby.
   const stubby = 0.9 + r() * 0.2;
@@ -102,6 +120,7 @@ export function footGenes(p: Person): FootGenes {
   const skin = prosthetic ? "#9aa3ad" : nudged;
   const lum = (parseInt(skin.slice(1, 3), 16) + parseInt(skin.slice(3, 5), 16) + parseInt(skin.slice(5, 7), 16)) / 3;
   const sole = prosthetic ? "#7c848e" : mix(skin, lum > 170 ? "#f2bdb0" : "#e7c0a6", lum > 170 ? 0.4 : 0.6);
+  const dirt = soleDirt(p);
   const moles = Array.from({ length: r() < 0.5 ? r.int(1, 3) : 0 }, () => ({ t: 0.3 + r() * 0.35, x: j(0.28), r: 0.6 + r() * 0.9 }));
   return {
     tips, bases, vis, toeW, angles, gaps, widthRatio, heelRatio: 0.62 + r() * 0.08, bunion: valgus > 7 ? (valgus - 7) / 7 : 0,
@@ -109,6 +128,7 @@ export function footGenes(p: Person): FootGenes {
     archH: archBase * (0.85 + r() * 0.3), instep: j(0.02), ankle: 0.85 + r() * 0.4, achilles: 0.85 + r() * 0.3,
     heelRound: 0.85 + r() * 0.3, toeLift: j(0.01), skin, sole,
     veins: lum > 175 ? 0.22 + r() * 0.2 : r() * 0.08, tendons: 0.25 + (p.body.weight < 0 ? 0.2 : 0) + r() * 0.2, moles, prosthetic,
+    dirt: prosthetic ? 0 : dirt.level, dirtColour: DIRT[dirt.kind], seed: Math.floor(r() * 1000),
   };
 }
 
@@ -282,6 +302,7 @@ function TopView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
               {g.prosthetic ? null : <>
                 <path d={`M${-nw * 0.62},${ny + nlen * 1.08} Q0,${ny + nlen * 1.35} ${nw * 0.62},${ny + nlen * 1.08}`} fill="none" stroke={shade(g.skin, 0.72)} strokeWidth={0.6} opacity={0.8} />
                 <path d={nailPath} fill={nail.fill} stroke={shade(nail.fill, 0.7)} strokeWidth={0.45} />
+                {g.dirt > 0.45 ? <path d={`M${-nw * 0.42},${ny + nlen * 0.12} Q0,${ny - nlen * 0.1} ${nw * 0.42},${ny + nlen * 0.12}`} fill="none" stroke={g.dirtColour} strokeWidth={Math.max(0.6, nlen * 0.1)} strokeLinecap="round" opacity={Math.min(0.85, g.dirt)} /> : null}
                 {!nail.painted && i === 0 ? <path d={`M${-nw * 0.3},${ny + nlen * 0.98} Q0,${ny + nlen * 0.7} ${nw * 0.3},${ny + nlen * 0.98}`} fill={lighten(nail.fill, 0.45)} opacity={0.8} /> : null}
                 {!nail.painted || nail.french ? <path d={`M${-nw * 0.46},${ny + nlen * 0.2} Q0,${ny - nlen * 0.05} ${nw * 0.46},${ny + nlen * 0.2}`} fill="none" stroke="#fbfaf6" strokeWidth={Math.max(0.7, nlen * (nail.french ? 0.26 : 0.1))} strokeLinecap="round" opacity={nail.french ? 1 : 0.55} /> : null}
                 <ellipse cx={-nw * 0.22} cy={ny + nlen * 0.42} rx={nw * 0.07} ry={nlen * 0.2} fill="#fff" opacity={nail.painted ? 0.28 : 0.18} filter={`url(#${uid}-b1)`} />
@@ -329,6 +350,7 @@ function SoleView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
         <filter id={`${uid}-b3`} filterUnits="userSpaceOnUse" x="-20" y="-20" width="240" height="330"><feGaussianBlur stdDeviation="3.5" /></filter>
         <filter id={`${uid}-b6`} filterUnits="userSpaceOnUse" x="-20" y="-20" width="240" height="330"><feGaussianBlur stdDeviation="7" /></filter>
         <clipPath id={`${uid}-sole`}><path d={body} /></clipPath>
+        {g.dirt > 0.12 ? <DirtFilter uid={uid} colour={g.dirtColour} seed={g.seed} /> : null}
         <linearGradient id={`${uid}-stoe`} x1="0" x2="1" y1="0" y2="0">
           <stop offset="0" stopColor={shade(g.sole, 0.86)} />
           <stop offset="0.4" stopColor={pale} />
@@ -354,7 +376,7 @@ function SoleView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
           <path d={smooth([[X(-0.44), Y(0.735)], [X(-0.1), Y(0.72)], [X(0.2), Y(0.7)], [X(0.44), Y(0.675)]], false)} fill="none" stroke={line} strokeWidth={0.9} opacity={0.7} />
           {/* fine creases in the arch */}
           {[0.34, 0.4, 0.47].map((v, k) => <path key={k} d={`M${X(-0.38 + k * 0.03)},${Y(v)} q${W * 0.1},${-2} ${W * 0.2},${1}`} fill="none" stroke={line} strokeWidth={0.5} opacity={0.35} />)}
-          {f.soles === "calloused" ? <>
+          {f.soles === "calloused" && g.dirt < 0.5 ? <>
             {E(0.01, 0.08, W * 0.22, L * 0.06, callus, 0.75, "b1")}
             {E(-0.3, 0.68, W * 0.12, L * 0.04, callus, 0.7, "b1")}
             {E(0.32, 0.63, W * 0.08, L * 0.03, callus, 0.6, "b1")}
@@ -363,6 +385,20 @@ function SoleView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
             {E(-0.05, 0.12, W * 0.12, L * 0.03, "#fff", 0.35, "b3")}
             {E(-0.1, 0.67, W * 0.18, L * 0.025, "#fff", 0.3, "b3")}
           </> : null}
+          {/* dirt where she stands: heel and ball first, the outside edge, then everything but the arch */}
+          {g.dirt > 0.12 ? (() => {
+            // Where she stands: heel and ball, the outside edge, and, once it's bad, everything but the arch.
+            const areas = <>
+              <ellipse cx={X(0.01)} cy={Y(0.1)} rx={W * (0.24 + g.dirt * 0.12)} ry={L * (0.08 + g.dirt * 0.04)} fill={g.dirtColour} />
+              <ellipse cx={X(0.02)} cy={Y(0.67)} rx={W * (0.34 + g.dirt * 0.14)} ry={L * (0.05 + g.dirt * 0.03)} fill={g.dirtColour} />
+              {g.dirt > 0.3 ? <path d={smooth([[X(0.2), Y(0.14)], [X(0.32), Y(0.36)], [X(0.37), Y(0.58)]], false)} fill="none" stroke={g.dirtColour} strokeWidth={W * 0.18 * (1.4 - hollow * 0.5)} /> : null}
+              {g.dirt > 0.6 ? <ellipse cx={X(0.08)} cy={Y(0.4)} rx={W * 0.36 * (1 - hollow * 0.4)} ry={L * 0.28} fill={g.dirtColour} opacity={0.55} /> : null}
+            </>;
+            return <>
+              <g filter={`url(#${uid}-b6)`} opacity={Math.min(0.9, 0.15 + g.dirt * 0.8)}>{areas}</g>
+              <g filter={`url(#${uid}-dirt)`} opacity={Math.min(0.55, g.dirt * 0.6)}>{areas}</g>
+            </>;
+          })() : null}
           {/* welts from the cane, across the tender parts */}
           {Array.from({ length: caned }, (_, i) => { const v = [0.15, 0.5, 0.35, 0.62, 0.25, 0.42, 0.56, 0.08][i]; return <path key={i} d={smooth([[X(-0.42), Y(v + 0.01)], [X(0), Y(v)], [X(0.42), Y(v - 0.012)]], false)} fill="none" stroke="#b1323d" strokeWidth={2.2} opacity={0.6} filter={`url(#${uid}-b1)`} />; })}
         </g>
@@ -391,6 +427,7 @@ function SoleView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
               <ellipse cx={0} cy={-F + V * (i === 0 ? 0.32 : 0.28)} rx={w * 0.4} ry={V * (i === 0 ? 0.26 : 0.22)} fill={rosy} opacity={0.75} filter={`url(#${uid}-b1)`} />
               <path d={`M${-w * 0.38},${-s - 0.26 * V} q${w * 0.38},${V * 0.06} ${w * 0.76},0`} fill="none" stroke={line} strokeWidth={0.7} opacity={0.75} />
               {i === 0 ? <path d={`M${-w * 0.34},${-s - 0.55 * V} q${w * 0.34},${V * 0.05} ${w * 0.68},0`} fill="none" stroke={line} strokeWidth={0.6} opacity={0.6} /> : null}
+              {g.dirt > 0.25 ? <ellipse cx={0} cy={-F + V * 0.3} rx={w * 0.36} ry={V * 0.22} fill={g.dirtColour} opacity={Math.min(0.75, g.dirt * 0.8)} filter={`url(#${uid}-b1)`} /> : null}
               {f.soles === "calloused" && i === 0 ? <ellipse cx={w * 0.3} cy={-s - 0.45 * V} rx={w * 0.15} ry={V * 0.2} fill={callus} opacity={0.5} filter={`url(#${uid}-b1)`} /> : null}
             </g>
           );
@@ -479,6 +516,7 @@ function SideView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
               <ellipse cx={P(0.08, 0)[0]} cy={P(0.08, 0)[1]} rx={L * 0.075} ry={L * 0.028} fill="#d5c08a" opacity={0.75} filter={`url(#${uid}-s1)`} />
               <ellipse cx={P(0.71, 0)[0]} cy={P(0.71, 0)[1]} rx={L * 0.07} ry={L * 0.024} fill="#d5c08a" opacity={0.7} filter={`url(#${uid}-s1)`} />
             </> : f.soles === "soft" ? <path d={smooth(sole, false)} fill="none" stroke="#f7c4bd" strokeWidth={L * 0.03} opacity={0.5} filter={`url(#${uid}-s1)`} /> : null}
+            {g.dirt > 0.12 ? <path d={smooth([P(0.0, 0.03 + g.dirt * 0.012), P(0.14, 0.034 + g.dirt * 0.01), P(0.28, a * 0.45 + 0.03), P(0.42, a * 0.75 + 0.026), P(0.58, a * 0.4 + 0.028), P(0.72, 0.03 + g.dirt * 0.01), P(0.86, 0.026), P(1.0, 0.024), P(1.0, -0.05), P(0, -0.05)], true)} fill={g.dirtColour} opacity={Math.min(0.95, 0.3 + g.dirt * 0.75)} filter={`url(#${uid}-s1)`} /> : null}
             {/* the arch, in shadow */}
             <ellipse cx={P(0.44, a + 0.04)[0]} cy={P(0.44, a + 0.04)[1]} rx={L * 0.16} ry={L * 0.035} fill={shade(g.skin, 0.7)} opacity={0.45} filter={`url(#${uid}-s3)`} />
             {/* light along the top of the foot and the heel; shade under the ankle */}
@@ -539,7 +577,10 @@ export default function FeetArt({ person }: { person: Person }) {
     setBusy(false);
   };
   const Photo = ({ v }: { v: "top" | "sole" | "side" }) => (showPhoto && photos?.[v] ? <img src={photos[v]} alt={`her foot, ${v}`} className="w-full h-auto rounded" /> : null);
-  const g = useMemo(() => footGenes(person), [person.id, person.body.skin, person.body.weight, person.body.marks.length, f.shape, f.width, f.arch]);
+  const genes = useMemo(() => footGenes(person), [person.id, person.body.skin, person.body.weight, person.body.marks.length, f.shape, f.width, f.arch]);
+  // Dirt changes week to week with her job, her shoes and the city, so it isn't memoised with the bones.
+  const d = soleDirt(person, save);
+  const g = { ...genes, dirt: genes.prosthetic ? 0 : d.level, dirtColour: ({ earth: "#4a3826", grime: "#34302c", dust: "#7a6b5a" } as const)[d.kind] };
   const uid = `ft${idHash(person.id, "uid").toString(36)}`;
   const cm = (f.size / 1.5 - 1.5).toFixed(1);
   const label = { egyptian: "Egyptian", greek: "Greek", roman: "Roman", germanic: "Germanic", celtic: "Celtic" }[f.shape ?? "egyptian"];
@@ -566,3 +607,6 @@ export default function FeetArt({ person }: { person: Person }) {
     </div>
   );
 }
+
+/** The three drawings on their own, without the photo controls (for tests and previews). */
+export { TopView, SoleView, SideView };

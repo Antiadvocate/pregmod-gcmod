@@ -93,9 +93,17 @@ export function noteMoment(s: SaveState, id: string, lines: MomentLine[]): void 
 
 /** Moments you walked away from a month ago are over. */
 export function ageMoments(s: SaveState): void {
-  // A scene you walked away from for a month is over, and it still counts for what you said in it.
-  for (const m of momentsOf(s)) if (m.open && s.arcology.week - m.updated > 4) { m.open = false; void concludeMoment(s, m, { offline: true }); }
+  // The week ending ends every scene still open, where it stands. What you said in it still counts,
+  // read from your own words without another model call.
+  closeAllMoments(s);
   s.moments = momentsOf(s).filter((m) => m.open || s.arcology.week - m.updated < 12);
+}
+
+/** End every open scene where it stands, offline. Returns how many ended. */
+export function closeAllMoments(s: SaveState): number {
+  let n = 0;
+  for (const m of momentsOf(s)) if (m.open) { m.open = false; n++; void concludeMoment(s, m, { offline: true }); }
+  return n;
 }
 
 export function closeMoment(s: SaveState, id: string): void {
@@ -103,8 +111,17 @@ export function closeMoment(s: SaveState, id: string): void {
   if (m) m.open = false;
 }
 
-function transcript(m: Moment): string {
-  return m.log.map((l) => (l.role === "you" ? `PLAYER: ${l.text}` : l.text)).join("\n\n");
+/** The scene so far, trimmed for the model: how it started and the last few exchanges. A long
+ *  scene doesn't resend every line every turn; what happened in the middle is already in her
+ *  memory and the deeds. */
+function transcript(m: Moment, keep = 6): string {
+  const line = (l: MomentLine) => (l.role === "you" ? `PLAYER: ${l.text}` : l.text);
+  if (m.log.length <= keep + 2) return m.log.map(line).join("\n\n");
+  const head = m.log.slice(0, 2);
+  const tail = m.log.slice(-keep);
+  const gap = m.log.length - head.length - tail.length;
+  const said = m.log.slice(2, -keep).filter((l) => l.role === "you").map((l) => l.text.slice(0, 60));
+  return [...head.map(line), `(${gap} lines later; the player had said: ${said.join(" / ")})`, ...tail.map(line)].join("\n\n");
 }
 
 export function splitOptions(text: string): { prose: string; options: string[] } {

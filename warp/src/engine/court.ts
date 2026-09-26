@@ -9,24 +9,41 @@
  */
 import type { SaveState } from "./types";
 import { clamp } from "./psyche";
-import { cultureOf, drivers, normLine, pushNorm, registerLawPull } from "./culture";
+import { type Norm, cultureOf, drivers, normLine, pushNorm, registerLawPull } from "./culture";
 import { LAWS, LAW_BY_ID, type LawDef } from "../data/laws";
+import { customLawDef, CUSTOM_EFFECTS, type CustomLaw } from "../data/customlaws";
 import { registerEvents, fireEvent, resolveEvent, type EventDef } from "./events";
 
 export interface LawInForce { id: string; week: number; exempt?: boolean; by: "you" | "court" | "keeper" }
 export interface CourtCase { week: number; law: string; kind: "enact" | "repeal"; outcome: string }
-export interface CourtState { last: number; record: CourtCase[]; vetoed: Record<string, number>; vetoes: number }
+export interface CourtState { last: number; record: CourtCase[]; vetoed: Record<string, number>; vetoes: number;
+  /** Laws you put before the court yourself, by week: your backing counts for 25 points of the city's opinion. */
+  backed?: Record<string, number> }
 
 for (const l of LAWS) registerLawPull(l.id, l.pull, l.name);
 
 export function courtOf(s: SaveState): CourtState {
   return (s.court ??= { last: 0, record: [], vetoed: {}, vetoes: 0 });
 }
-export const lawsOf = (s: SaveState) => (s.laws ??= []);
+/** Laws you wrote are registered next to the built-in ones, so everything that reads a law reads them. */
+function registerCustom(s: SaveState) {
+  for (const c of s.custom_laws ?? []) {
+    if (LAW_BY_ID[c.id]) continue;
+    const def = customLawDef(c);
+    LAW_BY_ID[c.id] = def;
+    registerLawPull(c.id, def.pull, def.name);
+    registerEvents([repealEvent(def)]);
+  }
+}
+export const lawsOf = (s: SaveState) => { registerCustom(s); return (s.laws ??= []); };
 export const inForce = (s: SaveState, id: string) => lawsOf(s).some((l) => l.id === id);
 
 const std = (s: SaveState, by: number) => { s.arcology.public_standing = clamp(s.arcology.public_standing + by, -10, 10); };
-const margin = (s: SaveState, l: LawDef) => (cultureOf(s).norms[l.norm] - l.at) * l.dir;
+/** Laws you back carry your weight for twelve weeks. */
+export const backedNow = (s: SaveState, id: string) => s.arcology.week - (courtOf(s).backed?.[id] ?? -99) <= 12;
+const margin = (s: SaveState, l: LawDef) => (cultureOf(s).norms[l.norm] - l.at) * l.dir + (backedNow(s, l.id) ? 25 : 0);
+/** How far the city is from a law, before your backing. */
+export const cityMargin = (s: SaveState, l: LawDef) => (cultureOf(s).norms[l.norm] - l.at) * l.dir;
 const repealMargin = (s: SaveState, l: LawDef) => (l.repealAt - cultureOf(s).norms[l.norm]) * l.dir;
 
 export function enact(s: SaveState, l: LawDef, by: LawInForce["by"], exempt = false): string {
@@ -38,6 +55,7 @@ export function enact(s: SaveState, l: LawDef, by: LawInForce["by"], exempt = fa
 
 function record(s: SaveState, l: LawDef, kind: CourtCase["kind"], outcome: string) {
   const c = courtOf(s);
+  if (c.backed) delete c.backed[l.id];
   c.record.push({ week: s.arcology.week, law: l.id, kind, outcome });
   if (c.record.length > 60) c.record.shift();
 }
@@ -131,7 +149,7 @@ export function tickCourt(s: SaveState): string[] {
 
   if (week - c.last < 4 || s.events.some((e) => e.kind.startsWith("court_"))) return out;
   c.last = week;
-  const enactable = LAWS.filter((l) => !inForce(s, l.id) && margin(s, l) > 0 && (l.also?.(s) ?? true) && week - (c.vetoed[l.id] ?? -99) >= 16)
+  const enactable = LAWS.filter((l) => !inForce(s, l.id) && margin(s, l) > 0 && (l.also?.(s) ?? true) && (week - (c.vetoed[l.id] ?? -99) >= 16 || backedNow(s, l.id)))
     .map((l) => ({ l, m: margin(s, l), kind: "enact" as const }));
   const repealable = lawsOf(s).map((x) => LAW_BY_ID[x.id]).filter((l): l is LawDef => !!l && repealMargin(s, l) > 0 && week - (c.vetoed[`repeal:${l.id}`] ?? -99) >= 12)
     .map((l) => ({ l, m: repealMargin(s, l), kind: "repeal" as const }));
@@ -149,3 +167,83 @@ export function lawsBrief(s: SaveState): string {
   return ls.map((l) => `· ${l.name}: ${l.text}${lawsOf(s).find((x) => x.id === l.id)?.exempt ? " (your household is exempt)" : ""}`).join("\n");
 }
 
+
+/* ── pushing it yourself ────────────────────────────────────────────────────────────────────── */
+
+/** Put a law before the court with your name on it. It's heard at the next sitting. */
+export function backLaw(s: SaveState, id: string): string {
+  const l = LAW_BY_ID[id];
+  if (!l || inForce(s, id)) return "";
+  const c = courtOf(s);
+  (c.backed ??= {})[id] = s.arcology.week;
+  c.last = Math.min(c.last, s.arcology.week - 4);
+  return `You put the ${l.name} before the court. It will be heard at the next sitting, with your name on the petition.`;
+}
+
+/** What decreeing a law over the court's head costs: more, the further the city is from it. */
+export function decreeCost(s: SaveState, l: LawDef): { standing: number; rep: number } {
+  const gap = Math.max(0, -cityMargin(s, l));
+  return { standing: Math.min(4, Math.round(gap / 25)), rep: Math.round(300 + gap * 25) };
+}
+
+/** Enact it now, over the court. */
+export function decreeLaw(s: SaveState, id: string): string {
+  const l = LAW_BY_ID[id];
+  if (!l || inForce(s, id)) return "";
+  const cost = decreeCost(s, l);
+  const extra = enact(s, l, "you");
+  std(s, -cost.standing);
+  s.arcology.rep -= cost.rep;
+  pushNorm(s, l.norm, l.dir * 6, `you decreed the ${l.name}`);
+  record(s, l, "enact", "you decreed it over the court");
+  return `You decree the ${l.name}. It's posted at every lift by the evening.${extra}${cost.standing ? " The court takes it badly, and so do the people who didn't want it." : ""}`;
+}
+
+/** Strike it yourself. */
+export function repealByDecree(s: SaveState, id: string): string {
+  const l = LAW_BY_ID[id];
+  if (!l || !inForce(s, id)) return "";
+  s.laws = lawsOf(s).filter((x) => x.id !== id);
+  const against = cityMargin(s, l) > 15;
+  if (against) std(s, -1);
+  s.arcology.rep -= 200;
+  pushNorm(s, l.norm, -l.dir * 5, `you struck the ${l.name}`);
+  record(s, l, "repeal", "you struck it by decree");
+  return `You strike the ${l.name} by decree.${against ? " The city was living by it, and it notices." : ""}`;
+}
+
+/* ── laws you write ─────────────────────────────────────────────────────────────────────────── */
+
+/** Reputation you need to write a law: more for every law of yours already in force. */
+export function customLawRep(s: SaveState): number {
+  const mine = (s.custom_laws ?? []).filter((c) => inForce(s, c.id)).length;
+  return 2000 + mine * 1500;
+}
+
+/** What it costs, beyond the reputation you need: some of it, and standing if the city is against it. */
+export function customLawCost(s: SaveState, push: CustomLaw["push"]): { rep: number; standing: number; against: Norm[] } {
+  const norms = cultureOf(s).norms;
+  const against = push.filter((p) => norms[p.norm] * p.dir < -30).map((p) => p.norm);
+  return { rep: 600 + against.length * 400, standing: against.length, against };
+}
+
+export function writeLaw(s: SaveState, draft: { name: string; text: string; push: CustomLaw["push"]; effects: string[] }): { ok: boolean; line: string } {
+  // The game says "the X Act" itself; a name that starts with "The" would read "the The".
+  const name = draft.name.trim().replace(/^the\s+/i, "").slice(0, 60);
+  const text = draft.text.trim().slice(0, 300);
+  if (!name || !text) return { ok: false, line: "A law needs a name and something it says." };
+  if (!draft.push.length && !draft.effects.length) return { ok: false, line: "Choose at least one thing it does." };
+  const need = customLawRep(s);
+  if (s.arcology.rep < need) return { ok: false, line: `You need ${need.toLocaleString()} reputation to write a law; you have ${Math.round(s.arcology.rep).toLocaleString()}.` };
+  const cost = customLawCost(s, draft.push);
+  const c: CustomLaw = { id: `custom_${s.arcology.week}_${(s.custom_laws ?? []).length}`, name, text, push: draft.push.slice(0, 2), effects: draft.effects.filter((e) => CUSTOM_EFFECTS[e]).slice(0, 2), week: s.arcology.week };
+  (s.custom_laws ??= []).push(c);
+  registerCustom(s);
+  const def = LAW_BY_ID[c.id];
+  lawsOf(s).push({ id: c.id, week: s.arcology.week, by: "you" });
+  s.arcology.rep -= cost.rep;
+  std(s, -cost.standing);
+  for (const p of c.push) pushNorm(s, p.norm, p.dir * 6, `you wrote the ${name}`);
+  record(s, def, "enact", "you wrote it");
+  return { ok: true, line: `The ${name} is law from Monday: "${text}" It's posted at every lift by the evening.${cost.standing ? " The city didn't ask for it, and it lets you know." : ""}` };
+}

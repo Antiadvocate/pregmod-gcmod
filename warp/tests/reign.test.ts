@@ -110,3 +110,26 @@ function hand(s: SaveState, h: Person) {
   check("once it's over she's no longer counted as living under her own rule", !isKeeper(s, h));
   check("and her rules come off", !agreementsOf(h).some((a) => a.by === "her"));
 }
+
+{
+  // Her lover: you ask, and it goes through the stages.
+  const { askForLover } = await import("../src/engine/reign.ts");
+  const s = game("reign-cuck");
+  const h = adults(s)[0];
+  h.persona.conscience = 0.5; h.bond.resentment = 0; h.persona.attracted_to = "men";
+  hand(s, h);
+  tickReign(s);
+  resolveEvent(s, s.events.find((e) => e.kind === "reign_terms")!, "accept");
+  const said = askForLover(s);
+  check("you can ask her to take a lover", !!said && !!s.reign!.cuck && s.events.some((e) => e.kind === "cuck_lover"), said);
+  resolveEvent(s, s.events.find((e) => e.kind === "cuck_lover")!, "watch");
+  const seen = new Set<string>();
+  for (let w = 0; w < 20; w++) {
+    endWeek(s);
+    for (const e of s.events.filter((x) => x.kind.startsWith("cuck_") || x.kind.startsWith("reign_"))) { seen.add(e.kind); resolveEvent(s, e, e.kind === "cuck_room" ? "serve" : e.kind === "cuck_public" ? "own" : e.kind === "cuck_child" ? "yours" : e.kind === "reign_order" ? "obey" : e.kind === "reign_future" ? "yes" : e.kind === "reign_display" ? "go" : "accept"); }
+    if (s.story) s.story.pending = undefined;
+  }
+  check("you're made to watch, then serve", seen.has("cuck_room") && s.reign!.duties.some((d) => /serve her and/.test(d)), [...seen]);
+  check("the lover takes your place in her bed", seen.has("cuck_bed") && /while .* sleeps in it/.test(s.reign!.sleep), s.reign!.sleep);
+  check("her card says she has a lover", /SHE HAS A LOVER/.test(personCard(s, h)));
+}

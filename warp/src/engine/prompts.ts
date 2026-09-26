@@ -13,6 +13,8 @@
  * is something the engine can be held to — if the prose contradicts the card, the card is right and
  * the guards in turn.ts say so.
  */
+import { othersBrief } from "./household";
+import { memoryLine, dedupeLines } from "./memory";
 import { assWord } from "./generate";
 import { anusWord } from "./genitals";
 import { describeTraits } from "./fleshcraft";
@@ -132,10 +134,12 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (between) lines.push(`BETWEEN YOU AND HER (these happened; she has not forgotten):\n${between}`);
   if (s.player.owned_by === p.id) lines.push(reignCard(s, p) || `SHE OWNS YOU: you gave yourself to her. She holds your collar and acts like it.`);
   else if (s.reign && theKeeper(s) && s.reign.keeper !== p.id) lines.push(householdUnderHer(s, p));
+  const others = othersBrief(s, p);
+  if (others) lines.push(others);
   const orders = agreementsBrief(s, p);
   if (orders) lines.push(orders);
   lines.push(`SHE CALLS YOU: ${s.player.owned_by === p.id ? (s.reign?.your_name ?? "whatever she likes") : calledBy(s, p)}${s.player.owned_by === p.id ? "" : " (always this; never another title unless she is defying you)"}.`);
-  if (memories.length) lines.push(`REMEMBERS: ${memories.map((m) => `${m.content} (week ${m.week})`).join(" | ")}`);
+  if (memories.length) lines.push(`REMEMBERS: ${memories.map(memoryLine).join(" | ")}`);
   if (p.psyche.state !== "intact") lines.push(`She is ${p.psyche.state}${p.psyche.break_mode ? ` (${p.psyche.break_mode})` : ""}. Write her that way, not as fine.`);
   return lines.join("\n");
 }
@@ -199,8 +203,8 @@ export function digest(s: SaveState, action = "", focus?: string): string {
     out.push(nearby.map((p) => `· ${p.name} [${p.id}] — ${p.assignment}${p.facility ? `, ${arc.facilities[p.facility]?.name}` : ""}`).join("\n"));
   }
 
-  const heard = s.rumors.filter((r) => r.salience > 3).slice(0, 4);
-  if (heard.length) out.push(`\n## WHAT PEOPLE ARE SAYING\n${heard.map((r) => `· ${r.content} (${r.truth})`).join("\n")}`);
+  const heard = dedupeLines(s.rumors.filter((r) => r.salience > 3).map((r) => `${r.content} (${r.truth})`)).slice(0, 4);
+  if (heard.length) out.push(`\n## WHAT PEOPLE ARE SAYING\n${heard.map((r) => `· ${r}`).join("\n")}`);
 
   const corr = s.corrections;
   if (corr.filler || corr.maxim || corr.echo || corr.reprint) {
@@ -211,10 +215,15 @@ export function digest(s: SaveState, action = "", focus?: string): string {
     if (corr.reprint) out.push(`· You reprinted your own previous turn: "${corr.reprint}"`);
   }
 
+  // Recent turns, with the ones that say the same thing collapsed: ten turns of "she served him"
+  // are one line with a count, not ten lines the model reads every turn.
   const recent = s.history.slice(-Math.max(2, s.models.history_window));
   if (recent.length) {
     out.push(`\n## EARLIER (for continuity; do not repeat)`);
-    for (const h of recent) out.push(`[wk ${h.week}] ${h.action ? `owner: ${h.action}\n` : ""}${h.summary}`);
+    const last = recent.at(-1)!;
+    const older = dedupeLines(recent.slice(0, -1).map((h) => `[wk ${h.week}] ${h.summary}`));
+    out.push(...older);
+    out.push(`[wk ${last.week}] ${last.action ? `owner: ${last.action}\n` : ""}${last.summary}`);
   }
   return out.join("\n");
 }

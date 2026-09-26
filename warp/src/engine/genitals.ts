@@ -277,7 +277,49 @@ export function describeFeet(p: Person): string {
   if (f.jewelry.length) out.push(`She wears ${f.jewelry.join(" and ")}.`);
   out.push(["She isn't ticklish.", "She's a little ticklish.", "She's very ticklish.", "She's hopelessly ticklish; touching her soles reduces her to squealing."][f.ticklish]);
   if (f.heels_clipped) out.push("Her Achilles tendons have been clipped: she can't stand flat, and walks only in heels or crawls on all fours.");
+  out.push(dirtWords(soleDirt(p)));
   return out.join(" ");
+}
+
+/** How dirty her soles are right now, 0 (clean) … 1 (black), what kind of dirt, and why. Barefoot
+ *  and on her feet all day in a dairy or a field they're filthy; kept in the spa or in your bed
+ *  they're clean. Shoes keep most of it off; a pedicure or a foot-worshipper takes it off. */
+export function soleDirt(p: Person, s?: { world?: { pollution: number }; laws?: { id: string }[] }): { level: number; kind: "earth" | "grime" | "dust"; why: string } {
+  const f = feetOf(p);
+  const shoes = (p.shoes ?? "").toLowerCase();
+  const bare = !shoes || shoes === "none" || /bare/.test(shoes);
+  const job: Record<string, [number, "earth" | "grime" | "dust", string]> = {
+    "work as a farmhand": [0.5, "earth", "working the fields"], "be the Farmer": [0.4, "earth", "working the fields"],
+    "work in the dairy": [0.35, "earth", "on the dairy floor all day"], "be the Milkmaid": [0.3, "earth", "on the dairy floor"],
+    "house servant": [0.32, "grime", "scrubbing floors"], "work as a servant": [0.32, "grime", "scrubbing floors"], "be the Stewardess": [0.25, "grime", "on her feet running the house"],
+    "public servant": [0.38, "grime", "walking the concourse all day"], "whore": [0.3, "grime", "working the street"],
+    "fight in the pit": [0.45, "dust", "the sand of the pit"], "be confined in the cellblock": [0.38, "grime", "the cellblock floor"],
+    "guard you": [0.2, "dust", "following you everywhere"], "recruit girls": [0.2, "dust", "out in the city"], "be your agent": [0.2, "dust", "out in the city"],
+    "work in the brothel": [0.1, "grime", "the brothel floors"], "serve in the club": [0.18, "grime", "the club floor"],
+    "rest": [-0.15, "dust", ""], "rest in the spa": [-0.4, "dust", ""], "get treatment in the clinic": [-0.35, "dust", ""], "get treatment": [-0.3, "dust", ""],
+    "please you": [-0.2, "dust", ""], "fucktoy": [-0.15, "dust", ""], "be your Concubine": [-0.3, "dust", ""], "work in an office": [-0.1, "dust", ""],
+    "be your secretary": [-0.15, "dust", ""], "be an idol": [-0.25, "dust", ""], "be confined in the arcade": [-0.1, "dust", ""],
+  };
+  const [w, kind, where] = job[p.assignment] ?? [0.1, "dust" as const, ""];
+  let level = (bare ? 0.35 : 0.04) + (w > 0 ? w * (bare ? 1 : 0.25) : w);
+  const why: string[] = [];
+  if (bare && w > 0.15) why.push(`barefoot and ${where}`);
+  else if (bare) why.push("barefoot");
+  if (f.heels_clipped) { level += 0.2; why.push("crawling"); }
+  if (bare && s?.world && s.world.pollution > 50) { level += 0.1; why.push("the grime in the air settles on everything"); }
+  if (bare && s?.laws?.some((l) => l.id === "barefoot_statute") && w > 0) level += 0.08;
+  const pampered = (p.acts?.["pedicure"] ?? 0) + (p.acts?.["worship feet"] ?? 0);
+  if (pampered) level -= Math.min(0.3, pampered * 0.05);
+  if (f.soles === "soft") level -= 0.1;
+  level = Math.max(0, Math.min(1, level));
+  return { level, kind, why: why.join(", ") };
+}
+
+export function dirtWords(d: { level: number; kind: string; why: string }): string {
+  if (d.level < 0.15) return "Her soles are clean.";
+  const stuff = d.kind === "earth" ? "earth and straw" : d.kind === "grime" ? "floor grime" : "dust";
+  const how = d.level > 0.7 ? `black with ${stuff}` : d.level > 0.4 ? `dirty, grey-brown with ${stuff} on the heels and balls` : `a little dusty`;
+  return `Her soles are ${how}${d.why ? ` (${d.why})` : ""}.`;
 }
 
 /** A hard list of what she has and hasn't got, for every prompt. Models drift toward the default
