@@ -16,6 +16,7 @@
  * afterwards to work out what must have happened, which is how the old end-of-week text and the
  * old budget screen ended up describing two different weeks.
  */
+import { tickHousehold } from "./household";
 import { tickBattles } from "./battles";
 import { tickFCTV } from "./fctv";
 import { tickCorp } from "./corp";
@@ -301,6 +302,8 @@ export function endWeek(s: SaveState): WeekReport {
   ageMoments(s);
   for (const e of tickDeeds(s)) push(e.text, "warning", 8, e.person);
   // The city's habits move with what it saw you do this week, and the court writes them down.
+  // What they did with each other this week, and a dispute for you now and then.
+  for (const l of tickHousehold(s)) push(l, "neutral", 4);
   const camp = tickCampaigns(s);
   if (camp.cash) led.entry("doctrine", "your campaigns", camp.cash);
   for (const l of camp.lines) push(l, "neutral", 4);

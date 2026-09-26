@@ -13,6 +13,7 @@
  * is something the engine can be held to — if the prose contradicts the card, the card is right and
  * the guards in turn.ts say so.
  */
+import { othersBrief } from "./household";
 import { memoryLine, dedupeLines } from "./memory";
 import { assWord } from "./generate";
 import { anusWord } from "./genitals";
@@ -133,6 +134,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (between) lines.push(`BETWEEN YOU AND HER (these happened; she has not forgotten):\n${between}`);
   if (s.player.owned_by === p.id) lines.push(reignCard(s, p) || `SHE OWNS YOU: you gave yourself to her. She holds your collar and acts like it.`);
   else if (s.reign && theKeeper(s) && s.reign.keeper !== p.id) lines.push(householdUnderHer(s, p));
+  const others = othersBrief(s, p);
+  if (others) lines.push(others);
   const orders = agreementsBrief(s, p);
   if (orders) lines.push(orders);
   lines.push(`SHE CALLS YOU: ${s.player.owned_by === p.id ? (s.reign?.your_name ?? "whatever she likes") : calledBy(s, p)}${s.player.owned_by === p.id ? "" : " (always this; never another title unless she is defying you)"}.`);
