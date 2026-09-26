@@ -16,7 +16,7 @@
  */
 import { inHousehold } from "../engine/romance";
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Send, Undo2, X } from "lucide-react";
+import { Loader2, Send, Undo2, RotateCcw, Square, X } from "lucide-react";
 import { useGame } from "../lib/game";
 import { Button, Chip, cx } from "../lib/ui";
 import type { ActionMode } from "../engine/types";
@@ -55,15 +55,34 @@ export default function Scene() {
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [save.history.length, streaming]);
 
-  async function send() {
-    const action = text.trim();
+  const stopper = useRef<AbortController | null>(null);
+  const [retry, setRetry] = useState<{ action: string; mode: ActionMode } | null>(null);
+  // A retry rolls the save back first; the resend has to run against the restored save, which
+  // arrives on the next render.
+  useEffect(() => { if (retry) { const r = retry; setRetry(null); void send(r.action, r.mode); } }, [retry]);
+
+  async function send(again?: string, againMode?: ActionMode) {
+    const action = (again ?? text).trim();
+    const m = againMode ?? mode;
     if (!action || busy) return;
     setBusy(true);
-    setText("");
+    if (!again) setText("");
     setStreaming("");
     setNotes([]);
-    const res = await runTurn(save, action, mode, { onDelta: (c) => setStreaming((p) => p + c), onReset: () => setStreaming("") });
+    const ctl = new AbortController();
+    stopper.current = ctl;
+    const res = await runTurn(save, action, m, { onDelta: (c) => setStreaming((p) => p + c), onReset: () => setStreaming(""), signal: ctl.signal });
+    stopper.current = null;
     setStreaming("");
+    if (ctl.signal.aborted) {
+      // Stopped: put everything back as it was before the turn, and your words back in the box.
+      const back = rollback(save);
+      if (back) replace(back);
+      setText(action);
+      setNotes(["Stopped. Nothing from that turn was kept."]);
+      setBusy(false);
+      return;
+    }
     setNotes(res.notes);
     mutate(() => {});
 
@@ -185,8 +204,14 @@ export default function Scene() {
           {MODES.map((m) => (
             <Chip key={m.id} on={mode === m.id} onClick={() => setMode(m.id)} title={m.hint}>{m.label}</Chip>
           ))}
+          {save.history.length && !busy && save.history.at(-1)!.action ? (
+            <button className="chip ml-auto" title="throw away the last response and ask the model again, with the same words"
+              onClick={() => { const last = save.history.at(-1)!; const back = rollback(save); if (back) { replace(back); setRetry({ action: last.action, mode: last.mode }); } }}>
+              <RotateCcw size={11} /> retry
+            </button>
+          ) : null}
           {save.history.length ? (
-            <button className="chip ml-auto" title="undo the last turn"
+            <button className="chip" title="undo the last turn"
               onClick={() => { const r = rollback(save); if (r) replace(r); }}>
               <Undo2 size={11} /> undo
             </button>
@@ -201,9 +226,15 @@ export default function Scene() {
             placeholder={MODES.find((m) => m.id === mode)!.hint}
             className="resize-none font-prose text-[15px]"
           />
-          <Button kind="primary" onClick={send} disabled={busy || !text.trim()}>
-            {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-          </Button>
+          {busy && stopper.current ? (
+            <Button kind="danger" onClick={() => stopper.current?.abort()} title="Stop the model; the turn is thrown away">
+              <Square size={13} /> stop
+            </Button>
+          ) : (
+            <Button kind="primary" onClick={() => void send()} disabled={busy || !text.trim()}>
+              {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+            </Button>
+          )}
         </div>
       </div>
     </div>

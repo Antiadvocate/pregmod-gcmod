@@ -7,6 +7,13 @@ export function getApiKey(): string { try { return localStorage.getItem(KEY) ?? 
 export function setApiKey(k: string): void { k ? localStorage.setItem(KEY, k.trim()) : localStorage.removeItem(KEY); }
 export function hasApiKey(): boolean { return !!getApiKey(); }
 
+/** How much the model may think before it writes. "off" asks it not to (flash and reasoning models
+ *  are much faster that way), "low" asks for a little, "model" leaves it to the model's default. */
+export type Thinking = "off" | "low" | "model";
+const THINK = "warp-thinking";
+export function getThinking(): Thinking { try { const v = localStorage.getItem(THINK); return v === "low" || v === "model" ? v : v === "off" ? "off" : "model"; } catch { return "model"; } }
+export function setThinking(v: Thinking): void { try { localStorage.setItem(THINK, v); } catch { /* storage blocked */ } }
+
 /** A model id prefixed `local/` routes to an OpenAI-compatible server on your own machine —
  *  KoboldCpp, llama-server, LM Studio, Ollama. That prefix is the whole routing mechanism, so any
  *  one slot can be local while the rest stay in the cloud. The useful split is a local narrator

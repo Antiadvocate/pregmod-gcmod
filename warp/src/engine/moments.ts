@@ -8,6 +8,7 @@
  * on the Penthouse, and picks up where it left off. With no model, the written game answers in her
  * voice and still offers you the next thing to say.
  */
+import { cultureBrief } from "./culture";
 import { lawsLine } from "./lawlife";
 import type { Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
@@ -53,6 +54,15 @@ ${HOUSE_STYLE}
 You are given the slave's card (fact), the world, and the scene so far. Write what happens next, in response to the player's last line. If the last thing in the scene is a short summary of something that just happened, write that moment out in full first: what she does, what she says, how she takes it. Two to four paragraphs, with her talking in her own voice. Follow the player's reply exactly; if they do something, write it happening. Do not write the player's feelings. Do not end the scene; stop at a point where the player can answer.
 
 Then, on its own line, write OPTIONS: and under it exactly four lines, each starting with "- ", giving four clearly different things the player could say or do next, in the player's voice and under twelve words each: one kind, one harsh, one sexual, and one that moves things along or leaves.`;
+
+/** A scene with nobody of yours in it: a citizen, a trader, an official, a stranger. */
+export const CITY_SCENE_SYSTEM = `You continue a scene in Free Cities, an adult text game about owning an arcology where slavery is legal. The player owns the arcology. This scene is not with one of the player's slaves: it is with whoever the situation is about (citizens, traders, officials, rivals, visitors, strangers).
+
+${HOUSE_STYLE}
+
+Write what happens next, in response to the player's last line. If the last thing in the scene is a short summary of something that just happened, write that moment out in full first. Give the people in it names if they have none, and their own voices; they know who the player is and act on it, by what the ARCOLOGY section says about the city, its laws and what people know the player did. Two to four paragraphs. Follow the player's reply exactly; if they do something, write it happening and how people react. Do not write the player's feelings. Do not end the scene; stop at a point where the player can answer.
+
+Then, on its own line, write OPTIONS: and under it exactly four lines, each starting with "- ", giving four clearly different things the player could say or do next, in the player's voice and under twelve words each: one generous, one hard, one that uses the moment for the player's gain or pleasure, and one that ends it or moves on.`;
 
 const DEFAULT_OPTIONS = [
   "Ask her what she's thinking",
@@ -160,10 +170,12 @@ export async function playMoment(
   }
 
   const card = p ? personCard(s, p, reply ?? m.title) : "";
+  const city = !p && !walking;
   const others = (m.others ?? []).map((id) => s.people[id]).filter(Boolean) as Person[];
   const bond = (a: Person, b: Person) => { const e = s.edges.find((x) => x.from === a.id && x.to === b.id); return e ? `${a.name} toward ${b.name}: ${e.roles.length ? `${e.roles.join(", ")}; ` : ""}warmth ${Math.round(e.warmth)}` : ""; };
   const user = [
     walking ? walkContext(s, m.walk) : "",
+    city ? cityContext(s) : "",
     card ? `## ${walking ? "WITH THE PLAYER" : "THE SLAVE"}\n${card}` : "",
     ...others.map((o) => `## ALSO IN THE SCENE\n${personCard(s, o, m.title)}`),
     p && others.length ? `## BETWEEN THEM\n${others.flatMap((o) => [bond(p, o), bond(o, p)]).filter(Boolean).join("\n")}\nBoth of them talk and act in the scene, each in her own voice.` : "",
@@ -175,7 +187,7 @@ export async function playMoment(
 
   let shown = "";
   const res = await call({
-    system: walking ? WALK_SYSTEM : MOMENT_SYSTEM, user,
+    system: walking ? WALK_SYSTEM : city ? CITY_SCENE_SYSTEM : MOMENT_SYSTEM, user,
     model: s.models.narrator_model, fallback: s.models.fallback_model,
     maxTokens: 1100, temperature: 0.95, signal: opts?.signal,
     onDelta: opts?.onDelta ? (c) => {
@@ -216,10 +228,23 @@ export async function playMoment(
   return { ok: true, prose };
 }
 
+/** What a scene with citizens needs to know: the city, its laws, what you've done, what's said. */
+function cityContext(s: SaveState): string {
+  const deeds = (s.deeds ?? []).filter((d) => d.public).slice(-4).map((d) => `· ${d.summary}`).join("\n");
+  const rumors = [...s.rumors].sort((a, b) => b.salience - a.salience).slice(0, 3).map((r) => `· "${r.content}"`).join("\n");
+  return [
+    `## THE ARCOLOGY\n${s.arcology.name}, week ${s.arcology.week}. Reputation ${Math.round(s.arcology.rep)}; the city's opinion of the player is ${s.arcology.public_standing >= 3 ? "good" : s.arcology.public_standing <= -3 ? "poor" : "mixed"}.${s.player.owned_by ? ` The player wears the collar of ${s.people[s.player.owned_by]?.name ?? "a slave"}, and people know it.` : ""}`,
+    cultureBrief(s) ? `HOW CITIZENS BEHAVE:\n${cultureBrief(s)}` : "",
+    lawsLine(s),
+    deeds ? `WHAT PEOPLE KNOW THE PLAYER DID:\n${deeds}` : "",
+    rumors ? `WHAT PEOPLE ARE SAYING:\n${rumors}` : "",
+  ].filter(Boolean).join("\n");
+}
+
 /* ── with no model: her own voice, and the next things to say ─────────────────────────────── */
 
 function offlineAnswer(s: SaveState, p: Person | undefined, reply: string): string {
-  if (!p) return reply ? "Nobody answers." : "";
+  if (!p) return reply ? "They hear you out. Whatever they were going to say, they think better of it, and wait to see what you do next." : "";
   const r = rng(`moment:${p.id}:${s.turn}:${reply.length}:${s.arcology.week}`);
   const t = reply.toLowerCase();
   const week = s.arcology.week;

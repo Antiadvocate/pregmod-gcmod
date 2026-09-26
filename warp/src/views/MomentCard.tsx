@@ -7,10 +7,11 @@
  * to answer her, and the written game answers back.
  */
 import { useEffect, useRef, useState } from "react";
-import { Loader2, MessageCircle, X } from "lucide-react";
+import { Loader2, MessageCircle, RotateCcw, Square, X } from "lucide-react";
 import { useGame } from "../lib/game";
 import { Button, cx } from "../lib/ui";
 import { closeAllMoments, momentsOf, openMoment, playMoment } from "../engine/moments";
+import { rollback, snapshot } from "../engine/state";
 import { concludeMoment, deedsOf, DEED_TAGS } from "../engine/deeds";
 import { modelsAvailable } from "../config";
 import { SlaveHead } from "./SlaveArt";
@@ -40,7 +41,7 @@ export function Reaction({ seed, className, auto = false, label = "Play it out",
 }
 
 export default function MomentCard({ id, className, bare, onClose }: { id: string; className?: string; bare?: boolean; onClose?: () => void }) {
-  const { save, mutate } = useGame();
+  const { save, mutate, replace } = useGame();
   const m = momentsOf(save).find((x) => x.id === id);
   const [busy, setBusy] = useState(false);
   const [stream, setStream] = useState("");
@@ -58,13 +59,41 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
   };
   const ran = useRef(false);
 
+  const stopper = useRef<AbortController | null>(null);
+  /** What the last model call was answering, so it can be asked again. undefined = nothing to retry. */
+  const last = useRef<string | null | undefined>(undefined);
+  const [again, setAgain] = useState<{ reply: string | null } | null>(null);
+  useEffect(() => { if (again) { const a = again; setAgain(null); void go(a.reply); } }, [again]);
+
   const go = async (reply: string | null) => {
     if (busy) return;
     setBusy(true); setStream(""); setErr("");
-    const res = await playMoment(save, id, reply, { onDelta: (c) => setStream((x) => x + c), onReset: () => setStream("") });
+    // Keep the state from before this reply, so a stop or a retry can put it all back.
+    mutate((s) => { snapshot(s); });
+    const ctl = new AbortController();
+    stopper.current = ctl;
+    const res = await playMoment(save, id, reply, { onDelta: (c) => setStream((x) => x + c), onReset: () => setStream(""), signal: ctl.signal });
+    stopper.current = null;
+    if (ctl.signal.aborted) {
+      const back = rollback(save);
+      if (back) replace(back);
+      setStream(""); setBusy(false); setText(reply ?? "");
+      last.current = undefined;
+      setErr("Stopped. Nothing from that reply was kept.");
+      return;
+    }
+    last.current = modelsAvailable() ? reply : undefined;
     mutate(() => {});
     setStream(""); setBusy(false); setText("");
     if (!res.ok && res.error) setErr(res.error);
+  };
+  const retry = () => {
+    if (busy || last.current === undefined) return;
+    const reply = last.current;
+    const back = rollback(save);
+    if (!back) return;
+    replace(back);
+    setAgain({ reply });
   };
 
   useEffect(() => {
@@ -103,6 +132,7 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
           : l.text.split(/\n\n+/).map((para, j) => <p key={`${i}-${j}`} className="font-prose text-[15px] leading-relaxed" style={{ color: "#e6dfd1" }}>{para}</p>))}
         {stream ? <p className="font-prose text-[15px] leading-relaxed mid whitespace-pre-line">{stream}</p> : null}
         {busy && !stream ? <div className="flex items-center gap-2 dim text-[12px]"><Loader2 size={13} className="animate-spin" /> …</div> : null}
+        {busy && stopper.current ? <button className="btn btn-sm btn-danger" onClick={() => stopper.current?.abort()} title="Stop the model; this reply is thrown away"><Square size={12} /> stop</button> : null}
         {err ? <div className="text-[12px] bad">{err}</div> : null}
       </div>
       {m.open && !busy ? (
@@ -118,6 +148,7 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
           </form>
           <div className="flex gap-2 mt-2">
             {bare ? null : <Button size="sm" kind="ghost" onClick={() => { setFolded(true); onClose?.(); }}>Continue later</Button>}
+            {last.current !== undefined ? <Button size="sm" kind="ghost" onClick={retry} title="Throw away that response and ask the model again"><RotateCcw size={12} /> Retry</Button> : null}
             <Button size="sm" kind="ghost" disabled={ending} onClick={() => void end()} title="End it where it is; what you did counts">{ending ? "…" : "Done"}</Button>
           </div>
         </>
