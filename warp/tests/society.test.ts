@@ -385,9 +385,10 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   check("a law outweighs a doctrine, and the doctrine still pulls", mixed.code.id === "livery" && mixed.runnerUp?.code.id === "chattel", mixed);
   check("nothing shaping a city means street clothes", dressCodeFor({ laws: [], doctrines: [], norms: flat, prosperity: 40 }).code.id === "street");
   const s = game("soc-dress");
+  s.arcology.neighbours[0].doctrines = ["degradationist", "subjugationist"];
   const near = societies(s).filter((x) => x.kind === "neighbour");
   check("every neighbour's laws come from its own habits", near.every((x) => x.lawIds.every((id) => { const l = LAW_BY_ID[id]; return (x.norms[l.norm] - l.at) * l.dir >= 0; })), near.map((x) => x.lawIds));
-  check("and they have some", near.some((x) => x.laws.length > 0), near.map((x) => x.laws.map((l) => l.name)));
+  check("a cruel neighbour's court has passed cruel laws", near[0].lawIds.includes("public_discipline") && near[0].lawIds.includes("chattel_act"), near[0].lawIds);
   s.arcology.rep = 20000;
   decreeLaw(s, "nudity_ordinance");
   const mine = household(societies(s)[0]);

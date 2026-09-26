@@ -27,6 +27,7 @@ import "./feetart.test.ts";
 import "./jobs.test.ts";
 import "./anatomy.test.ts";
 import "./society.test.ts";
+import "./globe.test.ts";
 import "./reign.test.ts";
 import "./tokens.test.ts";
 import "./household.test.ts";

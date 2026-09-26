@@ -882,6 +882,8 @@ export interface SaveState {
   city?: import("./city").CityState;
   /** THE WORLD — weather, climate, the economy and the Old World regions. Built on demand. */
   world?: import("./world").WorldState;
+  /** The world screen: research, involvement in wars, visits abroad. */
+  globe?: import("./globe").Globe;
   /** The content switches, which the original carried as V.seeExtreme, V.seeCircumcision and the
    *  rest. Defaulted on — this is the game it is — but the surgery table and a handful of acts
    *  read them, because the original let you turn the ugliest parts off and so does this. */

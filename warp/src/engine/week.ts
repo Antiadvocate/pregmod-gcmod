@@ -55,6 +55,7 @@ import { tickCourt } from "./court";
 import { tickReign } from "./reign";
 import { tickCampaigns } from "./civic";
 import { tickWorld } from "./world";
+import { tickGlobe } from "./globe";
 import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
 import { tickThreads } from "./threads";
@@ -300,6 +301,7 @@ export function endWeek(s: SaveState): WeekReport {
   // THE WORLD: weather, climate, the economy, the regions. Before the money is settled, because the
   // weather changes what the farms grew and what the power cost.
   lines.push(...tickWorld(s, led));
+  for (const l of tickGlobe(s)) push(l, "good", 8);
   ageMoments(s);
   for (const e of tickDeeds(s)) push(e.text, "warning", 8, e.person);
   // The city's habits move with what it saw you do this week, and the court writes them down.
