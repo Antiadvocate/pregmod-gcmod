@@ -144,3 +144,24 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   check("over a year, the court writes something", courtOf(s).record.length > 0, { norms: cultureOf(s).norms, record: courtOf(s).record });
   applyDeed(s, deed(s, ["cruelty"], true, "You whipped a slave in the plaza."));
 }
+
+{
+  // Society events come up in an ordinary run, and campaigns and speeches move the city.
+  const { CIVIC_EVENTS, startCampaign, speech, canSpeak } = await import("../src/engine/civic.ts");
+  const s = game("soc-civic");
+  let seen = 0;
+  for (let w = 0; w < 30; w++) {
+    endWeek(s);
+    for (const e of s.events.filter((x) => x.kind.startsWith("civic_") || x.kind.startsWith("court_"))) { if (e.kind.startsWith("civic_")) seen++; resolveEvent(s, e, (CIVIC_EVENTS.find((d) => d.id === e.kind)?.options[0].id) ?? "court"); }
+    if (s.story) s.story.pending = undefined;
+  }
+  check("society events happen in a normal run", seen >= 2, seen);
+  const t = game("soc-camp");
+  const before = cultureOf(t).norms.feet;
+  startCampaign(t, "washings");
+  for (let w = 0; w < 6; w++) endWeek(t);
+  check("a campaign moves its habit", cultureOf(t).norms.feet - before > 8, cultureOf(t).norms.feet - before);
+  check("and the breakdown names it", drivers(t, "feet").some((d) => /campaign/.test(d.why)));
+  const said = speech(t, "cruelty", -1);
+  check("a speech moves the city and waits a fortnight", !!said && !canSpeak(t));
+}

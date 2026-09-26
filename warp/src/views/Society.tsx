@@ -9,7 +9,8 @@ import { Footprints } from "lucide-react";
 import { useGame } from "../lib/game";
 import { Button, Card, Meter, Section, Stat, cx } from "../lib/ui";
 import { cultureOf, drivers, normLine, NORMS, NORM_IDS, type Norm } from "../engine/culture";
-import { courtOf, lawsOf } from "../engine/court";
+import { courtOf, lawsOf, backLaw, decreeLaw, decreeCost, repealByDecree, backedNow, cityMargin } from "../engine/court";
+import { CAMPAIGNS, CAMPAIGN_BY_ID, MAX_CAMPAIGNS, campaignsOf, canSpeak, speech, startCampaign, stopCampaign } from "../engine/civic";
 import { LAWS, LAW_BY_ID } from "../data/laws";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { EVENT_BY_ID, resolveEvent } from "../engine/events";
@@ -137,6 +138,75 @@ function Court() {
   );
 }
 
+function Shape() {
+  const { save, mutate } = useGame();
+  const [said, setSaid] = useState("");
+  const [lawId, setLawId] = useState("");
+  const running = campaignsOf(save);
+  const laws = lawsOf(save);
+  const notIn = LAWS.filter((l) => !laws.some((x) => x.id === l.id));
+  const law = LAW_BY_ID[lawId] ?? notIn[0];
+  const say = (fn: (s: typeof save) => string) => { let t = ""; mutate((s) => { t = fn(s); }); if (t) setSaid(t); };
+  return (
+    <Section title="Shape the city">
+      {said ? <Card className="mb-3"><p className="font-prose text-[14.5px] leading-relaxed">{said}</p></Card> : null}
+      <div className="grid gap-2.5 sm:grid-cols-2">
+        <Card>
+          <div className="text-[11px] uppercase tracking-wider dim mb-1">Speak from the balcony</div>
+          <div className="text-[11.5px] dim mb-2">{canSpeak(save) ? "Free, once every two weeks. Moves one habit a little; pushing hard against the city costs standing." : `You spoke in week ${save.last_speech}. Next speech in week ${(save.last_speech ?? 0) + 2}.`}</div>
+          <div className="space-y-1">
+            {NORM_IDS.map((n) => (
+              <div key={n} className="flex items-center gap-1.5 text-[12.5px]">
+                <span className="flex-1">{NORMS[n].name}</span>
+                <button className="chip !text-[11px]" disabled={!canSpeak(save)} onClick={() => say((s) => speech(s, n, -1))}>more {NORMS[n].low}</button>
+                <button className="chip !text-[11px]" disabled={!canSpeak(save)} onClick={() => say((s) => speech(s, n, 1))}>more {NORMS[n].high}</button>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <div className="text-[11px] uppercase tracking-wider dim mb-1">Campaigns ({running.length} of {MAX_CAMPAIGNS})</div>
+          <div className="text-[11.5px] dim mb-2">Paid every week; each pushes one habit steadily until you stop it.</div>
+          {running.map((k) => { const c = CAMPAIGN_BY_ID[k.id]; return c ? (
+            <div key={k.id} className="flex items-center gap-2 mb-1.5 text-[12.5px]">
+              <span className="flex-1"><span className="acc">{c.name}</span> <span className="dim">· since week {k.since} · ¤{c.cost.toLocaleString()}/wk</span></span>
+              <Button size="sm" kind="ghost" onClick={() => mutate((s) => stopCampaign(s, k.id))}>stop</Button>
+            </div>
+          ) : null; })}
+          <select className="w-full mt-1" value="" onChange={(e) => { const id = e.target.value; if (id) say((s) => startCampaign(s, id)); }} disabled={running.length >= MAX_CAMPAIGNS}>
+            <option value="">{running.length >= MAX_CAMPAIGNS ? "stop one to start another" : "start a campaign…"}</option>
+            {CAMPAIGNS.filter((c) => !running.some((k) => k.id === c.id)).map((c) => <option key={c.id} value={c.id}>{c.name} ({NORMS[c.norm].name}: more {c.dir > 0 ? NORMS[c.norm].high : NORMS[c.norm].low}) · ¤{c.cost.toLocaleString()}/wk</option>)}
+          </select>
+          {running.length ? null : <div className="text-[11px] dim mt-1">{CAMPAIGNS.length} campaigns, two directions for each habit.</div>}
+        </Card>
+        <Card>
+          <div className="text-[11px] uppercase tracking-wider dim mb-1">Write a law yourself</div>
+          {law ? <>
+            <select className="w-full mb-2" value={law.id} onChange={(e) => setLawId(e.target.value)}>
+              {notIn.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+            </select>
+            <div className="font-prose text-[13px] mb-1">{law.text}</div>
+            <div className="text-[11.5px] dim mb-2">{NORMS[law.norm].name}: the city is {Math.round(Math.abs(cityMargin(save, law)))} {cityMargin(save, law) >= 0 ? "past" : "short of"} it.{backedNow(save, law.id) ? " You've put it before the court." : ""}</div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" disabled={backedNow(save, law.id)} title="The court hears it at the next sitting, with your weight behind it" onClick={() => say((s) => backLaw(s, law.id))}>Put it before the court</Button>
+              <Button size="sm" kind="primary" title="Enact it now, over the court" onClick={() => say((s) => decreeLaw(s, law.id))}>Decree it · −{decreeCost(save, law).standing} standing, −{decreeCost(save, law).rep} rep</Button>
+            </div>
+          </> : <div className="text-[12px] dim">Every law is already in force.</div>}
+        </Card>
+        <Card>
+          <div className="text-[11px] uppercase tracking-wider dim mb-1">Strike a law</div>
+          {laws.length ? laws.map((x) => (
+            <div key={x.id} className="flex items-center gap-2 mb-1 text-[12.5px]">
+              <span className="flex-1">{LAW_BY_ID[x.id]?.name}</span>
+              <Button size="sm" kind="ghost" onClick={() => say((s) => repealByDecree(s, x.id))}>strike it</Button>
+            </div>
+          )) : <div className="text-[12px] dim">No laws in force.</div>}
+        </Card>
+      </div>
+    </Section>
+  );
+}
+
 function Walk() {
   const { save, mutate } = useGame();
   const [escort, setEscort] = useState("");
@@ -206,6 +276,8 @@ export default function Society() {
       <Section title="How citizens behave, and why">
         <div className="grid gap-2.5 sm:grid-cols-2">{NORM_IDS.map((n) => <NormCard key={n} n={n} />)}</div>
       </Section>
+
+      <Shape />
 
       <Court />
 

@@ -840,6 +840,9 @@ export interface SaveState {
   house_rules?: import("./agreements").Agreement[];
   /** When a slave holds your collar: how she rules. See engine/reign. */
   reign?: import("./reign").Reign;
+  /** Campaigns you are paying for, and the last week you spoke. See engine/civic. */
+  campaigns?: import("./civic").Campaign[];
+  last_speech?: number;
   /** What the city has come to think is normal. See engine/culture. */
   culture?: import("./culture").Culture;
   /** Laws the court has passed, and the cases before it. See engine/court. */

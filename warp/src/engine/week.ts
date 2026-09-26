@@ -51,6 +51,7 @@ import { tickDeeds } from "./deeds";
 import { tickCulture } from "./culture";
 import { tickCourt } from "./court";
 import { tickReign } from "./reign";
+import { tickCampaigns } from "./civic";
 import { tickWorld } from "./world";
 import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
@@ -300,6 +301,9 @@ export function endWeek(s: SaveState): WeekReport {
   ageMoments(s);
   for (const e of tickDeeds(s)) push(e.text, "warning", 8, e.person);
   // The city's habits move with what it saw you do this week, and the court writes them down.
+  const camp = tickCampaigns(s);
+  if (camp.cash) led.entry("doctrine", "your campaigns", camp.cash);
+  for (const l of camp.lines) push(l, "neutral", 4);
   for (const l of tickCulture(s)) push(l, "neutral", 7);
   for (const l of tickCourt(s)) push(l, "warning", 7);
   // If she holds your collar, the week is hers: her orders, her household, her laws.
