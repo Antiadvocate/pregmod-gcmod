@@ -5,6 +5,7 @@
  * is she like that", which is the question the old game could not answer at any price because the
  * answer was distributed across every passage that had ever touched her.
  */
+import PhotoPortrait from "./PhotoPortrait";
 import { sane, recoveryNote, rushCost, rushRecovery } from "../engine/health";
 import { DRUGS, canStart } from "../data/drugs";
 import { describeGenitals, describeFeet, mobility, dickCM, ballsWord, vaginaWord, anusWord, feetOf } from "../engine/genitals";
@@ -209,6 +210,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
         </div>
         <div className="flex-1 min-w-0">
           {p.body.portrait_url ? <img src={p.body.portrait_url} alt="" className="w-full max-h-40 object-cover rounded-lg mb-2" /> : null}
+          <PhotoPortrait id={id} body={doll} />
           <p className="font-prose text-[13.5px] leading-snug">{p.body.appearance_facts}</p>
           <p className="text-[12px] dim mt-1">{p.clothes === "no clothing" ? "Naked." : `Wearing ${p.clothes}.`}{p.body.appearance_now && !/^wearing whatever/.test(p.body.appearance_now) ? ` ${p.body.appearance_now}.` : ""}</p>
           <div className="grid grid-cols-1 gap-2 mt-3">

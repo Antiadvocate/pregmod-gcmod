@@ -202,8 +202,8 @@ export function decreeLaw(s: SaveState, id: string): string {
   std(s, -cost.standing);
   s.arcology.rep -= cost.rep;
   pushNorm(s, l.norm, l.dir * 6, `you decreed the ${l.name}`);
-  record(s, l, "enact", "you decreed it over the court");
-  return `You decree the ${l.name}. It's posted at every lift by the evening.${extra}${cost.standing ? " The court takes it badly, and so do the people who didn't want it." : ""}`;
+  record(s, l, "enact", "you decreed it");
+  return `You decree the ${l.name}. It's law from this moment, posted at every lift by the evening.${extra}${cost.standing ? " The people who didn't want it grumble where your patrols can't hear." : ""}`;
 }
 
 /** Strike it yourself. */

@@ -12,7 +12,7 @@ import { Button, Card, Meter, Section, Stat, cx } from "../lib/ui";
 import { cultureOf, drivers, normLine, NORMS, NORM_IDS, type Norm } from "../engine/culture";
 import { customLawCost, customLawRep, writeLaw } from "../engine/court";
 import { CUSTOM_EFFECTS, suggestPush, type CustomLaw } from "../data/customlaws";
-import { courtOf, lawsOf, backLaw, decreeLaw, decreeCost, repealByDecree, backedNow, cityMargin } from "../engine/court";
+import { courtOf, lawsOf, decreeLaw, decreeCost, repealByDecree, cityMargin } from "../engine/court";
 import { CAMPAIGNS, CAMPAIGN_BY_ID, MAX_CAMPAIGNS, campaignsOf, canSpeak, speech, startCampaign, stopCampaign } from "../engine/civic";
 import { LAWS, LAW_BY_ID } from "../data/laws";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
@@ -254,10 +254,9 @@ function Shape() {
               {notIn.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
             <div className="font-prose text-[13px] mb-1">{law.text}</div>
-            <div className="text-[11.5px] dim mb-2">{NORMS[law.norm].name}: the city is {Math.round(Math.abs(cityMargin(save, law)))} {cityMargin(save, law) >= 0 ? "past" : "short of"} it.{backedNow(save, law.id) ? " You've put it before the court." : ""}</div>
+            <div className="text-[11.5px] dim mb-2">{NORMS[law.norm].name}: the city is {Math.round(Math.abs(cityMargin(save, law)))} {cityMargin(save, law) >= 0 ? "past" : "short of"} it.</div>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" disabled={backedNow(save, law.id)} title="The court hears it at the next sitting, with your weight behind it" onClick={() => say((s) => backLaw(s, law.id))}>Put it before the court</Button>
-              <Button size="sm" kind="primary" title="Enact it now, over the court" onClick={() => say((s) => decreeLaw(s, law.id))}>Decree it · −{decreeCost(save, law).standing} standing, −{decreeCost(save, law).rep} rep</Button>
+              <Button size="sm" kind="primary" title="Your word is law: it takes effect now. The further the city is from it, the more it costs your standing and reputation" onClick={() => say((s) => decreeLaw(s, law.id))}>Make it law{decreeCost(save, law).standing || decreeCost(save, law).rep ? ` · −${decreeCost(save, law).rep} rep${decreeCost(save, law).standing ? `, −${decreeCost(save, law).standing} standing` : ""}` : ""}</Button>
             </div>
           </> : <div className="text-[12px] dim">Every law is already in force.</div>}
         </Card>
