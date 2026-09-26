@@ -12,7 +12,7 @@
  *     because the engine's contract is that a model failure degrades one pass for one turn and
  *     never takes the week with it.
  */
-import { getApiKey, getLocalEndpoint, isLocalModel, localModelId } from "./config";
+import { getApiKey, getLocalEndpoint, getThinking, isLocalModel, localModelId } from "./config";
 
 const OR_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -98,6 +98,8 @@ export async function call(opts: CallOptions): Promise<LLMResult> {
       }
       return res;
     } catch (e) {
+      // Stopped by the player: don't try the fallback, just stop.
+      if (opts.signal?.aborted) return { ok: false, text: "", usage: { prompt_tokens: 0, completion_tokens: 0 }, model, error: "stopped" };
       lastErr = String((e as Error)?.message ?? e);
       logErr(model, e);
     }
@@ -116,8 +118,20 @@ async function once(opts: CallOptions): Promise<LLMResult> {
   };
   if (opts.json) body.response_format = { type: "json_object" };
   if (!t.local) body.usage = { include: true };
+  // Thinking: OpenRouter takes a unified `reasoning` field; local servers (llama.cpp, KoboldCpp,
+  // LM Studio) take the chat template's enable_thinking switch for Qwen-style models.
+  const thinking = getThinking();
+  if (thinking !== "model") {
+    if (t.local) body.chat_template_kwargs = { enable_thinking: thinking !== "off" };
+    else body.reasoning = thinking === "off" ? { enabled: false } : { effort: "low" };
+  }
 
-  const res = await fetch(t.url, { method: "POST", headers: t.headers, body: JSON.stringify(body), signal: opts.signal });
+  let res = await fetch(t.url, { method: "POST", headers: t.headers, body: JSON.stringify(body), signal: opts.signal });
+  // A model or server that rejects the thinking switch gets the call again without it.
+  if (!res.ok && res.status === 400 && (body.reasoning || body.chat_template_kwargs)) {
+    delete body.reasoning; delete body.chat_template_kwargs;
+    res = await fetch(t.url, { method: "POST", headers: t.headers, body: JSON.stringify(body), signal: opts.signal });
+  }
   if (!res.ok) throw new Error(`${res.status} ${(await res.text()).slice(0, 200)}`);
 
   if (!opts.onDelta) {

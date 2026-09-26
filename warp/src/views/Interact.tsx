@@ -8,7 +8,8 @@
  */
 import { isKeeper } from "../engine/romance";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, Loader2, MessageCircle } from "lucide-react";
+import { ChevronLeft, Loader2, MessageCircle, RotateCcw, Square } from "lucide-react";
+import { rollback, snapshot } from "../engine/state";
 import { useGame } from "../lib/game";
 import { cx } from "../lib/ui";
 import { ACTS, ACT_BY_ID, FETISH_BY_ID } from "../data/intimacy";
@@ -69,7 +70,7 @@ function poseAfter(o: ActOutcome, fallback: Pose): Pose {
 }
 
 export default function Interact({ id, onClose }: { id: string; onClose: () => void }) {
-  const { save, mutate } = useGame();
+  const { save, mutate, replace } = useGame();
   const p = save.people[id];
   const [log, setLog] = useState<Entry[]>(() => {
     if (!p) return [];
@@ -116,12 +117,33 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
   };
 
   /** Your words, or the model's expansion of what just happened (reply null). */
+  const stopper = useRef<AbortController | null>(null);
+  /** The last model reply, for Retry: what it answered, and how long the log was before it. */
+  const lastCall = useRef<{ reply: string | null; logLen: number } | null>(null);
+  const [again, setAgain] = useState<string | null | undefined>(undefined);
+  useEffect(() => { if (again !== undefined) { const a = again; setAgain(undefined); void carryOn(a); } }, [again]);
+
   async function carryOn(reply: string | null) {
     if (busy) return;
     const m = ensureMoment();
+    const logLen = log.length;
+    mutate((s) => { snapshot(s); });
     if (reply) { engaged.current = true; setLog((l) => [...l, { k: "you", text: reply }]); }
     setBusy(true); setStream(""); setReplies([]); setTray(false);
-    const res = await playMoment(save, m, reply, { onDelta: modelsAvailable() ? (c) => setStream((x) => x + c) : undefined, onReset: () => setStream("") });
+    const ctl = new AbortController();
+    stopper.current = ctl;
+    const res = await playMoment(save, m, reply, { onDelta: modelsAvailable() ? (c) => setStream((x) => x + c) : undefined, onReset: () => setStream(""), signal: ctl.signal });
+    stopper.current = null;
+    if (ctl.signal.aborted) {
+      const back = rollback(save);
+      if (back) replace(back);
+      setLog((l) => [...l.slice(0, logLen), { k: "note", text: "Stopped. Nothing from that reply was kept." }]);
+      setStream(""); setBusy(false);
+      if (reply) setSaid(reply);
+      lastCall.current = null;
+      return;
+    }
+    lastCall.current = modelsAvailable() ? { reply, logLen } : null;
     mutate(() => {});
     setStream("");
     const entries: Entry[] = res.prose.split(/\n\n+/).filter(Boolean).map((t) => ({ k: "prose" as const, text: t }));
@@ -131,6 +153,16 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     setReplies(mo?.options ?? []);
     setBusy(false);
   }
+
+  const retry = () => {
+    const c = lastCall.current;
+    if (!c || busy) return;
+    const back = rollback(save);
+    if (!back) return;
+    replace(back);
+    setLog((l) => l.slice(0, c.logLen));
+    setAgain(c.reply);
+  };
 
   /** End the scene here: it's read back as a deed and starts changing things. */
   async function endHere() {
@@ -319,8 +351,11 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
         {!ended ? (
           <form className="flex gap-2 px-3 pt-3" onSubmit={(e) => { e.preventDefault(); const t = said.trim(); if (t) { setSaid(""); void carryOn(t); } }}>
             <input className="flex-1 min-w-0" value={said} disabled={busy} onChange={(e) => setSaid(e.target.value)} placeholder={`Say or do something to ${p.name}`} />
-            <button className="btn btn-sm btn-primary" disabled={busy || !said.trim()}>Go</button>
-            {mid && engaged.current ? <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void endHere()} title="End the scene; what you did in it starts to count">End it here</button> : null}
+            {busy && stopper.current
+              ? <button type="button" className="btn btn-sm btn-danger" onClick={() => stopper.current?.abort()} title="Stop the model; this reply is thrown away"><Square size={12} /> stop</button>
+              : <button className="btn btn-sm btn-primary" disabled={busy || !said.trim()}>Go</button>}
+            {!busy && lastCall.current ? <button type="button" className="btn btn-sm" onClick={retry} title="Throw away that response and ask the model again"><RotateCcw size={12} /> retry</button> : null}
+            {mid && engaged.current ? <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void endHere()} title="End the scene; what you did in it starts to count">Done</button> : null}
           </form>
         ) : null}
         {!ended && next.length ? (

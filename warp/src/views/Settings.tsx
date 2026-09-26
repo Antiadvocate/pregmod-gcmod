@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Chip, Field, Section } from "../lib/ui";
-import { getApiKey, setApiKey, getLocalEndpoint, setLocalEndpoint, modelsAvailable, getLocalImage, setLocalImage, LOCAL_IMAGE_DEFAULTS, type LocalImageEndpoint } from "../config";
+import { getThinking, setThinking, type Thinking, getApiKey, setApiKey, getLocalEndpoint, setLocalEndpoint, modelsAvailable, getLocalImage, setLocalImage, LOCAL_IMAGE_DEFAULTS, type LocalImageEndpoint } from "../config";
 import { generateLocalImage, KONTEXT_WORKFLOW, listLocalCheckpoints, WORKFLOW_TOKENS } from "../lib/diffusion";
 import { dynamicReadiness } from "../engine/dynamic";
 import { exportSave } from "../store";
@@ -14,6 +14,7 @@ import { imageModels } from "../lib/imagegen";
 export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
   const { save, mutate } = useGame();
   const [key, setKey] = useState(getApiKey());
+  const [thinking, setThinkingState] = useState<Thinking>(getThinking());
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [modelsState, setModelsState] = useState("Loading the OpenRouter model list…");
   async function loadModels(force = false) {
@@ -74,6 +75,13 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
               </Field>
             ))}
           </div>
+          <Field label="Thinking" hint="Reasoning models (and many flash models) think before they write, which can take a long time. Off asks them not to; if a model refuses the switch, the call is sent again without it.">
+            <div className="flex gap-1.5">
+              {([["off", "Off — fastest"], ["low", "A little"], ["model", "Model's default"]] as [Thinking, string][]).map(([v, label]) => (
+                <Chip key={v} on={thinking === v} onClick={() => { setThinking(v); setThinkingState(v); }}>{label}</Chip>
+              ))}
+            </div>
+          </Field>
           <Field label="Photo model — redraws the drawn feet as photographs" hint={`${imageModels(models).length} OpenRouter models that output images. Each redraw is one image per view, billed by the model.`}>
             <ModelPicker value={save.models.photo_model ?? ""} models={imageModels(models)} onChange={(id) => mutate((s) => { s.models.photo_model = id; })} />
           </Field>
