@@ -75,6 +75,12 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
               </Field>
             ))}
           </div>
+          <Field label="Lean mode" hint="Only call the model when you ask for something: no automatic week summary and no automatic assistant brief (she gets a button instead). Scenes, conversations and events still use the model when you play them.">
+            <div className="flex gap-1.5">
+              <Chip on={!!save.models.lean_mode} onClick={() => mutate((s) => { s.models.lean_mode = true; })}>On</Chip>
+              <Chip on={!save.models.lean_mode} onClick={() => mutate((s) => { s.models.lean_mode = false; })}>Off</Chip>
+            </div>
+          </Field>
           <Field label="Thinking" hint="Reasoning models (and many flash models) think before they write, which can take a long time. Off asks them not to; if a model refuses the switch, the call is sent again without it.">
             <div className="flex gap-1.5">
               {([["off", "Off — fastest"], ["low", "A little"], ["model", "Model's default"]] as [Thinking, string][]).map(([v, label]) => (

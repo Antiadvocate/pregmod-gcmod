@@ -41,6 +41,8 @@ import { describeYou } from "./you";
  */
 export const HOUSE_STYLE = `HOW FREE CITIES WRITES. Match the original game's voice. It is second person and present tense, addressed to the player as "you". It is plain, direct, matter-of-fact and a little dry, and it is explicit: it says who does what to whom with which body part, using ordinary crude words (cock, pussy, ass, tits, cum, fuck) and never a metaphor in their place. It states what a slave thinks and feels whenever that matters ("She's nervous, but she's glad you asked"; "She clearly hates it"; "She's too tired to argue"). Slaves call the player Master or Mistress unless their card says otherwise. Sentences are ordinary sentences a person would write, of ordinary length.
 
+HOW THE ARCOLOGY IS GOVERNED. The owner rules it absolutely, as a private dictatorship: there is no council, parliament, senate, election or vote, and nobody can overrule the owner. Citizens can petition, complain, protest or plot; the arcology's court only hears petitions and rules on what the owner leaves to it; the owner's word is law.
+
 Examples of the voice:
 - "You tell her she'll be sleeping in your bed tonight. She's surprised, and a little suspicious, but she strips and climbs in beside you without being told twice."
 - "She lies stiffly at the very edge of the mattress for the first hour, but exhaustion wins, and by morning she has rolled against you with her face in your shoulder."

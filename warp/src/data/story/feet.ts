@@ -221,7 +221,7 @@ ${p.name} wakes up and tries to stand, and can't. The believers in the concourse
     festival: {
       title: "The Feast of Soles",
       wait: (c) => adopted(c) || movement(c) >= 20,
-      text: (c) => `The believers want a festival: one day a year when every slave in ${c.arcology} is carried instead of walking, and citizens line the concourse to wash and kiss their feet. ${adopted(c) ? "Your doctrine council has already drawn up the route." : `${c.n("prophet")} has already chosen the day.`}
+      text: (c) => `The believers want a festival: one day a year when every slave in ${c.arcology} is carried instead of walking, and citizens line the concourse to wash and kiss their feet. ${adopted(c) ? "Your priests of the doctrine have already drawn up the route." : `${c.n("prophet")} has already chosen the day.`}
 
 They'd like the owner to lead it. They'd like ${c.sn}, whose feet started all of this, carried at the front.`,
       options: [
