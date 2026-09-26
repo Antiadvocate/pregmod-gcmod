@@ -37,6 +37,28 @@ export async function svgToPng(svg: SVGSVGElement, scale = 3, bg = "#111111"): P
   } finally { URL.revokeObjectURL(url); }
 }
 
+/**
+ * Put one or more full-length figures on a canvas shaped like a photograph, each scaled to the same
+ * height with room above the head and below the feet. A bare doll is a strip about four times taller
+ * than it is wide; image models reframe a strip like that to their own shape, and what they keep is
+ * the top half. Framed like this, the whole figure is already the picture.
+ */
+export async function frameFigures(pngs: string[], aspect = pngs.length > 1 ? 4 / 3 : 2 / 3, height = 1500, bg = "#111111"): Promise<string> {
+  const imgs = await Promise.all(pngs.map((src) => new Promise<HTMLImageElement>((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => bad(new Error("couldn't read a figure")); i.src = src; })));
+  const figH = height * 0.86;
+  const widths = imgs.map((i) => (i.width / i.height) * figH);
+  const gap = height * 0.08;
+  const need = widths.reduce((a, b) => a + b, 0) + gap * (imgs.length + 1);
+  const w = Math.max(Math.round(height * aspect), Math.round(need));
+  const c = document.createElement("canvas");
+  c.width = w; c.height = height;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, w, height);
+  let x = (w - (need - gap * 2)) / 2;
+  imgs.forEach((i, k) => { ctx.drawImage(i, x, height * 0.07, widths[k], figH); x += widths[k] + gap; });
+  return c.toDataURL("image/png");
+}
+
 /** Shrink a returned image to a JPEG small enough to keep in the save. */
 export async function toJpeg(dataUrl: string, maxSide = 900, q = 0.86): Promise<string> {
   const img = new Image();

@@ -20,6 +20,7 @@ import { EVENT_BY_ID, resolveEvent } from "../engine/events";
 import { momentsOf } from "../engine/moments";
 import { places, startWalk } from "../engine/walk";
 import MomentCard from "./MomentCard";
+import { compliance, propaganda, propagandaPreview } from "../engine/lawlife";
 
 function Spark({ values }: { values: number[] }) {
   if (values.length < 2) return null;
@@ -206,6 +207,41 @@ function OwnLaw() {
   );
 }
 
+function Propaganda({ say }: { say: (fn: (s: ReturnType<typeof useGame>["save"]) => string) => void }) {
+  const { save } = useGame();
+  const laws = lawsOf(save).filter((x) => LAW_BY_ID[x.id]).sort((a, b) => Number(b.id.startsWith("custom_")) - Number(a.id.startsWith("custom_")));
+  const [lawId, setLawId] = useState("");
+  const [amount, setAmount] = useState(50000);
+  const x = laws.find((y) => y.id === lawId) ?? laws[0];
+  const cash = Math.max(0, Math.floor(save.arcology.cash));
+  if (!x) return <Card><div className="text-[11px] uppercase tracking-wider dim mb-1">Propaganda for a law</div><div className="text-[12px] dim">No laws in force.</div></Card>;
+  const l = LAW_BY_ID[x.id];
+  const c = compliance(save, l);
+  const pv = propagandaPreview(save, x.id, amount);
+  return (
+    <Card>
+      <div className="text-[11px] uppercase tracking-wider dim mb-1">Propaganda for a law</div>
+      <div className="text-[11.5px] dim mb-2">Posters, broadcasts, parades. Each ¤5,000 moves the habits the law pushes by a point; ¤1,000,000 swings one end to end. It also buys goodwill toward the law that fades over a few months.</div>
+      <select className="w-full mb-2" value={x.id} onChange={(e) => setLawId(e.target.value)}>
+        {laws.map((y) => <option key={y.id} value={y.id}>{LAW_BY_ID[y.id].name}</option>)}
+      </select>
+      <div className="text-[11.5px] dim mb-2">Kept {Math.round(c.total)}: habits {Math.round(c.norms)}, goodwill {Math.round(c.goodwill)}, patrols {Math.round(c.force)}, habit {Math.round(c.habit)}.</div>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <span className="text-[12.5px]">¤</span>
+        <input type="number" min={1000} step={1000} max={cash} value={amount} onChange={(e) => setAmount(Math.max(0, Math.floor(Number(e.target.value) || 0)))} className="flex-1 min-w-0" />
+      </div>
+      <div className="flex flex-wrap gap-1.5 mb-2">
+        {[10000, 100000, 500000, 1000000].map((n) => <button key={n} className="chip !text-[11px]" onClick={() => setAmount(n)}>¤{n >= 1000000 ? `${n / 1000000}M` : `${n / 1000}k`}</button>)}
+        <button className="chip !text-[11px]" onClick={() => setAmount(cash)}>all of it</button>
+      </div>
+      <div className="text-[11.5px] dim mb-2">
+        {pv.norms.length ? pv.norms.map((n) => `${NORMS[n.norm].name} ${Math.round(n.from)} → ${Math.round(n.to)}`).join("; ") : "This law pushes no habit; the money buys goodwill only"}{`; goodwill → +${Math.round(pv.goodwill)}.`}
+      </div>
+      <Button size="sm" kind="primary" disabled={amount < 1000 || amount > cash} onClick={() => say((s) => propaganda(s, x.id, amount))}>Run it · ¤{amount.toLocaleString()}</Button>
+    </Card>
+  );
+}
+
 function Shape() {
   const { save, mutate } = useGame();
   const [said, setSaid] = useState("");
@@ -269,6 +305,7 @@ function Shape() {
             </div>
           )) : <div className="text-[12px] dim">No laws in force.</div>}
         </Card>
+        <Propaganda say={say} />
       </div>
       <OwnLaw />
     </Section>

@@ -86,7 +86,7 @@ export function pushNorm(s: SaveState, norm: Norm, by: number, why: string): voi
 }
 
 /** Where each doctrine pulls the norms, at full adoption. */
-const DOCTRINE_PULL: Record<string, Partial<Record<Norm, number>>> = {
+export const DOCTRINE_PULL: Record<string, Partial<Record<Norm, number>>> = {
   paternalist: { cruelty: -60, personhood: 50, manumission: 20 },
   degradationist: { cruelty: 70, personhood: -60, exposure: 30 },
   body_purist: { modification: -70 },

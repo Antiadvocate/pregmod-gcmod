@@ -222,6 +222,49 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
 }
 
 {
+  // A law the city's habits are against is still kept when the city likes you and the patrols are out.
+  const { writeLaw } = await import("../src/engine/court.ts");
+  const { lawPulse, compliance } = await import("../src/engine/lawlife.ts");
+  const { LAW_BY_ID } = await import("../src/data/laws.ts");
+  const s = game("soc-lawlove");
+  s.arcology.rep = 20000; s.arcology.security = 100; s.arcology.public_standing = 5;
+  s.arcology.policies["curfew"] = 1; s.arcology.policies["surveillance"] = 1;
+  writeLaw(s, { name: "No Respite", text: "Slaves work every hour the owner's household is awake.", push: [{ norm: "personhood", dir: -1 }], effects: ["subsidy"] });
+  pushNorm(s, "personhood", 60, "the city values its slaves");
+  const l = LAW_BY_ID[lawsOf(s).find((x) => x.id.startsWith("custom_"))!.id];
+  check("the city's habits are against it", compliance(s, l).norms < 0, compliance(s, l));
+  check("but it's kept, because they like you", compliance(s, l).total > 0, compliance(s, l));
+  s.arcology.week += 1;
+  const lines = lawPulse(s);
+  check("and the report doesn't say it's defied", lines.length > 0 && !lines.some((x) => /ignored|defaced|defying/.test(x)), lines);
+  const before = compliance(s, l).norms;
+  for (let w = 0; w < 6; w++) { s.arcology.week++; lawPulse(s); }
+  check("the city comes round to it over time", compliance(s, l).norms > before, { before, after: compliance(s, l).norms });
+}
+
+{
+  // Propaganda for a law: the more you spend, the further it goes; a million swings a habit end to end.
+  const { writeLaw } = await import("../src/engine/court.ts");
+  const { propaganda, compliance } = await import("../src/engine/lawlife.ts");
+  const { LAW_BY_ID } = await import("../src/data/laws.ts");
+  const s = game("soc-propaganda");
+  s.arcology.rep = 9000;
+  writeLaw(s, { name: "Cock Forward", text: "Every slave presents herself when a citizen asks.", push: [{ norm: "exposure", dir: 1 }], effects: [] });
+  const id = lawsOf(s).find((x) => x.id.startsWith("custom_"))!.id;
+  pushNorm(s, "exposure", -300, "the city is prudish");
+  s.arcology.cash = 500;
+  check("you need the cash", /you have/i.test(propaganda(s, id, 1000000)) && cultureOf(s).norms.exposure === -100);
+  s.arcology.cash = 50000;
+  const small = propaganda(s, id, 50000);
+  check("a small campaign moves it a little", Math.round(cultureOf(s).norms.exposure) === -90 && s.arcology.cash === 0, { small, n: cultureOf(s).norms.exposure });
+  const before = compliance(s, LAW_BY_ID[id]).total;
+  s.arcology.cash = 2000000;
+  propaganda(s, id, 1000000);
+  check("a million one-shots it", cultureOf(s).norms.exposure === 100 && s.arcology.cash === 1000000, cultureOf(s).norms.exposure);
+  check("and the city keeps it", compliance(s, LAW_BY_ID[id]).total > before + 100, compliance(s, LAW_BY_ID[id]));
+}
+
+{
   // On a walk, your laws are always being lived: done to your slave if they're about slaves.
   const { writeLaw } = await import("../src/engine/court.ts");
   const { walkContext } = await import("../src/engine/walk.ts");
@@ -256,4 +299,98 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   check("a walk's lasting fact doesn't become a world fact", !s.canon.some((c) => /Luigi/.test(c)) && !/Luigi's restaurant on the concourse serves/.test(dg(s)));
   check("it comes back when you walk there again", /Luigi/.test(walkContext(s, here)));
   if (there !== here) check("but not when you walk somewhere else", !/Luigi/.test(walkContext(s, there)));
+}
+
+{
+  // The Compare screen: your arcology beside its neighbours and the Old World, read from the save.
+  const { societies, household, contrast, figureFor } = await import("../src/engine/compare.ts");
+  const s = game("soc-compare");
+  const all = societies(s);
+  check("yours, the neighbours, and the Old World", all[0].kind === "yours" && all.at(-1)!.kind === "oldworld" && all.length === s.arcology.neighbours.length + 2, all.map((x) => x.name));
+  check("a neighbour keeps the same character each time you look", JSON.stringify(societies(s)[1].doctrines) === JSON.stringify(all[1].doctrines) && all[1].doctrines.length === 2, all[1].doctrines);
+  check("the neighbours aren't all the same city", new Set(all.slice(1, -1).map((x) => JSON.stringify(x.norms))).size > 1);
+  pushNorm(s, "exposure", 200, "the city goes naked");
+  const open = household(societies(s)[0]);
+  check("an open city's slaves go naked and barefoot", open.slave?.clothes === "no clothing" && open.slave?.shoes === "barefoot", open.slave);
+  check("the Old World has no slaves to draw", !household(all.at(-1)!).slave && figureFor(all.at(-1)!, "slave") === null);
+  check("the figures wear what the household says", figureFor(societies(s)[0], "slave")!.clothes === "no clothing");
+  const c = contrast(societies(s)[0], all.at(-1)!);
+  check("beside the Old World, the citizen comparison still runs", c.ours.length + c.theirs.length > 0 && ![...c.ours, ...c.theirs].some((l) => /Their slaves/.test(l)), c);
+}
+
+{
+  // The Compare screen tells each household's day as a story, from the same numbers.
+  const { societies } = await import("../src/engine/compare.ts");
+  const { dayInTheLife, castOf, moving } = await import("../src/engine/comparestory.ts");
+  const { writeLaw } = await import("../src/engine/court.ts");
+  const s = game("soc-story");
+  s.arcology.rep = 9000;
+  writeLaw(s, { name: "Open Hands", text: "A slave may not be struck in a public place.", push: [{ norm: "cruelty", dir: -1 }], effects: [] });
+  const all = societies(s);
+  const [yours, near, old] = [all[0], all[1], all.at(-1)!];
+  const day = dayInTheLife(s, yours, near, yours);
+  const c = castOf(yours);
+  check("five scenes, with the family named", day.length === 5 && day.join(" ").includes(c.wife) && day.join(" ").includes(c.slave), day);
+  check("your own law is on the street", /Open Hands/.test(day[1]), day[1]);
+  check("the cousin writes from the other place", day.at(-1)!.includes(near.name), day.at(-1));
+  check("the same day tells the same story", JSON.stringify(dayInTheLife(s, yours, near, yours)) === JSON.stringify(day));
+  const ow = dayInTheLife(s, old, yours, yours);
+  check("the Old World has no slave, only a debt worker", /owes the man who brought her/.test(ow.join(" ")) && !/her owners/.test(ow.join(" ")), ow);
+  pushNorm(s, "cruelty", 200, "the city turns cruel");
+  check("a cruel city's morning has the cane in it", /cane/.test(dayInTheLife(s, societies(s)[0], near, yours)[0]));
+  check("moving reads as a sentence", /^If the .+ packed up and moved from /.test(moving(near, yours)), moving(near, yours));
+  const { writeBrief, readWritten } = await import("../src/engine/comparestory.ts");
+  const b = writeBrief(s, yours, near);
+  check("the narrator gets every law word for word, and the family", b.user.includes(c.wife) && b.user.includes('"A slave may not be struck in a public place."') && /binding and literal/.test(b.system) && /children/.test(b.system));
+  const w = readWritten(yours, JSON.stringify({ citizen_clothes: "no clothing", citizen_shoes: "barefoot", husband: "nothing", slave_clothes: "a ballgown of stars", slave_collar: "a silk ribbon", slave_shoes: "barefoot", slaves: 9, story: ["one paragraph of the morning, long enough", "the street, where the law is kept by all", "the slave's day, with her errands and the grocer", "dinner", "a letter"] }));
+  check("the narrator's clothes are used when they're in the wardrobe", w?.outfits.citizen_clothes === "no clothing" && w?.outfits.slave_collar === "a silk ribbon", w);
+  check("and anything it made up falls back to the game's choice", !!w && w.outfits.slave_clothes !== "a ballgown of stars" && w.outfits.slaves === 5, w?.outfits);
+  check("a garbled answer is refused", readWritten(yours, "I'd rather not.") === null);
+}
+
+{
+  // The laws' own words beat the habits: a law that says citizens can't be dressed undresses them.
+  const { societies, household, figureFor } = await import("../src/engine/compare.ts");
+  const { dayInTheLife } = await import("../src/engine/comparestory.ts");
+  const { writeLaw } = await import("../src/engine/court.ts");
+  const s = game("soc-lawdress");
+  s.arcology.rep = 9000;
+  pushNorm(s, "exposure", -200, "the city is prudish");
+  check("a prudish city dresses its citizens", household(societies(s)[0]).citizen.clothes !== "no clothing");
+  writeLaw(s, { name: "Open Skin", text: "Citizens cannot be dressed in public.", push: [], effects: ["prestige"] });
+  const x = societies(s)[0];
+  check("until a law says they can't be", household(x).citizen.clothes === "no clothing" && figureFor(x, "citizen")!.clothes === "no clothing", household(x).citizen);
+  check("the husband too", /nothing/.test(household(x).husband));
+  check("and the story says so", /(Nobody on the concourse is dressed, citizens included|Every citizen on the concourse is naked)/.test(dayInTheLife(s, x, societies(s)[1], x)[1]));
+  writeLaw(s, { name: "Covered Chattel", text: "Every slave must be covered from neck to knee.", push: [], effects: ["prestige"] });
+  pushNorm(s, "exposure", 400, "the city goes open");
+  check("a law covering slaves beats an open city's habits", household(societies(s)[0]).slave?.clothes !== "no clothing", household(societies(s)[0]).slave);
+  const { lawDress } = await import("../src/engine/compare.ts");
+  const said = (text: string) => lawDress({ ...societies(s)[0], laws: [{ name: "T", text }] });
+  check("'may not wear shoes' is bare feet, not bare skin", said("Slaves may not wear shoes.").slave === undefined && said("Slaves may not wear shoes.").barefoot === true);
+  check("'may not wear clothing' is naked", said("Slaves may not wear clothing on the concourse.").slave === "naked");
+  check("'nobody may be dressed' covers citizens and slaves", said("Nobody may be dressed above the tenth floor.").citizen === "naked" && said("Nobody may be dressed above the tenth floor.").slave === "naked");
+}
+
+{
+  // Dress codes: earned from laws, doctrines and habits together, and the page says which.
+  const { dressCodeFor } = await import("../src/data/dresscodes.ts");
+  const { LAW_BY_ID } = await import("../src/data/laws.ts");
+  const { societies, household } = await import("../src/engine/compare.ts");
+  const { decreeLaw } = await import("../src/engine/court.ts");
+  const flat = { cruelty: 0, exposure: 0, personhood: 0, reversal: 0, feet: 0, manumission: 0, modification: 0, order: 0 };
+  const office = dressCodeFor({ laws: ["decency_statute"], doctrines: ["professionalism"], norms: { ...flat, exposure: -30 }, prosperity: 60 });
+  check("a law, a doctrine and a habit add up to one look", office.code.id === "office" && office.because.length === 3, office.because);
+  const mixed = dressCodeFor({ laws: ["welfare_code"], doctrines: ["degradationist"], norms: flat, prosperity: 60 });
+  check("a law outweighs a doctrine, and the doctrine still pulls", mixed.code.id === "livery" && mixed.runnerUp?.code.id === "chattel", mixed);
+  check("nothing shaping a city means street clothes", dressCodeFor({ laws: [], doctrines: [], norms: flat, prosperity: 40 }).code.id === "street");
+  const s = game("soc-dress");
+  s.arcology.neighbours[0].doctrines = ["degradationist", "subjugationist"];
+  const near = societies(s).filter((x) => x.kind === "neighbour");
+  check("every neighbour's laws come from its own habits", near.every((x) => x.lawIds.every((id) => { const l = LAW_BY_ID[id]; return (x.norms[l.norm] - l.at) * l.dir >= 0; })), near.map((x) => x.lawIds));
+  check("a cruel neighbour's court has passed cruel laws", near[0].lawIds.includes("public_discipline") && near[0].lawIds.includes("chattel_act"), near[0].lawIds);
+  s.arcology.rep = 20000;
+  decreeLaw(s, "nudity_ordinance");
+  const mine = household(societies(s)[0]);
+  check("a law you pass changes how your city dresses", mine.dress?.code.id === "open" && mine.dress.because.includes("the Nudity Ordinance"), mine.dress);
 }

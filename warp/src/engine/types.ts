@@ -846,6 +846,12 @@ export interface SaveState {
   reign?: import("./reign").Reign;
   /** Laws you wrote yourself. See data/customlaws. */
   custom_laws?: import("../data/customlaws").CustomLaw[];
+  /** Photographs of a typical household in each society on the Compare screen, by society id. */
+  compare_photos?: Record<string, { model: string; week: number; url?: string; error?: string; fp?: string }>;
+  /** The narrator's telling of a household's day, by "society:other". */
+  compare_stories?: Record<string, { model: string; week: number; text: string; fp?: string }>;
+  /** The narrator's outfits for each society's household, while its laws and habits still match `fp`. */
+  compare_written?: Record<string, { model: string; week: number; fp: string; outfits: import("./compare").Outfits }>;
   /** Campaigns you are paying for, and the last week you spoke. See engine/civic. */
   campaigns?: import("./civic").Campaign[];
   last_speech?: number;
@@ -876,6 +882,8 @@ export interface SaveState {
   city?: import("./city").CityState;
   /** THE WORLD — weather, climate, the economy and the Old World regions. Built on demand. */
   world?: import("./world").WorldState;
+  /** The world screen: research, involvement in wars, visits abroad. */
+  globe?: import("./globe").Globe;
   /** The content switches, which the original carried as V.seeExtreme, V.seeCircumcision and the
    *  rest. Defaulted on — this is the game it is — but the surgery table and a handful of acts
    *  read them, because the original let you turn the ugliest parts off and so does this. */

@@ -10,8 +10,8 @@
  */
 import type { Person, SaveState } from "./types";
 import { clamp } from "./psyche";
-import { cultureOf, pushNorm, type Norm } from "./culture";
-import { lawsOf, repealByDecree } from "./court";
+import { cultureOf, pushNorm, NORMS, type Norm } from "./culture";
+import { inForce, lawsOf, repealByDecree, type LawInForce } from "./court";
 import { LAW_BY_ID, type LawDef } from "../data/laws";
 import { registerEvents, fireEvent, type EventDef } from "./events";
 import { applyTreatment } from "./obedience";
@@ -29,6 +29,76 @@ function support(s: SaveState, l: LawDef): number {
   let n = 0, k = 0;
   for (const [norm, v] of Object.entries(l.pull) as [Norm, number][]) { n += norms[norm] * Math.sign(v); k++; }
   return k ? n / k : 0;
+}
+
+/**
+ * How well the city keeps a law, which is more than whether it agrees with it: people keep a law
+ * because they already live that way (the norms), because they like the one who wrote it
+ * (reputation and standing), because the patrols make them (security and curfew), and because it
+ * has been on the books long enough to be habit.
+ */
+export function compliance(s: SaveState, l: LawDef): { total: number; norms: number; goodwill: number; force: number; habit: number } {
+  const a = s.arcology;
+  const x = lawsOf(s).find((y) => y.id === l.id);
+  const effects = (s.custom_laws ?? []).find((c) => c.id === l.id)?.effects ?? [];
+  const norms = support(s, l);
+  let goodwill = clamp(a.rep / 20000, 0, 1) * 25 + a.public_standing * 2;
+  for (const e of effects) goodwill += e === "subsidy" || e === "care" || e === "hope" || e === "prestige" ? 6 : e === "tax" || e === "unrest" ? -6 : 0;
+  if (x?.exempt) goodwill -= 10;
+  goodwill += propagandaNow(s, x);
+  let force = clamp((a.security - 50) / 5, -10, 10);
+  if (effects.includes("enforcement")) force += 6;
+  if (inForce(s, "curfew")) force += 5;
+  if (a.policies["curfew"]) force += 3;
+  if (a.policies["surveillance"]) force += 3;
+  force = clamp(force, -10, 25);
+  const habit = x ? clamp((a.week - x.week) / 4, 0, 10) : 0;
+  return { total: norms + goodwill + force + habit, norms, goodwill, force, habit };
+}
+
+/** What's left of the last propaganda push for a law. */
+const propagandaNow = (s: SaveState, x?: LawInForce) => (x?.propaganda ? x.propaganda.size * 0.85 ** Math.max(0, s.arcology.week - x.propaganda.week) : 0);
+
+/** Propaganda moves each habit the law pushes one point per this many credits. ¤1,000,000 swings a habit end to end. */
+export const PROPAGANDA_PER_POINT = 5000;
+/** The goodwill it buys, one point per this many credits, to a ceiling. */
+const PROPAGANDA_PER_GOODWILL = 20000;
+const PROPAGANDA_MAX_GOODWILL = 40;
+
+/** What spending `amount` on propaganda for a law would do. */
+export function propagandaPreview(s: SaveState, id: string, amount: number): { points: number; goodwill: number; norms: { norm: Norm; from: number; to: number }[] } {
+  const l = LAW_BY_ID[id];
+  const x = lawsOf(s).find((y) => y.id === id);
+  const spend = Math.max(0, Math.floor(amount));
+  const points = spend / PROPAGANDA_PER_POINT;
+  const goodwill = Math.min(PROPAGANDA_MAX_GOODWILL, propagandaNow(s, x) + spend / PROPAGANDA_PER_GOODWILL);
+  const norms = cultureOf(s).norms;
+  return { points, goodwill, norms: l ? (Object.entries(l.pull) as [Norm, number][]).map(([norm, v]) => ({ norm, from: norms[norm], to: clamp(norms[norm] + Math.sign(v) * points, -100, 100) })) : [] };
+}
+
+/** Pay for posters, broadcasts, paid speakers and parades in the law's favour. The more you spend, the further it goes. */
+export function propaganda(s: SaveState, id: string, amount: number): string {
+  const l = LAW_BY_ID[id];
+  const x = lawsOf(s).find((y) => y.id === id);
+  const spend = Math.floor(amount);
+  if (!l || !x) return "";
+  if (!(spend >= 1000)) return "A campaign needs at least ¤1,000.";
+  if (spend > s.arcology.cash) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}; the campaign would cost ¤${spend.toLocaleString()}.`;
+  const pv = propagandaPreview(s, id, spend);
+  s.arcology.cash -= spend;
+  pushWithLaw(s, l, pv.points, `you paid ¤${spend.toLocaleString()} for propaganda for the ${l.name}`);
+  x.propaganda = { week: s.arcology.week, size: pv.goodwill };
+  std(s, Math.min(2, spend / 250000));
+  startRumor(s, `the ${l.name} is on every screen in the arcology`, { salience: Math.min(9, 4 + Math.round(spend / 100000)), charge: 1 });
+  const how = spend >= 1000000
+    ? `For a week there's nothing else. The ${l.name} is on every screen, every lift door and every coffee cup; children sing it in the schoolrooms, the FCTV anchors read it out between every segment, and paid speakers stand on crates at every junction from the spire to the verge. By Sunday people who hated it can't remember why.`
+    : spend >= 200000
+      ? `The campaign runs for a fortnight: posters on every floor, a jingle on FCTV, a parade down the main concourse with the ${l.name} on a banner the width of the street. People start quoting it without meaning to.`
+      : spend >= 30000
+        ? `Posters for the ${l.name} go up at every lift, and FCTV runs a spot about it before the evening news. It gets talked about.`
+        : `A few hundred posters for the ${l.name} go up on the busier floors. Some of them stay up.`;
+  const moved = pv.norms.map((n) => `${NORMS[n.norm].name.toLowerCase()} ${Math.round(n.from)} → ${Math.round(n.to)}`).join(", ");
+  return `${how}\n\n¤${spend.toLocaleString()} spent.${moved ? ` The city moves: ${moved}.` : ""} Goodwill toward the law: +${Math.round(pv.goodwill)}, fading over the next few months.`;
 }
 
 /** Push every habit the law pushes, by `by` in the law's direction (negative undoes it). */
@@ -59,17 +129,26 @@ export function lawPulse(s: SaveState): string[] {
     if (!l || !isCustom(l.id)) continue;
     // The week after you write it, the city answers it: someone breaks it, or someone celebrates it.
     const log = (s.event_log ??= {});
-    if (week - x.week >= 1 && !log[`lawfirst:${l.id}`] && fireEvent(s, support(s, l) > 0 ? "law_praise" : "law_breach", { facility: `law:${l.id}` })) log[`lawfirst:${l.id}`] = week;
+    if (week - x.week >= 1 && !log[`lawfirst:${l.id}`] && fireEvent(s, compliance(s, l).total > 0 ? "law_praise" : "law_breach", { facility: `law:${l.id}` })) log[`lawfirst:${l.id}`] = week;
     if ((week - x.week) % 2 !== 1) continue;
     const r = rng(`pulse:${l.id}:${week}`);
-    const sup = support(s, l);
-    const effects = (s.custom_laws ?? []).find((c) => c.id === l.id)?.effects ?? [];
+    const c = compliance(s, l);
+    // A city that likes you comes round to your laws: the ones it didn't want become its own.
+    if (c.goodwill > 10 && c.norms < 30) pushWithLaw(s, l, Math.min(3, c.goodwill / 15), `the city follows your lead on the ${l.name}`);
+    const effects = (s.custom_laws ?? []).find((y) => y.id === l.id)?.effects ?? [];
     const money = effects.includes("tax") ? ` The tax under it brought in about ¤${Math.round(s.arcology.population * 0.6 * 2).toLocaleString()} this fortnight.` : effects.includes("subsidy") ? " The arcology paid ¤3,000 toward it this fortnight." : "";
-    const line = sup > 30
-      ? r.pick([`The ${l.name} is simply how things are done now. Citizens keep it without being told.`, `People quote the ${l.name} at each other in the concourse, approvingly.`, `Shops have put up copies of the ${l.name} next to their prices.`])
-      : sup > 0
-        ? r.pick([`Most citizens are keeping the ${l.name}, some of them grudgingly.`, `The ${l.name} is being kept, mostly. The patrols have written a few fines under it.`, `Citizens argue in the cafés about the ${l.name}, and then mostly keep it.`])
-        : sup > -30
+    const loved = c.goodwill >= c.force;
+    const line = c.total > 30
+      ? c.norms > 0 || loved
+        ? r.pick(loved && c.norms <= 0
+          ? [`Plenty of citizens thought the ${l.name} was a strange law. They keep it anyway, because it's yours.`, `People keep the ${l.name} the way they'd keep a friend's house rules: they don't all see the point, but they like you.`, `A block captain on the residential floors has been reading the ${l.name} out at meetings. "The owner hasn't steered us wrong yet," he says.`]
+          : [`The ${l.name} is simply how things are done now. Citizens keep it without being told.`, `People quote the ${l.name} at each other in the concourse, approvingly.`, `Shops have put up copies of the ${l.name} next to their prices.`])
+        : r.pick([`The ${l.name} is kept to the letter. There's a patrol on every corner to see that it is.`, `Nobody breaks the ${l.name}. Nobody talks about it either, not with the cameras listening.`])
+      : c.total > 0
+        ? r.pick(c.norms < 0 && loved
+          ? [`Citizens grumble about the ${l.name} in the cafés, then keep it, because it's your law.`, `The ${l.name} is being kept, a little grudgingly. People who don't like it still like you.`]
+          : [`Most citizens are keeping the ${l.name}, some of them grudgingly.`, `The ${l.name} is being kept, mostly. The patrols have written a few fines under it.`, `Citizens argue in the cafés about the ${l.name}, and then mostly keep it.`])
+        : c.total > -30
           ? r.pick([`The ${l.name} is being ignored where the patrols can't see.`, `Someone has defaced the notices of the ${l.name} on the residential floors.`, `The ${l.name} is kept in the spire and ignored in the verge.`])
           : r.pick([`The city is openly defying the ${l.name}. There are petitions to repeal it in every block.`, `Nobody keeps the ${l.name} unless a patrol is watching. People have started calling it your law, not the city's.`]);
     out.push(line + money);
@@ -102,7 +181,7 @@ function lawEvent(id: string, when: (s: SaveState, l: LawDef) => boolean, weight
 export const LAW_EVENTS: EventDef[] = [
   lawEvent("law_breach", () => true, () => 1.5,
     (s, l) => `A patrol has caught a citizen on the commercial row breaking the ${l.name}, which says ${quote(l)} He's shouting that he's never heard of it. A crowd has gathered to see what the law is worth.`, [
-      { id: "example", label: "Make an example of him", run: (s, l) => { pushWithLaw(s, l, 5, `you made an example of a man who broke the ${l.name}`); pushNorm(s, "order", 3, `you enforced the ${l.name} in public`); std(s, support(s, l) > 0 ? 0.5 : -0.5); return `You have him put in the stocks by the fountain for a day, with a copy of the ${l.name} pinned to his coat. Everyone who walks past reads it. Nobody on the commercial row breaks it again that month.`; } },
+      { id: "example", label: "Make an example of him", run: (s, l) => { pushWithLaw(s, l, 5, `you made an example of a man who broke the ${l.name}`); pushNorm(s, "order", 3, `you enforced the ${l.name} in public`); std(s, compliance(s, l).total > 0 ? 0.5 : -0.5); return `You have him put in the stocks by the fountain for a day, with a copy of the ${l.name} pinned to his coat. Everyone who walks past reads it. Nobody on the commercial row breaks it again that month.`; } },
       { id: "fine", label: "Fine him", run: (s, l) => { s.arcology.cash += 500; pushWithLaw(s, l, 2, `a citizen was fined under the ${l.name}`); return `He's fined five hundred and let go. He pays, furious, and tells everyone the ${l.name} is a tax on the unlucky.`; } },
       { id: "pardon", label: "Pardon him", run: (s, l) => { pushWithLaw(s, l, -4, `you pardoned a man who broke the ${l.name}`); std(s, 0.5); return `You let him go with a warning. The crowd cheers, and by evening everyone knows the ${l.name} can be talked out of.`; } },
     ]),
@@ -112,13 +191,13 @@ export const LAW_EVENTS: EventDef[] = [
       { id: "exempt", label: "Exempt your household from it", note: "standing falls", run: (s, l) => { const x = lawsOf(s).find((y) => y.id === l.id); if (x) x.exempt = true; pushWithLaw(s, l, -5, `you exempted your own household from the ${l.name}`); std(s, -1.5); return `You exempt your household from the ${l.name}. It's legal, and everyone in the arcology now knows the law is for other people.`; } },
       { id: "pay", label: "Pay the fine and apologise", run: (s, l) => { s.arcology.cash -= 1000; std(s, 0.5); pushWithLaw(s, l, 2, `you paid your slave's fine under the ${l.name}`); return `You pay the fine yourself and send the citizen a note. He frames it.`; } },
     ]),
-  lawEvent("law_praise", (s, l) => support(s, l) > -10, () => 1,
+  lawEvent("law_praise", (s, l) => compliance(s, l).total > -10, () => 1,
     (s, l) => `A group of citizens wants to hold a gathering in the plaza to celebrate the ${l.name}: speeches, music, and the law read out from the fountain. They'd be honoured if you came.`, [
       { id: "attend", label: "Go and read it out yourself", run: (s, l) => { pushWithLaw(s, l, 7, `you read the ${l.name} out at the fountain`); s.arcology.rep += 200; return `You read the ${l.name} out from the fountain's edge to a few hundred people. They cheer the last line. A copy of your reading is on the screens by evening.`; } },
       { id: "fund", label: "Pay for it and stay away", note: "¤2,000", run: (s, l) => { s.arcology.cash -= 2000; pushWithLaw(s, l, 5, `you funded a celebration of the ${l.name}`); return `You pay for it. It's bigger than they planned, and louder.`; } },
       { id: "ignore", label: "Let them get on with it", run: (s, l) => { pushWithLaw(s, l, 2, `citizens celebrated the ${l.name}`); return `They hold it without you. It's small, and sincere, and a few people who walked past on their way somewhere else stop to listen.`; } },
     ]),
-  lawEvent("law_protest", (s, l) => support(s, l) < 10, () => 1.5,
+  lawEvent("law_protest", (s, l) => compliance(s, l).total < 10, () => 1.5,
     (s, l) => `There are a few hundred protesters outside the civic hall. They want the ${l.name} gone. Someone has painted ${quote(l)} on a bedsheet with a red line through it, and hung it from the balcony.`, [
       { id: "disperse", label: "Have them dispersed", run: (s, l) => { pushWithLaw(s, l, 4, `you dispersed the protest against the ${l.name}`); pushNorm(s, "order", 4, `you dispersed a protest`); std(s, -1); return `Security clears the steps in twenty minutes. Nobody is badly hurt. The bedsheet ends up in a museum in an Old World city, with your name on the label.`; } },
       { id: "listen", label: "Go out and hear them", run: (s, l) => { pushWithLaw(s, l, -3, `you went out to hear the protest against the ${l.name}`); std(s, 1); return `You go out onto the steps and listen for an hour. You don't promise anything. They go home anyway, and some of them stop hating you.`; } },
@@ -126,8 +205,14 @@ export const LAW_EVENTS: EventDef[] = [
     ]),
   lawEvent("law_abroad", () => true, () => 0.6,
     (s, l) => `An Old World newspaper has run a long piece about ${s.arcology.name} and the ${l.name}, quoting it in full: ${quote(l)} It's being read in a dozen cities, and three owners have written to ask what you meant by it.`, [
-      { id: "boast", label: "Answer proudly", run: (s, l) => { s.arcology.rep += support(s, l) > 0 ? 400 : 150; pushWithLaw(s, l, 3, `you defended the ${l.name} to the Old World`); return `You write back that ${s.arcology.name} makes its own laws, and this is one of them. The reply gets printed too. Visitors start arriving who want to see it for themselves.`; } },
+      { id: "boast", label: "Answer proudly", run: (s, l) => { s.arcology.rep += compliance(s, l).total > 0 ? 400 : 150; pushWithLaw(s, l, 3, `you defended the ${l.name} to the Old World`); return `You write back that ${s.arcology.name} makes its own laws, and this is one of them. The reply gets printed too. Visitors start arriving who want to see it for themselves.`; } },
       { id: "quiet", label: "Say nothing", run: (s, l) => `You say nothing. The story runs for a week and then another city does something worse. The ${l.name} stays on the books.` },
+    ]),
+  lawEvent("law_convert", (s, l) => { const c = compliance(s, l); return c.norms < 10 && c.goodwill > 12; }, () => 1.2,
+    (s, l) => `The block captain who led the grumbling against the ${l.name} on the residential floors has asked to see you. He says he's changed his mind about it, and that half his block has too: "We didn't want it. But you've done right by us, and we'd rather trust you than the people shouting." He'd like to say so in public.`, [
+      { id: "welcome", label: "Stand with him in the plaza", run: (s, l) => { pushWithLaw(s, l, 7, `a critic of the ${l.name} came round, and said so beside you`); std(s, 0.5); s.arcology.rep += 150; return `You stand beside him at the fountain while he tells the crowd why he came round to the ${l.name}. He's a better speaker than you'd guessed. People who came to heckle go home arguing for it.`; } },
+      { id: "warden", label: "Make him the law's warden on his floors", note: "¤1,000", run: (s, l) => { s.arcology.cash -= 1000; pushWithLaw(s, l, 5, `you made a converted critic warden of the ${l.name}`); pushNorm(s, "order", 2, `a citizen warden keeps the ${l.name}`); return `You give him a stipend and a sash. By the end of the month his floors keep the ${l.name} better than the spire does, and he tells everyone it was his idea.`; } },
+      { id: "thank", label: "Thank him privately", run: (s, l) => { pushWithLaw(s, l, 2, `a critic of the ${l.name} came round`); return `You thank him over a drink in the penthouse. He goes home pleased, and tells his block about the view.`; } },
     ]),
 ];
 
