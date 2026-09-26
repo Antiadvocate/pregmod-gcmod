@@ -846,6 +846,8 @@ export interface SaveState {
   reign?: import("./reign").Reign;
   /** Laws you wrote yourself. See data/customlaws. */
   custom_laws?: import("../data/customlaws").CustomLaw[];
+  /** Photographs of a typical household in each society on the Compare screen, by society id. */
+  compare_photos?: Record<string, { model: string; week: number; url?: string; error?: string }>;
   /** Campaigns you are paying for, and the last week you spoke. See engine/civic. */
   campaigns?: import("./civic").Campaign[];
   last_speech?: number;

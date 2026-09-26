@@ -300,3 +300,20 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   check("it comes back when you walk there again", /Luigi/.test(walkContext(s, here)));
   if (there !== here) check("but not when you walk somewhere else", !/Luigi/.test(walkContext(s, there)));
 }
+
+{
+  // The Compare screen: your arcology beside its neighbours and the Old World, read from the save.
+  const { societies, household, contrast, figureFor } = await import("../src/engine/compare.ts");
+  const s = game("soc-compare");
+  const all = societies(s);
+  check("yours, the neighbours, and the Old World", all[0].kind === "yours" && all.at(-1)!.kind === "oldworld" && all.length === s.arcology.neighbours.length + 2, all.map((x) => x.name));
+  check("a neighbour keeps the same character each time you look", JSON.stringify(societies(s)[1].doctrines) === JSON.stringify(all[1].doctrines) && all[1].doctrines.length === 2, all[1].doctrines);
+  check("the neighbours aren't all the same city", new Set(all.slice(1, -1).map((x) => JSON.stringify(x.norms))).size > 1);
+  pushNorm(s, "exposure", 200, "the city goes naked");
+  const open = household(societies(s)[0]);
+  check("an open city's slaves go naked and barefoot", open.slave?.clothes === "no clothing" && open.slave?.shoes === "barefoot", open.slave);
+  check("the Old World has no slaves to draw", !household(all.at(-1)!).slave && figureFor(all.at(-1)!, "slave") === null);
+  check("the figures wear what the household says", figureFor(societies(s)[0], "slave")!.clothes === "no clothing");
+  const c = contrast(societies(s)[0], all.at(-1)!);
+  check("beside the Old World, the citizen comparison still runs", c.ours.length + c.theirs.length > 0 && ![...c.ours, ...c.theirs].some((l) => /Their slaves/.test(l)), c);
+}
