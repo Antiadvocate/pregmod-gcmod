@@ -219,7 +219,14 @@ export function walkScene(s: SaveState, place: Place, escort?: Person): string {
   }
   for (const law of lawsOf(s)) {
     if (LAW_LINES[law.id]) pool.push({ w: 2.5, text: LAW_LINES[law.id] });
-    else if (LAW_BY_ID[law.id]) pool.push({ w: 3, text: `A notice by the lift, with your seal on it, announces the ${LAW_BY_ID[law.id].name}: "${LAW_BY_ID[law.id].text}" Two citizens are arguing in front of it.` });
+    else if (LAW_BY_ID[law.id]) {
+      const l = LAW_BY_ID[law.id];
+      const keep = Object.entries(l.pull).reduce((n, [k, v]) => n + c.norms[k as Norm] * Math.sign(v as number), 0) >= 0;
+      pool.push({ w: 3, text: `A notice by the lift, with your seal on it, announces the ${l.name}: "${l.text}" Two citizens are arguing in front of it.` });
+      pool.push({ w: 4, text: keep
+        ? `You see the ${l.name} being kept without anyone watching: people doing exactly what it says, as if it had always been the rule. "${l.text}" A child is explaining it to a younger one.`
+        : `You see the ${l.name} being broken in plain sight, a few steps from a patrol who pretends not to notice. Someone has scrawled "your law, not ours" across its notice.` });
+    }
   }
   for (const [id, st] of Object.entries(s.arcology.doctrines)) {
     const d = DOCTRINE_BY_ID[id];

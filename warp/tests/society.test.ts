@@ -189,3 +189,25 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   tickCourt(s);
   check("if the city turns hard against it, the court hears a repeal", s.events.some((e) => e.kind.startsWith("court_repeal_custom_")), s.events.map((e) => e.kind));
 }
+
+{
+  // A law you write is felt: the household hears, the report says how it's kept, events come about it.
+  const { writeLaw } = await import("../src/engine/court.ts");
+  const s = game("soc-lawlife");
+  s.arcology.rep = 9000;
+  writeLaw(s, { name: "Sole Tithe", text: "Every slave shows her soles to any citizen who asks, and the citizen pays a coin for the looking.", push: [{ norm: "feet", dir: 1 }, { norm: "exposure", dir: 1 }], effects: ["tax"] });
+  const her = Object.values(s.people).find((p) => p.status === "owned" && p.age >= 18)!;
+  check("your slaves hear about it", s.memory[her.id].episodic.some((m) => /Sole Tithe/.test(m.content)));
+  check("so does the city", s.rumors.some((r) => /Sole Tithe/.test(r.content)));
+  const lines: string[] = [];
+  const kinds = new Set<string>();
+  for (let w = 0; w < 8; w++) {
+    const rep = endWeek(s);
+    lines.push(...rep.lines.map((l) => l.text));
+    for (const e of s.events.filter((x) => x.kind.startsWith("law_"))) { kinds.add(e.kind); check("law events quote the law", /Sole Tithe/.test(e.seed), e.seed); resolveEvent(s, e, e.kind === "law_breach" ? "example" : e.kind === "law_household" ? "punish" : e.kind === "law_protest" ? "listen" : e.kind === "law_abroad" ? "boast" : "attend"); }
+    s.events = s.events.filter((e) => !e.kind.startsWith("civic_") && !e.kind.startsWith("hh_"));
+    if (s.story) s.story.pending = undefined;
+  }
+  check("the week after, the city answers it with an event", kinds.size >= 1, [...kinds]);
+  check("the report says how the city is keeping it", lines.some((l) => /Sole Tithe/.test(l)), lines.filter((l) => /Sole|law/i.test(l)).slice(0, 4));
+}
