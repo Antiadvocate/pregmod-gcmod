@@ -7,7 +7,7 @@ import { X } from "lucide-react";
 import { useGame } from "../lib/game";
 import { Button, Card, Meter, Section } from "../lib/ui";
 import { agreementsOf, captureInstructions, houseRules, keep } from "../engine/agreements";
-import { reignOf, STYLE_NOTE } from "../engine/reign";
+import { reignOf, STYLE_NOTE, askForLover } from "../engine/reign";
 import { LAW_BY_ID } from "../data/laws";
 
 export function StandingOrders({ person }: { person?: string }) {
@@ -61,7 +61,8 @@ export function StandingOrders({ person }: { person?: string }) {
 }
 
 export function ReignCard() {
-  const { save } = useGame();
+  const { save, mutate } = useGame();
+  const [said, setSaid] = useState("");
   const r = reignOf(save);
   const h = r ? save.people[r.keeper] : undefined;
   if (!r || !h) return null;
@@ -82,6 +83,9 @@ export function ReignCard() {
           {r.deputy && save.people[r.deputy] ? ` ${save.people[r.deputy].name} is in charge of you when she's out.` : ""}
           {r.married ? " You're married, and still hers." : r.permanent ? " She made it permanent." : ""}
         </div>
+        {r.cuck && r.cuck.stage > 0 ? <div className="text-[13px] mt-2"><span className="dim">Her lover:</span> {r.cuck.name}, {r.cuck.who}{r.cuck.public ? " · the city knows you're her cuckold" : ""}{r.cuck.child ? ` · she's carrying ${r.cuck.name}'s child` : ""}.</div> : null}
+        {!r.cuck ? <Button size="sm" kind="ghost" className="mt-2" onClick={() => { let t = ""; mutate((s) => { t = askForLover(s); }); setSaid(t); }}>Ask her to take a lover</Button> : null}
+        {said ? <p className="font-prose text-[14px] mt-2">{said}</p> : null}
         {r.laws.length ? <div className="text-[12.5px] mt-2"><span className="dim">Laws she signed:</span> {r.laws.map((id) => LAW_BY_ID[id]?.name ?? id).join(", ")}</div> : null}
         {r.log.length ? (
           <ul className="mt-3 space-y-0.5">

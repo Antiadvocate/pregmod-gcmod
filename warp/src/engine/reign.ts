@@ -22,14 +22,14 @@ import type { Person, ReportLine, SaveState } from "./types";
 import { clamp, shove } from "./psyche";
 import { applyTreatment, memoryTilt } from "./obedience";
 import { remember } from "./memory";
-import { startRumor, moveEdge } from "./social";
+import { startRumor, moveEdge, addRole } from "./social";
 import { romanceOf, theKeeper } from "./romance";
 import { registerEvents, fireEvent, resolveEvent, type EventDef } from "./events";
 import { agreementsOf, calledBy, keep } from "./agreements";
 import { enact, lawsOf } from "./court";
 import { LAWS, LAW_BY_ID, type LawDef } from "../data/laws";
 import { pushNorm, cultureOf, type Norm } from "./culture";
-import { hasWomb } from "./pregnancy";
+import { hasWomb, tryConception } from "./pregnancy";
 import { rng } from "./rng";
 
 export type ReignStyle = "doting" | "stern" | "cruel" | "playful" | "vengeful" | "reluctant";
@@ -59,6 +59,27 @@ export interface Reign {
   last_order?: number;
   last_law?: number;
   ended?: string;
+  /** She has a lover, and you are her cuckold. See the lover section below. */
+  cuck?: Cuck;
+}
+
+export interface Cuck {
+  /** A slave's id, when the lover is one of the household. */
+  id?: string;
+  name: string;
+  /** Who he or she is, in a few words. */
+  who: string;
+  /** Can the lover get her pregnant. */
+  sires: boolean;
+  stage: number;
+  since: number;
+  last: number;
+  /** You asked for it. */
+  asked?: boolean;
+  public?: boolean;
+  /** You're in the room. */
+  watches?: boolean;
+  child?: "theirs" | "yours";
 }
 
 export const STYLE_NOTE: Record<ReignStyle, string> = {
@@ -375,6 +396,110 @@ function futureCounter(s: SaveState, h: Person): string {
 
 registerEvents(EVENTS);
 
+/* ── her lover ───────────────────────────────────────────────────────────────────────────────
+ * A woman who owns you can take a lover, and you get to be her cuckold. She does it when it suits
+ * her style and her appetites, or when you ask her to. It comes in stages, each one an event you can
+ * go along with, ask her to soften, refuse, or end by taking the arcology back: she tells you; then
+ * you're in the room; then the lover has your place in her bed; then the city knows; and if the
+ * lover can, she may carry the lover's child and decide who raises it.
+ */
+
+const MEN = ["Marcus Hale, a security contractor from the upper floors", "Tomas Reyes, the club owner in the pleasure quarter", "Idris Okafor, a dock foreman with shoulders like a doorway", "Luca Bellandi, a young surgeon from the academy ring", "Viktor Sand, a mercenary captain between contracts"];
+const WOMEN = ["Sofia Marchetti, a jeweller on the commercial row", "Ines Varga, the pit's best fighter", "Mei Tanaka, an arcology owner's daughter from up the coast", "Dana Kross, a security captain", "Leila Haddad, the madam of the best house in the quarter"];
+
+function pickLover(s: SaveState, h: Person): Cuck {
+  const house = Object.values(s.people).filter((p) => p.status === "owned" && p.id !== h.id && p.age >= 18);
+  const e = (p: Person) => s.edges.find((x) => x.from === h.id && x.to === p.id)?.attraction ?? 0;
+  const slave = house.filter((p) => e(p) > 35).sort((a, b) => e(b) - e(a))[0];
+  const week = s.arcology.week;
+  if (slave) return { id: slave.id, name: slave.name, who: `one of your own slaves`, sires: !!slave.body.dick && slave.body.dick > 0 && !!slave.body.balls && slave.body.balls > 0, stage: 0, since: week, last: week };
+  const want = h.persona.attracted_to === "women" ? WOMEN : h.persona.attracted_to === "men" ? MEN : [...MEN, ...WOMEN];
+  const pick = rng(`lover:${h.id}:${week}`).pick(want);
+  const [name, who] = pick.split(", ");
+  return { name, who, sires: MEN.includes(pick), stage: 0, since: week, last: week };
+}
+
+/** You ask her to take a lover. */
+export function askForLover(s: SaveState): string {
+  const r = reignOf(s);
+  const h = r ? s.people[r.keeper] : undefined;
+  if (!r || !h || r.cuck) return "";
+  r.cuck = { ...pickLover(s, h), asked: true };
+  fav(s, r.style === "reluctant" ? -2 : 6);
+  note(s, "You asked her to take a lover.");
+  fireEvent(s, "cuck_lover", { person: h });
+  return r.style === "reluctant" ? `You ask ${h.name} to take a lover. She goes red and says she'll think about it, and a week later she tells you she has.` : `You ask ${h.name} to take a lover. She looks at you for a long moment, and smiles.`;
+}
+
+const loverName = (s: SaveState) => s.reign?.cuck?.name ?? "her lover";
+
+const CUCK_EVENTS: EventDef[] = [
+  reignEvent("cuck_lover", (s, c) => { const r = s.reign!; const k = r.cuck!; const h = c.person!; return k.asked
+    ? `${h.name} tells you she's chosen someone: ${k.name}, ${k.who}. "You asked for this," she says. "So you'll be grateful."`
+    : { doting: `${h.name} sits you down, and she's nervous. There's someone else, ${k.name}, ${k.who}. She wants to keep seeing them, and she wants you to be all right with it, because she's not giving you up either.`, stern: `${h.name} informs you she has taken a lover: ${k.name}, ${k.who}. She isn't asking. She's telling you so you'll know how to behave when they're here.`, cruel: `${h.name} tells you about ${k.name}, ${k.who}, with the door open so the household can hear. She describes what they did last night in some detail, and watches your face the whole time.`, playful: `${h.name} bounces into the room with a love bite on her neck. "Guess who," she says. It's ${k.name}, ${k.who}, and she wants you to meet them.`, vengeful: `${h.name} says you had your pick of the household for years. Now she has hers: ${k.name}, ${k.who}. "You can watch," she says, "the way we had to."`, reluctant: `${h.name} confesses she's been seeing ${k.name}, ${k.who}. She's frightened you'll be angry, and she keeps saying she's sorry.` }[r.style]; }, [
+    { id: "accept", label: "Accept it", resolve: (s, _e, p) => { const k = s.reign!.cuck!; k.stage = 1; k.last = s.arcology.week; fav(s, 8); s.reign!.obeyed++; note(s, `She took a lover: ${k.name}.`); if (k.id && s.people[k.id]) { addRole(s.edges, p!.id, k.id, "her lover"); addRole(s.edges, k.id, p!.id, "her lover"); keep(agreementsOf(s.people[k.id]), { rule: `is ${p!.name}'s lover; you serve them both`, week: s.arcology.week, by: "her" }); } return `You tell her it's all right. ${k.name} is at dinner that Friday, in your old seat, and ${p!.name} holds their hand on the table where you can see it.`; } },
+    { id: "watch", label: "Ask to be there", resolve: (s, _e, p) => { const k = s.reign!.cuck!; k.stage = 1; k.watches = true; k.last = s.arcology.week; fav(s, 12); s.reign!.obeyed++; note(s, "You asked to be in the room."); return `You ask if you can be there. ${p!.name} laughs, surprised, and then says yes. "In the chair in the corner," she says. "And you don't touch yourself unless I say."`; } },
+    { id: "beg", label: "Beg her not to", resolve: (s, _e, p) => { const r = s.reign!; if (r.style === "doting" || r.style === "reluctant" || r.favour >= 50) { r.cuck = undefined; note(s, "You begged her not to, and she gave them up."); return `You beg her. ${p!.name} is quiet for a long time, and then she says she'll stop seeing them. She does, as far as you know.`; } r.cuck!.stage = 1; r.cuck!.last = s.arcology.week; fav(s, -8); note(s, "You begged, and she did it anyway."); return `You beg her. ${DEFIED[r.style](p!)} She keeps seeing ${loverName(s)} anyway.`; } },
+    { id: "back", label: "Take the arcology back", note: "ends it", resolve: (s, _e, p) => back(s, p, `You tell ${p!.name} that if she's taking a lover, she's giving back the collar.`) },
+  ]),
+  reignEvent("cuck_room", (s, c) => { const k = s.reign!.cuck!; return `${c.person!.name} has ${k.name} in her bed tonight, and she wants you in the room. ${s.reign!.style === "cruel" || s.reign!.style === "vengeful" ? "Kneeling at the foot of it." : s.reign!.style === "playful" ? "She's put a cushion on the floor for you, with your name on it." : "In the chair by the window."}`; }, [
+    { id: "watch", label: "Watch", resolve: (s, _e, p) => { const k = s.reign!.cuck!; k.stage = 2; k.watches = true; k.last = s.arcology.week; fav(s, 8); s.reign!.obeyed++; pushNorm(s, "reversal", 2, `${p!.name} made the owner watch her with her lover`); note(s, `You watched her with ${k.name}.`); return `You watch. ${p!.name} keeps her eyes on you most of the time, even when ${k.name} is making her cry out, and afterwards she tells you to come and kiss her.`; } },
+    { id: "serve", label: "Serve them", resolve: (s, _e, p) => { const k = s.reign!.cuck!; k.stage = 2; k.watches = true; k.last = s.arcology.week; fav(s, 14); s.reign!.obeyed++; if (!s.reign!.duties.some((d) => /lover/.test(d))) s.reign!.duties.push(`serve her and ${k.name} in bed: undress them, fetch what they want, clean up after`); writeRules(s, p!, s.reign!); note(s, `You served her and ${k.name} in bed.`); return `You undress her for ${k.name}, and fetch what they ask for, and afterwards you clean her up with a warm cloth while ${k.name} watches. ${p!.name} strokes your hair while you do it. It's a duty now.`; } },
+    { id: "outside", label: "Wait outside the door", resolve: (s, _e, p) => { const k = s.reign!.cuck!; k.stage = 2; k.last = s.arcology.week; fav(s, 2); note(s, "You waited outside the door."); return `You wait outside the door. You can hear all of it. When ${k.name} leaves in the morning, they nod to you on the way past.`; } },
+    { id: "refuse", label: "Refuse", resolve: (s, _e, p) => { const r = s.reign!; r.cuck!.stage = 2; r.cuck!.last = s.arcology.week; fav(s, -12); r.defied++; note(s, "You refused to be in the room."); return `You refuse. ${DEFIED[r.style](p!)}`; } },
+  ]),
+  reignEvent("cuck_bed", (s, c) => `${c.person!.name} tells you ${loverName(s)} is staying the nights from now on. There's only room for two in her bed, and it isn't going to be you.`, [
+    { id: "accept", label: "Take the floor", resolve: (s, _e, p) => { const r = s.reign!; r.cuck!.stage = 3; r.cuck!.last = s.arcology.week; r.sleep = `at the foot of her bed while ${loverName(s)} sleeps in it with her`; writeRules(s, p!, r); fav(s, 8); r.obeyed++; note(s, `${loverName(s)} has your place in her bed.`); return `You sleep at the foot of the bed that night, and every night after. Some nights they're quiet. Most nights they aren't.`; } },
+    { id: "ask", label: "Ask for one night a week", resolve: (s, _e, p) => { const r = s.reign!; r.cuck!.stage = 3; r.cuck!.last = s.arcology.week; if (r.favour >= 25 || r.style === "doting") { r.sleep = `at the foot of her bed, except Sundays, when she has you in it`; writeRules(s, p!, r); note(s, "She gave you Sundays."); return `You ask for one night. ${p!.name} gives you Sundays, and tells ${loverName(s)} so in front of you.`; } r.sleep = `at the foot of her bed while ${loverName(s)} sleeps in it with her`; writeRules(s, p!, r); fav(s, -3); return `You ask. ${p!.name} says no, and pats the floor.`; } },
+    { id: "refuse", label: "Refuse", resolve: (s, _e, p) => { const r = s.reign!; r.cuck!.stage = 3; r.cuck!.last = s.arcology.week; r.sleep = "in the hall outside her room"; writeRules(s, p!, r); fav(s, -12); r.defied++; return `You refuse. She has you sleep in the hall instead. ${DEFIED[r.style](p!)}`; } },
+  ]),
+  reignEvent("cuck_public", (s, c) => `At her party tonight ${c.person!.name} introduces ${loverName(s)} as her lover, and you as her cuckold, to forty citizens and three arcology owners. She's waiting for you to say something.`, [
+    { id: "own", label: "Own it", resolve: (s, _e, p) => { const r = s.reign!; r.cuck!.stage = 4; r.cuck!.public = true; r.cuck!.last = s.arcology.week; fav(s, 12); r.obeyed++; pushNorm(s, "reversal", 8, `the owner stood up at a party as ${p!.name}'s cuckold`); pushNorm(s, "exposure", 3, `${p!.name}'s party`); s.arcology.rep -= 400; startRumor(s, `the owner is ${p!.name}'s cuckold, and said so at her party`, { about: p!.id, salience: 9 }); note(s, "She made you her cuckold in public."); return `You say it yourself: you're hers, and ${loverName(s)} is hers too, and you're grateful for it. The room goes quiet, and then someone starts clapping. The Association hears about it before breakfast.`; } },
+    { id: "private", label: "Ask her to keep it private", resolve: (s, _e, p) => { const r = s.reign!; r.cuck!.stage = 4; r.cuck!.last = s.arcology.week; if (r.style === "doting" || r.favour >= 30) { note(s, "She kept it private because you asked."); return `You ask her quietly. She changes the subject, and introduces you as her husband instead. Nobody believes it, but nobody says so.`; } r.cuck!.public = true; fav(s, -4); startRumor(s, `the owner is ${p!.name}'s cuckold`, { about: p!.id, salience: 8 }); return `You ask. ${p!.name} says it louder.`; } },
+  ]),
+  reignEvent("cuck_child", (s, c) => `${c.person!.name} is pregnant, and it's ${loverName(s)}'s. She wants to talk about who raises it.`, [
+    { id: "theirs", label: "Let her and her lover raise it", resolve: (s, _e, p) => { const r = s.reign!; r.cuck!.child = "theirs"; r.cuck!.stage = 5; fav(s, 6); note(s, `She's carrying ${loverName(s)}'s child, and they'll raise it.`); return `You tell her it's theirs. ${p!.name} kisses you on the forehead, like you've done something sweet.`; } },
+    { id: "yours", label: "Offer to raise it as yours", resolve: (s, _e, p) => { const r = s.reign!; r.cuck!.child = "yours"; r.cuck!.stage = 5; fav(s, 14); r.duties.push(`raise ${loverName(s)}'s child as your own`); writeRules(s, p!, r); startRumor(s, `the owner is raising ${loverName(s)}'s child for ${p!.name}`, { about: p!.id, salience: 8 }); note(s, `You'll raise ${loverName(s)}'s child as yours.`); return `You offer. ${p!.name} cries, which she hasn't done in front of you since she took the collar. The registry will say the child is yours.`; } },
+    { id: "refuse", label: "Refuse to have anything to do with it", resolve: (s, _e, p) => { const r = s.reign!; r.cuck!.stage = 5; fav(s, -15); r.defied++; return `You refuse. ${DEFIED[r.style](p!)}`; } },
+  ]),
+];
+registerEvents(CUCK_EVENTS);
+
+/** Weekly, while she has a lover: the stages, the nights, and sometimes a child. */
+function tickLover(s: SaveState, h: Person, r: Reign, rnd: ReturnType<typeof rng>): ReportLine[] {
+  const out: ReportLine[] = [];
+  const week = s.arcology.week;
+  const since = week - r.since;
+  const busy = s.events.some((e) => e.kind.startsWith("reign_") || e.kind.startsWith("cuck_"));
+  const f = (n: string) => h.persona.fetishes.find((x) => x.name === n)?.strength ?? 0;
+  if (!r.cuck) {
+    const appetite = (["cruel", "playful", "vengeful"].includes(r.style) ? 0.12 : 0.04) + (f("dom") + f("sadist") + f("humiliation")) / 800;
+    if (since >= 6 && !busy && r.style !== "reluctant" && rnd.chance(appetite)) {
+      r.cuck = pickLover(s, h);
+      fireEvent(s, "cuck_lover", { person: h });
+      out.push(line(`${h.name} has something to tell you about someone else.`, "warning", 9, h.id));
+    }
+    return out;
+  }
+  const k = r.cuck;
+  if (k.id && s.people[k.id]?.status !== "owned") { note(s, `${k.name} is gone, and so is her lover.`); r.cuck = undefined; return out; }
+  if (k.stage === 0) return out;
+  const nights = 2 + rnd.int(0, 4);
+  out.push(line(`${k.name} spent ${nights} nights in ${h.name}'s bed this week.${k.watches ? " You were in the room for most of them." : ""}`, "neutral", 3, h.id));
+  if (k.sires && hasWomb(h) && !h.womb.fetuses.length) {
+    if (f("pregnancy") >= 40) h.womb.contraceptives = false;
+    tryConception(s, h, k.id ?? null, nights);
+  }
+  const gap = week - k.last;
+  const next = !busy && (
+    (k.stage === 1 && gap >= 2 && fireEvent(s, "cuck_room", { person: h })) ||
+    (k.stage === 2 && gap >= 3 && fireEvent(s, "cuck_bed", { person: h })) ||
+    (k.stage === 3 && gap >= 4 && r.shown !== "private" && fireEvent(s, "cuck_public", { person: h })) ||
+    (k.stage >= 3 && k.stage < 5 && h.womb.fetuses.length > 0 && fireEvent(s, "cuck_child", { person: h })));
+  if (next) out.push(line(`${h.name} wants you, about ${k.name}.`, "warning", 8, h.id));
+  return out;
+}
+
 /* ── the week under her ─────────────────────────────────────────────────────────────────── */
 
 const line = (text: string, tone: ReportLine["tone"] = "neutral", weight = 6, person?: string): ReportLine => ({ text, tone, weight, person } as ReportLine);
@@ -414,6 +539,9 @@ export function tickReign(s: SaveState): ReportLine[] {
     fireEvent(s, "reign_order", { person: h });
     out.push(line(`${h.name} has an order for you.`, "warning", 7, h.id));
   }
+
+  // Her lover, if she has one, or the week she decides to.
+  out.push(...tickLover(s, h, r, rnd));
 
   // Seen in public.
   const g = h.persona.gregariousness ?? 0.5;
@@ -519,8 +647,9 @@ export function reignCard(s: SaveState, h: Person): string {
   return [
     `SHE OWNS YOU. She holds your collar and runs ${s.arcology.name}; write her that way, every scene. ${STYLE_NOTE[r.style]}`,
     `HER RULES FOR YOU (she enforces them): you call her "${r.her_title}"; she calls you "${r.your_name}"; you wear ${r.dress}; you sleep ${r.sleep}; you ${r.duties.join("; you ")}.`,
+    r.cuck && r.cuck.stage > 0 ? `SHE HAS A LOVER: ${r.cuck.name} (${r.cuck.who}), and you are her cuckold${r.cuck.public ? ", and the city knows it" : ""}. ${r.cuck.watches ? "She makes you watch, and serve them. " : ""}${r.cuck.stage >= 3 ? `${r.cuck.name} sleeps in her bed; you don't. ` : ""}${r.cuck.child ? `She's carrying ${r.cuck.name}'s child${r.cuck.child === "yours" ? ", which you will raise as yours" : ""}. ` : ""}` : "",
     `She is ${favourWord(r.favour)} (you've obeyed ${r.obeyed} times and defied her ${r.defied}). ${r.shown === "public" ? "She likes to show you off in public." : r.shown === "private" ? "She keeps you to herself, in the penthouse." : "Sometimes she takes you out with her."}${r.married ? " She married you, and you are still hers." : ""}${r.permanent && !r.married ? " She made it permanent." : ""}`,
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 /** For everyone else in the household. */

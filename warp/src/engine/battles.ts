@@ -75,7 +75,7 @@ export function tickBattles(s: SaveState): string[] {
   const hist = (s.battles ??= []);
   const last = hist[hist.length - 1];
   if (week < 12 || (last && week - last.week < 8) || s.events.some((e) => e.kind === "attack")) return [];
-  const r = rng(`attack:${s.id}:${week}`);
+  const r = rng(`attack:${s.story?.seed ?? s.id}:${week}`);
   const w = s.world;
   const wars = w ? Object.values(w.regions).filter((x) => x.state === "war" || x.state === "collapse").length : 0;
   const chance = 0.03 + wars * 0.02 + clamp(s.arcology.prosperity / 100, 0, 2) * 0.015 + (w ? w.strain / 2000 : 0);
@@ -95,7 +95,7 @@ function current(s: SaveState): Battle {
 function fight(s: SaveState, bonus: number, seed: string): { win: boolean; margin: number } {
   const b = current(s);
   const g = garrison(s).total + bonus;
-  const r = rng(`${seed}:${s.arcology.week}`);
+  const r = rng(`${seed}:${s.story?.seed ?? s.id}:${s.arcology.week}`);
   const roll = g * (0.75 + r() * 0.5) - b.size * (0.75 + r() * 0.5);
   return { win: roll >= 0, margin: roll };
 }
