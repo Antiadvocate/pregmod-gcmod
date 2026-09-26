@@ -57,7 +57,16 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   check("a cruel city gets the Public Discipline Act before the court", s.events.some((x) => x.kind === "court_enact_public_discipline"));
   s.arcology.week += 2;
   tickCourt(s);
-  check("a case you ignore is decided without you", inForce(s, "public_discipline") && lawsOf(s)[0].by === "court");
+  check("an unanswered case waits for you; nothing is enacted", !inForce(s, "public_discipline") && s.events.some((x) => x.kind === "court_enact_public_discipline"));
+  s.arcology.week += 8;
+  tickCourt(s);
+  check("after eight weeks it lapses, and still nothing changes", !inForce(s, "public_discipline") && !s.events.some((x) => x.kind === "court_enact_public_discipline"));
+  // You sign it yourself.
+  s.arcology.week += 20; courtOf(s).last = -99;
+  tickCourt(s);
+  const pd = s.events.find((x) => x.kind === "court_enact_public_discipline");
+  if (pd) resolveEvent(s, pd, "sign");
+  check("it's law only when you sign it", inForce(s, "public_discipline") && lawsOf(s)[0].by === "you");
   // The city turns gentle: the Welfare Code replaces it.
   pushNorm(s, "cruelty", -200, "you: freed the arcade");
   s.arcology.week += 4;
