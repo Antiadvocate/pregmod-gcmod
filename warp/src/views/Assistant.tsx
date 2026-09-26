@@ -73,7 +73,7 @@ export default function AssistantCard() {
   const lastWeek = save.reports[save.reports.length - 1]?.week;
 
   useEffect(() => {
-    if (!a || lastWeek === undefined || a.brief?.week === lastWeek) return;
+    if (!a || lastWeek === undefined || a.brief?.week === lastWeek || save.models.lean_mode) return;
     let live = true;
     void briefWeek(save).then(() => { if (live) mutate(() => {}); });
     return () => { live = false; };
@@ -100,7 +100,7 @@ export default function AssistantCard() {
             <button className="ml-auto text-[11px] dim underline" onClick={() => mutate((s) => { s.assistant = undefined; })}>change her</button>
           </div>
           <p className="font-prose text-[14.5px] leading-relaxed mt-1">
-            {a.brief && a.brief.week === lastWeek ? a.brief.text : lastWeek === undefined ? `${a.name} is watching. She'll brief you when the first week is done.` : <span className="dim"><Loader2 size={12} className="inline animate-spin" /> …</span>}
+            {a.brief && a.brief.week === lastWeek ? a.brief.text : lastWeek === undefined ? `${a.name} is watching. She'll brief you when the first week is done.` : save.models.lean_mode ? <button className="chip !text-[12px]" disabled={busy} onClick={async () => { setBusy(true); await briefWeek(save); mutate(() => {}); setBusy(false); }}>{busy ? "…" : "Brief me on the week"}</button> : <span className="dim"><Loader2 size={12} className="inline animate-spin" /> …</span>}
           </p>
         </div>
       </div>

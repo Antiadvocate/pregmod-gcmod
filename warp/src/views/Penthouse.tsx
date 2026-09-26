@@ -64,14 +64,17 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
     setRunning(true);
     let report = null as ReturnType<typeof endWeek> | null;
     mutate((s) => { report = endWeek(s); });
-    if (report && modelsAvailable()) {
+    // In lean mode the week report stays as the game wrote it: no model call for the summary.
+    if (report && modelsAvailable() && !save.models.lean_mode) {
       const text = await writeWeekProse(save, report);
       if (text) mutate(() => { /* report is already in the save; the prose was written onto it */ });
     }
     // Put the week's requests into their own mouths, when there is a model to do it. The payload
     // was fixed before this ran and is not passed to the model; only the wording changes.
-    if (modelsAvailable() && save.asks?.length) {
-      const voiced = await Promise.all(save.asks.map(async (a) => ({ id: a.id, says: await voiceAsk(save, a) })));
+    // One at a time: a burst of parallel calls is what trips a provider's per-minute limit.
+    if (modelsAvailable() && !save.models.lean_mode && save.asks?.length) {
+      const voiced: { id: string; says: string }[] = [];
+      for (const a of save.asks) voiced.push({ id: a.id, says: await voiceAsk(save, a) });
       mutate((s) => { for (const v of voiced) { const a = s.asks?.find((x) => x.id === v.id); if (a) a.text = v.says; } });
     }
     setRunning(false);

@@ -42,6 +42,17 @@ const m = bodies.length;
 const stopped = await call({ system: "s", user: "u", model: "some/flash", fallback: "other/model", signal: ctl.signal });
 check("stopping doesn't fall through to the fallback model", !stopped.ok && stopped.error === "stopped" && bodies.length === m + 1, bodies.length - m);
 
+// Rate limits: wait and retry, then say what happened.
+{
+  let hits = 0;
+  g.fetch = async () => { hits++; return hits < 3 ? new Response("slow down", { status: 429, headers: { "retry-after": "0.01" } }) : new Response(JSON.stringify({ choices: [{ message: { content: "Fine." } }] }), { status: 200 }); };
+  const r1 = await call({ system: "s", user: "u", model: "mistral/small:free" });
+  check("a rate limit is waited out and retried", r1.ok && hits === 3, { hits, r1 });
+  hits = -10;
+  const r2 = await call({ system: "s", user: "u", model: "mistral/small:free" });
+  check("and when it keeps failing, it says why", !r2.ok && /rate limited on mistral\/small:free[\s\S]*Free \(:free\) models/.test(r2.error ?? ""), r2.error);
+}
+
 g.fetch = oldFetch;
 if (hadLS) g.localStorage = oldLS; else delete g.localStorage;
 if (!hadLoc) delete g.location; else g.location = oldLoc;

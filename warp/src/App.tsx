@@ -13,6 +13,7 @@ import {
 import type { SaveState } from "./engine/types";
 import { GameProvider, useGame } from "./lib/game";
 import { listSaves, getSave } from "./store";
+import { onRateWait } from "./llm";
 import { cx, Sheet } from "./lib/ui";
 import Start from "./views/Start";
 import Penthouse from "./views/Penthouse";
@@ -82,6 +83,20 @@ export default function App() {
  *  and unreachable on the device it was asked for. */
 const PRIMARY: Route[] = ["penthouse", "people", "story", "city", "market"];
 
+/** A line at the top while a rate-limited call waits to try again, so the screen isn't just stuck. */
+function RateNotice() {
+  const [wait, setWait] = useState<{ until: number; status: number; model: string } | null>(null);
+  const [, tick] = useState(0);
+  useEffect(() => onRateWait((ms, status, model) => setWait({ until: Date.now() + ms, status, model })), []);
+  useEffect(() => { if (!wait) return; const id = setInterval(() => { if (Date.now() > wait.until) setWait(null); tick((n) => n + 1); }, 500); return () => clearInterval(id); }, [wait]);
+  if (!wait) return null;
+  return (
+    <div className="px-4 py-1.5 text-[12px]" style={{ background: "var(--accent-soft)", color: "var(--warn)" }}>
+      {wait.status === 429 ? `${wait.model} is rate-limiting requests` : `${wait.model} is overloaded`}; trying again in {Math.max(0, Math.ceil((wait.until - Date.now()) / 1000))}s.
+    </div>
+  );
+}
+
 function Shell({ onSwitch }: { onSwitch: () => void }) {
   const { save, rev } = useGame();
   const [route, setRoute] = useState<Route>("penthouse");
@@ -106,6 +121,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
         </div>
       </header>
 
+      <RateNotice />
       <div className="flex-1 flex min-h-0">
         <nav className="rail hidden md:flex flex-col gap-1 p-2 w-[172px] shrink-0 overflow-y-auto">
           {NAV.map((n) => (

@@ -71,7 +71,14 @@ export interface CallOptions {
   onDelta?: (chunk: string) => void;
   /** Called when streamed text is thrown away (a refusal) before the next model tries. */
   onReset?: () => void;
+  /** Called before waiting out a rate limit, with how long and why. */
+  onWait?: (ms: number, status: number) => void;
 }
+
+/** Anyone can listen for rate-limit waits (the shell shows a notice), without every caller
+ *  having to pass a handler down. */
+const waitListeners = new Set<(ms: number, status: number, model: string) => void>();
+export function onRateWait(fn: (ms: number, status: number, model: string) => void): () => void { waitListeners.add(fn); return () => waitListeners.delete(fn); }
 
 /** A model declining to write the scene instead of writing it. Checked on the opening of the reply
  *  only, so a character saying "I can't" in the middle of a scene is not mistaken for one. */
@@ -107,6 +114,23 @@ export async function call(opts: CallOptions): Promise<LLMResult> {
   return { ok: false, text: "", usage: { prompt_tokens: 0, completion_tokens: 0 }, model: chain[0] ?? "", error: lastErr };
 }
 
+/** How long to wait before retrying a 429/503: the server's Retry-After or reset header if it
+ *  sent one, else 3s then 8s. Never more than 20s. */
+function retryDelay(res: Response, tries: number): number {
+  const after = Number(res.headers.get("retry-after"));
+  if (after > 0) return Math.min(20000, after * 1000);
+  const reset = Number(res.headers.get("x-ratelimit-reset"));
+  if (reset > 1e12) return Math.min(20000, Math.max(1000, reset - Date.now()));
+  return tries === 0 ? 3000 : 8000;
+}
+
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((ok, fail) => {
+    const id = setTimeout(ok, ms);
+    signal?.addEventListener("abort", () => { clearTimeout(id); fail(Object.assign(new Error("aborted"), { name: "AbortError" })); }, { once: true });
+  });
+}
+
 async function once(opts: CallOptions): Promise<LLMResult> {
   const t = resolveTarget(opts.model);
   const body: Record<string, unknown> = {
@@ -126,13 +150,26 @@ async function once(opts: CallOptions): Promise<LLMResult> {
     else body.reasoning = thinking === "off" ? { enabled: false } : { effort: "low" };
   }
 
-  let res = await fetch(t.url, { method: "POST", headers: t.headers, body: JSON.stringify(body), signal: opts.signal });
+  const send = () => fetch(t.url, { method: "POST", headers: t.headers, body: JSON.stringify(body), signal: opts.signal });
+  let res = await send();
   // A model or server that rejects the thinking switch gets the call again without it.
   if (!res.ok && res.status === 400 && (body.reasoning || body.chat_template_kwargs)) {
     delete body.reasoning; delete body.chat_template_kwargs;
-    res = await fetch(t.url, { method: "POST", headers: t.headers, body: JSON.stringify(body), signal: opts.signal });
+    res = await send();
   }
-  if (!res.ok) throw new Error(`${res.status} ${(await res.text()).slice(0, 200)}`);
+  // Rate-limited or overloaded: wait what the server asks (up to 20 seconds) and try again, twice.
+  for (let tries = 0; !res.ok && [429, 502, 503].includes(res.status) && tries < 2; tries++) {
+    const wait = retryDelay(res, tries);
+    opts.onWait?.(wait, res.status);
+    for (const fn of waitListeners) fn(wait, res.status, opts.model);
+    await sleep(wait, opts.signal);
+    res = await send();
+  }
+  if (!res.ok) {
+    const detail = (await res.text()).slice(0, 200);
+    if (res.status === 429) throw new Error(`rate limited on ${opts.model}. ${/:free\b/.test(opts.model) ? "Free (:free) models on OpenRouter allow about 20 requests a minute and a small daily allowance; the paid version of the same model has much higher limits. " : "The provider is limiting requests right now. "}Setting a different fallback model, or a different bookkeeper model, spreads the load. (${detail})`);
+    throw new Error(`${res.status} ${detail}`);
+  }
 
   if (!opts.onDelta) {
     const json = await res.json();
