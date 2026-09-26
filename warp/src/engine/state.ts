@@ -7,6 +7,7 @@
  * is a crash somewhere far away with no clue in it. Everything it fills is a default that a
  * running game would have produced anyway.
  */
+import { compactMemory, similar } from "./memory";
 import { hasWomb } from "./pregnancy";
 import { reconcileAnatomy } from "./genitals";
 import { assWord } from "./generate";
@@ -201,6 +202,11 @@ export function sanitize(raw: SaveState): SaveState {
   s.models = { ...DEFAULT_MODELS, ...(s.models ?? {}) };
   s.people = s.people ?? {};
   s.memory = s.memory ?? {};
+  // Old saves filed the same beat week after week; fold the repeats together once, on load.
+  for (const m of Object.values(s.memory)) if (m?.episodic) compactMemory(m);
+  // Rumors that say the same thing are one rumor.
+  if (Array.isArray(s.rumors)) s.rumors = s.rumors.filter((r, i, all) => !all.slice(0, i).some((o) => similar(o.content, r.content)));
+  if (Array.isArray(s.canon)) s.canon = s.canon.filter((c, i, all) => !all.slice(0, i).some((o) => similar(o, c)));
   s.edges = s.edges ?? [];
   s.rumors = s.rumors ?? [];
   s.history = s.history ?? [];

@@ -30,7 +30,7 @@ export default function StoryCard() {
             {done.consequences.map((c, i) => <span key={i} className={cx("chip", /^−|less|cools|falls|dead|sold|gone/.test(c) ? "bad" : /^\+|warms|rises|better|heart|joins/.test(c) ? "good" : "")}>{c}</span>)}
           </div>
         ) : null}
-        <Reaction key={`${done.title}:${done.chose}`} auto={!!done.person} label={done.person ? "Answer her" : "Play it out"} seed={{ person: done.person, title: done.title, source: "story", you: done.chose, happened: done.text }} />
+        <Reaction key={`${done.title}:${done.chose}`} label="Play it out" seed={{ person: done.person, title: done.title, source: "story", you: done.chose, happened: done.text }} />
         {done.ended ? <div className="text-[12px] dim mt-3">That's the end of that story: {done.ended}.</div> : null}
         <Button kind="primary" size="sm" className="mt-4" onClick={() => setDone(null)}>{pendingBeat(save) ? "Go on" : "Done"}</Button>
       </Card>

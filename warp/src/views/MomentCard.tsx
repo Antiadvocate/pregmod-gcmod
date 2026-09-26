@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, MessageCircle, X } from "lucide-react";
 import { useGame } from "../lib/game";
 import { Button, cx } from "../lib/ui";
-import { momentsOf, openMoment, playMoment } from "../engine/moments";
+import { closeAllMoments, momentsOf, openMoment, playMoment } from "../engine/moments";
 import { concludeMoment, deedsOf, DEED_TAGS } from "../engine/deeds";
 import { modelsAvailable } from "../config";
 import { SlaveHead } from "./SlaveArt";
@@ -18,7 +18,7 @@ import { SlaveHead } from "./SlaveArt";
 export interface Seed { person?: string; others?: string[]; title: string; source: string; you?: string; happened: string }
 
 /** A moment that starts from something that just happened. */
-export function Reaction({ seed, className, auto = true, label = "Answer her" }: { seed: Seed; className?: string; auto?: boolean; label?: string }) {
+export function Reaction({ seed, className, auto = false, label = "Play it out", onOpen }: { seed: Seed; className?: string; auto?: boolean; label?: string; onOpen?: (id: string) => void }) {
   const { mutate } = useGame();
   const [id, setId] = useState<string | null>(null);
   const started = useRef(false);
@@ -28,13 +28,14 @@ export function Reaction({ seed, className, auto = true, label = "Answer her" }:
     let made = "";
     mutate((s) => { made = openMoment(s, seed); });
     setId(made);
+    onOpen?.(made);
   };
   // With a model, every reaction is written out without asking.
   useEffect(() => { if (auto && modelsAvailable() && seed.person) start(); }, []);
   if (id) return <MomentCard id={id} className={className} bare />;
   if (!seed.person && !modelsAvailable()) return null;
   return (
-    <button className={cx("btn btn-sm mt-3", className)} onClick={start}><MessageCircle size={13} /> {label}</button>
+    <button className={cx("btn btn-sm mt-3", className)} onClick={start} title={modelsAvailable() ? "Write it out with the model and answer it; what you do there has consequences" : "Answer it in the written game"}><MessageCircle size={13} /> {label}</button>
   );
 }
 
@@ -116,8 +117,8 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
             <Button size="sm" kind="primary" disabled={!text.trim()} onClick={() => { if (text.trim()) void go(text.trim()); }}>Go</Button>
           </form>
           <div className="flex gap-2 mt-2">
-            <Button size="sm" kind="ghost" onClick={() => { setFolded(true); onClose?.(); }}>Continue later</Button>
-            <Button size="sm" kind="ghost" disabled={ending} onClick={() => void end()}>{ending ? "…" : "End it here"}</Button>
+            {bare ? null : <Button size="sm" kind="ghost" onClick={() => { setFolded(true); onClose?.(); }}>Continue later</Button>}
+            <Button size="sm" kind="ghost" disabled={ending} onClick={() => void end()} title="End it where it is; what you did counts">{ending ? "…" : "Done"}</Button>
           </div>
         </>
       ) : null}
@@ -128,13 +129,16 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
 
 /** Her open scenes, or everyone's. */
 export function OpenMoments({ person, title }: { person?: string; title?: string }) {
-  const { save } = useGame();
+  const { save, mutate } = useGame();
   const [on, setOn] = useState<string | null>(null);
   const list = momentsOf(save).filter((m) => m.open && m.log.length > 1 && (!person || m.person === person)).slice(-8).reverse();
   if (!list.length) return null;
   return (
     <div className="space-y-2">
-      {title ? <div className="text-[11px] uppercase tracking-wider dim">{title}</div> : null}
+      <div className="flex items-center">
+        {title ? <div className="text-[11px] uppercase tracking-wider dim">{title}</div> : null}
+        {!person ? <button className="ml-auto text-[11px] dim underline" title="End every one of these where it stands; what you said in them still counts" onClick={() => { mutate((s) => { closeAllMoments(s); }); setOn(null); }}>clear all</button> : null}
+      </div>
       {list.map((m) => on === m.id
         ? <MomentCard key={m.id} id={m.id} onClose={() => setOn(null)} />
         : (
