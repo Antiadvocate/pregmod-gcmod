@@ -81,7 +81,7 @@ export const VIEW_WORDS = {
 
 export function redrawPrompt(view: keyof typeof VIEW_WORDS, description: string): string {
   return `Redraw this illustration as a single photorealistic photograph of one bare adult woman's foot, ${VIEW_WORDS[view]}.
-Keep everything the drawing shows exactly as it is: the outline, the length of each toe relative to the others, how wide the foot is, the arch, the heel, the skin tone, nail shape and nail colour, any jewelry, calluses, marks or welts. Do not add or remove toes, jewelry or polish.
+Keep everything the drawing shows exactly as it is: the outline, the length of each toe relative to the others, how wide the foot is, the arch, the heel, the skin tone, nail shape and nail colour, any jewelry, calluses, marks or welts. The foot has exactly five toes: never four, never six. In a view from the side, only the big toe is fully visible and the others are hidden behind it. Keep the soles exactly as clean or as dirty as the drawing shows them. Do not add or remove toes, jewelry or polish.
 What is known about this foot: ${description}
 Real skin texture with pores, fine creases and natural colour variation; soft studio light; a plain dark background; nothing else in the frame. No text.`;
 }

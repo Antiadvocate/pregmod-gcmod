@@ -15,7 +15,9 @@ import { registerEvents, fireEvent, resolveEvent, type EventDef } from "./events
 
 export interface LawInForce { id: string; week: number; exempt?: boolean; by: "you" | "court" | "keeper" }
 export interface CourtCase { week: number; law: string; kind: "enact" | "repeal"; outcome: string }
-export interface CourtState { last: number; record: CourtCase[]; vetoed: Record<string, number>; vetoes: number }
+export interface CourtState { last: number; record: CourtCase[]; vetoed: Record<string, number>; vetoes: number;
+  /** Laws you put before the court yourself, by week: your backing counts for 25 points of the city's opinion. */
+  backed?: Record<string, number> }
 
 for (const l of LAWS) registerLawPull(l.id, l.pull, l.name);
 
@@ -26,7 +28,11 @@ export const lawsOf = (s: SaveState) => (s.laws ??= []);
 export const inForce = (s: SaveState, id: string) => lawsOf(s).some((l) => l.id === id);
 
 const std = (s: SaveState, by: number) => { s.arcology.public_standing = clamp(s.arcology.public_standing + by, -10, 10); };
-const margin = (s: SaveState, l: LawDef) => (cultureOf(s).norms[l.norm] - l.at) * l.dir;
+/** Laws you back carry your weight for twelve weeks. */
+export const backedNow = (s: SaveState, id: string) => s.arcology.week - (courtOf(s).backed?.[id] ?? -99) <= 12;
+const margin = (s: SaveState, l: LawDef) => (cultureOf(s).norms[l.norm] - l.at) * l.dir + (backedNow(s, l.id) ? 25 : 0);
+/** How far the city is from a law, before your backing. */
+export const cityMargin = (s: SaveState, l: LawDef) => (cultureOf(s).norms[l.norm] - l.at) * l.dir;
 const repealMargin = (s: SaveState, l: LawDef) => (l.repealAt - cultureOf(s).norms[l.norm]) * l.dir;
 
 export function enact(s: SaveState, l: LawDef, by: LawInForce["by"], exempt = false): string {
@@ -38,6 +44,7 @@ export function enact(s: SaveState, l: LawDef, by: LawInForce["by"], exempt = fa
 
 function record(s: SaveState, l: LawDef, kind: CourtCase["kind"], outcome: string) {
   const c = courtOf(s);
+  if (c.backed) delete c.backed[l.id];
   c.record.push({ week: s.arcology.week, law: l.id, kind, outcome });
   if (c.record.length > 60) c.record.shift();
 }
@@ -131,7 +138,7 @@ export function tickCourt(s: SaveState): string[] {
 
   if (week - c.last < 4 || s.events.some((e) => e.kind.startsWith("court_"))) return out;
   c.last = week;
-  const enactable = LAWS.filter((l) => !inForce(s, l.id) && margin(s, l) > 0 && (l.also?.(s) ?? true) && week - (c.vetoed[l.id] ?? -99) >= 16)
+  const enactable = LAWS.filter((l) => !inForce(s, l.id) && margin(s, l) > 0 && (l.also?.(s) ?? true) && (week - (c.vetoed[l.id] ?? -99) >= 16 || backedNow(s, l.id)))
     .map((l) => ({ l, m: margin(s, l), kind: "enact" as const }));
   const repealable = lawsOf(s).map((x) => LAW_BY_ID[x.id]).filter((l): l is LawDef => !!l && repealMargin(s, l) > 0 && week - (c.vetoed[`repeal:${l.id}`] ?? -99) >= 12)
     .map((l) => ({ l, m: repealMargin(s, l), kind: "repeal" as const }));
@@ -149,3 +156,47 @@ export function lawsBrief(s: SaveState): string {
   return ls.map((l) => `· ${l.name}: ${l.text}${lawsOf(s).find((x) => x.id === l.id)?.exempt ? " (your household is exempt)" : ""}`).join("\n");
 }
 
+
+/* ── pushing it yourself ────────────────────────────────────────────────────────────────────── */
+
+/** Put a law before the court with your name on it. It's heard at the next sitting. */
+export function backLaw(s: SaveState, id: string): string {
+  const l = LAW_BY_ID[id];
+  if (!l || inForce(s, id)) return "";
+  const c = courtOf(s);
+  (c.backed ??= {})[id] = s.arcology.week;
+  c.last = Math.min(c.last, s.arcology.week - 4);
+  return `You put the ${l.name} before the court. It will be heard at the next sitting, with your name on the petition.`;
+}
+
+/** What decreeing a law over the court's head costs: more, the further the city is from it. */
+export function decreeCost(s: SaveState, l: LawDef): { standing: number; rep: number } {
+  const gap = Math.max(0, -cityMargin(s, l));
+  return { standing: Math.min(4, Math.round(gap / 25)), rep: Math.round(300 + gap * 25) };
+}
+
+/** Enact it now, over the court. */
+export function decreeLaw(s: SaveState, id: string): string {
+  const l = LAW_BY_ID[id];
+  if (!l || inForce(s, id)) return "";
+  const cost = decreeCost(s, l);
+  const extra = enact(s, l, "you");
+  std(s, -cost.standing);
+  s.arcology.rep -= cost.rep;
+  pushNorm(s, l.norm, l.dir * 6, `you decreed the ${l.name}`);
+  record(s, l, "enact", "you decreed it over the court");
+  return `You decree the ${l.name}. It's posted at every lift by the evening.${extra}${cost.standing ? " The court takes it badly, and so do the people who didn't want it." : ""}`;
+}
+
+/** Strike it yourself. */
+export function repealByDecree(s: SaveState, id: string): string {
+  const l = LAW_BY_ID[id];
+  if (!l || !inForce(s, id)) return "";
+  s.laws = lawsOf(s).filter((x) => x.id !== id);
+  const against = cityMargin(s, l) > 15;
+  if (against) std(s, -1);
+  s.arcology.rep -= 200;
+  pushNorm(s, l.norm, -l.dir * 5, `you struck the ${l.name}`);
+  record(s, l, "repeal", "you struck it by decree");
+  return `You strike the ${l.name} by decree.${against ? " The city was living by it, and it notices." : ""}`;
+}
