@@ -77,9 +77,9 @@ const slavesOf = (s: ReturnType<typeof newGame>) => Object.values(s.people).filt
   apply(s);
   const [yours, near] = [societies(s)[0], societies(s)[1]];
   check("the comparison draws your citizens blue", /blue \(engineered\)/.test(figureFor(yours, "citizen")!.body.skin));
-  check("and says so", /blue skin of the Azure program/.test(household(yours).citizen.line), household(yours).citizen.line);
+  check("and says so", /carries the Azure program: blue skin/.test(household(yours).citizen.line), household(yours).citizen.line);
   check("and the neighbours stay as they were", !/engineered/.test(figureFor(near, "citizen")!.body.skin));
-  check("the day's story has it", /blue skin the Azure program gave her/.test(dayInTheLife(s, yours, near, yours)[0]), dayInTheLife(s, yours, near, yours)[0]);
+  check("the day's story has it", /carry the Azure program.*blue skin/.test(dayInTheLife(s, yours, near, yours)[0]), dayInTheLife(s, yours, near, yours)[0]);
   const pl = places(s)[0];
   let seen = false;
   for (let i = 0; i < 12 && !seen; i++) { s.turn++; seen = /Azure program/.test(walkScene(s, pl)); }
@@ -122,4 +122,29 @@ const slavesOf = (s: ReturnType<typeof newGame>) => Object.values(s.people).filt
   check("a slave gets her own skin back", a.body.skin === "olive", a.body.skin);
   check("one with nothing kept gets a skin from where she's from", !/engineered/.test(b.body.skin), b.body.skin);
   check("and the narrator reads the program right", /Furnace program: heat-resistant\./.test(a.body.appearance_facts) && !/blue skin/.test(a.body.appearance_facts), a.body.appearance_facts);
+}
+
+{
+  // Any change you write is a trait, not only colours: read, recorded, highlighted, and at work.
+  const { traitsFor, changesOf, prevailingChanges, tickGenome } = await import("../src/engine/genome.ts");
+  const { cityThisWeek } = await import("../src/engine/citylife.ts");
+  const { societies, household } = await import("../src/engine/compare.ts");
+  const w = readWords("citizens with night vision and stronger bones");
+  check("the game reads traits in your own words", (w.traits ?? []).some((t) => t.name === "night vision" && t.tag === "senses") && (w.traits ?? []).some((t) => /stronger bones/.test(t.name) && t.tag === "strength") && !w.skin, w.traits);
+  const narr = clampSpec({ traits: [{ name: "Gills", what: "They can stay under for an hour.", tag: "wings" }, { name: "larger breasts", what: "x" }] } as never, "gills, and larger breasts");
+  check("a narrator's traits are kept, tag checked", narr.traits?.[0].name === "gills" && narr.traits?.[0].tag === undefined, narr.traits);
+  check("nothing sexual reaches citizens, who include children", traitsFor(narr, "citizens").length === 1 && traitsFor(narr, "slaves").length === 2);
+  const s = newGame({ seed: "genome-traits" });
+  s.arcology.cash = 5_000_000;
+  await design(s, { name: "Owl", text: "citizens and slaves with night vision, and sharper minds", target: "both" });
+  apply(s);
+  const her = slavesOf(s)[0];
+  check("slaves carry the traits in their bodies and in what the narrator reads", (her.body.traits ?? []).some((t) => /night vision/.test(t)) && /Owl program: .*night vision/.test(her.body.appearance_facts));
+  check("the traits are the changes shown, not colours", changesOf(genomeOf(s).edits[0].spec).includes("night vision") && !genomeOf(s).edits[0].spec.skin);
+  check("Compare shows them on your citizens", prevailingChanges(s, "citizens").changes.includes("night vision") && /Owl program: .*night vision/.test(household(societies(s)[0]).citizen.line));
+  s.citylife_seen = {};
+  check("and so does the city", cityThisWeek(s, 60).some((c) => /night vision/.test(c.text)));
+  const crime = s.arcology.crime, pros = s.arcology.prosperity;
+  tickGenome(s);
+  check("keener senses and sharper minds do something every week", s.arcology.crime < crime && s.arcology.prosperity > pros, { crime: [crime, s.arcology.crime], pros: [pros, s.arcology.prosperity] });
 }

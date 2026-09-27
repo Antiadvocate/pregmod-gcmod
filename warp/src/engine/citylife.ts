@@ -20,7 +20,7 @@ import { lawsOf } from "./court";
 import { LAW_BY_ID, type LawDef } from "../data/laws";
 import { compliance, pushWithLaw } from "./lawlife";
 import { household, societies } from "./compare";
-import { genomeOf, citizenShare, slaveShare } from "./genome";
+import { genomeOf, citizenShare, slaveShare, traitsFor } from "./genome";
 import { menialsOf, perHousehold } from "./menials";
 import { levelOf } from "./works";
 import { globeOf } from "./globe";
@@ -87,6 +87,22 @@ function geneScenes(s: SaveState, r: ReturnType<typeof rng>): Candidate[] {
     if ((res.disease ?? 0) > 0) out.push({ key: `gene-fever:${e.id}`, where: WHERE.clinics, w: 1.5, text: `The fever ward at the clinic has two beds filled, both newcomers the ${e.name} program never reached. A nurse says it used to be forty.` });
     if ((res.pollution ?? 0) > 0) out.push({ key: `gene-air:${e.id}`, where: WHERE.works, w: 1.5, text: `On a smog day the ${e.name} program's people jog the upper track without masks, and the tourists photograph them doing it.` });
     if (e.spec.health) out.push({ key: `gene-health:${e.id}`, where: WHERE.plaza, w: 1.2, text: `Men in their seventies do pull-ups on the bars in the plaza. Everyone knows which program paid for that.` });
+    // Every trait the program gave them, in its own words, somewhere it would show.
+    for (const t of traitsFor(e.spec, c >= sl ? "citizens" : "slaves")) {
+      const place = t.tag === "senses" ? WHERE.residential : t.tag === "strength" || t.tag === "endurance" ? WHERE.works : t.tag === "intellect" ? WHERE.market : t.tag === "beauty" ? WHERE.concourse : t.tag === "fertility" ? WHERE.clinics : r.pick([WHERE.plaza, WHERE.concourse, WHERE.verge, WHERE.docks]);
+      const lead = r.pick([
+        `You can tell the ${e.name} program's ${who} by their ${t.name}.`,
+        `A visitor from a neighbouring arcology asks about the ${t.name}, and three people explain the ${e.name} program at once.`,
+        `The ${t.name} the ${e.name} program gave ${who} has become ordinary.`,
+      ]);
+      out.push({ key: `gene-trait:${e.id}:${t.name}`, where: place, w: 2.5, text: `${lead} ${t.what}` });
+    }
+    // And what they look like now, when the program changed that.
+    const looks = [e.spec.skin && `${e.spec.skin} skin`, e.spec.hair && `${e.spec.hair} hair`, e.spec.eyes && `${e.spec.eyes} eyes`, e.spec.height && (e.spec.height > 0 ? "the extra height" : "the lost height")].filter(Boolean) as string[];
+    if (looks.length) out.push({ key: `gene-look:${e.id}`, where: WHERE.concourse, w: 1.5, text: r.pick([
+      `The ${e.name} program's ${looks.join(" and ")} are everywhere on the concourse now; the newcomers without them are the ones people look at twice.`,
+      `A children's drawing competition on the concourse: every family in the pictures has the ${looks.join(" and ")} of the ${e.name} program.`,
+    ]) });
     if (e.target !== "slaves" && c < 0.8) out.push({ key: `gene-wait:${e.id}`, where: WHERE.clinics, w: 2, text: `There's a queue outside the gene clinic: newcomers who arrived after the ${e.name} program ran, asking how they get it. The receptionist has a price list, and most of them read it and leave.`,
       options: [
         { id: "free", label: "A free clinic day, on the city", outcome: "The queue goes round the block. It's the most popular thing you've done in months.", do: { cash: -6000, standing: 0.8 } },
@@ -257,7 +273,7 @@ export function cityProseBrief(s: SaveState, week: number): { system: string; us
   if (!rep) return null;
   const laws = lawsOf(s).map((x) => LAW_BY_ID[x.id]).filter((l): l is LawDef => !!l);
   return {
-    system: "You write the weekly city column of a Free City arcology in a dark future where slavery is legal: ordinary life, told plainly and specifically, in the present tense. Every character is an adult except children, who appear only as children and never in anything sexual. The laws are binding and literal; never invent a law or a clause. Gene programs show in what they let people do, not in how they look; don't dwell on skin or colouring. No moralising, no summary at the end.",
+    system: "You write the weekly city column of a Free City arcology in a dark future where slavery is legal: ordinary life, told plainly and specifically, in the present tense. Every character is an adult except children, who appear only as children and never in anything sexual. The laws are binding and literal; never invent a law or a clause. Show every change the gene programs made (traits, abilities, colouring, height) as it matters in ordinary life, not just the visible ones. No moralising, no summary at the end.",
     user: [
       `THE ARCOLOGY: ${s.arcology.name}, week ${week}. Population ${Math.round(s.arcology.population).toLocaleString()}; prosperity ${Math.round(s.arcology.prosperity)}; crime ${Math.round(s.arcology.crime)}.`,
       laws.length ? `LAWS IN FORCE, WORD FOR WORD:\n${laws.map((l) => `- The ${l.name}: "${l.text}" (${compliance(s, l).total > 30 ? "kept willingly" : compliance(s, l).total > 0 ? "kept, grudgingly" : "often broken"})`).join("\n")}` : "",

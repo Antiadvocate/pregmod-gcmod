@@ -20,7 +20,7 @@ import { dressCodeFor, type DressChoice } from "../data/dresscodes";
 import { POLICY_BY_ID } from "../data/policies";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { generatePerson } from "./generate";
-import { lookWords, prevailingLook, type Look } from "./genome";
+import { prevailingChanges, prevailingLook, type Look } from "./genome";
 import { perHousehold } from "./menials";
 import { garment } from "../data/wardrobe";
 import { rng } from "./rng";
@@ -46,6 +46,8 @@ export interface Society {
   attitude?: number;
   /** The look the gene programs have given most of its citizens and slaves (yours only). */
   looks?: { citizen: Look; slave: Look };
+  /** Everything the gene programs changed in most citizens and slaves (yours only). */
+  engineered?: { citizen: { changes: string[]; from: string[] }; slave: { changes: string[]; from: string[] } };
   /** Slaves serving an average citizen household, counted (yours only): see engine/menials. */
   slavesPerHousehold?: number;
   /** What the narrator model dressed this household in, read from its laws; used while it still matches. */
@@ -57,7 +59,7 @@ export interface Outfits { citizen_clothes: string; citizen_shoes: string; husba
 
 /** What a society's laws and habits are, for telling whether a written household is still true. */
 export function fingerprint(x: Society): string {
-  return JSON.stringify([x.laws.map((l) => l.name + l.text), x.doctrines, x.lawIds, x.looks, NORM_IDS.map((n) => Math.round(x.norms[n] / 10)), Math.round(x.prosperity / 20)]);
+  return JSON.stringify([x.laws.map((l) => l.name + l.text), x.doctrines, x.lawIds, x.looks, x.engineered, NORM_IDS.map((n) => Math.round(x.norms[n] / 10)), Math.round(x.prosperity / 20)]);
 }
 
 /** Where a free city sits before anything pulls it: the numbers a new game starts at. */
@@ -100,6 +102,7 @@ export function societies(s: SaveState): Society[] {
     lawIds: [...myLaws.map((l) => l.id), ...myPolicies.map((id) => `policy:${id}`)],
     looks: { citizen: prevailingLook(s, "citizens"), slave: prevailingLook(s, "slaves") },
     slavesPerHousehold: perHousehold(s),
+    engineered: { citizen: prevailingChanges(s, "citizens"), slave: prevailingChanges(s, "slaves") },
   };
   const near = a.neighbours.map((n): Society => {
     const doctrines = neighbourDoctrines(s, n);
@@ -188,9 +191,9 @@ export function household(x: Society): Household {
     h.family = n ? h.family.replace(/^A citizen couple, their children, and [^ ]+ slaves?/, `A citizen couple, their children, and ${n === 1 ? "one slave" : `${n} slaves`}`) : "A citizen couple and their children. They can't afford a slave of their own, and borrow a neighbour's when they have guests.";
     if (!n && h.slave) h.slave = undefined;
   }
-  const cl = lookWords(x.looks?.citizen), sl = lookWords(x.looks?.slave);
-  h.citizen.line = `${h.citizen.clothes === "no clothing" ? "A citizen woman, naked." : `A citizen woman in ${h.citizen.clothes}${h.citizen.shoes === "heels" ? " and heels" : ""}.`}${cl ? ` She has the ${cl} of the ${x.looks!.citizen.from!.join(" and ")} program, like most citizens now.` : ""}`;
-  if (h.slave) h.slave.line = `Her slave, ${h.slave.clothes === "no clothing" ? "naked" : `in ${h.slave.clothes}`}, wearing ${h.slave.collar}${h.slave.shoes === "barefoot" ? ", barefoot" : ""}.${sl ? ` Engineered: ${sl}.` : ""}`;
+  const ce = x.engineered?.citizen, se = x.engineered?.slave;
+  h.citizen.line = `${h.citizen.clothes === "no clothing" ? "A citizen woman, naked." : `A citizen woman in ${h.citizen.clothes}${h.citizen.shoes === "heels" ? " and heels" : ""}.`}${ce?.changes.length ? ` Like most citizens now, she carries the ${ce.from.join(" and ")} program: ${ce.changes.join(", ")}.` : ""}`;
+  if (h.slave) h.slave.line = `Her slave, ${h.slave.clothes === "no clothing" ? "naked" : `in ${h.slave.clothes}`}, wearing ${h.slave.collar}${h.slave.shoes === "barefoot" ? ", barefoot" : ""}.${se?.changes.length ? ` Engineered: ${se.changes.join(", ")}.` : ""}`;
   return h;
 }
 

@@ -34,7 +34,8 @@ const built = async (seed: string) => {
   check("so are the menials and the public works", every.some((t) => /menial|numbers on their wrists|leased/.test(t)) && every.some((t) => /hydroponic|scrubber/i.test(t)));
   const repeats = keys.some((k, i) => k.some((x) => keys.slice(Math.max(0, i - 3), i).some((prev) => prev.includes(x))));
   check("nothing repeats within four weeks", !repeats);
-  check("gene programs show in what they do, and nobody's skin is the point", !all.some((t) => /\bskin\b/i.test(t)));
+  s.citylife_seen = {};
+  check("gene programs show in what they do", cityThisWeek(s, 40).some((c) => /Furnace program/.test(c.text)));
 }
 
 {
@@ -58,7 +59,7 @@ const built = async (seed: string) => {
     check("choosing resolves it once", !!out && chooseInScene(s, r.week, c.key, c.options![0].id) === "" && s.reports.find((x) => x.week === r.week)!.city!.find((x) => x.key === c.key)!.picked === c.options![0].id);
   }
   const b = cityProseBrief(s, r.week)!;
-  check("the narrator's column is only a brief until you ask", !!b && /Quiet Hours/.test(b.user) && /don't dwell on skin/.test(b.system) && !s.reports.at(-1)!.city_prose);
+  check("the narrator's column is only a brief until you ask", !!b && /Quiet Hours/.test(b.user) && /every change the gene programs made/.test(b.system) && !s.reports.at(-1)!.city_prose);
 }
 
 {

@@ -15,7 +15,7 @@ import { rng } from "./rng";
 import { generatePerson } from "./generate";
 import { figureFor, household, METRICS, type Outfits, type Society } from "./compare";
 import { NORMS, NORM_IDS, normLine } from "./culture";
-import { genomeBrief, lookWords } from "./genome";
+import { genomeBrief } from "./genome";
 import { WARDROBE } from "../data/wardrobe";
 import { call, parseJson } from "../llm";
 import { compliance } from "./lawlife";
@@ -50,11 +50,10 @@ function streetLaw(s: SaveState): LawDef | undefined {
 
 /** What the gene programs did to this household, as the morning light shows it. */
 function dna(x: Society, c: Cast): string {
-  const cl = x.looks?.citizen, sl = x.looks?.slave;
-  const cw = lookWords(cl), sw = lookWords(sl);
+  const ce = x.engineered?.citizen, se = x.engineered?.slave;
   const out: string[] = [];
-  if (cw) out.push(` In the bathroom mirror ${c.wife} has the ${cw} the ${cl!.from!.join(" and ")} program gave her, and so does ${c.husband}, and so does nearly everyone on their floor.`);
-  if (sw && x.kind === "yours") out.push(` ${c.slave}'s ${sw} ${sw.includes(" and ") ? "are" : "is"} engineered too: the owner had every slave in the city's households done.`);
+  if (ce?.changes.length) out.push(` ${c.wife} and ${c.husband} both carry the ${ce.from.join(" and ")} program, like nearly everyone on their floor: ${ce.changes.join(", ")}. The children were born with it.`);
+  if (se?.changes.length && x.kind === "yours") out.push(` ${c.slave} carries the owner's program too: ${se.changes.join(", ")}.`);
   return out.join("");
 }
 

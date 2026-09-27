@@ -8,7 +8,7 @@
  * make an example of somebody. Whatever you do out there is done in public, and the city takes it
  * back into its habits when the walk ends.
  */
-import { lookWords, prevailingLook } from "./genome";
+import { prevailingChanges } from "./genome";
 import { sentinelsLine } from "./battles";
 import type { Person, SaveState } from "./types";
 import { cultureOf, cultureBrief, NORM_IDS, type Norm } from "./culture";
@@ -194,10 +194,10 @@ function youLines(s: SaveState, escort?: Person): Vignette[] {
       : `People see your collar. Someone has chalked a cartoon on a wall of you on your knees in front of ${keeper?.name ?? "a slave"}, and a group of teenagers are laughing at it.` });
   }
   // What the gene programs did shows on every face in the crowd.
-  const cl = prevailingLook(s, "citizens");
-  if (lookWords(cl)) out.push({ w: 4, text: `Almost everyone in the crowd has the ${lookWords(cl)} of the ${cl.from!.join(" and ")} program. A tourist from the Old World stares at them, and at you, with her phone half raised.` });
-  const sl = prevailingLook(s, "slaves");
-  if (lookWords(sl) && !lookWords(cl)) out.push({ w: 3, text: `A citizen stops to look at a slave with ${lookWords(sl)}: one of yours, engineered. "Is that the owner's program?" he asks her. She nods.` });
+  const cl = prevailingChanges(s, "citizens");
+  if (cl.changes.length) out.push({ w: 4, text: `Almost everyone in the crowd carries the ${cl.from.join(" and ")} program (${cl.changes.join(", ")}), and it shows in how they move and what they do. A tourist from the Old World watches them, and you, with her phone half raised.` });
+  const sl = prevailingChanges(s, "slaves");
+  if (sl.changes.length && !cl.changes.length) out.push({ w: 3, text: `A citizen stops one of your slaves on the concourse to ask about her engineering (${sl.changes.join(", ")}). "Is that the owner's program?" She nods.` });
   for (const d of (s.deeds ?? []).filter((x) => x.public).slice(-3)) out.push({ w: 3, text: `People here know what you did. ${d.summary}` });
   const r = [...s.rumors].filter((x) => !x.where).sort((a, b) => b.salience - a.salience)[0];
   if (r) out.push({ w: 2, text: `At the lift, you overhear someone: "${r.content.replace(/^"|"$/g, "")}"` });

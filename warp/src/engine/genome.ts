@@ -47,6 +47,34 @@ export interface GeneSpec {
   side_effects: string;
   /** How citizens take it: −2…2 standing. */
   reaction: number;
+  /** Anything else the words ask for, in their own terms: night vision, gills, a longer life. The
+   *  narrator and the city read these; a tag gives one a small effect every week. */
+  traits?: GeneTrait[];
+}
+
+export type TraitTag = "strength" | "intellect" | "beauty" | "fertility" | "endurance" | "longevity" | "senses";
+export interface GeneTrait { name: string; what: string; tag?: TraitTag }
+export const TRAIT_TAGS: Record<TraitTag, string> = {
+  strength: "stronger: menials produce more, security rises a little",
+  intellect: "sharper: the city grows a little richer every week",
+  beauty: "beautiful: the arcology's name travels (reputation every week)",
+  fertility: "more fertile: the city grows faster",
+  endurance: "tireless: fewer menials are lost, slaves recover energy",
+  longevity: "longer-lived: health holds up",
+  senses: "keener senses: crime is harder to get away with",
+};
+const TAG_WORDS: [RegExp, TraitTag][] = [
+  [/\b(strong|stronger|strength|muscl|bone|dense)/, "strength"], [/\b(smart|intellig|clever|genius|memory|brain|iq|minds?|sharper|wits?|learn)/, "intellect"],
+  [/\b(beaut|attractive|gorgeous|pretty|handsome|lovely)/, "beauty"], [/\b(fertil|twins|birth|breed)/, "fertility"],
+  [/\b(endur|stamina|tireless|never tire|sleep less|less sleep)/, "endurance"], [/\b(long-lived|longevity|age slow|slower ageing|live longer|lifespan)/, "longevity"],
+  [/\b(night vision|see in the dark|hearing|smell|senses?|eyesight|sight)\b/, "senses"],
+];
+export const tagFor = (text: string): TraitTag | undefined => TAG_WORDS.find(([re]) => re.test(text.toLowerCase()))?.[1];
+
+/** Changes to bodies that aren't for citizens at large, who include children. Slaves are all adults. */
+const ADULT_ONLY = /\b(breast|boob|nipple|genital|penis|cock|vagina|pussy|clit|testic|scrotum|lactat|milk|libido|arous|horny|sexual|sex drive|orgasm|butt)\w*|\b(balls|ass|hips?|curves)\b/i;
+export function traitsFor(spec: GeneSpec, target: Target): GeneTrait[] {
+  return (spec.traits ?? []).filter((t) => target === "slaves" || !ADULT_ONLY.test(`${t.name} ${t.what}`));
 }
 
 export interface GeneEdit {
@@ -180,7 +208,8 @@ export function menialResistance(s: SaveState): number {
   let best = 0;
   for (const e of s.genome?.edits ?? []) {
     const share = clamp((e.menials ?? 0) / owned, 0, 1);
-    best = Math.max(best, Math.max(0, ...RESISTS.map((r) => e.spec.resist[r] ?? 0)) * share, ((e.spec.health ?? 0) / 20) * share);
+    const hardy = (e.spec.traits ?? []).some((t) => t.tag === "endurance" || t.tag === "strength" || t.tag === "longevity") ? 0.5 : 0;
+    best = Math.max(best, Math.max(0, hardy, ...RESISTS.map((r) => e.spec.resist[r] ?? 0)) * share, ((e.spec.health ?? 0) / 20) * share);
   }
   return clamp(best, 0, 0.9);
 }
@@ -217,7 +246,13 @@ export function readWords(text: string): GeneSpec {
     health: /\b(health|longevity|long-lived|vigou?r|strong)/.test(t) ? 8 : undefined,
     society: "", side_effects: "", reaction: 0,
   };
-  const parts = [spec.skin && `${spec.skin} skin`, spec.hair && `${spec.hair} hair`, spec.eyes && `${spec.eyes} eyes`, spec.height && (spec.height > 0 ? "taller" : "shorter"), ...RESISTS.filter((r) => resist[r]).map((r) => `${r}-resistant`), spec.health && "healthier"].filter(Boolean) as string[];
+  // Everything else the words ask for is a trait in their own terms: each clause the menu didn't read.
+  const MENU = /\b(skin|hair|eyes?|tall|taller|short|shorter|height|heat|hot|cold|freez|climate|weather|disease|plague|fever|immun|pollution|smog|lungs?|health|healthy)\b/i;
+  // Who it's for is not a trait: take out "citizens", "my slaves", "everyone" and the like first.
+  const body = text.replace(/\b(my |the |all |every |our )?(citizens?|slaves?|menials?|everyone|everybody|people|population|residents?)\b/gi, " ").replace(/\b(who|that) (have|has|can)\b/gi, " with ");
+  const clauses = body.split(/[,;.]|\band\b|\bwith\b|\bfor\b/i).map((c) => c.replace(/^\s*(give|make|grant|change|let)\b.*?\b(them|citizens|slaves|everyone|people|all)\b\s*/i, "").replace(/^\s*(a|an|the|to be|to have|have|be)\s+/i, "").trim()).filter((c) => c.length >= 4 && c.length <= 60 && !MENU.test(c));
+  spec.traits = clauses.slice(0, 4).map((c) => ({ name: c.toLowerCase(), what: `The edited have ${c.toLowerCase()}.`, tag: tagFor(c) }));
+  const parts = [spec.skin && `${spec.skin} skin`, spec.hair && `${spec.hair} hair`, spec.eyes && `${spec.eyes} eyes`, spec.height && (spec.height > 0 ? "taller" : "shorter"), ...RESISTS.filter((r) => resist[r]).map((r) => `${r}-resistant`), spec.health && "healthier", ...spec.traits.map((t) => t.name)].filter(Boolean) as string[];
   spec.complexity = clamp(parts.length, 1, 5);
   spec.remade = 3 + parts.length * 2;
   spec.summary = parts.length ? parts.join(", ") : "nothing the clinics can do";
@@ -249,6 +284,12 @@ function clampAll(raw: Partial<GeneSpec> & Record<string, unknown>): GeneSpec {
     society: str(raw.society, 1200),
     side_effects: str(raw.side_effects, 400),
     reaction: Math.round((num(raw.reaction, -2, 2) ?? 0) * 10) / 10,
+    traits: (Array.isArray(raw.traits) ? raw.traits : []).slice(0, 5).map((x: unknown) => {
+      const o = (x ?? {}) as Record<string, unknown>;
+      const name = str(o.name, 48).toLowerCase();
+      const tag = typeof o.tag === "string" && o.tag in TRAIT_TAGS ? (o.tag as TraitTag) : tagFor(name);
+      return name ? { name, what: str(o.what, 240) || `The edited have ${name}.`, tag } : null;
+    }).filter(Boolean) as GeneTrait[],
   };
 }
 
@@ -268,10 +309,11 @@ export async function design(s: SaveState, draft: { name: string; text: string; 
         `APPLIED TO: ${who}.`,
         `THE CITY: ${s.arcology.name}, ${Math.round(s.arcology.population).toLocaleString()} citizens, prosperity ${Math.round(s.arcology.prosperity)}.`,
         ``,
-        `Answer with JSON. Change only what the owner's words ask for. In particular, do NOT change skin, hair or eye colour or height unless the words ask for that exact thing; most edits change none of them, and a field you leave out stays as the people were born.`,
+        `Answer with JSON. Change only what the owner's words ask for; a field you leave out stays as the people were born. Colour and height fields are only for when the words ask for them. Anything else the words ask for (night vision, gills, stronger bones, slower ageing, a tail) goes in "traits", in the words' own terms.`,
         `{"summary": "<what it does, a few words>", "complexity": <1-5, how hard: a colour is 1, one resistance 2, several changes 3-5>,`,
         ` ONLY IF ASKED: "skin": "<one of ${GENE_COLOURS.join(", ")}>", "hair": "<same list>", "eyes": "<same list>", "height": <cm change, -12..12>,`,
         ` "resist": {"heat": <0-0.9>, "cold": <0-0.9>, "disease": <0-0.9>, "pollution": <0-0.9>}, "health": <0-20 one-off>, "remade": <0-15, how far it pushes the city toward remade bodies>,`,
+        ` "traits": [{"name": "<a few words>", "what": "<one sentence: what it's like to have it, day to day>", "tag": "<optional, one of ${Object.keys(TRAIT_TAGS).join(", ")}>"}],${draft.target !== "slaves" ? " Citizens include children: traits for citizens must not be sexual or about sexual body parts." : ""}`,
         ` "society": "<120-220 words: how the city changes once this is done: fashion, work, who has it and who doesn't, what the neighbours and the Old World say. Concrete, no moralising.>",`,
         ` "side_effects": "<one or two sentences>", "reaction": <-2..2, how the citizens take it>}`,
       ].join("\n"),
@@ -281,6 +323,7 @@ export async function design(s: SaveState, draft: { name: string; text: string; 
     if (j) { spec = clampSpec(j, text); by = "narrator"; }
   }
   spec ??= readWords(text);
+  spec.traits = traitsFor(spec, draft.target);
   genomeOf(s).draft = { name, text, target: draft.target, spec, by };
   return { ok: true };
 }
@@ -296,7 +339,7 @@ export function rewrite(p: Person, spec: GeneSpec, name: string): void {
   if (spec.eyes) b.eye_color = spec.eyes;
   if (spec.height) b.height_cm = Math.round(clamp(b.height_cm + spec.height, 130, 210));
   if (spec.health) p.health.health = clamp(p.health.health + spec.health, -100, 100);
-  const traits = RESISTS.filter((r) => (spec.resist[r] ?? 0) > 0).map((r) => `${r}-resistant (engineered)`);
+  const traits = [...RESISTS.filter((r) => (spec.resist[r] ?? 0) > 0).map((r) => `${r}-resistant (engineered)`), ...(spec.traits ?? []).map((t) => `${t.name} (engineered)`)];
   b.traits = [...new Set([...(b.traits ?? []), ...traits])];
   const bits = [spec.skin && `${spec.skin} skin`, spec.hair && `${spec.hair} hair`, spec.eyes && `${spec.eyes} eyes`, ...traits.map((t) => t.replace(" (engineered)", ""))].filter(Boolean);
   if (bits.length && !b.appearance_facts.includes(`the ${name} program`)) b.appearance_facts = `${b.appearance_facts.trim()} Her DNA was rewritten by the ${name} program: ${bits.join(", ")}.`.trim();
@@ -398,7 +441,8 @@ export function genomeBrief(s: SaveState): string {
   return edits.map((e) => {
     const c = citizenShare(s, e), sl = slaveShare(s, e);
     const reach = [c && `${Math.round(c * 100)}% of citizens`, sl && `${Math.round(sl * 100)}% of the owner's slaves`].filter(Boolean).join(" and ");
-    return `· Engineered, the ${e.name} program (${e.spec.summary}; ${reach || "nobody any more"}).${e.spec.society ? ` ${e.spec.society}` : ""}`;
+    const traits = (e.spec.traits ?? []).map((t) => `${t.name}: ${t.what}`).join(" ");
+    return `· Engineered, the ${e.name} program (${e.spec.summary}; ${reach || "nobody any more"}).${traits ? ` ${traits}` : ""}${e.spec.society ? ` ${e.spec.society}` : ""}`;
   }).join("\n");
 }
 
@@ -406,6 +450,22 @@ export function genomeBrief(s: SaveState): string {
 export function tickGenome(s: SaveState): string[] {
   if (!s.genome) return [];
   const out: string[] = [];
+  // What the traits do, every week, scaled by how many carry them.
+  const a = s.arcology;
+  for (const e of genomeOf(s).edits) {
+    const c = citizenShare(s, e), sl = slaveShare(s, e);
+    for (const t of e.spec.traits ?? []) {
+      switch (t.tag) {
+        case "intellect": a.prosperity = clamp(a.prosperity + 0.3 * c, 5, 200); break;
+        case "beauty": a.rep += Math.round(25 * Math.max(c, sl)); break;
+        case "fertility": a.population += Math.round(a.population * 0.002 * c); break;
+        case "strength": a.security = clamp(a.security + 0.2 * c, 0, 100); break;
+        case "senses": a.crime = clamp(a.crime - 0.3 * c, 0, 100); break;
+        case "endurance": for (const p of household(s)) if (e.slaves.includes(p.id)) p.health.energy = clamp(p.health.energy + 2, 0, 100); break;
+        case "longevity": for (const p of household(s)) if (e.slaves.includes(p.id)) p.health.health = clamp(p.health.health + 0.3, -100, 100); break;
+      }
+    }
+  }
   for (const e of genomeOf(s).edits) {
     if (!e.auto) continue;
     const more = topUp(s, e.id, true);
@@ -413,6 +473,31 @@ export function tickGenome(s: SaveState): string[] {
     if (s.arcology.cash < more.cost) { out.push(`The ${e.name} program couldn't reach this week's newcomers: it needs ¤${more.cost.toLocaleString()}.`); continue; }
     const done = topUp(s, e.id);
     if (done.line) out.push(done.line);
+  }
+  return out;
+}
+
+/** Every change a program made, in words: colours, height, resistances, health, and its traits. */
+export function changesOf(spec: GeneSpec): string[] {
+  return [
+    spec.skin && `${spec.skin} skin`, spec.hair && `${spec.hair} hair`, spec.eyes && `${spec.eyes} eyes`,
+    spec.height && (spec.height > 0 ? `${spec.height} cm taller` : `${-spec.height} cm shorter`),
+    ...RESISTS.filter((r) => (spec.resist[r] ?? 0) > 0).map((r) => `${r} resistance`),
+    spec.health && "better health",
+    ...(spec.traits ?? []).map((t) => t.name),
+  ].filter(Boolean) as string[];
+}
+
+/** What the programs have done to most citizens (or slaves): every change, and which programs. */
+export function prevailingChanges(s: SaveState, who: "slaves" | "citizens"): { changes: string[]; from: string[] } {
+  if (s.genome) genomeOf(s);
+  const out = { changes: [] as string[], from: [] as string[] };
+  for (const e of s.genome?.edits ?? []) {
+    const share = who === "slaves" ? slaveShare(s, e) : citizenShare(s, e);
+    const ch = changesOf(who === "citizens" ? { ...e.spec, traits: traitsFor(e.spec, "citizens") } : e.spec);
+    if (share < 0.4 || !ch.length) continue;
+    out.changes.push(...ch.filter((x) => !out.changes.includes(x)));
+    out.from.push(e.name);
   }
   return out;
 }

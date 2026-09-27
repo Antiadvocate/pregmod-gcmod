@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Meter, Section, cx } from "../lib/ui";
 import { modelsAvailable } from "../config";
-import { apply, citizenShare, design, genomeOf, PER_CITIZEN, PER_MENIAL, PER_SLAVE, quote, resistance, RESISTS, rewrite, slaveShare, topUp, type GeneSpec, type Target } from "../engine/genome";
+import { TRAIT_TAGS, apply, citizenShare, design, genomeOf, PER_CITIZEN, PER_MENIAL, PER_SLAVE, quote, resistance, RESISTS, rewrite, slaveShare, topUp, type GeneSpec, type Target } from "../engine/genome";
 import SlaveArt from "./SlaveArt";
 
 const TARGETS: [Target, string][] = [["slaves", "my slaves and menials"], ["citizens", "my citizens"], ["both", "all of them"]];
@@ -18,8 +18,9 @@ function Changes({ spec }: { spec: GeneSpec }) {
     spec.height && chip(`${spec.height > 0 ? "+" : ""}${spec.height} cm`, "h"),
     ...RESISTS.filter((r) => spec.resist[r]).map((r) => chip(`${r} resistance ${Math.round((spec.resist[r] ?? 0) * 100)}%`, r)),
     spec.health && chip(`+${Math.round(spec.health)} health`, "hp"),
+    ...(spec.traits ?? []).map((t) => <span key={`t-${t.name}`} className="chip on !text-[11px] pointer-events-none" title={`${t.what}${t.tag ? ` (${TRAIT_TAGS[t.tag]})` : ""}`}>{t.name}</span>),
   ].filter(Boolean);
-  return <div className="flex flex-wrap gap-1.5">{out.length ? out : <span className="text-[12px] dim">Nothing the clinics can do. Try naming a colour, a height, or what it should resist.</span>}</div>;
+  return <div className="flex flex-wrap gap-1.5">{out.length ? out : <span className="text-[12px] dim">Nothing the clinics can do yet. Say what should change: a trait, a colour, a height, what it should resist.</span>}</div>;
 }
 
 function Draft() {
@@ -82,7 +83,7 @@ function Writer() {
   return (
     <Card>
       <div className="text-[11px] uppercase tracking-wider dim mb-1">Write a gene edit</div>
-      <div className="text-[11.5px] dim mb-2">In your words. It's designed from a menu the clinics can deliver: skin, hair and eye colour, height, resistance to heat, cold, disease and pollution, and health. {modelsAvailable() ? "The narrator designs it and writes what it does to the city." : "Without a narrator model the game reads your words for those things."}</div>
+      <div className="text-[11.5px] dim mb-2">In your words. Anything you write becomes a trait the city lives with (night vision, stronger bones, slower ageing); the clinics can also change colouring and height, give resistance to heat, cold, disease and pollution, and better health. {modelsAvailable() ? "The narrator designs it and writes what it does to the city." : "Without a narrator model the game reads your words for those things."}</div>
       <input className="mb-2" value={name} onChange={(e) => setName(e.target.value)} placeholder="Its name, e.g. Azure" maxLength={60} />
       <textarea className="mb-2" rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="What it does, e.g. Blue skin for every citizen, and lungs that shrug off the smog." maxLength={600} />
       <div className="flex items-center gap-1.5 flex-wrap mb-2">
