@@ -17,6 +17,8 @@
 import type { Person, SaveState } from "./types";
 import { clamp } from "./psyche";
 import { call, parseJson } from "../llm";
+import { NATIONS } from "../data/people";
+import { rng } from "./rng";
 import { pushNorm } from "./culture";
 import { startRumor } from "./social";
 
@@ -59,8 +61,8 @@ export interface GeneEdit {
   /** Citizens edited when it was applied; newcomers since are not. */
   citizens: number;
   slaves: string[];
-  /** Set once old colour words have been re-read (see heal). */
-  healed?: boolean;
+  /** Which repair pass it has had (see heal). `true` was the first. */
+  healed?: boolean | number;
   /** Pay every week to reach new slaves and newcomers, so the whole city keeps it. */
   auto?: boolean;
 }
@@ -72,23 +74,71 @@ export function genomeOf(s: SaveState): Genome {
   return g;
 }
 
+/** What the owner's words actually ask to change about how people look. A visible change the words
+ *  don't ask for is never made, whatever a narrator put in its answer. */
+export function asked(text: string): { skin: boolean; hair: boolean; eyes: boolean; height: boolean } {
+  return {
+    skin: /\b(skin|skinned|complexions?|pigment\w*|skin[- ]?tone)\b/i.test(text),
+    hair: /\bhair(ed)?\b/i.test(text),
+    eyes: /\b(eyes?|eyed|iris(es)?)\b/i.test(text),
+    height: /\b(tall|taller|short|shorter|height|stature|giants?|petite)\b(?!-)/i.test(text),
+  };
+}
+
+/** Strip from a spec every visible change the owner's words don't ask for. */
+export function onlyAsked(spec: GeneSpec, text: string): GeneSpec {
+  const a = asked(text);
+  return { ...spec, skin: a.skin ? spec.skin : undefined, hair: a.hair ? spec.hair : undefined, eyes: a.eyes ? spec.eyes : undefined, height: a.height ? spec.height : undefined };
+}
+
+/** What she looked like before any program touched her, from what was kept, or from where she's from. */
+function born(p: Person): { skin: string; hair_color: string; eye_color: string } {
+  if (p.body.born) return p.body.born;
+  const nation = NATIONS.find((n) => n.name === p.origin.nationality);
+  const r = rng(`born:${p.id}`);
+  return {
+    skin: /\(engineered\)/.test(p.body.skin) ? (nation ? r.pick(nation.skin) : "olive") : p.body.skin,
+    hair_color: p.body.hair_color, eye_color: p.body.eye_color,
+  };
+}
+
 /**
- * Edits run before colour words were read loosely lost their colour ("azure" was not on the list,
- * so the skin never changed). Read the owner's own words again, put the colour back, and give the
- * slaves it already reached the look they paid for. Runs once per edit.
+ * Put right what earlier versions got wrong, once per edit:
+ *  · a narrator filled in a skin (or hair, or eye) colour the owner never asked for, and it was
+ *    applied; and the first repair read colours out of words too loosely. Any visible change the
+ *    owner's words don't ask for is taken off the edit, and every slave it touched gets back what
+ *    she was born with, unless another program she's had does ask for it.
+ *  · an edit that did ask for a colour, in a word the old list didn't know ("azure"), gets it.
  */
+const HEAL = 2;
 function heal(s: SaveState, g: Genome): void {
+  const touched = new Set<string>();
   for (const e of g.edits) {
-    if (e.healed) continue;
-    e.healed = true;
-    const w = readWords(e.text);
-    const fix: Partial<GeneSpec> = {};
-    if (!e.spec.skin && w.skin) fix.skin = w.skin;
-    if (!e.spec.hair && w.hair) fix.hair = w.hair;
-    if (!e.spec.eyes && w.eyes) fix.eyes = w.eyes;
-    if (!Object.keys(fix).length) continue;
-    Object.assign(e.spec, fix);
-    for (const id of e.slaves) { const p = s.people[id]; if (p) rewrite(p, { ...e.spec, height: undefined, health: undefined }, e.name); }
+    const done = e.healed === true ? 1 : typeof e.healed === "number" ? e.healed : 0;
+    if (done >= HEAL) continue;
+    e.healed = HEAL;
+    const before = { skin: e.spec.skin, hair: e.spec.hair, eyes: e.spec.eyes };
+    e.spec = onlyAsked(e.spec, e.text);
+    const w = onlyAsked(readWords(e.text), e.text);
+    if (!e.spec.skin && w.skin) e.spec.skin = w.skin;
+    if (!e.spec.hair && w.hair) e.spec.hair = w.hair;
+    if (!e.spec.eyes && w.eyes) e.spec.eyes = w.eyes;
+    if (before.skin !== e.spec.skin || before.hair !== e.spec.hair || before.eyes !== e.spec.eyes) for (const id of e.slaves) touched.add(id);
+  }
+  for (const id of touched) {
+    const p = s.people[id];
+    if (!p) continue;
+    const mine = g.edits.filter((e) => e.slaves.includes(id));
+    const orig = born(p);
+    const skin = mine.map((e) => e.spec.skin).filter(Boolean).at(-1);
+    const hair = mine.map((e) => e.spec.hair).filter(Boolean).at(-1);
+    const eyes = mine.map((e) => e.spec.eyes).filter(Boolean).at(-1);
+    p.body.skin = skin ? `${skin} (engineered)` : orig.skin;
+    if (hair) p.body.hair_color = hair; else if (p.body.born) p.body.hair_color = orig.hair_color;
+    if (eyes) p.body.eye_color = eyes; else if (p.body.born) p.body.eye_color = orig.eye_color;
+    // Rewrite what the narrator reads about her: each program's line says only what it did.
+    p.body.appearance_facts = p.body.appearance_facts.replace(/ ?Her DNA was rewritten by the [^:]+ program: [^.]*\./g, "").trim();
+    for (const e of mine) rewrite(p, { ...e.spec, height: undefined, health: undefined }, e.name);
   }
 }
 
@@ -126,7 +176,8 @@ const colourNear = (text: string, part: string): string | undefined => {
   const C = "light blue|dark blue|pale blue|deep blue|" + [...GENE_COLOURS, "azure", "cobalt", "navy", "sapphire", "emerald", "jade", "turquoise", "lavender", "lilac", "golden", "crimson", "scarlet", "ivory", "ebony", "gray", "platinum"].join("|");
   const before = new RegExp(`\\b(${C})(?:[\\s-]+\\w+)?[\\s-]+${part}`, "i").exec(text);
   if (before) return geneColour(before[1]);
-  const after = new RegExp(`\\b${part}(?:[\\s,]+(?!and\\b)\\w+){0,6}[\\s,]+(${C})\\b`, "i").exec(text);
+  // "skin ... to be blue", "hair turned silver", "eyes dyed gold": a colour after the part needs a word that says it's becoming it.
+  const after = new RegExp(`\\b${part}(?:[\\s,]+(?!and\\b)\\w+){0,5}?[\\s,]+(?:to be|to|turn(?:ed|s)?|become|becomes|dyed|colou?red|made|is|are|go(?:es)?|into)(?:[\\s]+(?:a|an|the|bright|deep|pale|light|dark))?[\\s]+(${C})\\b`, "i").exec(text);
   return after ? geneColour(after[1]) : undefined;
 };
 
@@ -145,7 +196,7 @@ export function readWords(text: string): GeneSpec {
     skin: colourNear(t, "skin"),
     hair: colourNear(t, "hair"),
     eyes: colourNear(t, "eyes?"),
-    height: /\btall/.test(t) ? 6 : /\bshort/.test(t) ? -6 : undefined,
+    height: /\b(tall|taller)\b(?!-)/.test(t) ? 6 : /\b(short|shorter)\b(?!-)/.test(t) ? -6 : undefined,
     resist,
     health: /\b(health|longevity|long-lived|vigou?r|strong)/.test(t) ? 8 : undefined,
     society: "", side_effects: "", reaction: 0,
@@ -160,7 +211,11 @@ export function readWords(text: string): GeneSpec {
 }
 
 /** Keep a spec inside the menu, whatever came back. */
-export function clampSpec(raw: Partial<GeneSpec> & Record<string, unknown>): GeneSpec {
+export function clampSpec(raw: Partial<GeneSpec> & Record<string, unknown>, text?: string): GeneSpec {
+  const spec = clampAll(raw);
+  return text === undefined ? spec : onlyAsked(spec, text);
+}
+function clampAll(raw: Partial<GeneSpec> & Record<string, unknown>): GeneSpec {
   const colour = (v: unknown) => geneColour(v);
   const num = (v: unknown, lo: number, hi: number) => (typeof v === "number" && Number.isFinite(v) ? clamp(v, lo, hi) : undefined);
   const resist: GeneSpec["resist"] = {};
@@ -197,9 +252,9 @@ export async function design(s: SaveState, draft: { name: string; text: string; 
         `APPLIED TO: ${who}.`,
         `THE CITY: ${s.arcology.name}, ${Math.round(s.arcology.population).toLocaleString()} citizens, prosperity ${Math.round(s.arcology.prosperity)}.`,
         ``,
-        `Answer with this JSON. Omit a field the words don't ask for.`,
+        `Answer with JSON. Change only what the owner's words ask for. In particular, do NOT change skin, hair or eye colour or height unless the words ask for that exact thing; most edits change none of them, and a field you leave out stays as the people were born.`,
         `{"summary": "<what it does, a few words>", "complexity": <1-5, how hard: a colour is 1, one resistance 2, several changes 3-5>,`,
-        ` "skin": "<one of ${GENE_COLOURS.join(", ")}>", "hair": "<same list>", "eyes": "<same list>", "height": <cm change, -12..12>,`,
+        ` ONLY IF ASKED: "skin": "<one of ${GENE_COLOURS.join(", ")}>", "hair": "<same list>", "eyes": "<same list>", "height": <cm change, -12..12>,`,
         ` "resist": {"heat": <0-0.9>, "cold": <0-0.9>, "disease": <0-0.9>, "pollution": <0-0.9>}, "health": <0-20 one-off>, "remade": <0-15, how far it pushes the city toward remade bodies>,`,
         ` "society": "<120-220 words: how the city changes once this is done: fashion, work, who has it and who doesn't, what the neighbours and the Old World say. Concrete, no moralising.>",`,
         ` "side_effects": "<one or two sentences>", "reaction": <-2..2, how the citizens take it>}`,
@@ -207,7 +262,7 @@ export async function design(s: SaveState, draft: { name: string; text: string; 
       model, fallback, json: true, maxTokens: 900, temperature: 0.8,
     });
     const j = res.ok ? parseJson<Record<string, unknown>>(res.text) : null;
-    if (j) { spec = clampSpec(j); by = "narrator"; }
+    if (j) { spec = clampSpec(j, text); by = "narrator"; }
   }
   spec ??= readWords(text);
   genomeOf(s).draft = { name, text, target: draft.target, spec, by };
@@ -219,6 +274,7 @@ export async function design(s: SaveState, draft: { name: string; text: string; 
 /** One body, rewritten. */
 export function rewrite(p: Person, spec: GeneSpec, name: string): void {
   const b = p.body;
+  if ((spec.skin || spec.hair || spec.eyes) && !b.born && !/\(engineered\)/.test(b.skin)) b.born = { skin: b.skin, hair_color: b.hair_color, eye_color: b.eye_color };
   if (spec.skin) b.skin = `${spec.skin} (engineered)`;
   if (spec.hair) b.hair_color = spec.hair;
   if (spec.eyes) b.eye_color = spec.eyes;

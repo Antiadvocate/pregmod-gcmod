@@ -96,3 +96,30 @@ const slavesOf = (s: ReturnType<typeof newGame>) => Object.values(s.people).filt
   const lines = tickGenome(t);
   check("a program set to keep up reaches the new slave", /blue \(engineered\)/.test(t.people[newcomer.id].body.skin) && t.arcology.cash === 100_000 - 600 && lines.length === 1, lines);
 }
+
+{
+  // Only what you asked for: a narrator that fills in a skin colour you didn't ask for is overruled.
+  const { asked } = await import("../src/engine/genome.ts");
+  const heat = clampSpec({ skin: "blue", hair: "silver", height: 8, resist: { heat: 0.7 } } as never, "make my slaves able to work through a heatwave");
+  check("a heat edit changes no colour, however the narrator answered", !heat.skin && !heat.hair && !heat.height && heat.resist.heat === 0.7, heat);
+  check("but asking for it still works", clampSpec({ skin: "azure" } as never, "give them blue skin").skin === "blue");
+  for (const text of ["a golden age of immunity to disease", "skin that heals like new, resistant to smog", "fix the food shortage by making them need less", "short-lived fevers only", "red blood cells that carry more oxygen"]) {
+    const w = readWords(text);
+    check(`"${text}" changes no colour or height`, !w.skin && !w.hair && !w.eyes && !w.height, w);
+  }
+  check("asked() reads the parts", asked("blue-skinned citizens with silver hair").skin && asked("blue-skinned citizens with silver hair").hair && !asked("resistant to heat").skin);
+
+  // Saves where it already happened: the slaves get back what they were born with.
+  const s = newGame({ seed: "genome-unask" });
+  const [a, b] = slavesOf(s);
+  a.body.born = { skin: "olive", hair_color: a.body.hair_color, eye_color: a.body.eye_color };
+  a.body.skin = "blue (engineered)"; b.body.skin = "blue (engineered)";
+  a.body.appearance_facts += " Her DNA was rewritten by the Furnace program: blue skin, heat-resistant.";
+  s.genome = { edits: [{ id: "gene_old", name: "Furnace", text: "make my slaves able to work through a heatwave", target: "slaves", healed: true,
+    spec: { summary: "x", complexity: 2, skin: "blue", resist: { heat: 0.6 }, society: "", side_effects: "", reaction: 0 }, by: "narrator", week: 1, cost: 1, citizens: 0, slaves: [a.id, b.id] }] };
+  genomeOf(s);
+  check("the unasked-for colour comes off the edit", !s.genome.edits[0].spec.skin && s.genome.edits[0].spec.resist.heat === 0.6);
+  check("a slave gets her own skin back", a.body.skin === "olive", a.body.skin);
+  check("one with nothing kept gets a skin from where she's from", !/engineered/.test(b.body.skin), b.body.skin);
+  check("and the narrator reads the program right", /Furnace program: heat-resistant\./.test(a.body.appearance_facts) && !/blue skin/.test(a.body.appearance_facts), a.body.appearance_facts);
+}

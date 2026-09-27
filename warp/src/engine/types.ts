@@ -107,6 +107,8 @@ export interface Body {
   appearance_facts: string;
   /** Permanent grown changes: real ears, a tail, scales. See engine/fleshcraft. */
   traits?: string[];
+  /** Her colouring before any gene program touched it (engine/genome), so it can be given back. */
+  born?: { skin: string; hair_color: string; eye_color: string };
   /** Current presentation: clothes, grime, visible state. Rewritten freely. */
   appearance_now: string;
   /** The exact words that drew this person's portrait, reused verbatim so a diffusion model
