@@ -6,10 +6,10 @@ import { useMemo, useState } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Meter, Section, cx } from "../lib/ui";
 import { modelsAvailable } from "../config";
-import { apply, citizenShare, design, genomeOf, PER_CITIZEN, PER_SLAVE, quote, resistance, RESISTS, rewrite, slaveShare, topUp, type GeneSpec, type Target } from "../engine/genome";
+import { apply, citizenShare, design, genomeOf, PER_CITIZEN, PER_MENIAL, PER_SLAVE, quote, resistance, RESISTS, rewrite, slaveShare, topUp, type GeneSpec, type Target } from "../engine/genome";
 import SlaveArt from "./SlaveArt";
 
-const TARGETS: [Target, string][] = [["slaves", "my slaves"], ["citizens", "my citizens"], ["both", "both"]];
+const TARGETS: [Target, string][] = [["slaves", "my slaves and menials"], ["citizens", "my citizens"], ["both", "all of them"]];
 
 function Changes({ spec }: { spec: GeneSpec }) {
   const chip = (label: string, key: string) => <span key={key} className="chip !text-[11px] pointer-events-none">{label}</span>;
@@ -53,7 +53,7 @@ function Draft() {
       {d.spec.side_effects ? <p className="text-[12px] mb-1"><span className="dim">Side effects:</span> {d.spec.side_effects}</p> : null}
       <p className="text-[12px] mb-2"><span className="dim">How citizens take it:</span> {d.spec.reaction > 0.4 ? "they like it" : d.spec.reaction < -0.4 ? "they resent it" : "divided"} (standing {d.spec.reaction >= 0 ? "+" : ""}{d.spec.reaction})</p>
       <div className="text-[12px] dim mb-2">
-        {[q.citizens && `${q.citizens.toLocaleString()} citizens × ¤${PER_CITIZEN}`, q.slaves && `${q.slaves} slave${q.slaves === 1 ? "" : "s"} × ¤${PER_SLAVE}`].filter(Boolean).join(" + ")} × complexity {d.spec.complexity} = <span className="acc">¤{q.cost.toLocaleString()}</span>
+        {[q.citizens && `${q.citizens.toLocaleString()} citizens × ¤${PER_CITIZEN}`, q.slaves && `${q.slaves} slave${q.slaves === 1 ? "" : "s"} × ¤${PER_SLAVE}`, q.menials && `${q.menials.toLocaleString()} menials × ¤${PER_MENIAL}`].filter(Boolean).join(" + ")} × complexity {d.spec.complexity} = <span className="acc">¤{q.cost.toLocaleString()}</span>
       </div>
       <div className="flex gap-2 flex-wrap">
         <Button size="sm" kind="primary" disabled={save.arcology.cash < q.cost} onClick={() => { let t = ""; mutate((s) => { t = apply(s); }); setSaid(t); }}>Run it · ¤{q.cost.toLocaleString()}</Button>
@@ -124,9 +124,9 @@ function Programs() {
               <input type="checkbox" checked={!!e.auto} onChange={(ev) => mutate((s) => { const x = genomeOf(s).edits.find((y) => y.id === e.id); if (x) x.auto = ev.target.checked; })} />
               Keep everyone up to date: each week, pay to reach new slaves and newcomers to the city
             </label>
-            {more.citizens || more.slaves.length ? (
+            {more.citizens || more.slaves.length || more.menials ? (
               <Button size="sm" kind="ghost" disabled={save.arcology.cash < more.cost} onClick={() => { let t = ""; mutate((s) => { t = topUp(s, e.id).line ?? ""; }); setSaid(t); }}>
-                Reach the rest: {[more.citizens && `${more.citizens.toLocaleString()} new citizens`, more.slaves.length && `${more.slaves.length} new slave${more.slaves.length === 1 ? "" : "s"}`].filter(Boolean).join(", ")} · ¤{more.cost.toLocaleString()}
+                Reach the rest: {[more.citizens && `${more.citizens.toLocaleString()} new citizens`, more.slaves.length && `${more.slaves.length} new slave${more.slaves.length === 1 ? "" : "s"}`, more.menials && `${more.menials.toLocaleString()} new menials`].filter(Boolean).join(", ")} · ¤{more.cost.toLocaleString()}
               </Button>
             ) : <span className="text-[11.5px] dim">Everyone it was for has it.</span>}
           </Card>
@@ -141,7 +141,7 @@ export default function Genome() {
   return (
     <>
       <Section title="The genome program">
-        <p className="text-[12.5px] dim mb-2.5">Rewrite the DNA of your slaves, your citizens, or both. Priced by the head (¤{PER_CITIZEN} a citizen, ¤{PER_SLAVE} a slave) times how hard the edit is. What it does to the city is written into the description every narrator reads.</p>
+        <p className="text-[12.5px] dim mb-2.5">Rewrite the DNA of your slaves, your citizens, or both. Priced by the head (¤{PER_CITIZEN} a citizen, ¤{PER_SLAVE} a named slave, ¤{PER_MENIAL} a menial) times how hard the edit is. What it does to the city is written into the description every narrator reads.</p>
         <div className="grid gap-2.5 lg:grid-cols-2 items-start">
           <Writer />
           <Draft />

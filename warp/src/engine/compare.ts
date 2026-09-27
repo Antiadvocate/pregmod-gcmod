@@ -21,6 +21,7 @@ import { POLICY_BY_ID } from "../data/policies";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { generatePerson } from "./generate";
 import { lookWords, prevailingLook, type Look } from "./genome";
+import { perHousehold } from "./menials";
 import { garment } from "../data/wardrobe";
 import { rng } from "./rng";
 
@@ -45,6 +46,8 @@ export interface Society {
   attitude?: number;
   /** The look the gene programs have given most of its citizens and slaves (yours only). */
   looks?: { citizen: Look; slave: Look };
+  /** Slaves serving an average citizen household, counted (yours only): see engine/menials. */
+  slavesPerHousehold?: number;
   /** What the narrator model dressed this household in, read from its laws; used while it still matches. */
   written?: Outfits;
 }
@@ -96,6 +99,7 @@ export function societies(s: SaveState): Society[] {
     laws: [...myLaws.map((l) => ({ name: l.name, text: l.text })), ...myPolicies.map((id) => ({ name: POLICY_BY_ID[id].name, text: POLICY_BY_ID[id].blurb }))],
     lawIds: [...myLaws.map((l) => l.id), ...myPolicies.map((id) => `policy:${id}`)],
     looks: { citizen: prevailingLook(s, "citizens"), slave: prevailingLook(s, "slaves") },
+    slavesPerHousehold: perHousehold(s),
   };
   const near = a.neighbours.map((n): Society => {
     const doctrines = neighbourDoctrines(s, n);
@@ -176,6 +180,13 @@ export function household(x: Society): Household {
     h.citizen.clothes = w.citizen_clothes; h.citizen.shoes = w.citizen_shoes; h.husband = w.husband;
     if (h.slave && w.slave_clothes) { h.slave.clothes = w.slave_clothes; h.slave.collar = w.slave_collar ?? h.slave.collar; h.slave.shoes = w.slave_shoes ?? h.slave.shoes; }
     if (w.slaves !== undefined && x.kind !== "oldworld") h.slaves = w.slaves;
+  }
+  // In your city the number is counted, not guessed: the citizens' own slaves and your menials on lease.
+  if (x.slavesPerHousehold !== undefined && x.kind !== "oldworld") {
+    const n = Math.round(clamp(x.slavesPerHousehold, 0, 9));
+    h.slaves = n;
+    h.family = n ? h.family.replace(/^A citizen couple, their children, and [^ ]+ slaves?/, `A citizen couple, their children, and ${n === 1 ? "one slave" : `${n} slaves`}`) : "A citizen couple and their children. They can't afford a slave of their own, and borrow a neighbour's when they have guests.";
+    if (!n && h.slave) h.slave = undefined;
   }
   const cl = lookWords(x.looks?.citizen), sl = lookWords(x.looks?.slave);
   h.citizen.line = `${h.citizen.clothes === "no clothing" ? "A citizen woman, naked." : `A citizen woman in ${h.citizen.clothes}${h.citizen.shoes === "heels" ? " and heels" : ""}.`}${cl ? ` She has the ${cl} of the ${x.looks!.citizen.from!.join(" and ")} program, like most citizens now.` : ""}`;

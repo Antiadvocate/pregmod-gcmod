@@ -890,6 +890,8 @@ export interface SaveState {
   works?: { levels: Record<string, number> };
   /** Gene programs run on the slaves and the citizens. See engine/genome. */
   genome?: import("./genome").Genome;
+  /** Menial slaves you own in bulk, and the ones your citizens own. See engine/menials. */
+  menials?: import("./menials").Menials;
   /** The content switches, which the original carried as V.seeExtreme, V.seeCircumcision and the
    *  rest. Defaulted on — this is the game it is — but the surgery table and a handful of acts
    *  read them, because the original let you turn the ugliest parts off and so does this. */

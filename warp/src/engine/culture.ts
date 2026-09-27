@@ -10,6 +10,7 @@
  * through the city reads them to show you what people are doing.
  */
 import { genomeBrief } from "./genome";
+import { slavesBrief } from "./menials";
 import type { SaveState } from "./types";
 import { clamp } from "./psyche";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
@@ -218,5 +219,5 @@ export function cultureBrief(s: SaveState): string {
   const habits = NORM_IDS.filter((n) => Math.abs(c.norms[n]) >= 15).map((n) => `· ${NORMS[n].name}: ${normLine(n, c.norms[n])} (${Math.round(c.norms[n])})`).join("\n");
   // What the owner has done to the city's DNA is part of what the city is now.
   const genes = genomeBrief(s);
-  return [habits, genes].filter(Boolean).join("\n");
+  return [habits, slavesBrief(s), genes].filter(Boolean).join("\n");
 }

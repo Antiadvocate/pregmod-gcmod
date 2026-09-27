@@ -18,6 +18,7 @@ import type { SaveState } from "./types";
 import type { Ledger } from "./economy";
 import { clamp } from "./psyche";
 import { worldOf } from "./world";
+import { constructionDiscount } from "./menials";
 
 export interface Work {
   id: string;
@@ -60,7 +61,7 @@ export const WORKS: Work[] = [
 export const WORK_BY_ID: Record<string, Work> = Object.fromEntries(WORKS.map((w) => [w.id, w]));
 
 export const levelOf = (s: SaveState, id: string) => s.works?.levels[id] ?? 0;
-export const nextCost = (s: SaveState, id: string) => { const w = WORK_BY_ID[id]; return Math.round((w.base * w.growth ** levelOf(s, id)) / 100) * 100; };
+export const nextCost = (s: SaveState, id: string) => { const w = WORK_BY_ID[id]; return Math.round((w.base * w.growth ** levelOf(s, id) * (1 - constructionDiscount(s))) / 100) * 100; };
 
 export function build(s: SaveState, id: string): string {
   const w = WORK_BY_ID[id];

@@ -61,6 +61,8 @@ export interface GeneEdit {
   /** Citizens edited when it was applied; newcomers since are not. */
   citizens: number;
   slaves: string[];
+  /** Menial slaves reached when it ran (and since). */
+  menials?: number;
   /** Which repair pass it has had (see heal). `true` was the first. */
   healed?: boolean | number;
   /** Pay every week to reach new slaves and newcomers, so the whole city keeps it. */
@@ -162,11 +164,25 @@ export function geneColour(v: unknown): string | undefined {
 export const PER_CITIZEN = 60;
 export const PER_SLAVE = 600;
 
-export function quote(s: SaveState, target: Target, spec: GeneSpec, slaves = household(s)): { citizens: number; slaves: number; cost: number } {
+export const PER_MENIAL = 150;
+export function quote(s: SaveState, target: Target, spec: GeneSpec, slaves = household(s)): { citizens: number; slaves: number; menials: number; cost: number } {
   const c = target !== "slaves" ? Math.round(s.arcology.population) : 0;
   const n = target !== "citizens" ? slaves.length : 0;
+  const mn = target !== "citizens" ? s.menials?.owned ?? 0 : 0;
   const k = clamp(Math.round(spec.complexity), 1, 5);
-  return { citizens: c, slaves: n, cost: (c * PER_CITIZEN + n * PER_SLAVE) * k };
+  return { citizens: c, slaves: n, menials: mn, cost: (c * PER_CITIZEN + n * PER_SLAVE + mn * PER_MENIAL) * k };
+}
+
+/** How much of what wears menials out the edits spare them: the best resistance, times the share reached. */
+export function menialResistance(s: SaveState): number {
+  const owned = s.menials?.owned ?? 0;
+  if (!owned) return 0;
+  let best = 0;
+  for (const e of s.genome?.edits ?? []) {
+    const share = clamp((e.menials ?? 0) / owned, 0, 1);
+    best = Math.max(best, Math.max(0, ...RESISTS.map((r) => e.spec.resist[r] ?? 0)) * share, ((e.spec.health ?? 0) / 20) * share);
+  }
+  return clamp(best, 0, 0.9);
 }
 
 /* ── reading the words ───────────────────────────────────────────────────────────────────────── */
@@ -295,31 +311,33 @@ export function apply(s: SaveState): string {
   if (s.arcology.cash < q.cost) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}; the program costs ¤${q.cost.toLocaleString()}.`;
   s.arcology.cash -= q.cost;
   if (d.target !== "citizens") for (const p of slaves) rewrite(p, d.spec, d.name);
-  const edit: GeneEdit = { id: `gene_${s.arcology.week}_${g.edits.length}`, name: d.name, text: d.text, target: d.target, spec: d.spec, by: d.by, week: s.arcology.week, cost: q.cost, citizens: q.citizens, slaves: d.target !== "citizens" ? slaves.map((p) => p.id) : [] };
+  const edit: GeneEdit = { id: `gene_${s.arcology.week}_${g.edits.length}`, name: d.name, text: d.text, target: d.target, spec: d.spec, by: d.by, week: s.arcology.week, cost: q.cost, citizens: q.citizens, slaves: d.target !== "citizens" ? slaves.map((p) => p.id) : [], menials: q.menials };
   g.edits.push(edit);
   g.draft = undefined;
   // What it does to the city's habits and its opinion of you.
   pushNorm(s, "modification", d.spec.remade ?? 4, `you ran the ${d.name} gene program`);
   startRumor(s, `the owner has rewritten the DNA of ${d.target === "slaves" ? "their slaves" : d.target === "citizens" ? "the citizens" : "the whole arcology"}: ${d.spec.summary}`, { salience: 8 });
   s.arcology.public_standing = clamp(s.arcology.public_standing + d.spec.reaction, -10, 10);
-  return `The ${d.name} program runs: ${[q.citizens && `${q.citizens.toLocaleString()} citizens`, q.slaves && `${q.slaves} slave${q.slaves === 1 ? "" : "s"}`].filter(Boolean).join(" and ")} rewritten (−¤${q.cost.toLocaleString()}).`;
+  return `The ${d.name} program runs: ${[q.citizens && `${q.citizens.toLocaleString()} citizens`, q.slaves && `${q.slaves} slave${q.slaves === 1 ? "" : "s"}`, q.menials && `${q.menials.toLocaleString()} menials`].filter(Boolean).join(" and ")} rewritten (−¤${q.cost.toLocaleString()}).`;
 }
 
 /** Run an edit again for those it hasn't reached: new slaves, and citizens who arrived since. */
-export function topUp(s: SaveState, id: string, dryRun = false): { citizens: number; slaves: Person[]; cost: number; line?: string } {
+export function topUp(s: SaveState, id: string, dryRun = false): { citizens: number; slaves: Person[]; menials: number; cost: number; line?: string } {
   const e = genomeOf(s).edits.find((x) => x.id === id);
-  if (!e) return { citizens: 0, slaves: [], cost: 0 };
+  if (!e) return { citizens: 0, slaves: [], menials: 0, cost: 0 };
   // Only the ones it hasn't reached: the heritable share of the growth already carries it.
   const citizens = e.target !== "slaves" ? Math.max(0, Math.round(s.arcology.population * (1 - citizenShare(s, e)))) : 0;
   const slaves = e.target !== "citizens" ? household(s).filter((p) => !e.slaves.includes(p.id)) : [];
-  const cost = (citizens * PER_CITIZEN + slaves.length * PER_SLAVE) * e.spec.complexity;
-  if (dryRun || (!citizens && !slaves.length) || s.arcology.cash < cost) return { citizens, slaves, cost };
+  const menials = e.target !== "citizens" ? Math.max(0, (s.menials?.owned ?? 0) - (e.menials ?? 0)) : 0;
+  const cost = (citizens * PER_CITIZEN + slaves.length * PER_SLAVE + menials * PER_MENIAL) * e.spec.complexity;
+  if (dryRun || (!citizens && !slaves.length && !menials) || s.arcology.cash < cost) return { citizens, slaves, menials, cost };
   s.arcology.cash -= cost;
   for (const p of slaves) rewrite(p, e.spec, e.name);
   // Everyone alive now has it; growth from here dilutes it again, less the heritable share.
   if (citizens) e.citizens = Math.round(s.arcology.population);
+  if (menials) e.menials = s.menials?.owned ?? 0;
   e.slaves.push(...slaves.map((p) => p.id)); e.cost += cost;
-  return { citizens, slaves, cost, line: `The ${e.name} program reaches ${[citizens && `${citizens.toLocaleString()} more citizens`, slaves.length && `${slaves.length} more slave${slaves.length === 1 ? "" : "s"}`].filter(Boolean).join(" and ")} (−¤${cost.toLocaleString()}).` };
+  return { citizens, slaves, menials, cost, line: `The ${e.name} program reaches ${[citizens && `${citizens.toLocaleString()} more citizens`, slaves.length && `${slaves.length} more slave${slaves.length === 1 ? "" : "s"}`, menials && `${menials.toLocaleString()} more menials`].filter(Boolean).join(" and ")} (−¤${cost.toLocaleString()}).` };
 }
 
 /* ── what it does, every week ────────────────────────────────────────────────────────────────── */
@@ -391,7 +409,7 @@ export function tickGenome(s: SaveState): string[] {
   for (const e of genomeOf(s).edits) {
     if (!e.auto) continue;
     const more = topUp(s, e.id, true);
-    if (!more.citizens && !more.slaves.length) continue;
+    if (!more.citizens && !more.slaves.length && !more.menials) continue;
     if (s.arcology.cash < more.cost) { out.push(`The ${e.name} program couldn't reach this week's newcomers: it needs ¤${more.cost.toLocaleString()}.`); continue; }
     const done = topUp(s, e.id);
     if (done.line) out.push(done.line);
