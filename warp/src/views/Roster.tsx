@@ -6,6 +6,7 @@
  * answer was distributed across every passage that had ever touched her.
  */
 import PhotoPortrait from "./PhotoPortrait";
+import MenialsPanel from "./Menials";
 import { sane, recoveryNote, rushCost, rushRecovery } from "../engine/health";
 import { DRUGS, canStart } from "../data/drugs";
 import { describeGenitals, describeFeet, mobility, dickCM, ballsWord, vaginaWord, anusWord, feetOf } from "../engine/genitals";
@@ -72,6 +73,7 @@ export default function Roster() {
 
   return (
     <>
+      <MenialsPanel />
       <div className="flex items-center gap-2 mb-4">
         <div className="relative flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 dim" />

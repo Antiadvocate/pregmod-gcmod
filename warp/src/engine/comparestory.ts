@@ -15,6 +15,7 @@ import { rng } from "./rng";
 import { generatePerson } from "./generate";
 import { figureFor, household, METRICS, type Outfits, type Society } from "./compare";
 import { NORMS, NORM_IDS, normLine } from "./culture";
+import { genomeBrief, lookWords } from "./genome";
 import { WARDROBE } from "../data/wardrobe";
 import { call, parseJson } from "../llm";
 import { compliance } from "./lawlife";
@@ -47,6 +48,16 @@ function streetLaw(s: SaveState): LawDef | undefined {
   return ls.filter((l) => l.id.startsWith("custom_")).sort((a, b) => a.name.localeCompare(b.name))[s.arcology.week % Math.max(1, ls.filter((l) => l.id.startsWith("custom_")).length)] ?? ls[0];
 }
 
+/** What the gene programs did to this household, as the morning light shows it. */
+function dna(x: Society, c: Cast): string {
+  const cl = x.looks?.citizen, sl = x.looks?.slave;
+  const cw = lookWords(cl), sw = lookWords(sl);
+  const out: string[] = [];
+  if (cw) out.push(` In the bathroom mirror ${c.wife} has the ${cw} the ${cl!.from!.join(" and ")} program gave her, and so does ${c.husband}, and so does nearly everyone on their floor.`);
+  if (sw && x.kind === "yours") out.push(` ${c.slave}'s ${sw} ${sw.includes(" and ") ? "are" : "is"} engineered too: the owner had every slave in the city's households done.`);
+  return out.join("");
+}
+
 function morning(x: Society, c: Cast): string {
   const n = x.norms, h = household(x);
   if (x.kind === "oldworld") return `${c.wife} ${c.surname}'s alarm goes at six. The heating in the flat is off again, so she makes the coffee in her coat and gets ${kidsWord(c.kids)} into their school clothes while ${c.husband} checks whether the trams are running today.`;
@@ -60,7 +71,7 @@ function morning(x: Society, c: Cast): string {
     ? ` The coffee is a minute late. ${c.husband} takes the cane down from its hook by the fridge without getting up from the table, and nobody else looks up.`
     : n.cruelty <= -40 ? ` ${c.husband} thanks her for it, and means it.` : "";
   const extra = h.slaves > 1 ? ` The household keeps ${h.slaves} slaves; ${c.slave} is the one who runs the kitchen.` : "";
-  return wakes + temper + extra;
+  return wakes + temper + extra + dna(x, c);
 }
 
 function street(s: SaveState, x: Society, c: Cast): string {
@@ -175,6 +186,8 @@ function facts(s: SaveState, x: Society): string[] {
     const pol = x.laws.filter((l) => !laws.some((k) => k.name === l.name));
     if (pol.length) out.push(`POLICIES: ${pol.map((l) => `${l.name}: ${l.text}`).join(" | ")}`);
     const st = s.arcology.public_standing;
+    const genes = genomeBrief(s);
+    if (genes) out.push(`WHAT THE OWNER HAS DONE TO THE CITY'S DNA (true of the people in the story):\n${genes}`);
     out.push(`THE CITY'S OPINION OF THE OWNER: ${st >= 3 ? "good" : st <= -3 ? "poor" : "mixed"}; reputation ${Math.round(s.arcology.rep)}.`);
   } else if (x.kind === "neighbour") {
     out.push(x.laws.length ? `LAWS IN FORCE, WORD FOR WORD (binding; passed by its court):\n${x.laws.map((l) => `- The ${l.name}: "${l.text}"`).join("\n")}` : "LAWS IN FORCE: none worth naming.");

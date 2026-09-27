@@ -17,6 +17,7 @@ import { castOf, dayInTheLife, moving, writeDay } from "../engine/comparestory";
 
 /** Days being written right now, so a re-render or a second mount doesn't pay for the same one twice. */
 const inflight = new Set<string>();
+import { lookWords } from "../engine/genome";
 import SlaveArt from "./SlaveArt";
 
 const listed = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
@@ -90,20 +91,22 @@ Show her whole body, from the top of her head to her feet, with the ground visib
   return `This image shows two stylised 3D-style characters from an adult video game, drawn full-length side by side. Redraw it as a single photorealistic full-length photograph of the same two adult women as real people, standing side by side in ${setting}.
 On the left: ${c.wife}, a free citizen of ${x.name}, about 34, wearing ${h.citizen.clothes}${h.citizen.shoes === "heels" ? " and heels" : ""}, standing easily.
 On the right: ${c.slave}, her household slave, an adult woman of about 22, ${slave}, wearing ${h.slave.collar}${h.slave.shoes === "barefoot" ? ", barefoot" : ""}. Her posture shows how slaves are kept there: ${x.norms.personhood >= 30 ? "upright and at ease, a half step behind her owner" : x.norms.personhood <= -30 ? "eyes lowered, hands clasped, a step behind" : "attentive, a step behind her owner"}.
-Keep each woman's body shape, skin tone, hair and pose, and exactly what each is wearing or not wearing, as in the drawing. Both are adults. Show both of them entirely, from the top of the head to the feet, with the floor visible under their feet. Do not crop at the waist or knees. Just behind them, and not blocking either woman, stands the citizen's husband, an adult man of about 37 in ${h.husband}. Nobody else in the frame. Natural light. No text.`;
+Keep each woman's body shape, skin tone, hair and pose, and exactly what each is wearing or not wearing, as in the drawing. Both are adults.${lookWords(x.looks?.citizen) ? ` The citizen and her husband were genetically engineered: they have ${lookWords(x.looks?.citizen)}, real and natural-looking, not paint.` : ""}${lookWords(x.looks?.slave) ? ` The slave was genetically engineered too: ${lookWords(x.looks?.slave)}, real and natural-looking.` : ""} Show both of them entirely, from the top of the head to the feet, with the floor visible under their feet. Do not crop at the waist or knees. Just behind them, and not blocking either woman, stands the citizen's husband, an adult man of about 37 in ${h.husband}. Nobody else in the frame. Natural light. No text.`;
 }
 
 function HouseholdCard({ x, other, yours, compact }: { x: Society; other: Society; yours: Society; compact?: boolean }) {
   const { save, mutate } = useGame();
   const h = household(x);
-  const citizen = useMemo(() => figureFor(x, "citizen"), [x.id, h.citizen.clothes, h.citizen.shoes]);
-  const slave = useMemo(() => figureFor(x, "slave"), [x.id, h.slave?.clothes, h.slave?.collar, h.slave?.shoes]);
+  const looks = JSON.stringify(x.looks ?? null);
+  const citizen = useMemo(() => figureFor(x, "citizen"), [x.id, h.citizen.clothes, h.citizen.shoes, looks]);
+  const slave = useMemo(() => figureFor(x, "slave"), [x.id, h.slave?.clothes, h.slave?.collar, h.slave?.shoes, looks]);
   const refC = useRef<SVGSVGElement>(null);
   const refS = useRef<SVGSVGElement>(null);
   const [busy, setBusy] = useState(false);
   const model = save.models.photo_model ?? "";
   const phAll = save.compare_photos?.[x.id];
-  const dressed = JSON.stringify(household(x));
+  // A photo shows what they wore and what the gene programs made them; either changing retires it.
+  const dressed = JSON.stringify([household(x), x.looks ?? null]);
   const ph = phAll && (!phAll.fp || phAll.fp === dressed) ? phAll : phAll?.error ? { ...phAll, url: undefined } : undefined;
   const cast = castOf(x);
   const key = `${x.id}:${other.id}`;
@@ -165,6 +168,7 @@ function HouseholdCard({ x, other, yours, compact }: { x: Society; other: Societ
       </div>
       {x.doctrines.length ? <div className="text-[11px] dim mb-0.5">{x.doctrines.map((d) => DOCTRINE_BY_ID[d]?.noun ?? d).join(" · ")}</div> : null}
       {x.kind !== "oldworld" ? <div className="text-[11px] dim mb-0.5">Laws: {x.laws.length ? x.laws.map((l) => l.name).join(" · ") : "none"}</div> : null}
+      {lookWords(x.looks?.citizen) || lookWords(x.looks?.slave) ? <div className="text-[11px] mb-0.5"><span className="acc">Engineered:</span> <span className="dim">{[lookWords(x.looks?.citizen) && `citizens ${lookWords(x.looks?.citizen)}`, lookWords(x.looks?.slave) && `slaves ${lookWords(x.looks?.slave)}`].filter(Boolean).join("; ")}</span></div> : null}
       {h.dress ? (
         <div className="text-[11.5px] mb-2">
           <span className="acc">{h.dress.code.name}</span>

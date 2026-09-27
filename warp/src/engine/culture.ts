@@ -9,6 +9,8 @@
  * which of your choices moved the city and how far. The court reads them to write laws; the walk
  * through the city reads them to show you what people are doing.
  */
+import { genomeBrief } from "./genome";
+import { slavesBrief } from "./menials";
 import type { SaveState } from "./types";
 import { clamp } from "./psyche";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
@@ -214,5 +216,8 @@ export function normLine(n: Norm, v: number): string {
 /** For the narrator and the walks. */
 export function cultureBrief(s: SaveState): string {
   const c = cultureOf(s);
-  return NORM_IDS.filter((n) => Math.abs(c.norms[n]) >= 15).map((n) => `· ${NORMS[n].name}: ${normLine(n, c.norms[n])} (${Math.round(c.norms[n])})`).join("\n");
+  const habits = NORM_IDS.filter((n) => Math.abs(c.norms[n]) >= 15).map((n) => `· ${NORMS[n].name}: ${normLine(n, c.norms[n])} (${Math.round(c.norms[n])})`).join("\n");
+  // What the owner has done to the city's DNA is part of what the city is now.
+  const genes = genomeBrief(s);
+  return [habits, slavesBrief(s), genes].filter(Boolean).join("\n");
 }

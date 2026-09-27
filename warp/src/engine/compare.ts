@@ -20,6 +20,8 @@ import { dressCodeFor, type DressChoice } from "../data/dresscodes";
 import { POLICY_BY_ID } from "../data/policies";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { generatePerson } from "./generate";
+import { lookWords, prevailingLook, type Look } from "./genome";
+import { perHousehold } from "./menials";
 import { garment } from "../data/wardrobe";
 import { rng } from "./rng";
 
@@ -42,6 +44,10 @@ export interface Society {
   beliefs: { name: string; text: string }[];
   /** A neighbour's feeling toward you, −100 … +100. */
   attitude?: number;
+  /** The look the gene programs have given most of its citizens and slaves (yours only). */
+  looks?: { citizen: Look; slave: Look };
+  /** Slaves serving an average citizen household, counted (yours only): see engine/menials. */
+  slavesPerHousehold?: number;
   /** What the narrator model dressed this household in, read from its laws; used while it still matches. */
   written?: Outfits;
 }
@@ -51,7 +57,7 @@ export interface Outfits { citizen_clothes: string; citizen_shoes: string; husba
 
 /** What a society's laws and habits are, for telling whether a written household is still true. */
 export function fingerprint(x: Society): string {
-  return JSON.stringify([x.laws.map((l) => l.name + l.text), x.doctrines, x.lawIds, NORM_IDS.map((n) => Math.round(x.norms[n] / 10)), Math.round(x.prosperity / 20)]);
+  return JSON.stringify([x.laws.map((l) => l.name + l.text), x.doctrines, x.lawIds, x.looks, NORM_IDS.map((n) => Math.round(x.norms[n] / 10)), Math.round(x.prosperity / 20)]);
 }
 
 /** Where a free city sits before anything pulls it: the numbers a new game starts at. */
@@ -92,6 +98,8 @@ export function societies(s: SaveState): Society[] {
     doctrines: myDoctrines, beliefs: beliefsOf(myDoctrines),
     laws: [...myLaws.map((l) => ({ name: l.name, text: l.text })), ...myPolicies.map((id) => ({ name: POLICY_BY_ID[id].name, text: POLICY_BY_ID[id].blurb }))],
     lawIds: [...myLaws.map((l) => l.id), ...myPolicies.map((id) => `policy:${id}`)],
+    looks: { citizen: prevailingLook(s, "citizens"), slave: prevailingLook(s, "slaves") },
+    slavesPerHousehold: perHousehold(s),
   };
   const near = a.neighbours.map((n): Society => {
     const doctrines = neighbourDoctrines(s, n);
@@ -173,8 +181,16 @@ export function household(x: Society): Household {
     if (h.slave && w.slave_clothes) { h.slave.clothes = w.slave_clothes; h.slave.collar = w.slave_collar ?? h.slave.collar; h.slave.shoes = w.slave_shoes ?? h.slave.shoes; }
     if (w.slaves !== undefined && x.kind !== "oldworld") h.slaves = w.slaves;
   }
-  h.citizen.line = h.citizen.clothes === "no clothing" ? "A citizen woman, naked." : `A citizen woman in ${h.citizen.clothes}${h.citizen.shoes === "heels" ? " and heels" : ""}.`;
-  if (h.slave) h.slave.line = `Her slave, ${h.slave.clothes === "no clothing" ? "naked" : `in ${h.slave.clothes}`}, wearing ${h.slave.collar}${h.slave.shoes === "barefoot" ? ", barefoot" : ""}.`;
+  // In your city the number is counted, not guessed: the citizens' own slaves and your menials on lease.
+  if (x.slavesPerHousehold !== undefined && x.kind !== "oldworld") {
+    const n = Math.round(clamp(x.slavesPerHousehold, 0, 9));
+    h.slaves = n;
+    h.family = n ? h.family.replace(/^A citizen couple, their children, and [^ ]+ slaves?/, `A citizen couple, their children, and ${n === 1 ? "one slave" : `${n} slaves`}`) : "A citizen couple and their children. They can't afford a slave of their own, and borrow a neighbour's when they have guests.";
+    if (!n && h.slave) h.slave = undefined;
+  }
+  const cl = lookWords(x.looks?.citizen), sl = lookWords(x.looks?.slave);
+  h.citizen.line = `${h.citizen.clothes === "no clothing" ? "A citizen woman, naked." : `A citizen woman in ${h.citizen.clothes}${h.citizen.shoes === "heels" ? " and heels" : ""}.`}${cl ? ` She has the ${cl} of the ${x.looks!.citizen.from!.join(" and ")} program, like most citizens now.` : ""}`;
+  if (h.slave) h.slave.line = `Her slave, ${h.slave.clothes === "no clothing" ? "naked" : `in ${h.slave.clothes}`}, wearing ${h.slave.collar}${h.slave.shoes === "barefoot" ? ", barefoot" : ""}.${sl ? ` Engineered: ${sl}.` : ""}`;
   return h;
 }
 
@@ -215,6 +231,10 @@ function householdByHabit(x: Society): Household {
 export function figureFor(x: Society, role: "citizen" | "slave"): Person | null {
   const h = household(x);
   const p = generatePerson({ seed: `${x.name} ${role} ${x.id} household`, sex: "female", age: role === "citizen" ? 34 : 22 });
+  const look = x.looks?.[role];
+  if (look?.skin) p.body.skin = `${look.skin} (engineered)`;
+  if (look?.hair) p.body.hair_color = look.hair;
+  if (look?.eyes) p.body.eye_color = look.eyes;
   if (role === "citizen") { p.clothes = h.citizen.clothes; p.collar = "no collar"; p.shoes = h.citizen.shoes; return p; }
   if (!h.slave) return null;
   p.clothes = h.slave.clothes; p.collar = h.slave.collar; p.shoes = h.slave.shoes;

@@ -12,6 +12,8 @@ import { rng } from "./rng";
 import { clamp } from "./psyche";
 import { WEATHER, HEADLINES, NEIGHBOR_FS, REGION_STATE_WORD, type WeatherKind, type RegionState } from "../data/world";
 import { REGIONS, REGION_BY_ID } from "../data/districts";
+import { industryPollutionFactor } from "./works";
+import { resistance } from "./genome";
 import type { Ledger } from "./economy";
 import { allArcs, startArc, arcDef, promote } from "./story";
 
@@ -112,7 +114,7 @@ export function tickWorld(s: SaveState, led: Ledger): ReportLine[] {
   const cleaner = arc.policies["sanitation"] ? 0.6 : 1;
   const flags = s.story?.flags ?? {};
   const scrubbed = flags["scrubbers"] ? 0.4 : 1;
-  w.pollution = clamp(w.pollution * 0.9 + works * 2.2 * cleaner * scrubbed + (arc.facilities["dairy"]?.level ?? 0) * 0.4, 0, 100);
+  w.pollution = clamp(w.pollution * 0.9 + works * 2.2 * cleaner * scrubbed * industryPollutionFactor(s) + (arc.facilities["dairy"]?.level ?? 0) * 0.4, 0, 100);
   w.strain = clamp(w.strain + 0.3 + w.pollution / 400, 0, 100);
 
   /* ── the weather ── */
@@ -135,16 +137,16 @@ export function tickWorld(s: SaveState, led: Ledger): ReportLine[] {
 
   switch (kind) {
     case "hot":
-      led.spend("world", "extra cooling in the heat", 300 + w.strain * 6);
+      led.spend("world", "extra cooling in the heat", (300 + w.strain * 6) * (1 - 0.6 * resistance(s, "heat", "citizens")));
       if (arc.facilities["club"]?.level) led.earn("world", "the club sells more drinks in the heat", 400);
       break;
     case "heatwave":
-      led.spend("world", "power for cooling during the heatwave", 1200 + w.strain * 25);
-      hurtExposed(-5, -12, "suffered working in the heatwave");
+      led.spend("world", "power for cooling during the heatwave", (1200 + w.strain * 25) * (1 - 0.6 * resistance(s, "heat", "citizens")));
+      { const k = 1 - resistance(s, "heat", "slaves"); if (k > 0.15) hurtExposed(-5 * k, -12 * k, "suffered working in the heatwave"); }
       arc.food.production *= 0.85;
       if (flags["desal"]) {
         if (flags["water_seller"]) led.earn("world", "selling desalinated water to the neighbors", 2500);
-      } else arc.prosperity = clamp(arc.prosperity - 2, 5, 200);
+      } else arc.prosperity = clamp(arc.prosperity - 2 * (1 - resistance(s, "heat", "citizens")), 5, 200);
       break;
     case "storm":
       led.spend("world", "storm repairs", flags["sea_wall"] ? 300 : 900);
@@ -166,27 +168,28 @@ export function tickWorld(s: SaveState, led: Ledger): ReportLine[] {
       }
       break;
     }
-    case "cold": led.spend("world", "heating", 500 + w.strain * 4); break;
+    case "cold": led.spend("world", "heating", (500 + w.strain * 4) * (1 - 0.6 * resistance(s, "cold", "citizens"))); break;
     case "freeze":
-      led.spend("world", "heating and burst pipes in the freeze", 1500 + w.strain * 15);
+      led.spend("world", "heating and burst pipes in the freeze", (1500 + w.strain * 15) * (1 - 0.6 * resistance(s, "cold", "citizens")));
       arc.food.production *= 0.7;
-      for (const p of exposed(s)) if (r.chance(0.3)) { p.health.illness = Math.max(p.health.illness, 1) as 1; }
-      hurtExposed(-3, -8, "got badly chilled working in the freeze");
+      { const k = 1 - resistance(s, "cold", "slaves");
+        for (const p of exposed(s)) if (r.chance(0.3 * k)) { p.health.illness = Math.max(p.health.illness, 1) as 1; }
+        if (k > 0.15) hurtExposed(-3 * k, -8 * k, "got badly chilled working in the freeze"); }
       break;
     case "dust":
       arc.food.production *= 0.8;
-      for (const p of household(s)) p.health.health = clamp(p.health.health - 1, -100, 100);
+      for (const p of household(s)) p.health.health = clamp(p.health.health - 1 * (1 - resistance(s, "pollution", "slaves")), -100, 100);
       led.spend("world", "replacing clogged air filters", 600);
       break;
     case "smog":
-      for (const p of household(s)) p.health.health = clamp(p.health.health - 2, -100, 100);
-      arc.prosperity = clamp(arc.prosperity - 2, 5, 200);
+      for (const p of household(s)) p.health.health = clamp(p.health.health - 2 * (1 - resistance(s, "pollution", "slaves")), -100, 100);
+      arc.prosperity = clamp(arc.prosperity - 2 * (1 - resistance(s, "pollution", "citizens")), 5, 200);
       break;
   }
   if (season === "winter") arc.food.production *= 0.75;
   if (season === "summer") arc.food.production *= 1.1;
   if (w.pollution > 40) {
-    arc.prosperity = clamp(arc.prosperity - w.pollution / 60, 5, 200);
+    arc.prosperity = clamp(arc.prosperity - (w.pollution / 60) * (1 - resistance(s, "pollution", "citizens")), 5, 200);
     if (r.chance(0.3)) push(`Pollution from your industry is at ${Math.round(w.pollution)}. Citizens are complaining about the air.`, "warning", 5);
   }
 
@@ -222,7 +225,7 @@ export function tickWorld(s: SaveState, led: Ledger): ReportLine[] {
     }
     const route = s.city?.routes.find((x) => x.region === reg.id);
     if (route && (run.state === "war" || run.state === "collapse")) route.disrupted = Math.max(route.disrupted, 1);
-    if (route && run.state === "plague" && r.chance(0.12)) {
+    if (route && run.state === "plague" && r.chance(0.12 * (1 - resistance(s, "disease", "slaves")))) {
       const p = r.pick(household(s));
       if (p && !p.health.illness) { p.health.illness = 1; push(`${p.name} caught the fever that came in on a ship from ${reg.name}.`, "bad", 7); }
     }

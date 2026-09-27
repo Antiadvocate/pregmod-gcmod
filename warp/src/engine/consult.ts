@@ -11,6 +11,7 @@
  * deliberate: a channel where you can ask a woman what she thinks without it becoming an event is
  * a different and much more useful thing than another scene, and the genre has never had one.
  */
+import { genomeBrief } from "./genome";
 import type { Person, SaveState } from "./types";
 import { call } from "../llm";
 import { modelsAvailable } from "../config";
@@ -70,6 +71,7 @@ export async function askHer(s: SaveState, personId: string, question: string): 
       mem?.beliefs.length ? `WHAT YOU HAVE CONCLUDED: ${mem.beliefs.map((b) => `"${b.text}"`).join(" ")}` : "",
       mem?.facts.length ? `THINGS YOU HAVE BEEN TOLD: ${mem.facts.slice(-6).map((f) => f.text).join("; ")}` : "",
       `THE PLACE: ${s.arcology.name}, week ${s.arcology.week}.`,
+      genomeBrief(s) ? `WHAT THE OWNER HAS DONE TO THE CITY'S DNA (you see it every day):\n${genomeBrief(s)}` : "",
       ``,
       `HE ASKS YOU: ${question}`,
     ].filter(Boolean).join("\n"),
