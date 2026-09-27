@@ -247,7 +247,7 @@ export function readWords(text: string): GeneSpec {
     society: "", side_effects: "", reaction: 0,
   };
   // Everything else the words ask for is a trait in their own terms: each clause the menu didn't read.
-  const MENU = /\b(skin|hair|eyes?|tall|taller|short|shorter|height|heat|hot|cold|freez|climate|weather|disease|plague|fever|immun|pollution|smog|lungs?|health|healthy)\b/i;
+  const MENU = /\b(skin\w*|hair\w*|eyes?|tall\w*|short\w*|height|heat\w*|hot|cold\w*|freez\w*|climate|weather|diseases?|plagues?|fevers?|immun\w*|virus\w*|sick\w*|pollution|smog|lungs?|toxins?|health\w*)\b/i;
   // Who it's for is not a trait: take out "citizens", "my slaves", "everyone" and the like first.
   const body = text.replace(/\b(my |the |all |every |our )?(citizens?|slaves?|menials?|everyone|everybody|people|population|residents?)\b/gi, " ").replace(/\b(who|that) (have|has|can)\b/gi, " with ");
   const clauses = body.split(/[,;.]|\band\b|\bwith\b|\bfor\b/i).map((c) => c.replace(/^\s*(give|make|grant|change|let)\b.*?\b(them|citizens|slaves|everyone|people|all)\b\s*/i, "").replace(/^\s*(a|an|the|to be|to have|have|be)\s+/i, "").trim()).filter((c) => c.length >= 4 && c.length <= 60 && !MENU.test(c));

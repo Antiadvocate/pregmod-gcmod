@@ -148,3 +148,16 @@ const slavesOf = (s: ReturnType<typeof newGame>) => Object.values(s.people).filt
   tickGenome(s);
   check("keener senses and sharper minds do something every week", s.arcology.crime < crime && s.arcology.prosperity > pros, { crime: [crime, s.arcology.crime], pros: [pros, s.arcology.prosperity] });
 }
+
+{
+  // Walks: a gene program shows on every walk, like your laws do, and the narrated walk is told to show it.
+  const { walkScene, walkContext, places } = await import("../src/engine/walk.ts");
+  const s = newGame({ seed: "genome-walk" });
+  s.arcology.cash = 5_000_000;
+  await design(s, { name: "Owl", text: "citizens with night vision, and resistant to fevers", target: "citizens" });
+  apply(s);
+  let every = true;
+  for (const pl of places(s)) for (let i = 0; i < 5; i++) { s.turn++; if (!/Owl program/.test(walkScene(s, pl))) every = false; }
+  check("every walk, everywhere, shows the gene program", every);
+  check("the narrated walk is told to show it at work", /GENE PROGRAMS DID .*show at least one of the changes/.test(walkContext(s)) && /night vision/.test(walkContext(s)));
+}
