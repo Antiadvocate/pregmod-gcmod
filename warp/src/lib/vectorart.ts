@@ -91,6 +91,10 @@ export const SKIN: [RegExp, string][] = [
   [/dyed pink/i, "#fe62b0"], [/dyed blue/i, "#5b8eb7"], [/dyed green/i, "#a6c373"], [/dyed purple/i, "#7a2391"],
   [/dyed red/i, "#bc4949"], [/dyed gray|dyed grey/i, "#bdbdbd"], [/dyed white/i, "#ffffff"], [/dyed black/i, "#1c1c1c"],
   [/tiger/i, "#e2d75d"],
+  // Skin the gene programs gave them (engine/genome), always written "<colour> (engineered)".
+  [/blue \(engineered\)/i, "#5b8eb7"], [/green \(engineered\)/i, "#7fae6a"], [/(purple|violet) \(engineered\)/i, "#8a4fa8"],
+  [/teal \(engineered\)/i, "#3f9a94"], [/(grey|silver) \(engineered\)/i, "#b9bec4"], [/gold \(engineered\)/i, "#d9b54a"],
+  [/red \(engineered\)/i, "#c2554a"], [/pink \(engineered\)/i, "#f09ab8"], [/white \(engineered\)/i, "#f4f1ec"], [/black \(engineered\)/i, "#262222"],
   [/pale|porcelain/i, "#f5ded3"],
   [/fair|light(?! brown)/i, "#f0d5c0"],
   [/olive/i, "#d9b48f"],
@@ -102,7 +106,7 @@ export const SKIN: [RegExp, string][] = [
 
 const HAIR: [RegExp, string][] = [
   [/platinum/i, "#eee7d2"], [/pink/i, "#f08bbd"], [/blue/i, "#3f6fd1"], [/green/i, "#3f9e5a"],
-  [/purple|violet/i, "#7b3fb8"], [/silver/i, "#c7ccd3"], [/white/i, "#f2f0ea"], [/strawberry/i, "#d9885a"],
+  [/purple|violet/i, "#7b3fb8"], [/teal/i, "#2f8f8a"], [/gold/i, "#d9b54a"], [/silver/i, "#c7ccd3"], [/white/i, "#f2f0ea"], [/strawberry/i, "#d9885a"],
   [/blonde|blond/i, "#e6c66a"],
   [/auburn/i, "#8c3b1e"],
   [/red|ginger/i, "#b33a1a"],
@@ -117,7 +121,7 @@ const EYE: [RegExp, string][] = [
   [/blue/i, "#5b8fbe"],
   [/green/i, "#5f8c5a"],
   [/hazel/i, "#8a6b3b"],
-  [/grey|gray/i, "#8d9395"],
+  [/grey|gray/i, "#8d9395"], [/purple|violet/i, "#7b4fb0"], [/gold|amber/i, "#c99a2e"], [/red/i, "#b3382c"], [/teal/i, "#2f8f8a"], [/silver|white/i, "#c9ced4"], [/pink/i, "#e07aa6"], [/black/i, "#15110f"],
   [/dark brown/i, "#3a2618"],
   [/brown/i, "#6b4423"],
 ];

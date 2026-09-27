@@ -29,6 +29,7 @@ import "./anatomy.test.ts";
 import "./society.test.ts";
 import "./globe.test.ts";
 import "./works.test.ts";
+import "./genome.test.ts";
 import "./reign.test.ts";
 import "./tokens.test.ts";
 import "./household.test.ts";

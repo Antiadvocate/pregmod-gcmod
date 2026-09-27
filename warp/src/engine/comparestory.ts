@@ -15,6 +15,7 @@ import { rng } from "./rng";
 import { generatePerson } from "./generate";
 import { figureFor, household, METRICS, type Outfits, type Society } from "./compare";
 import { NORMS, NORM_IDS, normLine } from "./culture";
+import { genomeBrief } from "./genome";
 import { WARDROBE } from "../data/wardrobe";
 import { call, parseJson } from "../llm";
 import { compliance } from "./lawlife";
@@ -175,6 +176,8 @@ function facts(s: SaveState, x: Society): string[] {
     const pol = x.laws.filter((l) => !laws.some((k) => k.name === l.name));
     if (pol.length) out.push(`POLICIES: ${pol.map((l) => `${l.name}: ${l.text}`).join(" | ")}`);
     const st = s.arcology.public_standing;
+    const genes = genomeBrief(s);
+    if (genes) out.push(`WHAT THE OWNER HAS DONE TO THE CITY'S DNA (true of the people in the story):\n${genes}`);
     out.push(`THE CITY'S OPINION OF THE OWNER: ${st >= 3 ? "good" : st <= -3 ? "poor" : "mixed"}; reputation ${Math.round(s.arcology.rep)}.`);
   } else if (x.kind === "neighbour") {
     out.push(x.laws.length ? `LAWS IN FORCE, WORD FOR WORD (binding; passed by its court):\n${x.laws.map((l) => `- The ${l.name}: "${l.text}"`).join("\n")}` : "LAWS IN FORCE: none worth naming.");
