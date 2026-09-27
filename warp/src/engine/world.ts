@@ -12,6 +12,7 @@ import { rng } from "./rng";
 import { clamp } from "./psyche";
 import { WEATHER, HEADLINES, NEIGHBOR_FS, REGION_STATE_WORD, type WeatherKind, type RegionState } from "../data/world";
 import { REGIONS, REGION_BY_ID } from "../data/districts";
+import { industryPollutionFactor } from "./works";
 import type { Ledger } from "./economy";
 import { allArcs, startArc, arcDef, promote } from "./story";
 
@@ -112,7 +113,7 @@ export function tickWorld(s: SaveState, led: Ledger): ReportLine[] {
   const cleaner = arc.policies["sanitation"] ? 0.6 : 1;
   const flags = s.story?.flags ?? {};
   const scrubbed = flags["scrubbers"] ? 0.4 : 1;
-  w.pollution = clamp(w.pollution * 0.9 + works * 2.2 * cleaner * scrubbed + (arc.facilities["dairy"]?.level ?? 0) * 0.4, 0, 100);
+  w.pollution = clamp(w.pollution * 0.9 + works * 2.2 * cleaner * scrubbed * industryPollutionFactor(s) + (arc.facilities["dairy"]?.level ?? 0) * 0.4, 0, 100);
   w.strain = clamp(w.strain + 0.3 + w.pollution / 400, 0, 100);
 
   /* ── the weather ── */

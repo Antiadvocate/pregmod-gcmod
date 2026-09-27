@@ -1,6 +1,7 @@
 /** THE ARCOLOGY — the building, its money, and the three neighbours who have opinions about you. */
 import { useGame } from "../lib/game";
 import Corporation from "./Corporation";
+import PublicWorks from "./PublicWorks";
 import { ATTACKERS, DEFENSES, buildDefense, defensesOf, garrison, lastBattles, type Defense } from "../engine/battles";
 import { Button, Card, Chip, Empty, Meter, Money, Section, Stat } from "../lib/ui";
 import { FACILITIES, FACILITY_BY_ID } from "../data/facilities";
@@ -25,6 +26,8 @@ export default function ArcologyView() {
         <Stat label="ownership" value={`${Math.round(arc.ownership)}%`} sub={`${arc.sectors.filter((s) => s.owner === "you").length} of ${arc.sectors.length} sectors`} />
         <Stat label="food" value={Math.round(arc.food.stores)} sub={`eats ${arc.food.consumption}/wk`} tone={arc.food.stores < 200 ? "warn" : undefined} />
       </div>
+
+      <PublicWorks />
 
       <Section title="Force">
         <Card>

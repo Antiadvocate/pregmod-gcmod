@@ -56,6 +56,7 @@ import { tickReign } from "./reign";
 import { tickCampaigns } from "./civic";
 import { tickWorld } from "./world";
 import { tickGlobe } from "./globe";
+import { tickWorks } from "./works";
 import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
 import { tickThreads } from "./threads";
@@ -302,6 +303,7 @@ export function endWeek(s: SaveState): WeekReport {
   // weather changes what the farms grew and what the power cost.
   lines.push(...tickWorld(s, led));
   for (const l of tickGlobe(s)) push(l, "good", 8);
+  tickWorks(s, led);
   ageMoments(s);
   for (const e of tickDeeds(s)) push(e.text, "warning", 8, e.person);
   // The city's habits move with what it saw you do this week, and the court writes them down.
@@ -379,7 +381,7 @@ export function endWeek(s: SaveState): WeekReport {
   }
 
   if (arc.cash < 0) problems.push(`You are ${Math.abs(arc.cash)} in the red.`);
-  if (arc.food.stores < 100 && arc.food.consumption > 0) problems.push("Food stores are nearly out.");
+  if (arc.food.stores < 100 && arc.food.consumption > 0) problems.push("Food stores are nearly out, and the shortfall is being bought at import prices. Hydroponic towers or a food stockpile (Arcology → Public works) fix it.");
   const overworked = alive(s).filter((p) => p.health.energy < 12);
   if (overworked.length) problems.push(`${overworked.length} of your slaves are exhausted.`);
   const wornOut = alive(s).filter((p) => wear(p.psyche) > 0.7);

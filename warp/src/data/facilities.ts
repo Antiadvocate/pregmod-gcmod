@@ -129,7 +129,7 @@ export const FACILITIES: FacilityDef[] = [
     psyche: { relaxation: 0.3, wear: 0.2, health: 1, energy: 40 },
     trains: {},
     upgrades: [
-      { id: "hydroponics", name: "Hydroponics", cost: 14000, note: "food production up sharply" },
+      { id: "hydroponics", name: "Hydroponics", cost: 14000, note: "each farmhand grows 60% more food" },
       { id: "livestock", name: "Livestock", cost: 18000, note: "meat, and a use for the pens" },
     ],
   },

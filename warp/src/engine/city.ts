@@ -20,6 +20,7 @@
  * whether the raid reaches the residential ring. A yield nobody can feel is a yield that should
  * not exist.
  */
+import { housingFromWorks } from "./works";
 import type { ReportLine, SaveState } from "./types";
 import { DISTRICT_BY_KIND, DISTRICTS, REGIONS, REGION_BY_ID, RINGS, type DistrictDef, type DistrictKind } from "../data/districts";
 import { clamp } from "./psyche";
@@ -130,6 +131,7 @@ export function cityYield(s: SaveState): CityYield {
     const reg = REGION_BY_ID[r.region];
     if (reg && !r.disrupted) out.cash += reg.cash;
   }
+  out.housing += housingFromWorks(s);
   for (const k of Object.keys(out) as (keyof CityYield)[]) out[k] = Math.round(out[k] * 100) / 100;
   return out;
 }
@@ -381,10 +383,12 @@ export function cityProblems(s: SaveState): string[] {
   const city = cityOf(s);
   const out: string[] = [];
   const ceiling = 400 + y.housing;
-  if (s.arcology.population > ceiling * 0.92) out.push(`Housing is nearly full — ${Math.round(s.arcology.population).toLocaleString()} of ${Math.round(ceiling).toLocaleString()}. Build residential or the city stops growing.`);
-  if (y.security < 6 && s.arcology.crime > 40) out.push("Crime is rising in the outer blocks and there's no police presence.");
+  if (s.arcology.population > ceiling * 0.92) out.push(`Housing is nearly full — ${Math.round(s.arcology.population).toLocaleString()} of ${Math.round(ceiling).toLocaleString()}. Build residential, or put up prefab housing blocks (Arcology → Public works), or the city stops growing.`);
+  if (y.security < 6 && s.arcology.crime > 40) out.push("Crime is rising in the outer blocks and there's no police presence. Police stations or a police surge (Arcology → Public works) will answer it.");
   if (!y.reach) out.push("Without docks you can't open trade routes.");
   if (y.arms < 15 && s.arcology.neighbours.some((n) => n.attitude < -40)) out.push("A hostile neighbor is out there, and your military is too weak to deter them.");
+  const air = s.world?.pollution ?? 0;
+  if (air > 40) out.push(`Pollution is at ${Math.round(air)} and costing you prosperity. Scrubber towers, clean-industry retrofits or cleanup crews (Arcology → Public works) bring it down.`);
   const rotting = city.districts.filter((d) => d.level && d.condition < 35).length;
   if (rotting) out.push(`${rotting} block${rotting === 1 ? " is" : "s are"} falling apart. Repairs are cheaper than rebuilding.`);
   return out;

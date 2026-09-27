@@ -7,6 +7,7 @@
  * transaction: `earn` and `spend` write a line, and the week's cash delta is the sum of the lines.
  * If the number on screen is wrong, the line that is wrong is on screen next to it.
  */
+import { foodCap } from "./works";
 import { jobMoney } from "./idols";
 import { DRUG_BY_ID } from "../data/drugs";
 import type { LedgerEntry, Person, SaveState } from "./types";
@@ -110,7 +111,7 @@ export function weeklyMoney(state: SaveState, p: Person): { income: number; upke
       // The farmyard does not earn: it FEEDS. Paying a worker's wage AND crediting the food they
       // grew is the double count that made the old budget screen disagree with the bank, so the
       // whole value of a farmhand shows up on the food line instead.
-      const food = clamp(34 * (1 + p.health.energy / 200) * competence(p, "labour"), 0, 140);
+      const food = clamp(34 * (1 + p.health.energy / 200) * competence(p, "labour") * (fac?.upgrades?.hydroponics ? 1.6 : 1), 0, 220);
       arc.food.production += food;
       note = `${Math.round(food)} units of food`;
     }
@@ -196,7 +197,7 @@ export function arcologyMoney(state: SaveState, led: Ledger): void {
     led.spend("food", "bought in, because you are not growing it", shortfall * 8);
     arc.food.stores = 0;
   } else {
-    arc.food.stores = clamp(arc.food.stores + arc.food.production - arc.food.consumption, 0, 8000);
+    arc.food.stores = clamp(arc.food.stores + arc.food.production - arc.food.consumption, 0, foodCap(state));
   }
   arc.food.production = 0;
 }
