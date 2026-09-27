@@ -896,6 +896,8 @@ export interface SaveState {
   genome?: import("./genome").Genome;
   /** Menial slaves you own in bulk, and the ones your citizens own. See engine/menials. */
   menials?: import("./menials").Menials;
+  /** Faces of people who aren't yours but keep turning up. See engine/faces.ts. */
+  faces?: Record<string, import("./faces").Face>;
   /** Scenes of city life shown recently, by key, so the week report doesn't repeat itself. */
   citylife_seen?: Record<string, number>;
   /** The content switches, which the original carried as V.seeExtreme, V.seeCircumcision and the

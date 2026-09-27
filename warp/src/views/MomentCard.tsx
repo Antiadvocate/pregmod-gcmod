@@ -101,7 +101,7 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
   }, [id]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const cast = useMemo(() => (m ? castOf(save, m) : []), [id, m?.person, (m?.others ?? []).join(), m ? m.log.length > 0 : false]);
+  const cast = useMemo(() => (m ? castOf(save, m) : []), [id, m?.person, (m?.others ?? []).join(), m?.log.length ?? 0]);
   if (!m) return null;
   const p = m.person ? save.people[m.person] : undefined;
   // Their face follows the last thing written on their side, and the reply as it arrives.

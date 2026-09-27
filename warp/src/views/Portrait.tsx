@@ -11,13 +11,18 @@ import type { Person, SaveState } from "../engine/types";
 import type { Moment as Scene } from "../engine/moments";
 import { generatePerson } from "../engine/generate";
 import { prevailingLook } from "../engine/genome";
+import { facesIn, personOf } from "../engine/faces";
 import { MOODS, moodFor, moodIn, PLURAL, speakerOf, type Mood } from "../lib/face";
 import SlaveArt from "./SlaveArt";
 
-/** Who is on the other side of a scene: yours when they're named, stand-ins when they aren't. */
+/** Who is on the other side of a scene: yours when they're named, then anyone on file who is
+ *  (the story's cast, strangers the model has met before), then stand-ins. */
 export function castOf(s: SaveState, m: Scene): Person[] {
   const named = [m.person, ...(m.others ?? [])].map((id) => (id ? s.people[id] : undefined)).filter((p): p is Person => !!p);
-  if (named.length) return named.slice(0, 3);
+  const said = `${m.title}\n${m.log.filter((l) => l.role !== "you").map((l) => l.text).join("\n")}`;
+  const filed = facesIn(s, said, 3).filter((f) => !named.some((p) => p.name === f.name)).map(personOf);
+  const cast = [...named, ...filed].slice(0, 3);
+  if (cast.length) return cast;
   const opening = `${m.title} ${m.log.find((l) => l.role !== "you")?.text.slice(0, 400) ?? ""}`;
   const count = PLURAL.test(opening) ? 3 : 1;
   const look = prevailingLook(s, "citizens");

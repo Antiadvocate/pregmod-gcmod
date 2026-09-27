@@ -59,6 +59,7 @@ import { tickGlobe } from "./globe";
 import { tickWorks } from "./works";
 import { tickGenome, menialResistance } from "./genome";
 import { tickMenials } from "./menials";
+import { pruneFaces, syncStoryCast } from "./faces";
 import { cityThisWeek } from "./citylife";
 import "./systemevents";
 import { tickRun } from "./run";
@@ -310,6 +311,8 @@ export function endWeek(s: SaveState): WeekReport {
   tickWorks(s, led);
   for (const l of tickGenome(s)) push(l, "neutral", 5);
   for (const l of tickMenials(s, led, menialResistance(s))) push(l, "warning", 5);
+  syncStoryCast(s);
+  pruneFaces(s);
   ageMoments(s);
   for (const e of tickDeeds(s)) push(e.text, "warning", 8, e.person);
   // The city's habits move with what it saw you do this week, and the court writes them down.

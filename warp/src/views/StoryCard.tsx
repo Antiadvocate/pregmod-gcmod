@@ -4,7 +4,7 @@
  * The scene, then the choices, then what came of the one you took — all in the same card, so the
  * answer is where you tapped. A choice that needs one of your people opens a picker in place.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { BookOpen, Lock } from "lucide-react";
 import { useGame } from "../lib/game";
 import { Button, Card, cx } from "../lib/ui";
@@ -12,6 +12,8 @@ import { answer, arcDef, optionsFor, pendingBeat, pickable, type Answer, type Op
 import { valuePerson } from "../engine/economy";
 import { SlaveHead } from "./SlaveArt";
 import { Reaction } from "./MomentCard";
+import Portrait from "./Portrait";
+import { facesIn, personOf } from "../engine/faces";
 
 export default function StoryCard() {
   const { save, mutate } = useGame();
@@ -24,7 +26,9 @@ export default function StoryCard() {
       <Card className="mb-6 border-l-2 fade-in" >
         <div className="text-[11px] uppercase tracking-wider acc mb-1.5 flex items-center gap-1.5"><BookOpen size={12} /> {done.title}</div>
         <div className="player-line !mt-1 !mb-3">{done.chose}</div>
+        <Faces text={done.text} />
         <Prose text={done.text} />
+        <div className="clear-both" />
         {done.consequences.length ? (
           <div className="flex flex-wrap gap-1.5 mt-3">
             {done.consequences.map((c, i) => <span key={i} className={cx("chip", /^−|less|cools|falls|dead|sold|gone/.test(c) ? "bad" : /^\+|warms|rises|better|heart|joins/.test(c) ? "good" : "")}>{c}</span>)}
@@ -51,8 +55,9 @@ export default function StoryCard() {
     <Card className="mb-6 border-l-2 fade-in">
       <div className="text-[11px] uppercase tracking-wider acc mb-1 flex items-center gap-1.5"><BookOpen size={12} /> {arcDef(p.def.id)?.title}</div>
       <h2 className="font-display text-[19px] leading-tight mb-3">{title}</h2>
+      <Faces text={p.beat.text(p.c)} />
       <Prose text={p.beat.text(p.c)} />
-      <div className="mt-4 space-y-2">
+      <div className="mt-4 space-y-2 clear-both">
         {opts.map((o) => (
           <div key={o.id}>
             <button disabled={!!o.locked} onClick={() => (o.pick ? setPicking(picking?.id === o.id ? null : o) : choose(o))}
@@ -89,6 +94,14 @@ function Picker({ o, onPick }: { o: OptionView; onPick: (id: string) => void }) 
       </div>
     </div>
   );
+}
+
+/** Whoever the beat is about, if they aren't yours: the creditor, the rival, the sibling. */
+function Faces({ text }: { text: string }) {
+  const { save } = useGame();
+  const people = useMemo(() => facesIn(save, text, 3).map(personOf), [text]);
+  if (!people.length) return null;
+  return <div className="float-right ml-3 mb-2"><Portrait people={people} text={text} size={64} /></div>;
 }
 
 function Prose({ text }: { text: string }) {

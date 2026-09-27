@@ -21,7 +21,7 @@
  */
 import { useEffect, useState, useMemo, useRef, type RefObject } from "react";
 import type { Person } from "../engine/types";
-import { ART_BASE, cropFor, layersFor, styleFor, heightTransform, type Crop, type Layer } from "../lib/vectorart";
+import { ART_BASE, manly, cropFor, layersFor, styleFor, heightTransform, type Crop, type Layer } from "../lib/vectorart";
 import { frameAt, jointFor, restingPose, transformFor, STILL, type Joint, type Pose } from "../lib/rig";
 import { subscribeClock, stillWanted } from "../lib/clock";
 import { expressionOf, ExpressionLayer, type Moment } from "../lib/expression";
@@ -108,7 +108,10 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
   // The face goes on after the features and before the fringe, so hair falls over a blush the way
   // it would.
   const base = face ? expressionOf(person, moment) : null;
-  const expr = base && mood ? { ...base, blush: Math.max(base.blush, mood.blush), tears: Math.max(base.tears, mood.tears), gasp: false } : base;
+  const man = manly(person);
+  // The pack has no men's haircuts. A man with hair_length 1 gets a close crop cut from his own skull.
+  const cropped = man && person.body.hair_length === 1;
+  const expr = base && mood ? { ...base, blush: man ? mood.blush * 0.25 : Math.max(base.blush, mood.blush), tears: Math.max(base.tears, mood.tears), gasp: false } : base;
   const foreAt = markup.findIndex((m) => m.layer.id.startsWith("Hair_Fore") || /_Ear_Fore$/.test(m.layer.id));
 
   // The moving part. Writes attributes rather than state: a breathing roster must not re-render.
@@ -221,7 +224,12 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
           </defs>
         ) : null}
         <g transform={crop === "full" ? heightTransform(person) : undefined}>
-        {markup.map(({ layer, inner }, i) => mood && FEATURE.test(layer.id) ? (
+        {markup.map(({ layer, inner }, i) => layer.id === "Head" && cropped ? (
+          <g key={`${layer.id}-${i}`} data-joint={jointFor(layer.id)} data-own={layer.transform ?? ""} transform={layer.transform}>
+            <g dangerouslySetInnerHTML={{ __html: inner }} />
+            <CroppedHair scope={scope} />
+          </g>
+        ) : mood && FEATURE.test(layer.id) ? (
           <g key={`${layer.id}-${i}`} data-joint={jointFor(layer.id)} data-own={layer.transform ?? ""} transform={layer.transform}>
             <Feature id={layer.id} inner={inner} scope={scope} />
           </g>
@@ -241,6 +249,20 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
 }
 
 const FEATURE = /^(Eyes_|Eyebrow_|Mouth_)/;
+
+/** The pack's head outline, filled in his hair colour above a hairline: a close crop that fits any skull. */
+const SKULL = "m323.4 161.2c6-14.4 8.4-24.7 10.6-40.1 4.5-31.3-16.1-52.4-42.5-43.9-34.2 11-29.4 33.1-26.2 53.7-1.16906 3.21971-1.63659 6.99403-1.5314 11.02311.14072 5.39012 1.30645 11.23617 3.18876 16.82016 1.79046 5.31154 4.78114 10.47993 7.73853 14.60539C281.69792 183.11628 283.49849 183.95695 286 184c10.1-1.7 28.3-4.2 37.4-22.8z";
+function CroppedHair({ scope }: { scope: string }) {
+  return (
+    <g pointerEvents="none">
+      <clipPath id={`${scope}-crop`}><path d="M240 50 L350 50 L350 134 Q342 113 328 107 Q307 100 288 102 Q272 105 267 114 Q264 121 264 130 L240 130 Z" /></clipPath>
+      <g clipPath={`url(#${scope}-crop)`}>
+        <path d={SKULL} className="hair" transform="translate(290 120) scale(1.03) translate(-290 -120)" />
+        <path d={SKULL} fill="#000" opacity={0.12} transform="translate(290 120) scale(1.03) translate(-290 -120)" />
+      </g>
+    </g>
+  );
+}
 const n2 = (v: number) => (Math.round(v * 100) / 100).toString();
 
 /** One face layer, split so its parts can move: eyes in a group that opens and shuts, each brow in
