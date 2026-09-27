@@ -97,7 +97,7 @@ export interface GeneEdit {
   auto?: boolean;
 }
 
-export interface Genome { edits: GeneEdit[]; draft?: { name: string; text: string; target: Target; spec: GeneSpec; by: "narrator" | "game" } }
+export interface Genome { edits: GeneEdit[]; draft?: { name: string; text: string; target: Target; spec: GeneSpec; by: "narrator" | "game"; /** The program this redesigns, when it's a revision. */ revises?: string } }
 export function genomeOf(s: SaveState): Genome {
   const g = (s.genome ??= { edits: [] });
   heal(s, g);
@@ -243,7 +243,7 @@ export function readWords(text: string): GeneSpec {
     eyes: colourNear(t, "eyes?"),
     height: /\b(tall|taller)\b(?!-)/.test(t) ? 6 : /\b(short|shorter)\b(?!-)/.test(t) ? -6 : undefined,
     resist,
-    health: /\b(health|longevity|long-lived|vigou?r|strong)/.test(t) ? 8 : undefined,
+    health: /\b(health|healthier|vigou?r)/.test(t) ? 8 : undefined,
     society: "", side_effects: "", reaction: 0,
   };
   // Everything else the words ask for is a trait in their own terms: each clause the menu didn't read.
@@ -294,7 +294,7 @@ function clampAll(raw: Partial<GeneSpec> & Record<string, unknown>): GeneSpec {
 }
 
 /** Have it designed: the narrator if one is given, else the game's reading. The draft waits to be applied. */
-export async function design(s: SaveState, draft: { name: string; text: string; target: Target }, model?: string, fallback?: string): Promise<{ ok: boolean; error?: string }> {
+export async function design(s: SaveState, draft: { name: string; text: string; target: Target; revises?: string }, model?: string, fallback?: string): Promise<{ ok: boolean; error?: string }> {
   const name = draft.name.trim().slice(0, 60) || "Unnamed edit";
   const text = draft.text.trim().slice(0, 600);
   if (!text) return { ok: false, error: "Write what the edit should do." };
@@ -324,7 +324,7 @@ export async function design(s: SaveState, draft: { name: string; text: string; 
   }
   spec ??= readWords(text);
   spec.traits = traitsFor(spec, draft.target);
-  genomeOf(s).draft = { name, text, target: draft.target, spec, by };
+  genomeOf(s).draft = { name, text, target: draft.target, spec, by, revises: draft.revises };
   return { ok: true };
 }
 
@@ -349,6 +349,7 @@ export function apply(s: SaveState): string {
   const g = genomeOf(s);
   const d = g.draft;
   if (!d) return "";
+  if (d.revises) return applyRevision(s);
   const slaves = household(s);
   const q = quote(s, d.target, d.spec, slaves);
   if (s.arcology.cash < q.cost) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}; the program costs ¤${q.cost.toLocaleString()}.`;
@@ -500,4 +501,88 @@ export function prevailingChanges(s: SaveState, who: "slaves" | "citizens"): { c
     out.from.push(e.name);
   }
   return out;
+}
+
+/* ── changing a program once it's running ────────────────────────────────────────────────────── */
+
+/** What a program put on one slave, taken off again: its traits, its line in what the narrator
+ *  reads, its height; her colouring goes back to what she was born with, or to what another
+ *  program she carries gave her. */
+function undo(s: SaveState, p: Person, e: GeneEdit): void {
+  const b = p.body;
+  const others = genomeOf(s).edits.filter((x) => x !== e && x.slaves.includes(p.id));
+  const kept = new Set(others.flatMap((x) => [...RESISTS.filter((r) => (x.spec.resist[r] ?? 0) > 0).map((r) => `${r}-resistant (engineered)`), ...(x.spec.traits ?? []).map((t) => `${t.name} (engineered)`)]));
+  const mine = [...RESISTS.filter((r) => (e.spec.resist[r] ?? 0) > 0).map((r) => `${r}-resistant (engineered)`), ...(e.spec.traits ?? []).map((t) => `${t.name} (engineered)`)];
+  b.traits = (b.traits ?? []).filter((t) => !mine.includes(t) || kept.has(t));
+  b.appearance_facts = b.appearance_facts.replace(new RegExp(` ?Her DNA was rewritten by the ${e.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} program: [^.]*\\.`, "g"), "").trim();
+  if (e.spec.height) b.height_cm = Math.round(clamp(b.height_cm - e.spec.height, 130, 210));
+  if (e.spec.skin || e.spec.hair || e.spec.eyes) {
+    const orig = born(p);
+    const last = (k: "skin" | "hair" | "eyes") => others.map((x) => x.spec[k]).filter(Boolean).at(-1);
+    if (e.spec.skin) b.skin = last("skin") ? `${last("skin")} (engineered)` : orig.skin;
+    if (e.spec.hair) b.hair_color = last("hair") ?? orig.hair_color;
+    if (e.spec.eyes) b.eye_color = last("eyes") ?? orig.eye_color;
+  }
+}
+
+/** A revision is run again on everyone it's for now, at a discount on a fresh program. */
+export const REVISE_RATE = 0.6;
+export const REVERSE_RATE = 0.5;
+export function revisionCost(s: SaveState): number {
+  const d = s.genome?.draft;
+  return d?.revises ? Math.round(quote(s, d.target, d.spec).cost * REVISE_RATE) : 0;
+}
+
+export function applyRevision(s: SaveState): string {
+  const g = genomeOf(s);
+  const d = g.draft;
+  const e = d?.revises ? g.edits.find((x) => x.id === d.revises) : undefined;
+  if (!d || !e) return "";
+  const cost = revisionCost(s);
+  if (s.arcology.cash < cost) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}; the revision costs ¤${cost.toLocaleString()}.`;
+  s.arcology.cash -= cost;
+  const was = { name: e.name, changes: changesOf(e.spec) };
+  for (const id of e.slaves) { const p = s.people[id]; if (p) undo(s, p, e); }
+  e.name = d.name; e.text = d.text; e.target = d.target; e.spec = d.spec; e.by = d.by; e.cost += cost;
+  const slaves = household(s);
+  e.slaves = d.target !== "citizens" ? slaves.map((p) => p.id) : [];
+  for (const p of slaves.filter((x) => e.slaves.includes(x.id))) rewrite(p, e.spec, e.name);
+  e.citizens = d.target !== "slaves" ? Math.round(s.arcology.population) : 0;
+  e.menials = d.target !== "citizens" ? s.menials?.owned ?? 0 : 0;
+  g.draft = undefined;
+  const now = changesOf(e.spec);
+  const added = now.filter((x) => !was.changes.includes(x)), removed = was.changes.filter((x) => !now.includes(x));
+  startRumor(s, `the owner has revised the ${e.name} gene program${added.length ? `: now ${added.join(", ")}` : ""}`, { salience: 6 });
+  return `The ${was.name === e.name ? e.name : `${was.name} program, now the ${e.name},`} program is revised (−¤${cost.toLocaleString()}).${added.length ? ` Added: ${added.join(", ")}.` : ""}${removed.length ? ` Taken away: ${removed.join(", ")}.` : ""}`;
+}
+
+export function reverseCost(s: SaveState, id: string): number {
+  const e = s.genome?.edits.find((x) => x.id === id);
+  return e ? Math.round(quote(s, e.target, e.spec).cost * REVERSE_RATE) : 0;
+}
+
+/** Undo a program on everyone it reached, and retire it. */
+export function reverse(s: SaveState, id: string): string {
+  const g = genomeOf(s);
+  const e = g.edits.find((x) => x.id === id);
+  if (!e) return "";
+  const cost = reverseCost(s, id);
+  if (s.arcology.cash < cost) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}; reversing it costs ¤${cost.toLocaleString()}.`;
+  s.arcology.cash -= cost;
+  for (const pid of e.slaves) { const p = s.people[pid]; if (p) undo(s, p, e); }
+  g.edits = g.edits.filter((x) => x !== e);
+  pushNorm(s, "modification", -((e.spec.remade ?? 4) / 2), `you reversed the ${e.name} gene program`);
+  startRumor(s, `the owner has reversed the ${e.name} gene program`, { salience: 6 });
+  return `The ${e.name} program is reversed: everyone it reached is back as they were (−¤${cost.toLocaleString()}).`;
+}
+
+export function rename(s: SaveState, id: string, name: string): void {
+  const e = genomeOf(s).edits.find((x) => x.id === id);
+  const n = name.trim().slice(0, 60);
+  if (!e || !n || n === e.name) return;
+  for (const pid of e.slaves) {
+    const p = s.people[pid];
+    if (p) p.body.appearance_facts = p.body.appearance_facts.split(`the ${e.name} program`).join(`the ${n} program`);
+  }
+  e.name = n;
 }

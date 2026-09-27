@@ -161,3 +161,32 @@ const slavesOf = (s: ReturnType<typeof newGame>) => Object.values(s.people).filt
   check("every walk, everywhere, shows the gene program", every);
   check("the narrated walk is told to show it at work", /GENE PROGRAMS DID .*show at least one of the changes/.test(walkContext(s)) && /night vision/.test(walkContext(s)));
 }
+
+{
+  // Editing a program once it's running: revise it, rename it, reverse it.
+  const { applyRevision, revisionCost, reverse, reverseCost, rename, REVISE_RATE } = await import("../src/engine/genome.ts");
+  const s = newGame({ seed: "genome-revise" });
+  s.arcology.cash = 10_000_000;
+  const her = slavesOf(s)[0];
+  const bornSkin = her.body.skin;
+  await design(s, { name: "Owl", text: "slaves with night vision and blue skin", target: "slaves" });
+  apply(s);
+  const id = genomeOf(s).edits[0].id;
+  check("the program is on her", /blue \(engineered\)/.test(her.body.skin) && her.body.traits!.includes("night vision (engineered)"));
+  await design(s, { name: "Owl", text: "slaves with night vision and stronger bones", target: "slaves", revises: id });
+  const cost = revisionCost(s);
+  const q = quote(s, "slaves", genomeOf(s).draft!.spec).cost;
+  check("a revision is priced at a discount on a fresh run", cost === Math.round(q * REVISE_RATE) && cost > 0, { cost, q });
+  const cash = s.arcology.cash;
+  const line = applyRevision(s);
+  check("it charges what it quoted, and says what changed", s.arcology.cash === cash - cost && /Added: stronger bones/.test(line) && /Taken away: blue skin/.test(line), line);
+  check("what it took away comes off her; what it added goes on", her.body.skin === bornSkin && !her.body.traits!.some((t) => /blue/.test(t)) && her.body.traits!.includes("stronger bones (engineered)") && her.body.traits!.includes("night vision (engineered)"), { skin: her.body.skin, traits: her.body.traits });
+  check("still one program, not two", genomeOf(s).edits.length === 1 && !genomeOf(s).draft);
+  check("and what the narrator reads about her says the new thing, once", (her.body.appearance_facts.match(/Owl program/g) ?? []).length === 1 && /stronger bones/.test(her.body.appearance_facts) && !/blue skin/.test(her.body.appearance_facts), her.body.appearance_facts);
+  rename(s, id, "Nightjar");
+  check("renaming carries into what everyone reads", genomeOf(s).edits[0].name === "Nightjar" && /Nightjar program/.test(her.body.appearance_facts) && !/Owl program/.test(her.body.appearance_facts));
+  const rc = reverseCost(s, id);
+  const before = s.arcology.cash;
+  reverse(s, id);
+  check("reversing it undoes it on her, retires it, and costs half a fresh run", !genomeOf(s).edits.length && s.arcology.cash === before - rc && !(her.body.traits ?? []).some((t) => /engineered/.test(t)) && !/Nightjar program/.test(her.body.appearance_facts), her.body.traits);
+}
