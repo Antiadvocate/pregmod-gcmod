@@ -20,7 +20,7 @@ import { dressCodeFor, type DressChoice } from "../data/dresscodes";
 import { POLICY_BY_ID } from "../data/policies";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { generatePerson } from "./generate";
-import { prevailingLook } from "./genome";
+import { lookWords, prevailingLook, type Look } from "./genome";
 import { garment } from "../data/wardrobe";
 import { rng } from "./rng";
 
@@ -44,7 +44,7 @@ export interface Society {
   /** A neighbour's feeling toward you, −100 … +100. */
   attitude?: number;
   /** The look the gene programs have given most of its citizens and slaves (yours only). */
-  looks?: { citizen: { skin?: string; hair?: string; eyes?: string }; slave: { skin?: string; hair?: string; eyes?: string } };
+  looks?: { citizen: Look; slave: Look };
   /** What the narrator model dressed this household in, read from its laws; used while it still matches. */
   written?: Outfits;
 }
@@ -177,8 +177,9 @@ export function household(x: Society): Household {
     if (h.slave && w.slave_clothes) { h.slave.clothes = w.slave_clothes; h.slave.collar = w.slave_collar ?? h.slave.collar; h.slave.shoes = w.slave_shoes ?? h.slave.shoes; }
     if (w.slaves !== undefined && x.kind !== "oldworld") h.slaves = w.slaves;
   }
-  h.citizen.line = h.citizen.clothes === "no clothing" ? "A citizen woman, naked." : `A citizen woman in ${h.citizen.clothes}${h.citizen.shoes === "heels" ? " and heels" : ""}.`;
-  if (h.slave) h.slave.line = `Her slave, ${h.slave.clothes === "no clothing" ? "naked" : `in ${h.slave.clothes}`}, wearing ${h.slave.collar}${h.slave.shoes === "barefoot" ? ", barefoot" : ""}.`;
+  const cl = lookWords(x.looks?.citizen), sl = lookWords(x.looks?.slave);
+  h.citizen.line = `${h.citizen.clothes === "no clothing" ? "A citizen woman, naked." : `A citizen woman in ${h.citizen.clothes}${h.citizen.shoes === "heels" ? " and heels" : ""}.`}${cl ? ` She has the ${cl} of the ${x.looks!.citizen.from!.join(" and ")} program, like most citizens now.` : ""}`;
+  if (h.slave) h.slave.line = `Her slave, ${h.slave.clothes === "no clothing" ? "naked" : `in ${h.slave.clothes}`}, wearing ${h.slave.collar}${h.slave.shoes === "barefoot" ? ", barefoot" : ""}.${sl ? ` Engineered: ${sl}.` : ""}`;
   return h;
 }
 

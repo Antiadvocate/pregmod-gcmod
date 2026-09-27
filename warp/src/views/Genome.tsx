@@ -120,6 +120,10 @@ function Programs() {
               {e.target !== "citizens" ? <Meter value={sl * 100} label="your slaves it reaches, %" /> : <div />}
             </div>
             {e.spec.society ? <p className="font-prose text-[13.5px] leading-relaxed mb-2">{e.spec.society}</p> : null}
+            <label className="flex items-center gap-2 text-[12px] mb-2 cursor-pointer">
+              <input type="checkbox" checked={!!e.auto} onChange={(ev) => mutate((s) => { const x = genomeOf(s).edits.find((y) => y.id === e.id); if (x) x.auto = ev.target.checked; })} />
+              Keep everyone up to date: each week, pay to reach new slaves and newcomers to the city
+            </label>
             {more.citizens || more.slaves.length ? (
               <Button size="sm" kind="ghost" disabled={save.arcology.cash < more.cost} onClick={() => { let t = ""; mutate((s) => { t = topUp(s, e.id).line ?? ""; }); setSaid(t); }}>
                 Reach the rest: {[more.citizens && `${more.citizens.toLocaleString()} new citizens`, more.slaves.length && `${more.slaves.length} new slave${more.slaves.length === 1 ? "" : "s"}`].filter(Boolean).join(", ")} · ¤{more.cost.toLocaleString()}

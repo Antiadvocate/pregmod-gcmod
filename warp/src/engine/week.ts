@@ -57,6 +57,7 @@ import { tickCampaigns } from "./civic";
 import { tickWorld } from "./world";
 import { tickGlobe } from "./globe";
 import { tickWorks } from "./works";
+import { tickGenome } from "./genome";
 import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
 import { tickThreads } from "./threads";
@@ -304,6 +305,7 @@ export function endWeek(s: SaveState): WeekReport {
   lines.push(...tickWorld(s, led));
   for (const l of tickGlobe(s)) push(l, "good", 8);
   tickWorks(s, led);
+  for (const l of tickGenome(s)) push(l, "neutral", 5);
   ageMoments(s);
   for (const e of tickDeeds(s)) push(e.text, "warning", 8, e.person);
   // The city's habits move with what it saw you do this week, and the court writes them down.

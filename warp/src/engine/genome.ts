@@ -59,12 +59,53 @@ export interface GeneEdit {
   /** Citizens edited when it was applied; newcomers since are not. */
   citizens: number;
   slaves: string[];
+  /** Set once old colour words have been re-read (see heal). */
+  healed?: boolean;
+  /** Pay every week to reach new slaves and newcomers, so the whole city keeps it. */
+  auto?: boolean;
 }
 
 export interface Genome { edits: GeneEdit[]; draft?: { name: string; text: string; target: Target; spec: GeneSpec; by: "narrator" | "game" } }
-export const genomeOf = (s: SaveState): Genome => (s.genome ??= { edits: [] });
+export function genomeOf(s: SaveState): Genome {
+  const g = (s.genome ??= { edits: [] });
+  heal(s, g);
+  return g;
+}
+
+/**
+ * Edits run before colour words were read loosely lost their colour ("azure" was not on the list,
+ * so the skin never changed). Read the owner's own words again, put the colour back, and give the
+ * slaves it already reached the look they paid for. Runs once per edit.
+ */
+function heal(s: SaveState, g: Genome): void {
+  for (const e of g.edits) {
+    if (e.healed) continue;
+    e.healed = true;
+    const w = readWords(e.text);
+    const fix: Partial<GeneSpec> = {};
+    if (!e.spec.skin && w.skin) fix.skin = w.skin;
+    if (!e.spec.hair && w.hair) fix.hair = w.hair;
+    if (!e.spec.eyes && w.eyes) fix.eyes = w.eyes;
+    if (!Object.keys(fix).length) continue;
+    Object.assign(e.spec, fix);
+    for (const id of e.slaves) { const p = s.people[id]; if (p) rewrite(p, { ...e.spec, height: undefined, health: undefined }, e.name); }
+  }
+}
 
 const household = (s: SaveState): Person[] => Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 18);
+
+/** Any colour word to one the art can draw: "light blue", "azure" and "cobalt" are all blue. */
+const SHADES: [RegExp, (typeof GENE_COLOURS)[number]][] = [
+  [/teal|turquoise|aqua|cyan/, "teal"], [/violet|lilac|lavender|indigo/, "violet"], [/purple|plum|magenta|mauve/, "purple"],
+  [/blue|azure|cobalt|navy|sapphire|cerulean/, "blue"], [/green|emerald|jade|olive green|verdant/, "green"],
+  [/silver|platinum|chrome|metallic/, "silver"], [/gr[ae]y|ash|slate|charcoal/, "grey"], [/gold|golden|amber|bronze|brass/, "gold"],
+  [/pink|rose|blush/, "pink"], [/red|crimson|scarlet|ruby|ruddy/, "red"], [/white|ivory|pearl|alabaster|snow/, "white"], [/black|ebony|jet|onyx|obsidian/, "black"],
+];
+export function geneColour(v: unknown): string | undefined {
+  if (typeof v !== "string" || !v.trim()) return undefined;
+  const t = v.toLowerCase();
+  return SHADES.find(([re]) => re.test(t))?.[1];
+}
 
 /* ── pricing ─────────────────────────────────────────────────────────────────────────────────── */
 
@@ -82,11 +123,11 @@ export function quote(s: SaveState, target: Target, spec: GeneSpec, slaves = hou
 
 /** The colour a body part is given: "blue skin", "blue-green hair", "skin dyed blue", "eyes that are gold". */
 const colourNear = (text: string, part: string): string | undefined => {
-  const C = GENE_COLOURS.join("|");
+  const C = "light blue|dark blue|pale blue|deep blue|" + [...GENE_COLOURS, "azure", "cobalt", "navy", "sapphire", "emerald", "jade", "turquoise", "lavender", "lilac", "golden", "crimson", "scarlet", "ivory", "ebony", "gray", "platinum"].join("|");
   const before = new RegExp(`\\b(${C})(?:[\\s-]+\\w+)?[\\s-]+${part}`, "i").exec(text);
-  if (before) return before[1].toLowerCase();
-  const after = new RegExp(`\\b${part}(?:[\\s,]+(?!and\\b)\\w+){0,3}[\\s,]+(${C})\\b`, "i").exec(text);
-  return after ? after[1].toLowerCase() : undefined;
+  if (before) return geneColour(before[1]);
+  const after = new RegExp(`\\b${part}(?:[\\s,]+(?!and\\b)\\w+){0,6}[\\s,]+(${C})\\b`, "i").exec(text);
+  return after ? geneColour(after[1]) : undefined;
 };
 
 /** The game's own reading of what you wrote, for when there is no narrator. */
@@ -120,7 +161,7 @@ export function readWords(text: string): GeneSpec {
 
 /** Keep a spec inside the menu, whatever came back. */
 export function clampSpec(raw: Partial<GeneSpec> & Record<string, unknown>): GeneSpec {
-  const colour = (v: unknown) => (typeof v === "string" && (GENE_COLOURS as readonly string[]).includes(v.toLowerCase()) ? v.toLowerCase() : undefined);
+  const colour = (v: unknown) => geneColour(v);
   const num = (v: unknown, lo: number, hi: number) => (typeof v === "number" && Number.isFinite(v) ? clamp(v, lo, hi) : undefined);
   const resist: GeneSpec["resist"] = {};
   const r = (raw.resist ?? {}) as Record<string, unknown>;
@@ -212,20 +253,30 @@ export function apply(s: SaveState): string {
 export function topUp(s: SaveState, id: string, dryRun = false): { citizens: number; slaves: Person[]; cost: number; line?: string } {
   const e = genomeOf(s).edits.find((x) => x.id === id);
   if (!e) return { citizens: 0, slaves: [], cost: 0 };
-  const citizens = e.target !== "slaves" ? Math.max(0, Math.round(s.arcology.population) - e.citizens) : 0;
+  // Only the ones it hasn't reached: the heritable share of the growth already carries it.
+  const citizens = e.target !== "slaves" ? Math.max(0, Math.round(s.arcology.population * (1 - citizenShare(s, e)))) : 0;
   const slaves = e.target !== "citizens" ? household(s).filter((p) => !e.slaves.includes(p.id)) : [];
   const cost = (citizens * PER_CITIZEN + slaves.length * PER_SLAVE) * e.spec.complexity;
   if (dryRun || (!citizens && !slaves.length) || s.arcology.cash < cost) return { citizens, slaves, cost };
   s.arcology.cash -= cost;
   for (const p of slaves) rewrite(p, e.spec, e.name);
-  e.citizens += citizens; e.slaves.push(...slaves.map((p) => p.id)); e.cost += cost;
+  // Everyone alive now has it; growth from here dilutes it again, less the heritable share.
+  if (citizens) e.citizens = Math.round(s.arcology.population);
+  e.slaves.push(...slaves.map((p) => p.id)); e.cost += cost;
   return { citizens, slaves, cost, line: `The ${e.name} program reaches ${[citizens && `${citizens.toLocaleString()} more citizens`, slaves.length && `${slaves.length} more slave${slaves.length === 1 ? "" : "s"}`].filter(Boolean).join(" and ")} (−¤${cost.toLocaleString()}).` };
 }
 
 /* ── what it does, every week ────────────────────────────────────────────────────────────────── */
 
 /** Share of the citizens an edit reaches now: newcomers since dilute it. */
-export const citizenShare = (s: SaveState, e: GeneEdit) => (e.target === "slaves" ? 0 : clamp(e.citizens / Math.max(1, s.arcology.population), 0, 1));
+/** Share of the citizens an edit reaches now. It's heritable: about a third of the city's growth is
+ *  children born to the edited, who carry it. The rest are newcomers, who don't until you pay. */
+export const HERITABLE = 0.3;
+export function citizenShare(s: SaveState, e: GeneEdit): number {
+  if (e.target === "slaves" || e.citizens <= 0) return 0;
+  const pop = Math.max(1, s.arcology.population);
+  return clamp((e.citizens + Math.max(0, pop - e.citizens) * HERITABLE) / pop, 0, 1);
+}
 /** Share of your slaves an edit reaches now. */
 export function slaveShare(s: SaveState, e: GeneEdit): number {
   if (e.target === "citizens") return 0;
@@ -244,25 +295,50 @@ export function resistance(s: SaveState, kind: Resist, who: "slaves" | "citizens
 }
 
 /** For the art and the comparison: the look most citizens (or slaves) now have. */
-export function prevailingLook(s: SaveState, who: "slaves" | "citizens"): { skin?: string; hair?: string; eyes?: string } {
-  const out: { skin?: string; hair?: string; eyes?: string } = {};
+export interface Look { skin?: string; hair?: string; eyes?: string; from?: string[] }
+export function prevailingLook(s: SaveState, who: "slaves" | "citizens"): Look {
+  if (s.genome) genomeOf(s);
+  const out: Look = {};
   for (const e of s.genome?.edits ?? []) {
     const share = who === "slaves" ? slaveShare(s, e) : citizenShare(s, e);
-    if (share < 0.5) continue;
+    if (share < 0.4 || !(e.spec.skin || e.spec.hair || e.spec.eyes)) continue;
     if (e.spec.skin) out.skin = e.spec.skin;
     if (e.spec.hair) out.hair = e.spec.hair;
     if (e.spec.eyes) out.eyes = e.spec.eyes;
+    (out.from ??= []).push(e.name);
   }
   return out;
 }
 
+/** "blue skin and silver hair", for a sentence. */
+export function lookWords(l?: Look): string {
+  if (!l) return "";
+  const parts = [l.skin && `${l.skin} skin`, l.hair && `${l.hair} hair`, l.eyes && `${l.eyes} eyes`].filter(Boolean) as string[];
+  return parts.length < 2 ? parts.join("") : `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
+}
+
 /** For every narrator: what has been done to the city's DNA, and what it did to the city. */
 export function genomeBrief(s: SaveState): string {
-  const edits = s.genome?.edits ?? [];
+  const edits = s.genome ? genomeOf(s).edits : [];
   if (!edits.length) return "";
   return edits.map((e) => {
     const c = citizenShare(s, e), sl = slaveShare(s, e);
     const reach = [c && `${Math.round(c * 100)}% of citizens`, sl && `${Math.round(sl * 100)}% of the owner's slaves`].filter(Boolean).join(" and ");
     return `· Engineered, the ${e.name} program (${e.spec.summary}; ${reach || "nobody any more"}).${e.spec.society ? ` ${e.spec.society}` : ""}`;
   }).join("\n");
+}
+
+/** Weekly: programs set to keep up reach whoever arrived since, and charge for it. */
+export function tickGenome(s: SaveState): string[] {
+  if (!s.genome) return [];
+  const out: string[] = [];
+  for (const e of genomeOf(s).edits) {
+    if (!e.auto) continue;
+    const more = topUp(s, e.id, true);
+    if (!more.citizens && !more.slaves.length) continue;
+    if (s.arcology.cash < more.cost) { out.push(`The ${e.name} program couldn't reach this week's newcomers: it needs ¤${more.cost.toLocaleString()}.`); continue; }
+    const done = topUp(s, e.id);
+    if (done.line) out.push(done.line);
+  }
+  return out;
 }
