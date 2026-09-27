@@ -102,7 +102,7 @@ export function propaganda(s: SaveState, id: string, amount: number): string {
 }
 
 /** Push every habit the law pushes, by `by` in the law's direction (negative undoes it). */
-function pushWithLaw(s: SaveState, l: LawDef, by: number, why: string) {
+export function pushWithLaw(s: SaveState, l: LawDef, by: number, why: string) {
   for (const [norm, v] of Object.entries(l.pull) as [Norm, number][]) pushNorm(s, norm, Math.sign(v) * by, why);
 }
 

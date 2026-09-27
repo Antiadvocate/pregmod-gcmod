@@ -59,6 +59,8 @@ import { tickGlobe } from "./globe";
 import { tickWorks } from "./works";
 import { tickGenome, menialResistance } from "./genome";
 import { tickMenials } from "./menials";
+import { cityThisWeek } from "./citylife";
+import "./systemevents";
 import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
 import { tickThreads } from "./threads";
@@ -409,6 +411,7 @@ export function endWeek(s: SaveState): WeekReport {
     rep_start: repStart,
     rep_end: arc.rep,
     problems,
+    city: cityThisWeek(s),
   };
   s.reports.push(report);
   if (s.reports.length > 24) s.reports.shift();

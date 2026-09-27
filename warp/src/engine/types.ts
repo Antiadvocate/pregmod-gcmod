@@ -698,6 +698,10 @@ export interface WeekReport {
   /** Written by the narrator when a model is configured — a paragraph over the top of the
    *  numbers. Absent is fine; the numbers are the record. */
   prose?: string;
+  /** The city this week: scenes from ordinary life (engine/citylife). */
+  city?: import("./citylife").Scene[];
+  /** The narrator's column on the week, written only when asked. */
+  city_prose?: { model: string; text: string };
 }
 
 export type ActionMode = "do" | "say" | "think" | "story";
@@ -892,6 +896,8 @@ export interface SaveState {
   genome?: import("./genome").Genome;
   /** Menial slaves you own in bulk, and the ones your citizens own. See engine/menials. */
   menials?: import("./menials").Menials;
+  /** Scenes of city life shown recently, by key, so the week report doesn't repeat itself. */
+  citylife_seen?: Record<string, number>;
   /** The content switches, which the original carried as V.seeExtreme, V.seeCircumcision and the
    *  rest. Defaulted on — this is the game it is — but the surgery table and a handful of acts
    *  read them, because the original let you turn the ugliest parts off and so does this. */

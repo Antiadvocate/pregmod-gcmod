@@ -31,6 +31,7 @@ import "./globe.test.ts";
 import "./works.test.ts";
 import "./genome.test.ts";
 import "./menials.test.ts";
+import "./citylife.test.ts";
 import "./reign.test.ts";
 import "./tokens.test.ts";
 import "./household.test.ts";
