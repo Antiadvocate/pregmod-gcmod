@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Section } from "../lib/ui";
 import { grantAsk, refuseAsk, type Ask, type AskReply } from "../engine/asks";
-import { SlaveHead } from "./SlaveArt";
+import Portrait from "./Portrait";
 import { Reaction } from "./MomentCard";
 
 export default function AskCard({ ask, onDone }: { ask: Ask; onDone?: () => void }) {
@@ -24,7 +24,7 @@ export default function AskCard({ ask, onDone }: { ask: Ask; onDone?: () => void
   return (
     <Card className="fade-in">
       <div className="flex items-center gap-2.5 mb-2">
-        <SlaveHead person={who} size={36} />
+        <Portrait people={[who]} text={reply ? `${reply.what} ${reply.said}` : ask.text} size={52} label={false} />
         <div className="min-w-0">
           <div className="text-[13.5px]">{who.name}</div>
           <div className="text-[10.5px] uppercase tracking-wider dim">{ask.kind === "instruction" ? "telling you" : "asking"}</div>

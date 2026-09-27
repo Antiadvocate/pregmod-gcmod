@@ -51,6 +51,8 @@ export const CROPS = {
   full: "164 -135 266 1097",
   bust: "215 55 130 380",
   head: "248 58 105 122",
+  // Brow to chin, for a portrait whose expression is the point.
+  face: "245 86 92 102",
 } as const;
 
 export type Crop = keyof typeof CROPS;

@@ -25,6 +25,7 @@ import { ART_BASE, cropFor, layersFor, styleFor, heightTransform, type Crop, typ
 import { frameAt, jointFor, restingPose, transformFor, STILL, type Joint, type Pose } from "../lib/rig";
 import { subscribeClock, stillWanted } from "../lib/clock";
 import { expressionOf, ExpressionLayer, type Moment } from "../lib/expression";
+import { blend, blinkAt, cloneFace, mouthPaths, talkAt, MOUTH_BOX, type Box, type FaceParams } from "../lib/face";
 
 /** file stem → inner SVG markup, or null when the file is not in the pack. */
 const cache = new Map<string, string | null>();
@@ -70,8 +71,12 @@ async function loadLayer(id: string): Promise<string | null> {
 
 let scopeSeq = 0;
 
-export default function SlaveArt({ person, height = 260, crop = "full", className, pose, animate = true, svgRef, moment, face = true }:
+export default function SlaveArt({ person, height = 260, crop = "full", className, pose, animate = true, svgRef, moment, face = true, mood, speaking = false }:
   { person: Person; height?: number | string; crop?: Crop; className?: string; pose?: Pose; animate?: boolean;
+    /** A face that moves: brows, eyes and a drawn mouth set to this, easing there from wherever they were. */
+    mood?: FaceParams;
+    /** Her mouth moves, as if the words arriving are hers. */
+    speaking?: boolean;
     /** What just happened, so her face can show it. */
     moment?: Moment;
     /** Draw the expression layer at all. Off for the ControlNet render, where it would only confuse. */
@@ -102,7 +107,8 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
 
   // The face goes on after the features and before the fringe, so hair falls over a blush the way
   // it would.
-  const expr = face ? expressionOf(person, moment) : null;
+  const base = face ? expressionOf(person, moment) : null;
+  const expr = base && mood ? { ...base, blush: Math.max(base.blush, mood.blush), tears: Math.max(base.tears, mood.tears), gasp: false } : base;
   const foreAt = markup.findIndex((m) => m.layer.id.startsWith("Hair_Fore") || /_Ear_Fore$/.test(m.layer.id));
 
   // The moving part. Writes attributes rather than state: a breathing roster must not re-render.
@@ -129,6 +135,70 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
     return subscribeClock((ms) => paint(frameAt(person, held, ms)));
   }, [markup, person, held, animate, !!expr]);
 
+  // The face. Same clock, same rule: attributes, not state. It eases from wherever it is to the mood
+  // asked for, blinks on its own schedule, and moves its mouth while she is speaking.
+  const target = useRef(mood);
+  target.current = mood;
+  const talking = useRef(speaking);
+  talking.current = speaking;
+  const hasFace = !!mood && markup.length > 0;
+  useEffect(() => {
+    const root = svg.current;
+    if (!root || !hasFace) return;
+    const q = <T extends Element>(sel: string) => root.querySelector<T>(sel);
+    const eyes = q<SVGGElement>("[data-feature=eyes]");
+    const irises = eyes ? Array.from(eyes.querySelectorAll<SVGElement>(".eye")) : [];
+    const brows = { l: q<SVGGElement>("[data-feature=brow-l]"), r: q<SVGGElement>("[data-feature=brow-r]") };
+    const pack = q<SVGGElement>("[data-feature=mouth-pack]");
+    const lips = { upper: q<SVGPathElement>("[data-mouth=upper]"), lower: q<SVGPathElement>("[data-mouth=lower]"), gap: q<SVGPathElement>("[data-mouth=gap]"), teeth: q<SVGPathElement>("[data-mouth=teeth]"), line: q<SVGPathElement>("[data-mouth=line]"), shade: q<SVGPathElement>("[data-mouth=shade]"), gapFill: q<SVGPathElement>("[data-mouth=gap-fill]") };
+    const box = (g: SVGGraphicsElement | null, fallback: Box): Box => {
+      try { const b = g?.getBBox(); return b && b.width > 1 ? { x: b.x, y: b.y, w: b.width, h: b.height } : fallback; } catch { return fallback; }
+    };
+    const eb = box(eyes, { x: 263, y: 122, w: 53, h: 18 });
+    const mb = box(pack, MOUTH_BOX);
+    const mid = eb.x + eb.w / 2;
+    // Both copies hold both brows (the clip hides one), so each pivots on the middle of its own half.
+    const bb = box(brows.l, { x: 263, y: 114, w: 53, h: 8 });
+    const bl = { x: bb.x, y: bb.y, w: mid - bb.x, h: bb.h };
+    const br = { x: mid, y: bb.y, w: bb.x + bb.w - mid, h: bb.h };
+    for (const [side, x0, x1] of [["l", -1000, mid], ["r", mid, 2000]] as const) {
+      const rect = q<SVGRectElement>(`#${scope}-clip-${side} rect`);
+      rect?.setAttribute("x", String(x0)); rect?.setAttribute("width", String(x1 - x0));
+    }
+    if (pack) pack.style.opacity = "0";
+    const seed = [...person.id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+    const cur = cloneFace(target.current!);
+    let last = 0;
+    const paint = (ms: number) => {
+      const goal = target.current;
+      if (!goal) return;
+      const dt = last ? Math.min(100, ms - last) : 1000;
+      last = ms;
+      Object.assign(cur, blend(cur, goal, 1 - Math.exp(-dt / 140)));
+      const open = cur.eyes.open * (animate ? blinkAt(ms, seed) : 1);
+      const ey = eb.y + eb.h * 0.62;
+      eyes?.setAttribute("transform", `translate(0 ${n2(ey)}) scale(1 ${n2(Math.max(0.06, Math.min(1.18, open)))}) translate(0 ${n2(-ey)})`);
+      const drift = animate ? Math.sin(ms / 1700 + seed) * 0.25 : 0;
+      for (const iris of irises) iris.setAttribute("transform", `translate(${n2(cur.eyes.gazeX + drift)} ${n2(cur.eyes.gazeY)})`);
+      const brow = (g: SVGGElement | null, b: Box, s: { dy: number; tilt: number }, sign: number) =>
+        g?.setAttribute("transform", `translate(0 ${n2(s.dy * 1.5)}) rotate(${n2(sign * s.tilt * 1.4)} ${n2(b.x + b.w / 2)} ${n2(b.y + b.h / 2)})`);
+      brow(brows.l, bl, cur.brows.left, -1);
+      brow(brows.r, br, cur.brows.right, 1);
+      const talk = talking.current && animate ? talkAt(ms) * 0.75 : 0;
+      const d = mouthPaths(mb, { ...cur.mouth, open: Math.min(1, cur.mouth.open + talk) });
+      lips.upper?.setAttribute("d", d.upper);
+      lips.shade?.setAttribute("d", d.upper);
+      lips.lower?.setAttribute("d", d.lower);
+      lips.gap?.setAttribute("d", d.gap);
+      lips.gapFill?.setAttribute("d", d.gap);
+      lips.teeth?.setAttribute("d", d.teeth || "M0 0");
+      lips.line?.setAttribute("d", d.line);
+    };
+    paint(performance.now());
+    if (!animate || stillWanted()) { Object.assign(cur, cloneFace(target.current!)); last = 0; paint(0); return; }
+    return subscribeClock(paint);
+  }, [markup, hasFace, animate, person.id]);
+
   const css = styleFor(person, scope);
   const tints = useMemo(() => [...new Set(markup.map((m) => m.layer.tint).filter((t): t is number => !!t))], [markup]);
 
@@ -143,8 +213,19 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
             {tints.map((t) => <filter key={t} id={`${scope}-hue${t}`}><feColorMatrix type="hueRotate" values={String(t)} /></filter>)}
           </defs>
         ) : null}
+        {mood ? (
+          <defs>
+            <clipPath id={`${scope}-clip-l`}><rect x={-1000} y={-1000} width={1289.5} height={3000} /></clipPath>
+            <clipPath id={`${scope}-clip-r`}><rect x={289.5} y={-1000} width={2000} height={3000} /></clipPath>
+            <clipPath id={`${scope}-clip-m`}><path data-mouth="gap" /></clipPath>
+          </defs>
+        ) : null}
         <g transform={crop === "full" ? heightTransform(person) : undefined}>
-        {markup.map(({ layer, inner }, i) => (
+        {markup.map(({ layer, inner }, i) => mood && FEATURE.test(layer.id) ? (
+          <g key={`${layer.id}-${i}`} data-joint={jointFor(layer.id)} data-own={layer.transform ?? ""} transform={layer.transform}>
+            <Feature id={layer.id} inner={inner} scope={scope} />
+          </g>
+        ) : (
           <g key={`${layer.id}-${i}`}
             data-joint={jointFor(layer.id)}
             data-own={layer.transform ?? ""}
@@ -156,6 +237,32 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
         </g>
       </svg>
     </div>
+  );
+}
+
+const FEATURE = /^(Eyes_|Eyebrow_|Mouth_)/;
+const n2 = (v: number) => (Math.round(v * 100) / 100).toString();
+
+/** One face layer, split so its parts can move: eyes in a group that opens and shuts, each brow in
+ *  its own clipped copy, and the pack's mouth kept (hidden) to measure a drawn one against. */
+function Feature({ id, inner, scope }: { id: string; inner: string; scope: string }) {
+  if (id.startsWith("Eyes_")) return <g data-feature="eyes" dangerouslySetInnerHTML={{ __html: inner }} />;
+  if (id.startsWith("Eyebrow_")) return (
+    <>
+      <g clipPath={`url(#${scope}-clip-l)`}><g data-feature="brow-l" dangerouslySetInnerHTML={{ __html: inner }} /></g>
+      <g clipPath={`url(#${scope}-clip-r)`}><g data-feature="brow-r" dangerouslySetInnerHTML={{ __html: inner }} /></g>
+    </>
+  );
+  return (
+    <>
+      <g data-feature="mouth-pack" dangerouslySetInnerHTML={{ __html: inner }} />
+      <path data-mouth="gap-fill" fill="#3a1618" />
+      <g clipPath={`url(#${scope}-clip-m)`}><path data-mouth="teeth" fill="#f4efe6" /></g>
+      <path data-mouth="lower" className="lip" stroke="#000" strokeOpacity={0.35} strokeWidth={0.35} />
+      <path data-mouth="upper" className="lip" stroke="#000" strokeOpacity={0.35} strokeWidth={0.35} />
+      <path data-mouth="shade" fill="#000" opacity={0.14} />
+      <path data-mouth="line" fill="none" stroke="#2a1214" strokeWidth={0.7} strokeLinecap="round" />
+    </>
   );
 }
 
