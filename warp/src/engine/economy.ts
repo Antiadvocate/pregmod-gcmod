@@ -8,7 +8,7 @@
  * If the number on screen is wrong, the line that is wrong is on screen next to it.
  */
 import { foodCap } from "./works";
-import { menialFood } from "./menials";
+import { foodEats } from "./menials";
 import { jobMoney } from "./idols";
 import { DRUG_BY_ID } from "../data/drugs";
 import type { LedgerEntry, Person, SaveState } from "./types";
@@ -192,7 +192,7 @@ export function arcologyMoney(state: SaveState, led: Ledger): void {
   // whole population was being billed to the owner at import prices, which came to twelve thousand
   // a week against a rent roll of four hundred and bankrupted every save by week five. What you
   // actually cover is your people, plus the public provision that keeps a city-state from rioting.
-  arc.food.consumption = Math.round(arc.population * 0.12 + Object.keys(state.people).length * 4 + menialFood(state));
+  arc.food.consumption = foodEats(state);
   const shortfall = arc.food.consumption - (arc.food.production + arc.food.stores);
   if (shortfall > 0) {
     led.spend("food", "bought in, because you are not growing it", shortfall * 8);

@@ -20,6 +20,7 @@ import { EVENT_BY_ID, resolveEvent } from "../engine/events";
 import { momentsOf } from "../engine/moments";
 import { places, startWalk } from "../engine/walk";
 import MomentCard from "./MomentCard";
+import SubTabs from "./SubTabs";
 import { compliance, propaganda, propagandaPreview } from "../engine/lawlife";
 
 function Spark({ values }: { values: number[] }) {
@@ -361,7 +362,8 @@ export default function Society() {
   const rumors = [...save.rumors].sort((a, b) => b.salience - a.salience).slice(0, 4);
 
   return (
-    <>
+    <SubTabs id="society" tabs={[
+      { id: "overview", label: "Overview", render: () => (<>
       <Section title="What your city has become">
         <Card className="mb-3">
           {strongest.length
@@ -377,16 +379,6 @@ export default function Society() {
           <Stat label="reputation" value={Math.round(arc.rep).toLocaleString()} />
         </div>
       </Section>
-
-      <Section title="How citizens behave, and why">
-        <div className="grid gap-2.5 sm:grid-cols-2">{NORM_IDS.map((n) => <NormCard key={n} n={n} />)}</div>
-      </Section>
-
-      <Shape />
-
-      <Court />
-
-      <Walk />
 
       <Section title="What people think of you">
         <div className="grid gap-2.5 sm:grid-cols-2">
@@ -408,6 +400,16 @@ export default function Society() {
           </Card>
         </div>
       </Section>
-    </>
+      </>) },
+      { id: "habits", label: "How citizens behave", render: () => (<>
+      <Section title="How citizens behave, and why">
+        <div className="grid gap-2.5 sm:grid-cols-2">{NORM_IDS.map((n) => <NormCard key={n} n={n} />)}</div>
+      </Section>
+
+      </>) },
+      { id: "shape", label: "Shape the city & laws", render: () => <Shape /> },
+      { id: "court", label: "The court", render: () => <Court /> },
+      { id: "walk", label: "Walk the city", render: () => <Walk /> },
+    ]} />
   );
 }

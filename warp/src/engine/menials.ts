@@ -28,6 +28,8 @@ export type Treatment = "harsh" | "standard" | "decent";
 
 export interface Menials {
   owned: number;
+  /** Move menials onto the farms each week when the city would otherwise go hungry. On unless turned off. */
+  autofeed?: boolean;
   jobs: Record<MenialJob, number>;
   treatment: Treatment;
   /** Slaves your citizens own. */
@@ -124,6 +126,8 @@ export function slavePopulation(s: SaveState): number {
 
 /** Public works are cheaper with crews on them. Read by engine/works. */
 export const constructionDiscount = (s: SaveState) => clamp((s.menials?.jobs.construction ?? 0) / 20 / 100, 0, 0.3);
+/** What the whole city eats in a week: citizens, your household, your menials. */
+export const foodEats = (s: SaveState) => Math.round(s.arcology.population * 0.12 + Object.keys(s.people).length * 4 + (s.menials?.owned ?? 0) * 2);
 /** Menials eat. Read by engine/economy. */
 export const menialFood = (s: SaveState) => (s.menials?.owned ?? 0) * 2;
 
@@ -133,6 +137,27 @@ export function tickMenials(s: SaveState, led: Ledger, resist = 0): string[] {
   const t = TREATMENT[m.treatment];
   const lines: string[] = [];
   let cash = 0;
+  if (m.owned > 0 && m.autofeed !== false) {
+    // Keep the city fed: if what's grown this week won't cover what's eaten, put menials on the
+    // farms: idle ones first, then from labour, public use and sanitation. They eat 2 and grow 14.
+    const eats = foodEats(s);
+    const per = 14 * t.output;
+    let short = eats - (a.food.production + m.jobs.farms * per) - Math.max(0, a.food.stores - eats) ;
+    if (short > 0) {
+      let need = Math.ceil(short / per);
+      const moved: string[] = [];
+      const take = (from: "idle" | MenialJob) => {
+        const have = from === "idle" ? idle(m) : m.jobs[from];
+        const k = Math.min(have, need);
+        if (!k) return;
+        if (from !== "idle") m.jobs[from] -= k;
+        m.jobs.farms += k; need -= k;
+        moved.push(`${k.toLocaleString()} from ${from === "idle" ? "the idle" : JOBS[from].name.toLowerCase()}`);
+      };
+      for (const f of ["idle", "labour", "public", "sanitation"] as const) if (need > 0) take(f);
+      if (moved.length) lines.push(`To keep the city fed, ${moved.join(", ")} went to the farms.`);
+    }
+  }
   if (m.owned > 0) {
     const out = t.output;
     const labour = Math.round(m.jobs.labour * 40 * clamp(a.prosperity / 60, 0.5, 2) * out);

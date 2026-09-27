@@ -2,6 +2,8 @@
 import { useGame } from "../lib/game";
 import Corporation from "./Corporation";
 import PublicWorks from "./PublicWorks";
+import SubTabs from "./SubTabs";
+import { foodEats } from "../engine/menials";
 import { ATTACKERS, DEFENSES, buildDefense, defensesOf, garrison, lastBattles, type Defense } from "../engine/battles";
 import { Button, Card, Chip, Empty, Meter, Money, Section, Stat } from "../lib/ui";
 import { FACILITIES, FACILITY_BY_ID } from "../data/facilities";
@@ -17,6 +19,8 @@ export default function ArcologyView() {
   // spending money on buildings — which is the only way anybody has ever learned construction.
   const eng = skill.engineering(save);
   const price = (n: number) => Math.round(n * eng);
+  // What last week's shortfall cost: the city buys what it doesn't grow at import prices.
+  const bought = -(save.reports.at(-1)?.ledger.filter((l) => l.category === "food").reduce((n, l) => n + l.cash, 0) ?? 0);
 
   return (
     <>
@@ -24,11 +28,12 @@ export default function ArcologyView() {
         <Stat label="prosperity" value={Math.round(arc.prosperity)} sub={`population ${arc.population.toLocaleString()}`} />
         <Stat label="security" value={Math.round(arc.security)} sub={`crime ${Math.round(arc.crime)}`} tone={arc.crime > 60 ? "bad" : undefined} />
         <Stat label="ownership" value={`${Math.round(arc.ownership)}%`} sub={`${arc.sectors.filter((s) => s.owner === "you").length} of ${arc.sectors.length} sectors`} />
-        <Stat label="food" value={Math.round(arc.food.stores)} sub={`eats ${arc.food.consumption}/wk`} tone={arc.food.stores < 200 ? "warn" : undefined} />
+        <Stat label="food" value={Math.round(arc.food.stores)} sub={bought ? `eats ${foodEats(save).toLocaleString()}/wk; buying ${Math.round(bought / 8).toLocaleString()} (¤${bought.toLocaleString()}/wk)` : `eats ${foodEats(save).toLocaleString()}/wk${save.menials?.owned ? `, ${(save.menials.owned * 2).toLocaleString()} of it menials` : ""}`} tone={arc.food.stores < 200 ? "warn" : undefined} />
       </div>
 
-      <PublicWorks />
-
+      <SubTabs id="arcology" tabs={[
+        { id: "works", label: "Public works", render: () => <PublicWorks /> },
+        { id: "force", label: "Force & defenses", render: () => (<>
       <Section title="Force">
         <Card>
           <div className="grid sm:grid-cols-2 gap-5">
@@ -74,6 +79,8 @@ export default function ArcologyView() {
         ) : null}
       </Section>
 
+        </>) },
+        { id: "policies", label: "Policies", render: () => (<>
       <Section title="Policies">
         <div className="grid gap-2 sm:grid-cols-2">
           {POLICIES.map((pol) => {
@@ -101,6 +108,8 @@ export default function ArcologyView() {
         </div>
       </Section>
 
+        </>) },
+        { id: "facilities", label: "Facilities", render: () => (<>
       <Section title="Facilities">
         <div className="grid gap-2.5 sm:grid-cols-2">
           {FACILITIES.map((def) => {
@@ -163,6 +172,8 @@ export default function ArcologyView() {
         </div>
       </Section>
 
+        </>) },
+        { id: "holdings", label: "Sectors, neighbours & debt", render: () => (<>
       <Section title="Sectors">
         <Card>
           <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5 mb-3">
@@ -241,6 +252,8 @@ export default function ArcologyView() {
       ) : <Section title="Debt"><Empty>You owe nobody anything.</Empty></Section>}
 
       <Corporation />
+        </>) },
+      ]} />
     </>
   );
 }

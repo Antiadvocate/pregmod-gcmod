@@ -387,7 +387,7 @@ export function endWeek(s: SaveState): WeekReport {
   }
 
   if (arc.cash < 0) problems.push(`You are ${Math.abs(arc.cash)} in the red.`);
-  if (arc.food.stores < 100 && arc.food.consumption > 0) problems.push("Food stores are nearly out, and the shortfall is being bought at import prices. Hydroponic towers or a food stockpile (Arcology → Public works) fix it.");
+  if (arc.food.stores < 100 && arc.food.consumption > 0) problems.push(`Food stores are nearly out: the city eats ${arc.food.consumption.toLocaleString()} a week${s.menials?.owned ? ` (${(s.menials.owned * 2).toLocaleString()} of it your menials)` : ""}, and the shortfall is bought at ¤8 a unit. Automated farm decks or hydroponic towers (Arcology → Public works), or menials on the farms (each grows 14 and eats 2), fix it.`);
   const overworked = alive(s).filter((p) => p.health.energy < 12);
   if (overworked.length) problems.push(`${overworked.length} of your slaves are exhausted.`);
   const wornOut = alive(s).filter((p) => wear(p.psyche) > 0.7);

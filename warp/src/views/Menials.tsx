@@ -48,7 +48,11 @@ export default function MenialsPanel() {
           <div className="flex flex-wrap gap-1.5 mb-1">
             {(Object.keys(TREATMENT) as Treatment[]).map((t) => <button key={t} className={cx("chip !text-[11.5px]", m.treatment === t && "on")} onClick={() => mutate((s) => { menialsOf(s).treatment = t; })}>{TREATMENT[t].name} · ¤{TREATMENT[t].upkeep}/wk</button>)}
           </div>
-          <div className="text-[11.5px] dim">{TREATMENT[m.treatment].note}. They eat 2 food a week each.</div>
+          <div className="text-[11.5px] dim">{TREATMENT[m.treatment].note}. They eat 2 food a week each: {(m.owned * 2).toLocaleString()} a week for all of them.</div>
+          <label className="flex items-center gap-2 text-[12px] mt-2 cursor-pointer">
+            <input type="checkbox" className="!w-auto shrink-0" checked={m.autofeed !== false} onChange={(e) => mutate((s) => { menialsOf(s).autofeed = e.target.checked; })} />
+            Keep the city fed: each week, move menials to the farms when the city would otherwise go hungry
+          </label>
           {m.last && m.last.week >= save.arcology.week - 1 ? <div className="text-[11.5px] mt-2">Last week: {m.last.cash >= 0 ? "+" : "−"}¤{Math.abs(m.last.cash).toLocaleString()} net{m.last.food ? `, ${m.last.food.toLocaleString()} food grown` : ""}{m.last.lost ? `, ${m.last.lost} lost` : ""}.</div> : null}
         </Card>
         <Card className="min-w-0">

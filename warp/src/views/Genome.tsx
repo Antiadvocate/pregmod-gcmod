@@ -8,6 +8,7 @@ import { Button, Card, Meter, Section, cx } from "../lib/ui";
 import { modelsAvailable } from "../config";
 import { TRAIT_TAGS, REVISE_RATE, REVERSE_RATE, applyRevision, changesOf, rename, reverse, reverseCost, revisionCost, apply, citizenShare, design, genomeOf, PER_CITIZEN, PER_MENIAL, PER_SLAVE, quote, resistance, RESISTS, rewrite, slaveShare, topUp, type GeneSpec, type Target } from "../engine/genome";
 import SlaveArt from "./SlaveArt";
+import SubTabs from "./SubTabs";
 
 const TARGETS: [Target, string][] = [["slaves", "my slaves and menials"], ["citizens", "my citizens"], ["both", "all of them"]];
 
@@ -206,31 +207,32 @@ function Programs() {
 
 export default function Genome() {
   const { save } = useGame();
+  const n = genomeOf(save).edits.length;
+  const draft = genomeOf(save).draft;
   return (
     <>
-      <Section title="The genome program">
-        <p className="text-[12.5px] dim mb-2.5">Rewrite the DNA of your slaves, your citizens, or both. Priced by the head (¤{PER_CITIZEN} a citizen, ¤{PER_SLAVE} a named slave, ¤{PER_MENIAL} a menial) times how hard the edit is. What it does to the city is written into the description every narrator reads.</p>
-        <div className="grid gap-2.5 lg:grid-cols-2 items-start">
-          <Writer />
-          <Draft />
-        </div>
-      </Section>
-      <Section title="What the edits spare them">
-        <Card>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {(["citizens", "slaves"] as const).map((who) => (
-              <div key={who} className="space-y-2">
-                <div className="text-[10.5px] uppercase tracking-wider dim">{who === "citizens" ? "Your citizens" : "Your slaves"}</div>
-                {RESISTS.map((r) => <Meter key={r} value={resistance(save, r, who) * 100} label={`${r}: harm spared, %`} />)}
+      <p className="text-[12.5px] dim mb-2.5">Rewrite the DNA of your slaves, your citizens, or both. Priced by the head (¤{PER_CITIZEN} a citizen, ¤{PER_SLAVE} a named slave, ¤{PER_MENIAL} a menial) times how hard the edit is. What it does to the city is written into the description every narrator reads.</p>
+      {/* A program waiting to be run, or a revision, stays in view whichever tab you're on. */}
+      {draft ? <div className="mb-3"><Draft /></div> : null}
+      <SubTabs id="genome" tabs={[
+        { id: "programs", label: "Programs", badge: n || undefined, render: () => <Section title="Programs run"><Programs /></Section> },
+        { id: "new", label: "Write a new one", render: () => <Section title="Write a gene edit"><Writer /></Section> },
+        { id: "spared", label: "What they're spared", render: () => (
+          <Section title="What the edits spare them">
+            <Card>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(["citizens", "slaves"] as const).map((who) => (
+                  <div key={who} className="space-y-2">
+                    <div className="text-[10.5px] uppercase tracking-wider dim">{who === "citizens" ? "Your citizens" : "Your slaves"}</div>
+                    {RESISTS.map((r) => <Meter key={r} value={resistance(save, r, who) * 100} label={`${r}: harm spared, %`} />)}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <p className="text-[11.5px] dim mt-2">Heat and cold cut what heatwaves and freezes cost and do to the slaves working outside; pollution cuts what smog and dust do; disease cuts the fevers that come in on the ships.</p>
-        </Card>
-      </Section>
-      <Section title="Programs run">
-        <Programs />
-      </Section>
+              <p className="text-[11.5px] dim mt-2">Heat and cold cut what heatwaves and freezes cost and do to the slaves working outside; pollution cuts what smog and dust do; disease cuts the fevers that come in on the ships.</p>
+            </Card>
+          </Section>
+        ) },
+      ]} />
     </>
   );
 }

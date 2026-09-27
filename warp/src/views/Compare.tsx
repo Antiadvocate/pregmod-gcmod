@@ -19,6 +19,7 @@ import { castOf, dayInTheLife, moving, writeDay } from "../engine/comparestory";
 const inflight = new Set<string>();
 import { lookWords } from "../engine/genome";
 import SlaveArt from "./SlaveArt";
+import SubTabs from "./SubTabs";
 
 const listed = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
 
@@ -230,11 +231,13 @@ export default function Compare() {
 
   return (
     <>
-      <Section title={`${yours.name} and ${other.name}`} right={
-        <div className="flex flex-wrap gap-1.5">
-          {others.map((x) => <button key={x.id} className={cx("chip !text-[11.5px]", x.id === other.id && "on")} onClick={() => setPick(x.id)}>{x.name}</button>)}
-        </div>
-      }>
+      <div className="flex flex-wrap items-center gap-1.5 mb-2">
+        <span className="text-[12px] dim">Beside {yours.name}:</span>
+        {others.map((x) => <button key={x.id} className={cx("chip !text-[11.5px]", x.id === other.id && "on")} onClick={() => setPick(x.id)}>{x.name}</button>)}
+      </div>
+      <SubTabs id="compare" tabs={[
+        { id: "households", label: "A day in each", render: () => (<>
+      <Section title={`${yours.name} and ${other.name}`}>
         <p className="text-[12.5px] dim mb-2.5">One ordinary household in each, on the same day this week, told from what the game knows: the city's habits, the laws in force, prosperity, crime and the patrols. {other.kind === "oldworld" ? "The Old World is judged by how stable its regions are." : `${other.name} is judged by its doctrines and the laws its court has passed from them.`}</p>
         <div className="grid gap-2.5 md:grid-cols-2">
           <HouseholdCard x={yours} other={other} yours={yours} />
@@ -242,6 +245,8 @@ export default function Compare() {
         </div>
       </Section>
 
+        </>) },
+        { id: "moved", label: "If they moved", render: () => (<>
       <Section title="If they moved">
         <Card>
           <p className="font-prose text-[14px] leading-relaxed mb-2">{moving(other, yours)}</p>
@@ -255,13 +260,19 @@ export default function Compare() {
         </Card>
       </Section>
 
+        </>) },
+        { id: "habits", label: "How they live", render: () => (<>
       <Section title={`How ${yours.name} and ${other.name} live`}>
         <Habits yours={yours} other={other} />
       </Section>
 
+        </>) },
+        { id: "scores", label: "Everywhere, scored", render: () => (<>
       <Section title="Everywhere, side by side">
         <Scorecard all={all} />
       </Section>
+        </>) },
+      ]} />
     </>
   );
 }
