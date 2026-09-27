@@ -11,6 +11,7 @@ import { band } from "../engine/psyche";
 import { societyScore } from "../engine/society";
 import type { MarketOffer } from "../engine/types";
 import SlaveArt, { SlaveBust } from "./SlaveArt";
+import MenialsPanel from "./Menials";
 
 export default function Market() {
   const { save, mutate } = useGame();
@@ -19,6 +20,8 @@ export default function Market() {
 
   return (
     <>
+      {/* Menials are bought here in bulk, the same panel as on the People screen. */}
+      <MenialsPanel />
       {MARKETS.map((m) => {
         const offers = save.market.offers[m.id] ?? [];
         const locked = save.arcology.rep < m.needs_rep;
