@@ -60,6 +60,8 @@ import { tickWorks } from "./works";
 import { tickGenome, menialResistance } from "./genome";
 import { tickMenials } from "./menials";
 import { pruneFaces, syncStoryCast } from "./faces";
+import { tickSagas } from "./saga";
+import { modelsAvailable } from "../config";
 import { cityThisWeek } from "./citylife";
 import "./systemevents";
 import { tickRun } from "./run";
@@ -312,6 +314,7 @@ export function endWeek(s: SaveState): WeekReport {
   for (const l of tickGenome(s)) push(l, "neutral", 5);
   for (const l of tickMenials(s, led, menialResistance(s))) push(l, "warning", 5);
   syncStoryCast(s);
+  for (const l of tickSagas(s, modelsAvailable())) push(l, "warning", 11);
   pruneFaces(s);
   ageMoments(s);
   for (const e of tickDeeds(s)) push(e.text, "warning", 8, e.person);

@@ -20,6 +20,7 @@
 import type { Person, SaveState } from "./types";
 import { generatePerson } from "./generate";
 import { NATIONS } from "../data/people";
+import { sagaFaces } from "./saga";
 
 export interface Face {
   name: string;
@@ -212,7 +213,7 @@ export function pruneFaces(s: SaveState): void {
   const all = s.faces;
   if (!all) return;
   const week = s.arcology.week;
-  const cast = new Set(Object.values(s.story?.cast ?? {}).map((n) => n && keyOf(n.name)));
+  const cast = new Set([...Object.values(s.story?.cast ?? {}).map((n) => n && keyOf(n.name)), ...sagaFaces(s)]);
   for (const [k, f] of Object.entries(all)) {
     if (cast.has(k)) continue;
     if ((f.seen <= 1 && week - f.last > 12) || week - f.last > 52) delete all[k];
