@@ -1,7 +1,8 @@
 /** YOU — the one character in the game whose interior the engine is not allowed to author, and
  *  the only place you can see what your household actually thinks of you. */
 import { useGame } from "../lib/game";
-import { Button, Card, Field, Meter, Section, Stat } from "../lib/ui";
+import { Button, Card, Field, Meter, Section, Stat, cx } from "../lib/ui";
+import { genderWord } from "../engine/you";
 import { householdRead, PLAYER_SKILLS } from "../engine/player";
 import { unrest } from "../engine/security";
 import { read } from "../engine/obedience";
@@ -40,6 +41,15 @@ export default function You() {
         <Card>
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Name"><input value={save.player.name} onChange={(e) => mutate((s) => { s.player.name = e.target.value; })} /></Field>
+            <Field label="You are" hint="Every scene, and everyone in them, calls you this.">
+              <div className="flex flex-wrap gap-1.5">
+                {([["he/him", "a man · he"], ["she/her", "a woman · she"], ["they/them", "neither · they"]] as const).map(([k, label]) => (
+                  <button key={k} className={cx("chip !text-[12px] !py-1 !px-3", save.player.pronouns === k && "on")}
+                    onClick={() => mutate((s) => { s.player.pronouns = k; s.player.pronouns_set = true; })}>{label}</button>
+                ))}
+              </div>
+              <div className="text-[11.5px] dim mt-1.5">{genderWord(save).replace(/^./, (c) => c.toUpperCase())}.</div>
+            </Field>
             <Field label="What your slaves call you" hint="Unless one of them has agreed to something else."><input value={save.player.address ?? ""} placeholder="Master" onChange={(e) => mutate((s) => { s.player.address = e.target.value || undefined; })} /></Field>
           </div>
           <Field label="Your appearance" hint="The narrator uses this exactly as written.">

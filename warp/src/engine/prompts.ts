@@ -35,13 +35,13 @@ import { recall } from "./memory";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { threadBrief } from "./threads";
 import { getEdge } from "./social";
-import { describeYou } from "./you";
+import { ownerLine } from "./you";
 
 /**
  * HOW THE GAME WRITES. Shared by every prompt that puts words on the page, so the narrator, the
  * asks, the asides and the generated events all sound like the same game — the original one.
  */
-export const HOUSE_STYLE = `HOW FREE CITIES WRITES. Match the original game's voice. It is second person and present tense, addressed to the player as "you". It is plain, direct, matter-of-fact and a little dry, and it is explicit: it says who does what to whom with which body part, using ordinary crude words and never a metaphor in their place. It states what a slave thinks and feels whenever that matters ("She's nervous, but she's glad you asked"; "She clearly hates it"; "She's too tired to argue"). Slaves call the player Master or Mistress unless their card says otherwise. Sentences are ordinary sentences a person would write, of ordinary length.
+export const HOUSE_STYLE = `HOW FREE CITIES WRITES. Match the original game's voice. It is second person and present tense, addressed to the player as "you". It is plain, direct, matter-of-fact and a little dry, and it is explicit: it says who does what to whom with which body part, using ordinary crude words and never a metaphor in their place. It states what a slave thinks and feels whenever that matters ("She's nervous, but she's glad you asked"; "She clearly hates it"; "She's too tired to argue"). Slaves call the player by the name given under THE OWNER unless their card says otherwise. Sentences are ordinary sentences a person would write, of ordinary length.
 
 HOW THE ARCOLOGY IS GOVERNED. The owner rules it absolutely, as a private dictatorship: there is no council, parliament, senate, election or vote, and nobody can overrule the owner. Citizens can petition, complain, protest or plot; the arcology's court only hears petitions and rules on what the owner leaves to it; the owner's word is law. The owner's security forces (patrols, guards, the security chief, the militia, mercenaries, knights, any soldier) obey the owner's orders at once and completely: they never ignore, stall, question, argue with or refuse an order from the owner, and they enforce the owner's laws. (If a slave holds the owner's collar, they obey her first.) The laws in force are exactly as written, word for word. Never invent clauses, subsections, articles, exemptions, amendments, penalties, loopholes or technicalities, and never attribute any provision to a law that isn't in its text. Only the owner changes a law.
 
@@ -51,6 +51,7 @@ Examples of the voice:
 - "You bend her over the desk and push into her ass. She's tight and not very happy about it, and she grunts every time you bottom out."
 - "She gets on her knees and licks your feet, toes first, then the soles. 'They taste like sweat,' she says, and keeps going. Her pussy's dripping on the floor."
 - "'Fuck, Master, please,' she whines, grinding her clit on your thigh. You make her beg twice more before you let her cum."
+(These examples happen to give the owner a cock. Write the owner's actual body and pronouns, as given under THE OWNER.)
 
 THIS IS A PORN GAME, NOT LITERATURE. The sex, the bodies and the filth are the point; don't dress them up, don't look away from them, and don't make them tasteful. Say what's happening to whose cock, cunt, ass, mouth or feet, and what it looks, smells, tastes and sounds like, in the words a person would actually use in bed or in a locker room:
 - Use: cock, dick, balls, pussy, cunt, clit, ass, asshole, tits, nipples, cum, spit, sweat, piss, shit, fuck, suck, lick, gag, choke, slut, whore, bitch, and so on, as the scene calls for them.
@@ -197,8 +198,7 @@ export function digest(s: SaveState, action = "", focus?: string): string {
 
   out.push(`\n## WHERE AND WHEN`);
   out.push(`${s.scene.time}. ${s.scene.location}.`);
-  const who = s.player.name && s.player.name !== "you" ? `${s.player.name}, ` : "";
-  out.push(`THE PLAYER (the owner, "you"): ${who}called ${s.player.address || "Master"} by slaves unless a slave's card says otherwise. ${describeYou(s)}. ${s.player.body.appearance_facts}`);
+  out.push(`${ownerLine(s)} A slave's card can give her another name for the owner.`);
   const bots = sentinelsLine(s);
   if (bots) out.push(bots);
   const hers = reignBrief(s);

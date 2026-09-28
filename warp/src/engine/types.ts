@@ -919,6 +919,8 @@ export interface SaveState {
 export interface Player {
   name: string;
   pronouns: Pronouns;
+  /** Chosen, or settled once from the body and address for a save from before there was a choice. */
+  pronouns_set?: boolean;
   age: number;
   title: string;
   /** What the household calls you to your face: "Master", "Mistress", "Sir", a name. */
