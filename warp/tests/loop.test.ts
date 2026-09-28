@@ -10,7 +10,9 @@ import { newMemory } from "../src/engine/memory.ts";
 import { refresh } from "../src/engine/obedience.ts";
 import { resolveAct, canDo } from "../src/engine/intimacy.ts";
 import { ACTS } from "../src/data/intimacy.ts";
-import { generateAsk, grantAsk } from "../src/engine/asks.ts";
+import { generateAsk, grantAsk, type AskWorld } from "../src/engine/asks.ts";
+import { NORM_IDS } from "../src/engine/culture.ts";
+import { romanceOf } from "../src/engine/romance.ts";
 import { writeAct } from "../src/engine/writer.ts";
 import { runFollowup, talk, TOPICS, FOLLOWUPS } from "../src/engine/encounter.ts";
 import { registerOf, say } from "../src/engine/voice.ts";
@@ -156,4 +158,63 @@ function one(seed: string) {
   const keys = new Set<string>();
   for (let i = 0; i < 12; i++) keys.add(generateAsk(s, p)?.key ?? "none");
   check("asking her again can turn up something else", keys.size > 1, [...keys]);
+}
+
+/* ── asks live in the arcology they are asked in ───────────────────────────────────────────── */
+{
+  const world = (over: Partial<AskWorld> = {}): AskWorld => ({
+    laws: [], norms: Object.fromEntries(NORM_IDS.map((n) => [n, 0])) as AskWorld["norms"], doctrine: () => 0, ...over,
+  });
+  const noPill = { id: "custom_1", name: "Fruitful Houses Act", text: "Contraceptives are banned. Every slave shall be kept pregnant.", exempt: false };
+  const fertile = (seed: string) => {
+    const { s, p } = one(seed);
+    p.womb.fertility = 80; p.womb.sterile = false; p.womb.contraceptives = false; p.womb.fetuses = []; p.body.vagina = 2;
+    p.persona.fetishes = [{ name: "none", strength: 0, known: true }];
+    p.persona.paraphilia = undefined;
+    return { s, p };
+  };
+  const tally = (s: ReturnType<typeof one>["s"], p: ReturnType<typeof one>["p"], w: AskWorld, key: string, n = 40) => {
+    const hits: ReturnType<typeof generateAsk>[] = [];
+    for (let i = 0; i < n; i++) {
+      s.arcology.week = 10 + i;
+      for (const k of Object.keys(p.counters)) if (k.startsWith("ask_")) delete p.counters[k];
+      const a = generateAsk(s, p, w);
+      if (a?.key === key) hits.push(a);
+    }
+    return hits;
+  };
+
+  // A devoted woman does not ask for what the law forbids; with no such law she does.
+  const d = fertile("devoted-pill");
+  d.p.bond = { ...d.p.bond, bond: 85, fear: 0, resentment: 0, hope: 70 };
+  refresh(d.p, d.s.memory[d.p.id]);
+  check("with no law against it, she asks for the pill", tally(d.s, d.p, world(), "contraceptives_on").length > 0);
+  check("under a law banning contraceptives, a devoted woman never asks for the pill", tally(d.s, d.p, world({ laws: [noPill] }), "contraceptives_on").length === 0);
+
+  // A woman with the standing to push asks anyway, and the ask says what it breaks and what it costs.
+  const b = fertile("bold-pill");
+  b.p.bond = { ...b.p.bond, bond: 70, fear: 0, resentment: 10, hope: 60 };
+  romanceOf(b.p).dominion = 45;
+  refresh(b.p, b.s.memory[b.p.id]);
+  const bold = tally(b.s, b.p, world({ laws: [noPill] }), "contraceptives_on", 80);
+  check("a woman with standing asks for it anyway", bold.length > 0, bold.length);
+  check("and the ask names the law it breaks", bold.every((a) => a!.against?.includes("Fruitful Houses Act") && /goes against|doesn't come into it/.test(a!.text)), bold[0]);
+  check("and saying yes costs standing", bold.every((a) => a!.rep === 12));
+  const exempt = tally(b.s, b.p, world({ laws: [{ ...noPill, exempt: true }] }), "contraceptives_on", 80);
+  check("unless your household is exempt from that law", exempt.length > 0 && exempt.every((a) => a!.rep === undefined), exempt[0]);
+
+  // Clothes are what the city's slaves wear, and a nudity law keeps a devoted girl from asking.
+  const n = one("naked");
+  n.p.clothes = "no clothing";
+  n.p.bond = { ...n.p.bond, bond: 85, fear: 0, resentment: 0, hope: 70 };
+  n.p.persona.flaw = undefined;
+  refresh(n.p, n.s.memory[n.p.id]);
+  const kimono = tally(n.s, n.p, world({ slaveDress: "a kimono" }), "clothes_code");
+  check("a naked slave asks for what the city's slaves wear", kimono.length > 0 && kimono.every((a) => a!.payload.value === "a kimono"), kimono[0]);
+  const ordinance = { id: "nudity_ordinance", name: "Nudity Ordinance", text: "Slaves go naked in public.", exempt: false };
+  const naked = world({ laws: [ordinance], dressLaw: "naked" });
+  check("under a nudity law a devoted slave does not ask to be dressed", [...tally(n.s, n.p, naked, "clothes"), ...tally(n.s, n.p, naked, "clothes_code")].length === 0);
+  n.p.persona.flaw = { id: "shamefast", known: false, worn: 0 };
+  const shy = [...tally(n.s, n.p, naked, "clothes", 80), ...tally(n.s, n.p, naked, "clothes_code", 80)];
+  check("but a shamefast one still asks, knowing it's against the law", shy.length > 0 && shy.every((a) => a!.against?.includes("Nudity Ordinance")), shy[0]);
 }

@@ -29,6 +29,7 @@ export default function AskCard({ ask, onDone }: { ask: Ask; onDone?: () => void
           <div className="text-[14px] font-medium">{who.name}</div>
           <div className="text-[11.5px] dim">{ask.kind === "instruction" ? "is telling you" : "is asking"}</div>
         </div>
+        {ask.against ? <span className="chip bad ml-auto self-start max-w-[45%] !whitespace-normal text-right" title={`Goes against ${ask.against}`}>against {ask.against.replace(/^the /, "")}</span> : null}
       </div>
       <p className="font-prose text-[15px] leading-relaxed mb-3">{ask.text}</p>
       {reply ? (
@@ -42,7 +43,7 @@ export default function AskCard({ ask, onDone }: { ask: Ask; onDone?: () => void
       ) : (
         <div className="flex flex-wrap gap-2">
           <Button size="sm" kind="primary" onClick={() => answer("yes")}>
-            {ask.kind === "instruction" ? "do as she says" : "yes"}{ask.cash ? ` · ¤${ask.cash.toLocaleString()}` : ""}
+            {ask.kind === "instruction" ? "do as she says" : "yes"}{ask.cash ? ` · ¤${ask.cash.toLocaleString()}` : ""}{ask.rep ? ` · −${ask.rep} rep` : ""}
           </Button>
           <Button size="sm" onClick={() => answer("no")}>no</Button>
           <Button size="sm" kind="danger" onClick={() => answer("harsh")}>put her in her place</Button>
