@@ -1,8 +1,8 @@
 /** THE ASSISTANT — set her up, read her brief, ask her things. */
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { ChevronRight, Loader2, MessageCircle } from "lucide-react";
 import { useGame } from "../lib/game";
-import { Button, Card, cx } from "../lib/ui";
+import { Button, Card, Sheet, cx } from "../lib/ui";
 import { askAssistant, briefWeek, makeAssistant, PA_LOOKS, PA_MANNERS, PA_QUESTIONS, type PALook, type PAManner } from "../engine/assistant";
 
 export function PAAvatar({ look, hue, size = 56 }: { look: PALook; hue: number; size?: number }) {
@@ -31,14 +31,14 @@ export function PAAvatar({ look, hue, size = 56 }: { look: PALook; hue: number; 
   );
 }
 
-function Setup() {
+function Setup({ onDone }: { onDone?: () => void }) {
   const { mutate } = useGame();
   const [name, setName] = useState("Aria");
   const [look, setLook] = useState<PALook>("classic");
   const [manner, setManner] = useState<PAManner>("loyal");
   const [hue, setHue] = useState(210);
   return (
-    <Card className="mb-6">
+    <div>
       <div className="flex gap-3 items-center mb-3">
         <PAAvatar look={look} hue={hue} />
         <div>
@@ -59,8 +59,26 @@ function Setup() {
       <div className="text-[11.5px] dim mb-3">{PA_MANNERS[manner].note}</div>
       <div className="text-[11px] uppercase tracking-wider dim mb-1">Colour</div>
       <input type="range" min={0} max={359} value={hue} onChange={(e) => setHue(Number(e.target.value))} className="w-full mb-3" />
-      <Button kind="primary" onClick={() => mutate((s) => { makeAssistant(s, { name, look, manner, hue }); })}>Switch her on</Button>
-    </Card>
+      <Button kind="primary" onClick={() => { mutate((s) => { makeAssistant(s, { name, look, manner, hue }); }); onDone?.(); }}>Switch her on</Button>
+    </div>
+  );
+}
+
+/** Setting her up is done once, so on the Penthouse it is one row, and the form is a sheet. */
+function SetupRow() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button className="row-link mb-4" onClick={() => setOpen(true)}>
+        <PAAvatar look="classic" hue={210} size={30} />
+        <span className="flex-1 min-w-0">
+          <span className="block text-[13.5px]">Set up your assistant</span>
+          <span className="block text-[11.5px] dim">She reads the week and answers questions</span>
+        </span>
+        <ChevronRight size={16} className="dim" />
+      </button>
+      <Sheet open={open} onClose={() => setOpen(false)} title="Your assistant"><Setup onDone={() => setOpen(false)} /></Sheet>
+    </>
   );
 }
 
@@ -79,7 +97,9 @@ export default function AssistantCard() {
     return () => { live = false; };
   }, [a?.name, lastWeek]);
 
-  if (!a) return <Setup />;
+  const [asking, setAsking] = useState(false);
+  const [full, setFull] = useState(false);
+  if (!a) return <SetupRow />;
   const ask = async (text: string, topic?: string) => {
     if (busy || !text.trim()) return;
     setBusy(true); setOpen(true);
@@ -89,36 +109,48 @@ export default function AssistantCard() {
   };
   const log = a.log.slice(-6);
 
+  const brief = a.brief && a.brief.week === lastWeek ? a.brief.text : null;
+
   return (
-    <Card className="mb-6">
+    <Card className="mb-4 !p-3.5">
       <div className="flex gap-3 items-start">
-        <PAAvatar look={a.look} hue={a.hue} />
+        <PAAvatar look={a.look} hue={a.hue} size={36} />
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2">
-            <span className="text-[14px]">{a.name}</span>
-            <span className="text-[11px] dim">{PA_LOOKS[a.look].name.toLowerCase()} · {PA_MANNERS[a.manner].name.toLowerCase()}</span>
-            <button className="ml-auto text-[11px] dim underline" onClick={() => mutate((s) => { s.assistant = undefined; })}>change her</button>
+          <div className="flex items-center gap-2">
+            <span className="text-[13.5px] font-medium">{a.name}</span>
+            <button className={cx("ml-auto chip", asking && "on")} onClick={() => setAsking(!asking)}><MessageCircle size={11} /> ask</button>
           </div>
-          <p className="font-prose text-[14.5px] leading-relaxed mt-1">
-            {a.brief && a.brief.week === lastWeek ? a.brief.text : lastWeek === undefined ? `${a.name} is watching. She'll brief you when the first week is done.` : save.models.lean_mode ? <button className="chip !text-[12px]" disabled={busy} onClick={async () => { setBusy(true); await briefWeek(save); mutate(() => {}); setBusy(false); }}>{busy ? "…" : "Brief me on the week"}</button> : <span className="dim"><Loader2 size={12} className="inline animate-spin" /> …</span>}
-          </p>
+          <div className="text-[13px] mid leading-relaxed mt-0.5">
+            {brief ? (
+              <button className={cx("text-left", !full && "clamp-3")} onClick={() => setFull(!full)}>{brief}</button>
+            ) : lastWeek === undefined ? <span className="dim">She'll brief you when the first week is done.</span>
+              : save.models.lean_mode ? <button className="chip !text-[12px]" disabled={busy} onClick={async () => { setBusy(true); await briefWeek(save); mutate(() => {}); setBusy(false); }}>{busy ? "…" : "Brief me on the week"}</button>
+              : <span className="dim"><Loader2 size={12} className="inline animate-spin" /> reading the week</span>}
+          </div>
         </div>
       </div>
-      <div className="flex flex-wrap gap-1.5 mt-3">
-        {PA_QUESTIONS.map((x) => <button key={x.id} disabled={busy} className="chip !text-[12px]" onClick={() => void ask(x.label, x.id)}>{x.label}</button>)}
-      </div>
-      <form className="flex gap-2 mt-2" onSubmit={(e) => { e.preventDefault(); void ask(q); }}>
-        <input className="flex-1 min-w-0" value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Ask ${a.name} anything`} disabled={busy} />
-        <Button size="sm" kind="primary" disabled={busy || !q.trim()} onClick={() => void ask(q)}>{busy ? "…" : "Ask"}</Button>
-      </form>
+      {asking ? (
+        <div className="mt-3 fade-in">
+          <div className="flex flex-wrap gap-1.5">
+            {PA_QUESTIONS.map((x) => <button key={x.id} disabled={busy} className="chip !text-[12px]" onClick={() => void ask(x.label, x.id)}>{x.label}</button>)}
+          </div>
+          <form className="flex gap-2 mt-2" onSubmit={(e) => { e.preventDefault(); void ask(q); }}>
+            <input className="flex-1 min-w-0" value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Ask ${a.name} anything`} disabled={busy} />
+            <Button size="sm" kind="primary" disabled={busy || !q.trim()} onClick={() => void ask(q)}>{busy ? "…" : "Ask"}</Button>
+          </form>
+          <div className="flex gap-3 mt-2 text-[11px] dim">
+            {log.length ? <button className="underline" onClick={() => setOpen(!open)}>{open ? "hide what she said" : "show what she said"}</button> : null}
+            <button className="underline ml-auto" onClick={() => mutate((s) => { s.assistant = undefined; })}>change her</button>
+          </div>
+        </div>
+      ) : null}
       {open && log.length ? (
         <div className="mt-3 space-y-2">
           {log.map((l, i) => l.role === "you"
             ? <div key={i} className="player-line !my-1">{l.text}</div>
             : <p key={i} className="font-prose text-[14px] leading-relaxed" style={{ color: `hsl(${a.hue} 60% 82%)` }}>{l.text}</p>)}
-          <button className="text-[11px] dim underline" onClick={() => setOpen(false)}>hide</button>
         </div>
-      ) : log.length ? <button className="text-[11px] dim underline mt-2" onClick={() => setOpen(true)}>show what she said</button> : null}
+      ) : null}
     </Card>
   );
 }

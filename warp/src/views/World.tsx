@@ -14,6 +14,7 @@ import {
 } from "../engine/globe";
 import GlobeCanvas from "./GlobeCanvas";
 import SubTabs from "./SubTabs";
+import WorldCard from "./WorldCard";
 
 const KIND_WORD: Record<Place["kind"], string> = { yours: "yours", neighbour: "neighbour", freecity: "Free City", region: "Old World" };
 
@@ -175,6 +176,7 @@ export default function World() {
   return (
     <>
       <SubTabs id="world" tabs={[
+        { id: "week", label: "This week", render: () => <WorldCard /> },
         { id: "globe", label: "The globe", render: () => (<>
       <Section title="The world">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">

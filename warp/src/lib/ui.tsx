@@ -16,7 +16,7 @@ export function Section({ title, right, children, className }: { title: string; 
   return (
     <section className={cx("mb-6", className)}>
       <header className="flex items-baseline justify-between mb-2.5">
-        <h2 className="font-display text-[15px] tracking-tight">{title}</h2>
+        <h2 className="text-[15px] font-semibold tracking-tight">{title}</h2>
         {right}
       </header>
       {children}
@@ -150,7 +150,7 @@ export function Fold({ id, title, right, children, defaultOpen = true, count }: 
       <div className="flex items-center gap-2">
         <button className="foldhead flex-1" aria-expanded={open} onClick={toggle}>
           {title}
-          {count !== undefined ? <span className="font-mono normal-case tracking-normal">{count}</span> : null}
+          {count ? <span className="fold-count">{count}</span> : null}
           <ChevronDown size={14} className="chev" />
         </button>
         {right}

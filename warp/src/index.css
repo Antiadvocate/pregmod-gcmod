@@ -36,6 +36,14 @@
   --font-prose: "Newsreader", Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  /* Names some screens were written against and nothing defined; they resolved to nothing, which
+     is why the sheet's grabber and the fold headings had no colour of their own. */
+  --rule: var(--line-strong);
+  --dim: var(--text-lo);
+  --text: var(--text-hi);
+  --bg: var(--ink-0);
+  --card: var(--ink-1);
+  --acc: var(--accent);
 }
 
 [data-theme="brass"]   { --accent: #c9a227; --accent-soft: rgba(201,162,39,.14); --accent-glow: rgba(201,162,39,.32); }
@@ -84,6 +92,31 @@ body {
   background: color-mix(in srgb, var(--ink-0) 92%, transparent);
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* A family's screens, as tabs across the top: the label and an underline, nothing boxed. */
+.segtab {
+  position: relative; flex-shrink: 0;
+  padding: 7px 0 9px; font-size: 13px; font-weight: 500; color: var(--text-lo);
+  transition: color .15s;
+}
+.segtab.on { color: var(--text-hi); }
+.segtab::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; border-radius: 2px;
+  background: var(--accent); transform: scaleX(0); transition: transform .2s cubic-bezier(.2,.8,.3,1);
+}
+.segtab.on::after { transform: scaleX(1); }
+.segtab .dot { position: absolute; top: 7px; right: -7px; width: 5px; height: 5px; border-radius: 99px; background: var(--accent); }
+.iconbtn { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 99px; color: var(--text-lo); }
+.iconbtn:active { background: var(--ink-2); }
+.tabbar .tab { transition: color .15s; }
+.tabbar .tab:active { transform: scale(.94); }
+.badge {
+  position: absolute; top: -5px; right: -9px; min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 99px; background: var(--accent); color: var(--ink-0);
+  font: 600 9.5px/16px var(--font-sans); text-align: center;
+}
+main { overscroll-behavior-y: contain; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { main { scroll-behavior: auto } .segtab::after { transition: none } }
 
 /* surfaces --------------------------------------------------------------- */
 .card { background: var(--ink-1); border: 1px solid var(--line); border-radius: var(--radius); }
@@ -214,11 +247,12 @@ input[type="range"]:focus { outline: none; }
    to scroll past all of it to reach anything. Sections close now, and remember. */
 .foldhead {
   display: flex; align-items: center; gap: 8px; width: 100%;
-  padding: 9px 2px; text-align: left;
-  font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim);
+  padding: 10px 2px; text-align: left;
+  font-size: 14.5px; font-weight: 600; letter-spacing: -.005em; color: var(--text-hi);
 }
+.foldhead .fold-count { font: 600 11px/18px var(--font-sans); min-width: 20px; height: 18px; padding: 0 6px; border-radius: 99px; background: var(--ink-2); color: var(--text-mid); text-align: center; }
 .foldhead:hover { color: var(--text); }
-.foldhead .chev { transition: transform .16s ease; margin-left: auto; }
+.foldhead .chev { transition: transform .16s ease; margin-left: auto; color: var(--text-lo); }
 .foldhead[aria-expanded="false"] .chev { transform: rotate(-90deg); }
 @media (prefers-reduced-motion: reduce) { .foldhead .chev { transition: none } }
 
@@ -332,3 +366,67 @@ input[type="range"]:focus { outline: none; }
 @media (prefers-reduced-motion: reduce) {
   .room-twinkle, .room-sway, .room-neon, .room-walk, .room-pulse, .room-spot, .room-steam, .room-trace, .room-bulb { animation: none }
 }
+
+/* ── the console's small parts ─────────────────────────────────────────────────────────────── */
+.warn { color: var(--warn); }
+
+/* Four figures in one band, divided by rules rather than boxed one by one. */
+.strip {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; text-align: left;
+  background: var(--ink-1); border: 1px solid var(--line); border-radius: var(--radius);
+}
+.strip-cell { padding: 10px 12px; min-width: 0; }
+.strip-cell + .strip-cell { border-left: 1px solid var(--line); }
+.strip:active { background: var(--ink-2); }
+
+/* Rows: things you read. Cards are kept for things you answer. */
+.list { border-top: 1px solid var(--line); }
+.list-row {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 10px 2px; border-bottom: 1px solid var(--line);
+}
+button.list-row:active { background: var(--ink-1); }
+.row-link {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 10px 12px; border-radius: var(--radius); background: var(--ink-1); border: 1px solid var(--line);
+}
+.row-link:active { background: var(--ink-2); }
+.row-note { font-size: 12.5px; color: var(--text-mid); padding-left: 10px; border-left: 2px solid var(--accent-glow); }
+.count {
+  font: 600 11px/18px var(--font-sans); min-width: 20px; height: 18px; padding: 0 6px; border-radius: 99px;
+  background: var(--accent-soft); color: var(--accent); text-align: center;
+}
+.clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* End the week: floats above the tab bar so it never sits at the bottom of a scroll. */
+.endweek {
+  position: fixed; left: 0; right: 0; z-index: 30; pointer-events: none;
+  bottom: calc(58px + env(safe-area-inset-bottom)); display: flex; justify-content: center; padding: 0 16px;
+}
+@media (min-width: 768px) { .endweek { left: 172px; bottom: 20px; } }
+.endweek-btn {
+  pointer-events: auto; display: inline-flex; align-items: center; gap: 10px;
+  padding: 11px 16px 11px 18px; border-radius: 99px;
+  background: var(--accent); color: var(--ink-0); font-weight: 600; font-size: 14px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.2);
+  transition: transform .14s cubic-bezier(.2,.9,.3,1.2), opacity .15s;
+}
+.endweek-btn:active { transform: scale(.96); }
+.endweek-btn:disabled { opacity: .7; }
+.endweek-count { font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 99px; background: rgba(0,0,0,.18); }
+
+.ledger-row { border-bottom: 1px solid var(--line); }
+.ledger-row summary::-webkit-details-marker { display: none; }
+.ledger-row[open] summary { color: var(--accent); }
+
+/* In-page tabs: one segmented control, so they never look like the buttons around them. */
+.segmented {
+  display: flex; gap: 2px; padding: 3px; overflow-x: auto; max-width: 100%; width: max-content;
+  background: var(--ink-1); border: 1px solid var(--line); border-radius: 11px;
+}
+.seg {
+  flex-shrink: 0; padding: 6px 12px; border-radius: 8px; white-space: nowrap;
+  font-size: 12.5px; font-weight: 500; color: var(--text-lo); transition: background .15s, color .15s;
+}
+.seg.on { background: var(--ink-3); color: var(--text-hi); box-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.seg-badge { margin-left: 6px; font-size: 11px; color: var(--accent); }

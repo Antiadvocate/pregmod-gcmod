@@ -24,10 +24,10 @@ export default function AskCard({ ask, onDone }: { ask: Ask; onDone?: () => void
   return (
     <Card className="fade-in">
       <div className="flex items-center gap-2.5 mb-2">
-        <Portrait people={[who]} text={reply ? `${reply.what} ${reply.said}` : ask.text} size={52} label={false} />
+        <Portrait people={[who]} text={reply ? `${reply.what} ${reply.said}` : ask.text} size={44} label={false} />
         <div className="min-w-0">
-          <div className="text-[13.5px]">{who.name}</div>
-          <div className="text-[10.5px] uppercase tracking-wider dim">{ask.kind === "instruction" ? "telling you" : "asking"}</div>
+          <div className="text-[14px] font-medium">{who.name}</div>
+          <div className="text-[11.5px] dim">{ask.kind === "instruction" ? "is telling you" : "is asking"}</div>
         </div>
       </div>
       <p className="font-prose text-[15px] leading-relaxed mb-3">{ask.text}</p>

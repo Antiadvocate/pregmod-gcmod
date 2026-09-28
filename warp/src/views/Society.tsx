@@ -21,6 +21,7 @@ import { momentsOf } from "../engine/moments";
 import { places, startWalk } from "../engine/walk";
 import MomentCard from "./MomentCard";
 import SubTabs from "./SubTabs";
+import FCTVCard from "./FCTVCard";
 import { compliance, propaganda, propagandaPreview } from "../engine/lawlife";
 
 function Spark({ values }: { values: number[] }) {
@@ -410,6 +411,7 @@ export default function Society() {
       { id: "shape", label: "Shape the city & laws", render: () => <Shape /> },
       { id: "court", label: "The court", render: () => <Court /> },
       { id: "walk", label: "Walk the city", render: () => <Walk /> },
+      { id: "fctv", label: "FCTV", render: () => <FCTVCard /> },
     ]} />
   );
 }
