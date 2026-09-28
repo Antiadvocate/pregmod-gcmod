@@ -8,6 +8,7 @@ import { newGame, sanitize } from "../src/engine/state.ts";
 import { inferPronouns, ownerLine, genderWord, settleBody } from "../src/engine/you.ts";
 import { digest } from "../src/engine/prompts.ts";
 import { setOwnerContext, withOwner } from "../src/llm.ts";
+import type { Saga } from "../src/engine/saga.ts";
 
 check("Mistress means she", inferPronouns("cock", "Mistress") === "she/her");
 check("Sir means he", inferPronouns("pussy", "Sir") === "he/him");
@@ -49,4 +50,37 @@ check("and a pussy or both means she", inferPronouns("pussy", "Owner") === "she/
   const already = withOwner({ system: "x", user: digest(s) });
   check("but not twice when the prompt already says it", already.system === "x");
   setOwnerContext("");
+}
+
+/* ── the owner is "you", and only "you" ────────────────────────────────────────────────────── */
+{
+  const { takeBible, cleanOption, chapterPrompt, biblePrompt, forgetOwnerAsStranger, sagasOf } = await import("../src/engine/saga.ts");
+  const { isOwnerName } = await import("../src/engine/you.ts");
+  const { facesOf, meet } = await import("../src/engine/faces.ts");
+  const s = newGame({ seed: "own-one", kit: "pussy", player_name: "Aurelia Vance", address: "Mistress" });
+
+  check("the owner's names are all the owner", ["Aurelia Vance", "Aurelia", "you", "the Owner", "Mistress", "the player"].every((n) => isOwnerName(s, n)));
+  check("and nobody else is", !isOwnerName(s, "Mira Kovač") && !isOwnerName(s, "Aurelian"));
+  check("the owner line says they are one person", /ONE person/.test(ownerLine(s)) && /Aurelia Vance/.test(ownerLine(s)));
+  check("a stranger can't be filed under the owner's name", meet(s, { name: "Aurelia Vance" }) === undefined && !facesOf(s)["aurelia vance"]);
+
+  const x: Saga = { id: "sg", seed: { id: "t", kind: "own", text: "A rival wants the ninth floor." }, status: "unwritten", title: "", premise: "", stakes: "", acts: [], act: 0, cast: [], facts: [], paths: [], history: [], due: 1, started: 1 };
+  sagasOf(s).list.push(x);
+  check("the outline prompt tells the narrator not to cast the owner", /Do NOT put the player in the cast, under their name \(Aurelia Vance\)/.test(biblePrompt(s, x)));
+  const ok = takeBible(s, x, {
+    title: "The Ninth Floor", premise: "A rival moves in.", stakes: "The floor.",
+    acts: ["arrival", "war"], paths: [{ id: "a", label: "You win" }, { id: "b", label: "She wins" }],
+    cast: [{ name: "Aurelia Vance", role: "the owner" }, { name: "Mira Kovač", role: "the rival", pronoun: "she", age: 30 }],
+  });
+  check("an outline that casts the owner keeps everyone but the owner", ok && x.cast.length === 1 && x.cast[0].name === "Mira Kovač", x.cast.map((c) => c.name));
+  check("and the owner gets no face on file", !facesOf(s)["aurelia vance"]);
+  check("the chapter prompt says every option is something you do", /Every option is something YOU do/.test(chapterPrompt(s, x)));
+  const o = cleanOption(s, { label: "Let Aurelia decide Mira's fate", outcome: "It is decided." });
+  check("an option naming the owner is put in the second person", o?.label === "Let you decide Mira's fate", o?.label);
+
+  // A save where the model already did it.
+  x.cast.push({ name: "Aurelia", role: "the owner", want: "", fear: "", toward: 0, now: "", turns: [] });
+  s.faces!["aurelia"] = { name: "Aurelia", pronoun: "she", age: 30, seen: 1, first: 1, last: 1 } as never;
+  forgetOwnerAsStranger(s);
+  check("an old save loses the owner from the cast and the faces", x.cast.every((c) => c.name !== "Aurelia") && !s.faces!["aurelia"]);
 }

@@ -43,6 +43,7 @@ import { HOUSE_STYLE } from "./prompts";
 import { coarsen, REGISTER_TAIL } from "./register";
 import { cultureOf, NORMS, NORM_IDS, normLine, pushNorm, type Norm } from "./culture";
 import { resolveAct } from "./intimacy";
+import { isOwnerName } from "./you";
 import { ACTS, ACT_BY_ID, FETISHES, FLAW_BY_ID, fetishBand } from "../data/intimacy";
 import { household, societies } from "./compare";
 
@@ -371,7 +372,7 @@ const fetishId = (v: unknown) => { const t = String(v ?? "").toLowerCase().trim(
 
 /** Whatever the model wrote, made into something the rules can run. Unknown keys drop; sizes are held to the scale of the game. */
 export function cleanOption(s: SaveState, raw: Record<string, unknown>): SagaOption | null {
-  const label = str(raw.label, 160);
+  const label = youFor(s, str(raw.label, 160));
   const outcome = str(raw.outcome, 1600);
   if (!label || !outcome) return null;
   const big = Math.max(20000, Math.abs(s.arcology.cash) * 0.6);
@@ -565,7 +566,7 @@ export function arcologyBrief(s: SaveState): string {
   const household = owned(s).slice(0, 12).map((p) => { const r = read(p); return `${p.name} (${p.age}, ${p.origin.nationality ?? p.origin.race}, ${r.label}; devotion ${Math.round(r.devotion)}, fear ${Math.round(p.bond.fear)}, resentment ${Math.round(p.bond.resentment)}${p.assignment ? `, ${p.assignment}` : ""})`; });
   const neighbours = a.neighbours.map((n) => `${n.name} to the ${n.direction} (${n.attitude >= 30 ? "friendly" : n.attitude <= -30 ? "hostile" : "wary"})`);
   return [
-    `THE ARCOLOGY: ${a.name}, week ${a.week}. Owner: ${s.player.name && s.player.name !== "you" ? s.player.name : "the player"} (called ${s.player.address || "Master"}). Cash ¤${Math.round(a.cash).toLocaleString()}, reputation ${Math.round(a.rep).toLocaleString()}, the city's opinion ${a.public_standing >= 3 ? "good" : a.public_standing <= -3 ? "poor" : "mixed"}, prosperity ${Math.round(a.prosperity)}, crime ${Math.round(a.crime)}, security ${Math.round(a.security)}, ${a.population.toLocaleString()} citizens.${s.player.owned_by ? ` The player wears the collar of ${s.people[s.player.owned_by]?.name ?? "a slave"}.` : ""}`,
+    `THE ARCOLOGY: ${a.name}, week ${a.week}. Owner: YOU, the player${s.player.name && s.player.name !== "you" ? ` (named ${s.player.name})` : ""}, called ${s.player.address || "Master"}. The owner is the reader, written as "you"; never a character in the cast. Cash ¤${Math.round(a.cash).toLocaleString()}, reputation ${Math.round(a.rep).toLocaleString()}, the city's opinion ${a.public_standing >= 3 ? "good" : a.public_standing <= -3 ? "poor" : "mixed"}, prosperity ${Math.round(a.prosperity)}, crime ${Math.round(a.crime)}, security ${Math.round(a.security)}, ${a.population.toLocaleString()} citizens.${s.player.owned_by ? ` The player wears the collar of ${s.people[s.player.owned_by]?.name ?? "a slave"}.` : ""}`,
     cultureBrief(s) ? `HOW PEOPLE HERE BEHAVE:\n${cultureBrief(s)}` : "",
     laws,
     s.genome ? genomeBrief(s) : "",
@@ -646,6 +647,8 @@ export function biblePrompt(s: SaveState, x: Saga): string {
     people.length ? `## THE PLAYER'S PEOPLE AT ITS CENTRE\n${people.map((p) => `${p.name}: ${p.persona?.background ?? ""} ${p.persona?.speech_pattern ? `Speaks: ${p.persona.speech_pattern}.` : ""}`.trim()).join("\n")}` : "",
     faces.length ? `## PEOPLE ALREADY MET\n${faces.map((f) => `${f.name} — ${f.pronoun}, about ${f.age}${f.nation ? `, ${f.nation}` : ""}${f.detail ? `; ${f.detail}` : ""}`).join("\n")}` : "",
     `## WRITE THE SAGA'S BIBLE
+The player is the owner and is written as "you". Do NOT put the player in the cast${s.player.name && s.player.name !== "you" ? `, under their name (${s.player.name}) or any other` : ""}: the cast is everyone else. The story happens to and around "you", and "you" make its choices.
+
 It is an erotic story: its premise is a desire, a taboo, an appetite or a sexual power struggle that could only happen under these laws and customs. Three to five acts, each with a sexual turn. Three to six people in it, all adults: use the player's people and the people already met above by their exact names; invent the rest with full names. At least one character must be someone who is not the player's slave. Give three or four ways it could end, each genuinely different (who wins, who's lost, who becomes what in bed, what the arcology's customs become).
 
 JSON: {"title":"2-5 words","premise":"2-3 sentences","stakes":"one sentence: what the player could win or lose","tone":"a few words","acts":["act 1 aim","act 2 aim","..."],"paths":[{"id":"short_id","label":"one way it ends"}],"cast":[{"name":"full name","role":"their part in this","want":"...","fear":"...","secret":"...","toward":-100..100,"now":"where they stand, a few words","desire":"what they want in bed","limit":"what they won't do, yet","pronoun":"she|he","age":N,"nationality":"...","skin":"...","hair":"colour, style","eyes":"...","detail":"one visible detail"}]}`,
@@ -661,7 +664,7 @@ export function chapterPrompt(s: SaveState, x: Saga, own?: string): string {
     arcologyBrief(s),
     desireBrief(s),
     `## THE SAGA: ${x.title}\n${x.premise}\nStakes: ${x.stakes}${x.tone ? `\nTone: ${x.tone}` : ""}\nActs: ${x.acts.map((a, i) => `${i + 1}. ${a}${i === x.act ? " ← NOW" : ""}`).join(" ")}`,
-    `## THE PEOPLE IN IT\n${x.cast.map(castLine(s)).join("\n")}`,
+    `## THE PEOPLE IN IT (not including "you")\n${x.cast.filter((c) => !isOwnerName(s, c.name)).map(castLine(s)).join("\n")}`,
     x.facts.length ? `## FACTS (established; keep them)\n${x.facts.map((f) => `· ${f}`).join("\n")}` : "",
     `## WAYS IT COULD END\n${x.paths.map((p) => `· ${p.id}: ${p.label} [${p.state}]`).join("\n")}`,
     past ? `## EARLIER\n${past}` : "",
@@ -670,7 +673,7 @@ export function chapterPrompt(s: SaveState, x: Saga, own?: string): string {
       ? `## THE PLAYER'S OWN ANSWER to "${x.chapter?.title}"\n${own}\n\n${VOCAB()}
 Resolve it as ONE option in the same JSON shape (the label is what they did, in a few words; the outcome is what happens). Be fair: what they tried may work, half-work, or cost them. JSON: {"option": ${OPTION_SCHEMA}}`
       : `## WRITE THE NEXT CHAPTER${last ? "\nThis is the last act. Every option ends the saga by one of the open paths (set \"ends\"), and the outcome is its epilogue: what became of each person." : `\nAct ${x.act + 1} of ${x.acts.length}. Set "advance": true on an option only when it completes this act's aim.`}
-Four to eight paragraphs, in the present tense, second person for the player. Something happens, sex is on the page, and somebody changes. Then three or four options, most of them sexual choices with sexual consequences.
+Four to eight paragraphs, in the present tense, second person for the player. The player is "you" and only "you": never the player's name in the third person, never "the owner" as someone else in the room. Something happens, sex is on the page, and somebody changes. Then three or four options, most of them sexual choices with sexual consequences. Every option is something YOU do, written as an order to yourself ("Bend her over the desk", "Refuse the offer"), never a question about what someone should do.
 ${VOCAB()}
 
 JSON: {"title":"chapter title","text":"the chapter; paragraphs separated by blank lines","options":[${OPTION_SCHEMA}]}`,
@@ -705,7 +708,8 @@ export function takeBible(s: SaveState, x: Saga, raw: Record<string, unknown>): 
   const cast = (Array.isArray(raw.cast) ? raw.cast : []).flatMap((c): SagaChar[] => {
     const o = c as Record<string, unknown>;
     const name = str(o?.name, 48);
-    if (!name) return [];
+    // The owner is "you", not a character; a model that casts them makes two people of one.
+    if (!name || isOwnerName(s, name)) return [];
     let at = whoIs(s, name);
     if (!at.person && !at.face) {
       const f = meet(s, { name, pronoun: /^he$/i.test(String(o.pronoun ?? "")) ? "he" : "she", age: num(o.age, 18, 85), nation: nationFrom(str(o.nationality, 40)), skin: str(o.skin, 40), hair: str(o.hair, 60)?.split(",")[0].trim(), hair_style: str(o.hair, 60)?.split(",").slice(1).join(",").trim() || undefined, eyes: str(o.eyes, 30), detail: str(o.detail, 120) });
@@ -759,6 +763,28 @@ export async function answerOwn(s: SaveState, sagaId: string, text: string, writ
   // Your own answer can't spend what you don't have.
   o.effects = o.effects?.filter((e) => !("cash" in e) || e.cash >= 0 || s.arcology.cash + e.cash >= 0);
   return { ok: true, result: apply(s, x, x.chapter, o) };
+}
+
+/** "Aurelia's orders" in an option the player takes is "your orders". Only the possessive, and
+ *  the bare name in a label, are safe to swap; dialogue elsewhere may say the name out loud. */
+function youFor(s: SaveState, text: string | undefined): string | undefined {
+  const full = s.player.name && s.player.name !== "you" ? s.player.name.trim() : "";
+  if (!text || !full) return text;
+  let out = text;
+  for (const name of [...new Set([full, full.split(" ")[0]])].filter((n) => n.length > 1)) {
+    const esc = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    out = out.replace(new RegExp(`\\b${esc}['’]s\\b`, "g"), "your").replace(new RegExp(`\\b${esc}\\b`, "g"), "you");
+  }
+  return out.charAt(0).toUpperCase() + out.slice(1);
+}
+
+/**
+ * For saves where a model already cast the owner as a character: take them out of every saga's
+ * cast and out of the faces on file. Runs on load.
+ */
+export function forgetOwnerAsStranger(s: SaveState): void {
+  for (const x of s.sagas?.list ?? []) x.cast = x.cast.filter((c) => !isOwnerName(s, c.name));
+  for (const [k, f] of Object.entries(s.faces ?? {})) if (isOwnerName(s, f.name)) delete s.faces![k];
 }
 
 /** Faces in running sagas are not forgotten. */

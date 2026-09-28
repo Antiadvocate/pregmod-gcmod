@@ -123,6 +123,21 @@ export function genderWord(s: SaveState): string {
   return cock && pussy ? "a futanari woman: a woman with a cock and balls as well as a pussy" : pussy ? "a woman" : "a woman with a cock and no pussy";
 }
 
+/**
+ * Whether a name a model wrote is the owner. The player is one person under several labels —
+ * "you", "the player", "the owner", their name, their title — and a model that sees the name in
+ * one place and "you" in another will happily make two people of them.
+ */
+export function isOwnerName(s: SaveState, name: string | undefined): boolean {
+  const n = (name ?? "").toLowerCase().replace(/[^\p{L}' ]/gu, " ").replace(/\s+/g, " ").trim();
+  if (!n) return false;
+  if (/^(you|yourself|the player|player|the owner|owner|the arcology owner|the arcologist)$/.test(n)) return true;
+  const full = (s.player.name ?? "").toLowerCase().trim();
+  if (full && full !== "you" && (n === full || n === full.split(" ")[0] || n.startsWith(`${full} `))) return true;
+  const title = (s.player.address ?? "").toLowerCase().trim();
+  return !!title && (n === title || n === `the ${title}`);
+}
+
 export function ownerLine(s: SaveState): string {
   const b = playerBody(s);
   const pr = s.player.pronouns ?? "he/him";
@@ -132,6 +147,9 @@ export function ownerLine(s: SaveState): string {
   (canSire(s) ? has : hasnt).push("balls");
   (hasPussy(s) ? has : hasnt).push("a pussy");
   (b.boobs >= 300 ? has : hasnt).push("breasts");
-  const name = s.player.name && s.player.name !== "you" ? `${s.player.name}, ` : "";
-  return `THE OWNER (the player, written as "you"): ${name}${genderWord(s)}. Pronouns ${pr}: anyone speaking about the owner says ${subj}/${obj}/${pos}. Slaves call the owner "${s.player.address || (pr === "she/her" ? "Mistress" : "Master")}". The owner's body: ${describeYou(s)}. The owner HAS ${has.join(", ")}; the owner DOES NOT HAVE ${hasnt.join(", ") || "anything missing"}. Never give the owner a body part they do not have or take away one they do; every scene, memory and line of dialogue keeps to this.${s.player.body.appearance_facts ? ` ${s.player.body.appearance_facts}` : ""}`;
+  const named = s.player.name && s.player.name !== "you" ? s.player.name : "";
+  const name = named ? `${named}, ` : "";
+  const title = s.player.address || (pr === "she/her" ? "Mistress" : "Master");
+  const one = `"You", the player, the owner${named ? `, ${named}` : ""} and "${title}" are ONE person, the person reading. Write that person only as "you", in the second person. Never write the owner as a separate character in the third person${named ? ` ("${named} walks in", "${named}'s orders")` : ""}, never put the owner in a cast list, and never ask what the owner${named ? ` or ${named}` : ""} should do: every choice offered is something YOU do. Other characters may say ${named ? `"${named}" or ` : ""}"${title}" aloud when they speak to or about you.`;
+  return `THE OWNER (the player, written as "you"): ${name}${genderWord(s)}. ${one} Pronouns ${pr}: anyone speaking about the owner says ${subj}/${obj}/${pos}. Slaves call the owner "${s.player.address || (pr === "she/her" ? "Mistress" : "Master")}". The owner's body: ${describeYou(s)}. The owner HAS ${has.join(", ")}; the owner DOES NOT HAVE ${hasnt.join(", ") || "anything missing"}. Never give the owner a body part they do not have or take away one they do; every scene, memory and line of dialogue keeps to this.${s.player.body.appearance_facts ? ` ${s.player.body.appearance_facts}` : ""}`;
 }

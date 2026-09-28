@@ -28,6 +28,7 @@ import { newStory } from "./story";
 import { newRun } from "./run";
 import { ORIGIN_BY_ID } from "../data/story";
 import { settleBody, settlePronouns, type Kit } from "./you";
+import { forgetOwnerAsStranger } from "./saga";
 import { cityOf, cityYield } from "./city";
 
 export interface NewGameOptions {
@@ -206,7 +207,7 @@ export function sanitize(raw: SaveState): SaveState {
   s.people = s.people ?? {};
   s.memory = s.memory ?? {};
   // The owner was "they" for everyone before there was a choice; settle it from body and address.
-  if (s.player) settlePronouns(s);
+  if (s.player) { settlePronouns(s); forgetOwnerAsStranger(s); }
   // Old saves filed the same beat week after week; fold the repeats together once, on load.
   for (const m of Object.values(s.memory)) if (m?.episodic) compactMemory(m);
   // Rumors that say the same thing are one rumor.
