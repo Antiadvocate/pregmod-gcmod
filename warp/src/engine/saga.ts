@@ -51,7 +51,7 @@ import { household, societies } from "./compare";
 export interface SagaSeed {
   /** Stable, so the same thing never seeds two sagas. */
   id: string;
-  kind: "law" | "slave" | "face" | "cast" | "neighbour" | "world" | "gene" | "menials" | "doctrine" | "deed" | "city" | "desire" | "custom" | "dress";
+  kind: "law" | "slave" | "face" | "cast" | "neighbour" | "world" | "gene" | "menials" | "doctrine" | "deed" | "city" | "desire" | "custom" | "dress" | "own";
   /** What it grew from, in a sentence, for the narrator. */
   text: string;
   /** Your people it's about. */
@@ -142,6 +142,8 @@ export interface Saga {
   started: number;
   /** A report line was already given for the chapter now due. */
   told?: number;
+  /** How many times it has been started over, for the record. */
+  restarts?: number;
   ended?: { week: number; path?: string; text: string };
 }
 
@@ -254,6 +256,54 @@ export function pickSeed(s: SaveState): SagaSeed | undefined {
   if (!pool.length) return undefined;
   const r = rng(`saga:${s.id ?? ""}:${s.arcology.week}:${st.used.length}`);
   return r.weighted(pool, (x) => x.weight).seed;
+}
+
+/* ── changing what a story is about ─────────────────────────────────────────────────────────── */
+
+/** Back to the start: nothing written, due now. What the chapters already did to people stays done. */
+function unwrite(s: SaveState, x: Saga): void {
+  Object.assign(x, { status: "unwritten" as const, title: "", premise: "", stakes: "", tone: undefined, acts: [], act: 0, cast: [], facts: [], paths: [], history: [], chapter: undefined, due: s.arcology.week, told: undefined });
+  x.restarts = (x.restarts ?? 0) + 1;
+}
+
+/** Another thing from this arcology to grow the story from, instead of the one it drew. False when
+ *  there is nothing else unused to draw from. */
+export function rerollSaga(s: SaveState, id: string): boolean {
+  const st = sagasOf(s);
+  const x = st.list.find((q) => q.id === id);
+  if (!x || x.status !== "unwritten") return false;
+  const busy = new Set(running(s).filter((q) => q.id !== id).flatMap((q) => q.seed.people ?? []));
+  const pool = seedsFor(s).filter(({ seed }) => seed.id !== x.seed.id && !st.used.includes(seed.id) && !(seed.people ?? []).some((p) => busy.has(p)));
+  if (!pool.length) return false;
+  const seed = rng(`saga-reroll:${id}:${st.used.length}`).weighted(pool, (q) => q.weight).seed;
+  st.used.push(seed.id);
+  x.seed = seed;
+  return true;
+}
+
+/**
+ * THE OWNER'S OWN IDEA. What they write becomes the thing the story grows from, in place of what
+ * the arcology suggested; anyone of theirs, or anyone already met, named in it is written in by
+ * name. A story already running is started over on it.
+ */
+export function steerSaga(s: SaveState, id: string, idea: string): boolean {
+  const x = sagasOf(s).list.find((q) => q.id === id);
+  const text = idea.trim().slice(0, 1200);
+  if (!x || x.status === "ended" || !text) return false;
+  const named = (name: string) => name.length > 1 && new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(text);
+  const people = owned(s).filter((p) => named(p.name) || named(p.name.split(" ")[0])).map((p) => p.id);
+  const faces = Object.entries(facesOf(s)).filter(([, f]) => named(f.name)).map(([k]) => k);
+  if (x.status !== "unwritten") unwrite(s, x);
+  x.seed = { id: `own:${x.id}:${x.restarts ?? 0}`, kind: "own", text, people, faces };
+  return true;
+}
+
+/** Start a running story over from the same seed: a new outline, new people, a new first chapter. */
+export function restartSaga(s: SaveState, id: string): boolean {
+  const x = sagasOf(s).list.find((q) => q.id === id);
+  if (!x || x.status !== "running") return false;
+  unwrite(s, x);
+  return true;
 }
 
 /* ── the week ───────────────────────────────────────────────────────────────────────────────── */
@@ -590,7 +640,9 @@ export function biblePrompt(s: SaveState, x: Saga): string {
   return [
     arcologyBrief(s),
     desireBrief(s),
-    `## WHAT IT GROWS FROM\n${x.seed.text}`,
+    x.seed.kind === "own"
+      ? `## WHAT THE OWNER WANTS THIS STORY TO BE ABOUT\n${x.seed.text}\n\nThis is the premise, written by the player. Build the saga on it exactly as they put it: keep every person, place and situation they name. The arcology above is the world it happens in, not a reason to change what they asked for.`
+      : `## WHAT IT GROWS FROM\n${x.seed.text}`,
     people.length ? `## THE PLAYER'S PEOPLE AT ITS CENTRE\n${people.map((p) => `${p.name}: ${p.persona?.background ?? ""} ${p.persona?.speech_pattern ? `Speaks: ${p.persona.speech_pattern}.` : ""}`.trim()).join("\n")}` : "",
     faces.length ? `## PEOPLE ALREADY MET\n${faces.map((f) => `${f.name} — ${f.pronoun}, about ${f.age}${f.nation ? `, ${f.nation}` : ""}${f.detail ? `; ${f.detail}` : ""}`).join("\n")}` : "",
     `## WRITE THE SAGA'S BIBLE

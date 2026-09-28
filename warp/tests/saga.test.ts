@@ -120,3 +120,34 @@ check("a face in a running story is kept", !!t.faces["oren kade"]);
   check("the city's customs move", cultureOf(u).norms.exposure === 79);
   check("and what she wants is written down", y.cast[0].desire === "to be watched by strangers" && y.cast[0].limit === "being touched by them");
 }
+
+/* ── changing what a story is about ────────────────────────────────────────────────────────── */
+{
+  const { rerollSaga, steerSaga, restartSaga, biblePrompt } = await import("../src/engine/saga.ts");
+  const t = newGame({ seed: "saga-steer" });
+  t.arcology.rep = 20000;
+  writeLaw(t, { name: "Open Doors", text: "No slave's door may be locked.", push: [{ norm: "exposure", dir: 1 }], effects: [] });
+  const girl = Object.values(t.people).find((p) => p.status === "owned")!;
+  girl.bond.resentment = 80;
+  sagasOf(t).next_start = t.arcology.week;
+  tickSagas(t, true);
+  const y = running(t)[0];
+  const before = y.seed.id;
+  const rolled = rerollSaga(t, y.id);
+  check("a new story can draw something else to grow from", !rolled || (y.seed.id !== before && sagasOf(t).used.includes(y.seed.id)), [before, y.seed.id]);
+
+  const idea = `${girl.name.split(" ")[0]} wants to run the Open Doors household on the ninth floor, and the neighbours' wives want her gone.`;
+  check("the owner can write what it's about", steerSaga(t, y.id, idea) && y.seed.kind === "own" && y.seed.text === idea);
+  check("and their people named in it are written in", !!y.seed.people?.includes(girl.id), y.seed.people);
+  const prompt = biblePrompt(t, y);
+  check("the narrator is told to build on the owner's idea", prompt.includes(idea) && /WHAT THE OWNER WANTS/.test(prompt) && !/WHAT IT GROWS FROM/.test(prompt));
+  check("and it waits to be begun", y.status === "unwritten");
+
+  // Written and one chapter in: starting over drops the chapters and keeps the idea.
+  await writeNext(t, y.id, fake([{ ...bible, cast: [{ ...bible.cast[0], name: girl.name }, bible.cast[1]] }, chapter()]));
+  choose(t, y.id, 0);
+  check("the story ran a chapter", y.status === "running" && y.history.length === 1);
+  check("a running story can be started over", restartSaga(t, y.id) && y.status === "unwritten" && !y.history.length && !y.title && y.seed.text === idea && y.restarts === 1);
+  await writeNext(t, y.id, fake([{ ...bible, cast: [{ ...bible.cast[0], name: girl.name }, bible.cast[1]] }, chapter()]));
+  check("or started over on a new idea", steerSaga(t, y.id, "A rival arcology's heiress arrives to buy the whole household.") && y.status === "unwritten" && y.seed.text.startsWith("A rival"));
+}
