@@ -17,7 +17,8 @@
 
 export type DistrictKind =
   | "spire" | "residential" | "commercial" | "industrial"
-  | "civic" | "docks" | "academy" | "barracks" | "pleasure";
+  | "civic" | "docks" | "academy" | "barracks" | "pleasure"
+  | "arena" | "clinic" | "garden" | "temple" | "exchange" | "dairy" | "power";
 
 export interface DistrictDef {
   kind: DistrictKind;
@@ -116,6 +117,47 @@ export const DISTRICTS: DistrictDef[] = [
     yields: { cash: 2100, rep: 12, prosperity: 2, security: -3 },
     favoured_by: ["hedonist", "degradationist", "supplication"],
     household: "Whores and public servants earn more.",
+  },
+  {
+    kind: "arena", name: "Arena", blurb: "Fights, races and public punishments, in front of forty thousand seats.",
+    found: 26000, step: 20000, bulk: 0.3, hue: "#8a7358", cap: 5,
+    yields: { rep: 28, cash: 700, prosperity: 1, security: -1 },
+    favoured_by: ["roman", "aztec", "physical_idealist", "degradationist"],
+  },
+  {
+    kind: "clinic", name: "Clinic tower", blurb: "Surgery, fertility and body work, open all night.",
+    found: 20000, step: 15000, bulk: 0.44, hue: "#6f8a86", cap: 5,
+    yields: { prosperity: 3, rep: 10, cash: 500 },
+    favoured_by: ["paternalist", "transformation", "eugenics", "repopulation"],
+  },
+  {
+    kind: "garden", name: "Sky garden", blurb: "Terraced gardens and orchards. The only green for miles.",
+    found: 15000, step: 11000, bulk: 0.26, hue: "#5f7d5a", cap: 5,
+    yields: { prosperity: 4, rep: 8, housing: 150 },
+    favoured_by: ["pastoralist", "body_purist", "edo", "chinese"],
+  },
+  {
+    kind: "temple", name: "Temple", blurb: "Where the arcology worships. What it worships is up to you.",
+    found: 21000, step: 16000, bulk: 0.36, hue: "#8c7a66", cap: 5,
+    yields: { rep: 30, security: 2 },
+    favoured_by: ["chattel_religion", "aztec", "egyptian", "arabian"],
+  },
+  {
+    kind: "exchange", name: "Exchange tower", blurb: "Banks, brokers and the slave futures market.",
+    found: 30000, step: 24000, bulk: 0.62, hue: "#5d6c80", cap: 6,
+    yields: { cash: 1900, prosperity: 2, security: -1 },
+    favoured_by: ["professionalism", "neo_imperial"],
+  },
+  {
+    kind: "dairy", name: "Dairy", blurb: "Milking halls and stalls. The product ships worldwide.",
+    found: 17000, step: 13000, bulk: 0.3, hue: "#8a8270", cap: 6,
+    yields: { cash: 1500, rep: 4, prosperity: -1 },
+    favoured_by: ["pastoralist", "expansionist", "cummunism"],
+  },
+  {
+    kind: "power", name: "Power plant", blurb: "Reactors and cooling towers. The lights stay on through a siege.",
+    found: 22000, step: 16000, bulk: 0.4, hue: "#6c6c70", cap: 5,
+    yields: { industry: 4, security: 3, prosperity: 1 },
   },
 ];
 

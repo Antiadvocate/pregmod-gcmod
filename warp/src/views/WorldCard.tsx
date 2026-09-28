@@ -1,4 +1,4 @@
-/** THE WORLD, on the Penthouse: this week's weather and what's forecast, the economy, the climate,
+/** THE WORLD, this week (the first tab of the World screen): this week's weather and what's forecast, the economy, the climate,
  *  the regions your docks trade with, the news, and everything coming up in the weeks ahead. */
 import { useGame } from "../lib/game";
 import { Card, cx } from "../lib/ui";

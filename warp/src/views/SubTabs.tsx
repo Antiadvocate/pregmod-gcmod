@@ -19,16 +19,16 @@ export default function SubTabs({ id, tabs }: { id: string; tabs: SubTab[] }) {
   if (!current) return null;
   const pick = (t: string) => {
     setOn(t);
-    document.querySelector("main")?.scrollTo({ top: 0 });
+    document.querySelector("main")?.scrollTo({ top: 0, behavior: "instant" });
   };
   return (
     <>
-      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 mb-3" style={{ background: "var(--ink-0)", borderBottom: "1px solid var(--line)" }}>
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar" role="tablist" style={{ WebkitOverflowScrolling: "touch" }}>
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 mb-4" style={{ background: "color-mix(in srgb, var(--ink-0) 92%, transparent)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
+        <div className="segmented no-scrollbar" role="tablist">
           {tabs.map((t) => (
             <button key={t.id} role="tab" aria-selected={t.id === current.id} onClick={() => pick(t.id)}
-              className={cx("chip shrink-0 !text-[12.5px] !py-1.5 !px-3", t.id === current.id && "on")}>
-              {t.label}{t.badge ? <span className="ml-1.5 opacity-80">{t.badge}</span> : null}
+              className={cx("seg", t.id === current.id && "on")}>
+              {t.label}{t.badge ? <span className="seg-badge">{t.badge}</span> : null}
             </button>
           ))}
         </div>

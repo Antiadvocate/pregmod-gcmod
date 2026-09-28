@@ -14,7 +14,7 @@ import {
   militaryStrength, buildDiscount, costToRaise, canRaise, tickCity, cityProblems,
 } from "../src/engine/city.ts";
 import { DISTRICTS, REGIONS } from "../src/data/districts.ts";
-import { layout, hourFrom } from "../src/lib/cityart.ts";
+import { layout, hourFrom, styleOf, STYLES } from "../src/lib/cityart.ts";
 
 function rich(seed = "city") {
   const s = newGame({ seed, starting_slaves: 2 });
@@ -210,4 +210,40 @@ const vacant = (s: ReturnType<typeof rich>) => cityOf(s).districts.filter((d) =>
     return b.length ? Math.max(...b.map((x) => x.h)) : 0;
   };
   check("a built-up city draws taller than a bare one, not shorter", h(large) > h(small), { small: h(small), large: h(large) });
+}
+
+{
+  // The seven kinds added with the architecture pass: each one can be founded on empty ground and
+  // pays out something the player can feel.
+  for (const kind of ["arena", "clinic", "garden", "temple", "exchange", "dairy", "power"] as const) {
+    const s = rich(`kind-${kind}`);
+    const before = cityYield(s);
+    const plot = vacant(s)[0];
+    const out = raise(s, plot.id, kind);
+    const after = cityYield(s);
+    const moved = (Object.keys(after) as (keyof typeof after)[]).some((k) => after[k] !== before[k]);
+    check(`${/^[aeiou]/.test(kind) ? "an" : "a"} ${kind} can be built and changes what the city yields`, out.ok && moved, { out, kind });
+  }
+}
+
+{
+  // The skyline wears the revival the city has taken furthest, and nothing below a quarter.
+  check("no doctrine, no architecture", styleOf({}).style === "modern");
+  check("a doctrine at 20% is not enough", styleOf({ roman: { adoption: 20 } }).style === "modern");
+  check("the furthest-adopted revival wins", styleOf({ roman: { adoption: 40 }, edo: { adoption: 70 }, hedonist: { adoption: 95 } }).style === "edo");
+  check("and it strengthens with adoption", styleOf({ roman: { adoption: 80 } }).strength > styleOf({ roman: { adoption: 30 } }).strength);
+
+  // Every revival, on a city built out with every kind: still in frame, spire still tallest.
+  const s = rich("dressed");
+  const kinds = DISTRICTS.filter((d) => d.kind !== "spire").map((d) => d.kind);
+  vacant(s).forEach((d, i) => { raise(s, d.id, kinds[i % kinds.length]); for (let k = 0; k < 6; k++) raise(s, d.id); });
+  for (const style of Object.keys(STYLES) as (keyof typeof STYLES)[]) {
+    const o = layout(cityOf(s).districts, { week: 90, crime: 20, population: 9000, hour: "dusk", style, strength: 1 });
+    const vb = o.viewBox.split(" ").map(Number);
+    const spire = o.blocks.find((b) => b.id === "d-core")!;
+    check(`${/^[aeiou]/.test(style) ? "an" : "a"} ${style} city fits its frame with the spire on top`,
+      Math.min(...o.blocks.map((b) => b.y)) > vb[1] && o.blocks.every((b) => b.id === "d-core" || b.y >= spire.y));
+    check(`and every shape in a ${style} city is a real path`,
+      o.blocks.every((b) => [b.body, b.side, b.top, ...b.details.map((d) => d.d)].every((p) => p === undefined || !/NaN|undefined/.test(p))));
+  }
 }

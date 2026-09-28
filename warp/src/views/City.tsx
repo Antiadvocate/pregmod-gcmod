@@ -21,6 +21,8 @@ import {
 } from "../engine/city";
 import { DISTRICTS, DISTRICT_BY_KIND, REGIONS, RINGS, type DistrictKind } from "../data/districts";
 import { Skyline } from "./Skyline";
+import { STYLES, styleOf } from "../lib/cityart";
+import { DOCTRINE_BY_ID } from "../data/doctrines";
 
 type Tab = "build" | "trade" | "neighbours";
 
@@ -45,6 +47,8 @@ export default function City() {
         style={{ background: "var(--bg)" }}>
         <Skyline onPick={(id) => { setPicked(id); setNote(null); }} selected={picked} />
       </div>
+
+      <Architecture />
 
       {/* The city in one line each. Six numbers, and every one of them is a lever. */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 mb-4">
@@ -87,6 +91,26 @@ export default function City() {
         ) : null}
       </Sheet>
     </>
+  );
+}
+
+/** What the skyline is wearing, and which doctrine put it there. */
+function Architecture() {
+  const { save } = useGame();
+  const { style, strength } = styleOf(save.arcology.doctrines);
+  const def = STYLES[style];
+  const adoption = style === "modern" ? 0 : Math.round(save.arcology.doctrines[style]?.adoption ?? 0);
+  return (
+    <div className="flex items-start gap-2.5 mb-4 text-[12.5px]">
+      <span className="w-2.5 h-2.5 rounded-full mt-1 shrink-0" style={{ background: def.stone, boxShadow: `0 0 0 2px ${def.trim}55` }} />
+      <div className="min-w-0">
+        <span className="font-medium">{def.name}</span>
+        <span className="mid"> · {def.note}</span>
+        {style !== "modern"
+          ? <div className="text-[11.5px] dim mt-0.5">{DOCTRINE_BY_ID[style]?.noun ?? style} at {adoption}% · {strength >= 0.99 ? "the whole city wears it" : "more of the city takes it up as adoption rises"}</div>
+          : <div className="text-[11.5px] dim mt-0.5">A revivalist doctrine past 25% adoption gives the city its architecture.</div>}
+      </div>
+    </div>
   );
 }
 
