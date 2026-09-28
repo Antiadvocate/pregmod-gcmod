@@ -85,6 +85,34 @@ const PLACE_LINES: Record<Place["kind"], string[]> = {
     "The club doors are open and the music comes out into the street. Slaves in the doorways call out prices.",
     "A tourist from the Old World is staring at everything with his mouth open, and a slave has already got his wallet.",
   ],
+  arena: [
+    "The arena is half full for an afternoon card. Two slaves are fighting in the sand while the crowd bets on which one breaks first.",
+    "Between bouts, attendants rake the sand. A girl is chained to a post in the middle of it, waiting for the next event.",
+  ],
+  clinic: [
+    "The clinic's waiting room is all owners. Their slaves wait in a pen by the lifts, in paper gowns.",
+    "A surgeon walks out onto the terrace for a cigarette. Through the glass behind him, a slave is being wheeled out with new breasts.",
+  ],
+  garden: [
+    "The orchard terraces smell of wet soil. Slaves in straw hats are picking fruit, and a couple is picnicking under the trees.",
+    "A gardener's slave is kneeling in a flower bed, naked except for gloves, planting bulbs in rows.",
+  ],
+  temple: [
+    "The temple doors are open. Inside, slaves kneel in rows along the aisle while the priest reads.",
+    "Worshippers leave offerings at the altar: flowers, coins, and a girl in white, collared and waiting.",
+  ],
+  exchange: [
+    "The trading floor is shouting. On the big board, the price of a trained slave has gone up four percent since the morning.",
+    "A broker is on the phone, one hand on the bare back of the slave kneeling beside his desk.",
+  ],
+  dairy: [
+    "The milking hall hums. Rows of slaves are strapped into the stalls, each with her number on a tag at her collar.",
+    "A dairyman is walking the stalls with a clipboard, checking yields and patting heads.",
+  ],
+  power: [
+    "The cooling towers hiss. Engineers in white overalls walk the catwalks, and nobody else is allowed past the fence.",
+    "A shift of maintenance slaves comes off the reactor floor, sweating, and is marched to the showers.",
+  ],
   verge: [
     "The verge is shacks and shipping containers, with cooking smoke over all of it. The people who clean your arcology live here.",
     "Kids are playing in the dust between the containers. One of them has a toy collar on a doll.",

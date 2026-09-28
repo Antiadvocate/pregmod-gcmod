@@ -112,7 +112,7 @@ export function Sheet({ open, onClose, title, children, wide }:
         onClick={(e) => e.stopPropagation()}>
         <div className="grabber sm:hidden" />
         <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 hairline" style={{ background: "var(--ink-1)" }}>
-          <h3 className="font-display text-[15px]">{title}</h3>
+          <h3 className="text-[15px] font-semibold">{title}</h3>
           <Button kind="ghost" size="sm" onClick={onClose}>close</Button>
         </div>
         <div className="p-4">{children}</div>
