@@ -13,6 +13,7 @@ import {
   type Involvement, type Place,
 } from "../engine/globe";
 import GlobeCanvas from "./GlobeCanvas";
+import SubTabs from "./SubTabs";
 
 const KIND_WORD: Record<Place["kind"], string> = { yours: "yours", neighbour: "neighbour", freecity: "Free City", region: "Old World" };
 
@@ -173,6 +174,8 @@ export default function World() {
   const home = ps.find((x) => x.kind === "yours")!;
   return (
     <>
+      <SubTabs id="world" tabs={[
+        { id: "globe", label: "The globe", render: () => (<>
       <Section title="The world">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
           <div>
@@ -192,6 +195,8 @@ export default function World() {
         </div>
       </Section>
 
+        </>) },
+        { id: "wars", label: "Wars & crises", badge: wars.length || undefined, render: () => (<>
       <Section title="Wars and crises">
         {wars.length ? (
           <div className="grid gap-2.5 md:grid-cols-2">
@@ -208,14 +213,20 @@ export default function World() {
         ) : <Card><p className="text-[12.5px] dim">Nowhere is at war this week. The regions are calm, for now.</p></Card>}
       </Section>
 
+        </>) },
+        { id: "climate", label: "Old World & climate", render: () => (<>
       <Section title="The Old World, and the climate">
         <OldWorld />
       </Section>
 
+        </>) },
+        { id: "research", label: "Research", render: () => (<>
       <Section title="Research">
         <p className="text-[12.5px] dim mb-2.5">Paid up front; each runs for some weeks and then works every week after. Some fix what the world is doing to itself. {home.name} reaches {areaLabel(home.radiusKm)}.</p>
         <ResearchGrid />
       </Section>
+        </>) },
+      ]} />
     </>
   );
 }

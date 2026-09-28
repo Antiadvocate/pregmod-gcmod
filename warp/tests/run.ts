@@ -31,11 +31,14 @@ import "./globe.test.ts";
 import "./works.test.ts";
 import "./genome.test.ts";
 import "./menials.test.ts";
+import "./citylife.test.ts";
 import "./reign.test.ts";
 import "./tokens.test.ts";
 import "./household.test.ts";
 import "./llm.test.ts";
 import "./lawguard.test.ts";
+import "./face.test.ts";
+import "./faces.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);

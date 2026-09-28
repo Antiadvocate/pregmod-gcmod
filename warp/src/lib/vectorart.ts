@@ -51,6 +51,8 @@ export const CROPS = {
   full: "164 -135 266 1097",
   bust: "215 55 130 380",
   head: "248 58 105 122",
+  // Brow to chin, for a portrait whose expression is the point.
+  face: "245 86 92 102",
 } as const;
 
 export type Crop = keyof typeof CROPS;
@@ -140,6 +142,10 @@ export function shade(hex: string, factor: number): string {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
 }
 
+/** A man, as the art is concerned: he/him with a masculine face. The pack draws women; for him it
+ *  uses heavier brows and bare lips, and the portrait adds stubble. */
+export const manly = (p: Person) => p.pronouns === "he/him" && p.body.face_shape === "masculine";
+
 export function paletteFor(p: Person): Record<string, string> {
   // A full-body suit is her skin, as far as the art is concerned — that is how the original draws
   // latex, and it is why the suit covers her arms and legs without separate layers for them.
@@ -157,7 +163,7 @@ export function paletteFor(p: Person): Record<string, string> {
     scrotum: shade(skin, 0.95),
     bellybutton: shade(skin, 0.8),
     areola: shade(skin, 0.78),
-    lip: p.look?.lips ?? (suit ? shade(skin, 0.82) : shade(match(SKIN, p.body.skin, "#d9b48f"), 0.82)),
+    lip: p.look?.lips ?? (suit ? shade(skin, 0.82) : shade(match(SKIN, p.body.skin, "#d9b48f"), manly(p) ? 0.9 : 0.82)),
     hair,
     eyebrow_hair: hair,
     pubic_hair: hair,
@@ -509,7 +515,7 @@ function faceLayers(p: Person): Layer[] {
   const shape = rows[p.body.face_shape] ? p.body.face_shape : "normal";
   const [eyes, mouth, nose, brow] = rows[shape];
   // Only the brow's fullness is hers to vary — the four features are a set and stay one.
-  const fullness = BROW_FULLNESS[faceHash(p) % BROW_FULLNESS.length];
+  const fullness = manly(p) ? (faceHash(p) % 2 ? "Bushy" : "Thick") : BROW_FULLNESS[faceHash(p) % BROW_FULLNESS.length];
   return [
     { id: `Eyes_${eyes}` },
     { id: `Mouth_${mouth}` },

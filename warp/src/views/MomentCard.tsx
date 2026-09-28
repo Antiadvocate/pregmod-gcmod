@@ -6,7 +6,7 @@
  * Walk away and it stays open on her page; pick it up there later. Without a model it waits for you
  * to answer her, and the written game answers back.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, MessageCircle, RotateCcw, Square, X } from "lucide-react";
 import { useGame } from "../lib/game";
 import { Button, cx } from "../lib/ui";
@@ -14,7 +14,7 @@ import { closeAllMoments, momentsOf, openMoment, playMoment } from "../engine/mo
 import { rollback, snapshot } from "../engine/state";
 import { concludeMoment, deedsOf, DEED_TAGS } from "../engine/deeds";
 import { modelsAvailable } from "../config";
-import { SlaveHead } from "./SlaveArt";
+import Portrait, { castOf } from "./Portrait";
 
 export interface Seed { person?: string; others?: string[]; title: string; source: string; you?: string; happened: string }
 
@@ -100,8 +100,12 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
     if (m?.unexpanded && !ran.current) { ran.current = true; void go(null); }
   }, [id]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const cast = useMemo(() => (m ? castOf(save, m) : []), [id, m?.person, (m?.others ?? []).join(), m?.log.length ?? 0]);
   if (!m) return null;
   const p = m.person ? save.people[m.person] : undefined;
+  // Their face follows the last thing written on their side, and the reply as it arrives.
+  const said = stream || [...m.log].reverse().find((l) => l.role !== "you")?.text || "";
   // In place under an event, the opening line is already on screen above.
   const lines = bare ? m.log.slice(m.log.findIndex((l) => l.role === "scene") + 1) : m.log;
 
@@ -117,8 +121,8 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
   return (
     <div className={cx(bare ? "mt-3 pt-3 hairline-top" : "card p-4", "fade-in", className)}>
       {!bare ? (
-        <div className="flex items-center gap-2.5 mb-3">
-          {p ? <SlaveHead person={p} size={32} /> : null}
+        <div className="flex items-center gap-3 mb-3">
+          <Portrait people={cast} text={said.slice(-600)} speaking={busy && !!stream} size={72} />
           <div className="min-w-0 flex-1">
             <div className="text-[13.5px]">{m.title}</div>
             <div className="text-[10.5px] uppercase tracking-wider dim">week {m.week}{m.updated !== m.week ? ` · last week ${m.updated}` : ""}</div>
@@ -126,6 +130,7 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
           {onClose ? <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="close"><X size={15} /></button> : null}
         </div>
       ) : null}
+      {bare && cast.length ? <div className="float-left mr-3 mb-1"><Portrait people={cast} text={said.slice(-600)} speaking={busy && !!stream} size={52} /></div> : null}
       <div className="space-y-3">
         {lines.map((l, i) => l.role === "you"
           ? <div key={i} className="player-line !my-1">{l.text}</div>
@@ -135,6 +140,7 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
         {busy && stopper.current ? <button className="btn btn-sm btn-danger" onClick={() => stopper.current?.abort()} title="Stop the model; this reply is thrown away"><Square size={12} /> stop</button> : null}
         {err ? <div className="text-[12px] bad">{err}</div> : null}
       </div>
+      {bare && cast.length ? <div className="clear-both" /> : null}
       {m.open && !busy ? (
         <>
           <div className="mt-3 space-y-1.5">

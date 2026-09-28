@@ -5,7 +5,59 @@
  *  than a separately maintained counter. */
 import { useState } from "react";
 import { useGame } from "../lib/game";
-import { Card, Chip, Empty, Money, Section } from "../lib/ui";
+import { Button, Card, Chip, Empty, Money, Section } from "../lib/ui";
+import { modelsAvailable } from "../config";
+import { call } from "../llm";
+import { chooseInScene, cityProseBrief } from "../engine/citylife";
+import type { WeekReport } from "../engine/types";
+
+/** The city this week: the game's scenes, their choices, and the narrator's column when asked for. */
+function CityThisWeek({ report }: { report: WeekReport }) {
+  const { save, mutate } = useGame();
+  const [busy, setBusy] = useState("");
+  const [err, setErr] = useState("");
+  const [plain, setPlain] = useState(false);
+  const scenes = report.city ?? [];
+  if (!scenes.length) return null;
+  const write = async () => {
+    const b = cityProseBrief(save, report.week);
+    if (!b || busy) return;
+    setBusy(" "); setErr("");
+    let acc = "";
+    const res = await call({ ...b, model: save.models.narrator_model, fallback: save.models.fallback_model, maxTokens: 1400, temperature: 0.9, onDelta: (d) => { acc += d; setBusy(acc); }, onReset: () => { acc = ""; setBusy(" "); } });
+    if (res.ok && res.text.trim()) mutate((s) => { const r = s.reports.find((x) => x.week === report.week); if (r) r.city_prose = { model: res.model, text: res.text.trim() }; });
+    else setErr(res.error ?? "The narrator returned nothing.");
+    setBusy(""); setPlain(false);
+  };
+  const prose = busy.trim() ? busy : !plain ? report.city_prose?.text : undefined;
+  return (
+    <Section title="The city this week" right={
+      <div className="flex items-center gap-2">
+        {report.city_prose && !busy ? <button className="text-[11px] dim underline" onClick={() => setPlain(!plain)}>{plain ? "the narrator's column" : "the scenes"}</button> : null}
+        {modelsAvailable() ? <Button size="sm" kind="ghost" disabled={!!busy} onClick={() => void write()} title="One model call: the narrator writes this week in full, from the scenes, your laws and everything behind them">{busy ? "writing…" : report.city_prose ? "write it again" : "have the narrator write the week"}</Button> : null}
+      </div>
+    }>
+      {err ? <div className="text-[11.5px] warn mb-2">{err}</div> : null}
+      {prose ? (
+        <Card><div className="font-prose text-[14.5px] leading-relaxed whitespace-pre-line">{prose}</div></Card>
+      ) : (
+        <div className="grid gap-2 md:grid-cols-2">
+          {scenes.map((c) => (
+            <Card key={c.key}>
+              <div className="text-[10.5px] uppercase tracking-wider acc mb-1">{c.where}</div>
+              <p className="font-prose text-[14px] leading-relaxed">{c.text}</p>
+              {c.result ? <p className="font-prose text-[13.5px] leading-relaxed mt-2 dim">{c.result}</p> : c.options?.length ? (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {c.options.map((o) => <Button key={o.id} size="sm" kind="ghost" onClick={() => mutate((s) => { chooseInScene(s, report.week, c.key, o.id); })}>{o.label}</Button>)}
+                </div>
+              ) : null}
+            </Card>
+          ))}
+        </div>
+      )}
+    </Section>
+  );
+}
 
 export default function Report() {
   const { save } = useGame();
@@ -46,6 +98,8 @@ export default function Report() {
         </div>
         {report.prose ? <p className="font-prose text-[15px] leading-relaxed mt-4">{report.prose}</p> : null}
       </Card>
+
+      <CityThisWeek report={report} />
 
       {report.problems.length ? (
         <Section title="Problems">

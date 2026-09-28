@@ -11,6 +11,8 @@ import { band } from "../engine/psyche";
 import { societyScore } from "../engine/society";
 import type { MarketOffer } from "../engine/types";
 import SlaveArt, { SlaveBust } from "./SlaveArt";
+import MenialsPanel from "./Menials";
+import SubTabs from "./SubTabs";
 
 export default function Market() {
   const { save, mutate } = useGame();
@@ -19,6 +21,9 @@ export default function Market() {
 
   return (
     <>
+      {/* Menials are bought here in bulk too, the same panel as on the People screen. */}
+      <SubTabs id="market" tabs={[
+        { id: "named", label: "Slaves for sale", render: () => (<>
       {MARKETS.map((m) => {
         const offers = save.market.offers[m.id] ?? [];
         const locked = save.arcology.rep < m.needs_rep;
@@ -71,6 +76,9 @@ export default function Market() {
         </Section>
       ) : null}
 
+        </>) },
+        { id: "menials", label: "Menials in bulk", render: () => <MenialsPanel /> },
+      ]} />
       <Sheet open={!!open} onClose={() => setOpen(null)} title={open?.person.name ?? ""} wide>
         {open ? (
           <div className="space-y-4">

@@ -77,9 +77,9 @@ const slavesOf = (s: ReturnType<typeof newGame>) => Object.values(s.people).filt
   apply(s);
   const [yours, near] = [societies(s)[0], societies(s)[1]];
   check("the comparison draws your citizens blue", /blue \(engineered\)/.test(figureFor(yours, "citizen")!.body.skin));
-  check("and says so", /blue skin of the Azure program/.test(household(yours).citizen.line), household(yours).citizen.line);
+  check("and says so", /carries the Azure program: blue skin/.test(household(yours).citizen.line), household(yours).citizen.line);
   check("and the neighbours stay as they were", !/engineered/.test(figureFor(near, "citizen")!.body.skin));
-  check("the day's story has it", /blue skin the Azure program gave her/.test(dayInTheLife(s, yours, near, yours)[0]), dayInTheLife(s, yours, near, yours)[0]);
+  check("the day's story has it", /carry the Azure program.*blue skin/.test(dayInTheLife(s, yours, near, yours)[0]), dayInTheLife(s, yours, near, yours)[0]);
   const pl = places(s)[0];
   let seen = false;
   for (let i = 0; i < 12 && !seen; i++) { s.turn++; seen = /Azure program/.test(walkScene(s, pl)); }
@@ -122,4 +122,71 @@ const slavesOf = (s: ReturnType<typeof newGame>) => Object.values(s.people).filt
   check("a slave gets her own skin back", a.body.skin === "olive", a.body.skin);
   check("one with nothing kept gets a skin from where she's from", !/engineered/.test(b.body.skin), b.body.skin);
   check("and the narrator reads the program right", /Furnace program: heat-resistant\./.test(a.body.appearance_facts) && !/blue skin/.test(a.body.appearance_facts), a.body.appearance_facts);
+}
+
+{
+  // Any change you write is a trait, not only colours: read, recorded, highlighted, and at work.
+  const { traitsFor, changesOf, prevailingChanges, tickGenome } = await import("../src/engine/genome.ts");
+  const { cityThisWeek } = await import("../src/engine/citylife.ts");
+  const { societies, household } = await import("../src/engine/compare.ts");
+  const w = readWords("citizens with night vision and stronger bones");
+  check("the game reads traits in your own words", (w.traits ?? []).some((t) => t.name === "night vision" && t.tag === "senses") && (w.traits ?? []).some((t) => /stronger bones/.test(t.name) && t.tag === "strength") && !w.skin, w.traits);
+  const narr = clampSpec({ traits: [{ name: "Gills", what: "They can stay under for an hour.", tag: "wings" }, { name: "larger breasts", what: "x" }] } as never, "gills, and larger breasts");
+  check("a narrator's traits are kept, tag checked", narr.traits?.[0].name === "gills" && narr.traits?.[0].tag === undefined, narr.traits);
+  check("nothing sexual reaches citizens, who include children", traitsFor(narr, "citizens").length === 1 && traitsFor(narr, "slaves").length === 2);
+  const s = newGame({ seed: "genome-traits" });
+  s.arcology.cash = 5_000_000;
+  await design(s, { name: "Owl", text: "citizens and slaves with night vision, and sharper minds", target: "both" });
+  apply(s);
+  const her = slavesOf(s)[0];
+  check("slaves carry the traits in their bodies and in what the narrator reads", (her.body.traits ?? []).some((t) => /night vision/.test(t)) && /Owl program: .*night vision/.test(her.body.appearance_facts));
+  check("the traits are the changes shown, not colours", changesOf(genomeOf(s).edits[0].spec).includes("night vision") && !genomeOf(s).edits[0].spec.skin);
+  check("Compare shows them on your citizens", prevailingChanges(s, "citizens").changes.includes("night vision") && /Owl program: .*night vision/.test(household(societies(s)[0]).citizen.line));
+  s.citylife_seen = {};
+  check("and so does the city", cityThisWeek(s, 60).some((c) => /night vision/.test(c.text)));
+  const crime = s.arcology.crime, pros = s.arcology.prosperity;
+  tickGenome(s);
+  check("keener senses and sharper minds do something every week", s.arcology.crime < crime && s.arcology.prosperity > pros, { crime: [crime, s.arcology.crime], pros: [pros, s.arcology.prosperity] });
+}
+
+{
+  // Walks: a gene program shows on every walk, like your laws do, and the narrated walk is told to show it.
+  const { walkScene, walkContext, places } = await import("../src/engine/walk.ts");
+  const s = newGame({ seed: "genome-walk" });
+  s.arcology.cash = 5_000_000;
+  await design(s, { name: "Owl", text: "citizens with night vision, and resistant to fevers", target: "citizens" });
+  apply(s);
+  let every = true;
+  for (const pl of places(s)) for (let i = 0; i < 5; i++) { s.turn++; if (!/Owl program/.test(walkScene(s, pl))) every = false; }
+  check("every walk, everywhere, shows the gene program", every);
+  check("the narrated walk is told to show it at work", /GENE PROGRAMS DID .*show at least one of the changes/.test(walkContext(s)) && /night vision/.test(walkContext(s)));
+}
+
+{
+  // Editing a program once it's running: revise it, rename it, reverse it.
+  const { applyRevision, revisionCost, reverse, reverseCost, rename, REVISE_RATE } = await import("../src/engine/genome.ts");
+  const s = newGame({ seed: "genome-revise" });
+  s.arcology.cash = 10_000_000;
+  const her = slavesOf(s)[0];
+  const bornSkin = her.body.skin;
+  await design(s, { name: "Owl", text: "slaves with night vision and blue skin", target: "slaves" });
+  apply(s);
+  const id = genomeOf(s).edits[0].id;
+  check("the program is on her", /blue \(engineered\)/.test(her.body.skin) && her.body.traits!.includes("night vision (engineered)"));
+  await design(s, { name: "Owl", text: "slaves with night vision and stronger bones", target: "slaves", revises: id });
+  const cost = revisionCost(s);
+  const q = quote(s, "slaves", genomeOf(s).draft!.spec).cost;
+  check("a revision is priced at a discount on a fresh run", cost === Math.round(q * REVISE_RATE) && cost > 0, { cost, q });
+  const cash = s.arcology.cash;
+  const line = applyRevision(s);
+  check("it charges what it quoted, and says what changed", s.arcology.cash === cash - cost && /Added: stronger bones/.test(line) && /Taken away: blue skin/.test(line), line);
+  check("what it took away comes off her; what it added goes on", her.body.skin === bornSkin && !her.body.traits!.some((t) => /blue/.test(t)) && her.body.traits!.includes("stronger bones (engineered)") && her.body.traits!.includes("night vision (engineered)"), { skin: her.body.skin, traits: her.body.traits });
+  check("still one program, not two", genomeOf(s).edits.length === 1 && !genomeOf(s).draft);
+  check("and what the narrator reads about her says the new thing, once", (her.body.appearance_facts.match(/Owl program/g) ?? []).length === 1 && /stronger bones/.test(her.body.appearance_facts) && !/blue skin/.test(her.body.appearance_facts), her.body.appearance_facts);
+  rename(s, id, "Nightjar");
+  check("renaming carries into what everyone reads", genomeOf(s).edits[0].name === "Nightjar" && /Nightjar program/.test(her.body.appearance_facts) && !/Owl program/.test(her.body.appearance_facts));
+  const rc = reverseCost(s, id);
+  const before = s.arcology.cash;
+  reverse(s, id);
+  check("reversing it undoes it on her, retires it, and costs half a fresh run", !genomeOf(s).edits.length && s.arcology.cash === before - rc && !(her.body.traits ?? []).some((t) => /engineered/.test(t)) && !/Nightjar program/.test(her.body.appearance_facts), her.body.traits);
 }

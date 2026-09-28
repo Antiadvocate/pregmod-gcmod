@@ -1,7 +1,7 @@
 /**
  * PUBLIC WORKS — every problem the arcology has can be bought down.
  *
- * Two ways to spend on a problem:
+ * Two ways to spend on a problem (a level's price rises gently, because every level does the same):
  *
  *   works       infrastructure, built a level at a time. Each level costs more than the last and
  *               adds a little weekly upkeep, and does its job every week for as long as it stands.
@@ -38,24 +38,26 @@ export interface Work {
 const owned = (s: SaveState) => Object.values(s.people).filter((p) => p.status === "owned" || p.status === "indentured");
 
 export const WORKS: Work[] = [
-  { id: "hydroponics", name: "Hydroponic towers", fixes: "food", each: "+150 food a week", base: 18000, growth: 1.45, upkeep: 250,
+  { id: "hydroponics", name: "Hydroponic towers", fixes: "food", each: "+150 food a week", base: 18000, growth: 1.12, upkeep: 250,
     weekly: (s, l) => { s.arcology.food.production += 150 * l; } },
-  { id: "granary", name: "Cold stores", fixes: "food stores", each: "+4,000 food the stores can hold", base: 12000, growth: 1.4, upkeep: 100 },
-  { id: "scrubbers", name: "Scrubber towers", fixes: "pollution", each: "−3 pollution a week", base: 16000, growth: 1.45, upkeep: 300,
+  { id: "autofarm", name: "Automated farm decks", fixes: "food, at scale", each: "+1,500 food a week, grown and harvested by machines", base: 120000, growth: 1.12, upkeep: 1200,
+    weekly: (s, l) => { s.arcology.food.production += 1500 * l; } },
+  { id: "granary", name: "Cold stores", fixes: "food stores", each: "+4,000 food the stores can hold", base: 12000, growth: 1.1, upkeep: 100 },
+  { id: "scrubbers", name: "Scrubber towers", fixes: "pollution", each: "−3 pollution a week", base: 16000, growth: 1.15, upkeep: 300,
     weekly: (s, l) => { const w = worldOf(s); w.pollution = clamp(w.pollution - 3 * l, 0, 100); } },
   { id: "clean_industry", name: "Clean industry retrofits", fixes: "pollution at the source", each: "your industry pollutes 15% less (down to a quarter)", base: 25000, growth: 1.5, upkeep: 200 },
-  { id: "police", name: "Police stations", fixes: "crime", each: "−1.5 crime and +0.5 security a week", base: 15000, growth: 1.45, upkeep: 400,
+  { id: "police", name: "Police stations", fixes: "crime", each: "−1.5 crime and +0.5 security a week", base: 15000, growth: 1.15, upkeep: 400,
     weekly: (s, l) => { s.arcology.crime = clamp(s.arcology.crime - 1.5 * l, 0, 100); s.arcology.security = clamp(s.arcology.security + 0.5 * l, 0, 100); } },
-  { id: "housing", name: "Prefab housing blocks", fixes: "housing", each: "+150 people the city can house", base: 14000, growth: 1.35, upkeep: 150 },
-  { id: "amenities", name: "Parks, markets and transit", fixes: "prosperity", each: "+0.6 prosperity a week", base: 20000, growth: 1.45, upkeep: 450,
+  { id: "housing", name: "Prefab housing blocks", fixes: "housing", each: "+150 people the city can house", base: 14000, growth: 1.08, upkeep: 150 },
+  { id: "amenities", name: "Parks, markets and transit", fixes: "prosperity", each: "+0.6 prosperity a week", base: 20000, growth: 1.15, upkeep: 450,
     weekly: (s, l) => { s.arcology.prosperity = clamp(s.arcology.prosperity + 0.6 * l, 5, 200); } },
-  { id: "civic_media", name: "Civic media office", fixes: "what citizens think of you", each: "+0.15 standing a week", base: 18000, growth: 1.5, upkeep: 350,
+  { id: "civic_media", name: "Civic media office", fixes: "what citizens think of you", each: "+0.15 standing a week", base: 18000, growth: 1.2, upkeep: 350,
     weekly: (s, l) => { s.arcology.public_standing = clamp(s.arcology.public_standing + 0.15 * l, -10, 10); } },
-  { id: "hospital", name: "Household hospital wing", fixes: "your slaves' health", each: "+0.8 health a week for every slave", base: 16000, growth: 1.45, upkeep: 300,
+  { id: "hospital", name: "Household hospital wing", fixes: "your slaves' health", each: "+0.8 health a week for every slave", base: 16000, growth: 1.15, upkeep: 300,
     weekly: (s, l) => { for (const p of owned(s)) p.health.health = clamp(p.health.health + 0.8 * l, -100, 100); } },
-  { id: "comforts", name: "Servants' quarters", fixes: "exhaustion and household unrest", each: "+3 energy, +0.4 hope and −0.3 resentment a week for every slave", base: 14000, growth: 1.45, upkeep: 250,
+  { id: "comforts", name: "Servants' quarters", fixes: "exhaustion and household unrest", each: "+3 energy, +0.4 hope and −0.3 resentment a week for every slave", base: 14000, growth: 1.15, upkeep: 250,
     weekly: (s, l) => { for (const p of owned(s)) { p.health.energy = clamp(p.health.energy + 3 * l, 0, 100); p.bond.hope = clamp(p.bond.hope + 0.4 * l, 0, 100); p.bond.resentment = clamp(p.bond.resentment - 0.3 * l, 0, 100); } } },
-  { id: "climate_fund", name: "Climate fund", fixes: "the world's climate", each: "−0.3 climate strain a week", base: 30000, growth: 1.5, upkeep: 800,
+  { id: "climate_fund", name: "Climate fund", fixes: "the world's climate", each: "−0.3 climate strain a week", base: 30000, growth: 1.18, upkeep: 800,
     weekly: (s, l) => { const w = worldOf(s); w.strain = clamp(w.strain - 0.3 * l, 0, 100); } },
 ];
 export const WORK_BY_ID: Record<string, Work> = Object.fromEntries(WORKS.map((w) => [w.id, w]));

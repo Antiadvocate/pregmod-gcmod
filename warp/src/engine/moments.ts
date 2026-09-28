@@ -14,6 +14,7 @@ import { lawsLine } from "./lawlife";
 import type { Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
+import { castBrief, facesIn, keyOf, meet, parseCast } from "./faces";
 import { HOUSE_STYLE, personCard, BOOKKEEPER_SYSTEM, bookkeeperContext } from "./prompts";
 import { worldBrief } from "./world";
 import { applyDiff, salvage, type Diff } from "./turn";
@@ -183,6 +184,7 @@ export async function playMoment(
     s.world ? `## THE WORLD\n${worldBrief(s)}` : "",
     walking ? "" : lawsLine(s),
     walking || city ? "" : sentinelsLine(s),
+    castBrief(s, `${m.title}\n${transcript(m)}\n${reply ?? ""}`),
     `## THE SCENE SO FAR (${m.title})\n${transcript(m)}`,
     reply ? `## THE PLAYER'S REPLY\n${reply}` : `## WRITE THIS MOMENT OUT IN FULL, then offer the options.`,
   ].filter(Boolean).join("\n\n");
@@ -195,7 +197,7 @@ export async function playMoment(
     onDelta: opts?.onDelta ? (c) => {
       shown += c;
       // Stream the prose only; the options list is not for reading as it arrives.
-      if (!/\n\s*OPTIONS/i.test(shown)) opts.onDelta!(c);
+      if (!/\n\s*(OPTIONS|\**CAST\**\s*:)/i.test(shown)) opts.onDelta!(c);
     } : undefined,
     onReset: () => { shown = ""; opts?.onReset?.(); },
   });
@@ -205,8 +207,13 @@ export async function playMoment(
     m.options = fallbackOptions();
     return { ok: false, prose, error: res.error };
   }
-  const { prose: raw, options } = splitOptions(salvage(res.text));
-  const prose = raw || res.text.trim();
+  const { prose: uncast, cast } = parseCast(salvage(res.text));
+  const { prose: raw, options } = splitOptions(uncast);
+  const prose = raw || uncast.trim();
+  // Anyone new the model put in the scene goes on file with their face; anyone on file who turned up is seen again.
+  const ours = new Set(Object.values(s.people).filter((x) => x.status === "owned" || x.status === "indentured").map((x) => keyOf(x.name)));
+  for (const c of cast) if (!ours.has(keyOf(c.name))) meet(s, c);
+  for (const f of facesIn(s, prose, 6)) meet(s, f);
   m.log.push({ role: "scene", text: prose });
   m.options = options.length >= 2 ? options : fallbackOptions();
   m.unexpanded = false;

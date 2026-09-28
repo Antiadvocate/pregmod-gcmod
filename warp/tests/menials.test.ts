@@ -61,3 +61,21 @@ import { nextCost } from "../src/engine/works.ts";
   buyMenials(s, Math.round(s.arcology.population / 3) * 3); setJob(s, "lease", m.owned);
   check("lease three a household and they have three", household(societies(s)[0]).slaves === 3, household(societies(s)[0]).slaves);
 }
+
+{
+  // Menials eat, and by default the city keeps itself fed by putting them on the farms.
+  const s = newGame({ seed: "menials-autofeed" });
+  s.arcology.cash = 50_000_000;
+  buyMenials(s, 10_000);
+  setJob(s, "labour", 10_000);
+  s.arcology.food.stores = 0;
+  const r = endWeek(s);
+  const m = menialsOf(s);
+  const bought = -r.ledger.filter((l) => l.category === "food").reduce((n, l) => n + l.cash, 0);
+  check("ten thousand menials on labour: enough move to the farms to feed everyone", m.jobs.farms >= 1400 && bought === 0 && r.lines.some((l) => /To keep the city fed/.test(l.text)), { farms: m.jobs.farms, bought });
+  const t2 = newGame({ seed: "menials-autofeed" });
+  t2.arcology.cash = 50_000_000;
+  buyMenials(t2, 10_000); setJob(t2, "labour", 10_000); menialsOf(t2).autofeed = false; t2.arcology.food.stores = 0;
+  const r2 = endWeek(t2);
+  check("turned off, it doesn't, and the shortfall is bought", menialsOf(t2).jobs.farms === 0 && r2.ledger.some((l) => l.category === "food" && l.cash < -100_000));
+}

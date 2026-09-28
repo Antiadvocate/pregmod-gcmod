@@ -7,6 +7,7 @@
  */
 import PhotoPortrait from "./PhotoPortrait";
 import MenialsPanel from "./Menials";
+import SubTabs from "./SubTabs";
 import { sane, recoveryNote, rushCost, rushRecovery } from "../engine/health";
 import { DRUGS, canStart } from "../data/drugs";
 import { describeGenitals, describeFeet, mobility, dickCM, ballsWord, vaginaWord, anusWord, feetOf } from "../engine/genitals";
@@ -73,7 +74,8 @@ export default function Roster() {
 
   return (
     <>
-      <MenialsPanel />
+      <SubTabs id="people" tabs={[
+        { id: "household", label: "Your household", badge: people.length || undefined, render: () => (<>
       <div className="flex items-center gap-2 mb-4">
         <div className="relative flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 dim" />
@@ -95,6 +97,9 @@ export default function Roster() {
         </div>
       ) : <Empty>Nobody yet. Buy someone at the Market.</Empty>}
 
+        </>) },
+        { id: "menials", label: "Menials", badge: save.menials?.owned ? save.menials.owned.toLocaleString() : undefined, render: () => <MenialsPanel /> },
+      ]} />
       <Sheet open={!!openId} onClose={() => setOpenId(null)} title={openId ? save.people[openId]?.name ?? "" : ""} wide>
         {openId && save.people[openId] ? <PersonPanel id={openId} onClose={() => setOpenId(null)} onWith={() => setWithId(openId)} onDress={() => setDressId(openId)} /> : null}
       </Sheet>

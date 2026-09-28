@@ -17,7 +17,9 @@ import { build, emergency, emergencyPreview, foodCap, levelOf, nextCost, industr
   const cap = foodCap(b);
   build(b, "granary");
   check("cold stores hold more", foodCap(b) === cap + 4000);
-  check("each level costs more than the last", nextCost(b, "hydroponics") > 18000 * 1.45 && levelOf(b, "hydroponics") === 2);
+  check("each level costs a little more than the last", nextCost(b, "hydroponics") === Math.round(18000 * 1.12 ** 2 / 100) * 100 && levelOf(b, "hydroponics") === 2);
+  for (let i = 0; i < 19; i++) { b.arcology.cash = 1e9; build(b, "hydroponics"); }
+  check("so a big city can keep building: level 22 isn't millions", nextCost(b, "hydroponics") < 400_000, nextCost(b, "hydroponics"));
 }
 
 {

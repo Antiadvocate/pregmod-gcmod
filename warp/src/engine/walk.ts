@@ -8,7 +8,7 @@
  * make an example of somebody. Whatever you do out there is done in public, and the city takes it
  * back into its habits when the walk ends.
  */
-import { lookWords, prevailingLook } from "./genome";
+import { genomeOf, citizenShare, slaveShare, traitsFor, genomeBrief } from "./genome";
 import { sentinelsLine } from "./battles";
 import type { Person, SaveState } from "./types";
 import { cultureOf, cultureBrief, NORM_IDS, type Norm } from "./culture";
@@ -193,11 +193,6 @@ function youLines(s: SaveState, escort?: Person): Vignette[] {
       ? `People see your collar, and see ${keeper?.name ?? "her"}'s name on it. An old woman touches your arm and says she thinks it's beautiful.`
       : `People see your collar. Someone has chalked a cartoon on a wall of you on your knees in front of ${keeper?.name ?? "a slave"}, and a group of teenagers are laughing at it.` });
   }
-  // What the gene programs did shows on every face in the crowd.
-  const cl = prevailingLook(s, "citizens");
-  if (lookWords(cl)) out.push({ w: 4, text: `Almost everyone in the crowd has the ${lookWords(cl)} of the ${cl.from!.join(" and ")} program. A tourist from the Old World stares at them, and at you, with her phone half raised.` });
-  const sl = prevailingLook(s, "slaves");
-  if (lookWords(sl) && !lookWords(cl)) out.push({ w: 3, text: `A citizen stops to look at a slave with ${lookWords(sl)}: one of yours, engineered. "Is that the owner's program?" he asks her. She nods.` });
   for (const d of (s.deeds ?? []).filter((x) => x.public).slice(-3)) out.push({ w: 3, text: `People here know what you did. ${d.summary}` });
   const r = [...s.rumors].filter((x) => !x.where).sort((a, b) => b.salience - a.salience)[0];
   if (r) out.push({ w: 2, text: `At the lift, you overhear someone: "${r.content.replace(/^"|"$/g, "")}"` });
@@ -246,6 +241,67 @@ function lawInAction(s: SaveState, l: { name: string; text: string; pull: Partia
   ]);
 }
 
+/** The gene programs, as a walk would come across them: one program, one of its changes, at work here. */
+function geneInAction(s: SaveState, place: Place, escort: Person | undefined, r: ReturnType<typeof rng>): string | null {
+  if (!s.genome) return null;
+  const edits = genomeOf(s).edits.map((e) => ({ e, reach: Math.max(citizenShare(s, e), slaveShare(s, e)) })).filter((x) => x.reach >= 0.2);
+  if (!edits.length) return null;
+  const { e } = r.weighted(edits, (x) => x.reach);
+  const who = citizenShare(s, e) >= slaveShare(s, e) ? "citizens" : "slaves";
+  const here = place.name.toLowerCase().replace(/^the /, "the ");
+  const name = `the ${e.name} program`;
+  const options: string[] = [];
+  for (const t of traitsFor(e.spec, who)) {
+    const N = `${name[0].toUpperCase()}${name.slice(1)}`;
+    const byTag: Record<string, string[]> = {
+      senses: [
+        `A shopkeeper in ${here} catches a thief the others never noticed, and has him by the collar before he reaches the door. ${N}'s ${t.name}.`,
+        `The lights fail in ${here} for a minute. Half the crowd carries on as if nothing happened: ${t.name}, from ${name}. The other half stands still and waits.`,
+        `A child in ${here} points out a hawk circling the spire, far above, before any adult can see it. ${t.name[0].toUpperCase()}${t.name.slice(1)}: ${name}.`,
+      ],
+      strength: [
+        `Two ${who} carry a café's delivery crates up the stairs in ${here} as if they were empty. Nobody remarks on it any more; it's ${name}'s ${t.name}.`,
+        `A lift jams between floors in ${here}. Three of ${name}'s people prise the doors open by hand.`,
+      ],
+      intellect: [
+        `An argument about tariffs at a café table in ${here} is conducted entirely in figures, at speed. ${N} did that: ${t.name}.`,
+        `A chess hustler in ${here} has stopped taking bets from anyone ${name} reached. He says it's bad for business.`,
+      ],
+      beauty: [
+        `People in ${here} keep stopping to look at each other. The ${t.name} ${name} gave them has made the whole floor a little vain.`,
+        `A scout from an Old World modelling agency works ${here} with a clipboard, and gives up counting.`,
+      ],
+      fertility: [
+        `There are prams everywhere in ${here}. The clinics say ${name} has doubled the birth rate, and the nurseries are hiring.`,
+      ],
+      endurance: [
+        `A night-shift crew in ${here} is still working at dawn and looks fresh. ${N}: ${t.name}.`,
+        `The café in ${here} has stopped selling coffee after midnight: ${name}'s people don't need it, and they're most of the customers.`,
+      ],
+      longevity: [
+        `An old woman in ${here} tells you she's ninety-one and has never been ill. She thanks ${name} for it, and you, with a wink.`,
+      ],
+      "": [
+        `In ${here} you see ${name} everywhere you look: ${t.name}. ${t.what}`,
+        `A tourist in ${here} asks what's different about the people here. A waiter tells her: ${t.name}, ${name}. ${t.what}`,
+      ],
+    };
+    options.push(...(byTag[t.tag ?? ""] ?? byTag[""]));
+  }
+  const wx = s.world?.weather.kind;
+  if ((e.spec.resist.heat ?? 0) > 0) options.push(wx === "heatwave" || wx === "hot" ? `It's sweltering, and the ${who} ${name} reached are the only ones in ${here} not looking for shade.` : `A vendor in ${here} sells cold drinks with a sign: "for the unedited". ${name[0].toUpperCase()}${name.slice(1)}'s people don't need them.`);
+  if ((e.spec.resist.cold ?? 0) > 0) options.push(`The ${who} ${name} reached walk ${here} in shirtsleeves while everyone else is in coats.`);
+  if ((e.spec.resist.disease ?? 0) > 0) options.push(`A cough is going round ${here}. The ${who} ${name} reached don't catch it; the newcomers do.`);
+  if ((e.spec.resist.pollution ?? 0) > 0) options.push(`The air in ${here} smells of the works, and ${name}'s people breathe it without masks.`);
+  if (e.spec.health) options.push(`Everyone in ${here} looks well. ${name[0].toUpperCase()}${name.slice(1)} shows in how they walk.`);
+  const looks = [e.spec.skin && `${e.spec.skin} skin`, e.spec.hair && `${e.spec.hair} hair`, e.spec.eyes && `${e.spec.eyes} eyes`].filter(Boolean) as string[];
+  if (looks.length) options.push(`Most of the faces in ${here} have ${name}'s ${looks.join(" and ")}. The few without it are newcomers, and they're the ones people look at twice.`);
+  if (!options.length) return null;
+  let line = r.pick(options);
+  if (escort && e.slaves.includes(escort.id)) line += ` ${escort.name} carries it too, and a stranger stops her to ask about it.`;
+  return line;
+}
+
 export function walkScene(s: SaveState, place: Place, escort?: Person): string {
   const r = rng(`walk:${s.arcology.week}:${place.id}:${s.turn}:${escort?.id ?? ""}`);
   const c = cultureOf(s);
@@ -280,8 +336,11 @@ export function walkScene(s: SaveState, place: Place, escort?: Person): string {
   // Your own laws always show: they're the thing you changed, and people are living under them.
   const yours = lawsOf(s).filter((x) => x.id.startsWith("custom_")).map((x) => LAW_BY_ID[x.id]).filter(Boolean).slice(-2).reverse();
   for (const l of yours) picked.push(lawInAction(s, l, escort, r));
+  // Your gene programs show too, when they've reached enough people to be seen.
+  const gene = geneInAction(s, place, escort, r);
+  if (gene) picked.push(gene);
   const left = [...pool];
-  for (let i = 0; i < 4 - yours.length && left.length; i++) {
+  for (let i = 0; i < 4 - yours.length - (gene ? 1 : 0) && left.length; i++) {
     const v = r.weighted(left, (x) => x.w);
     picked.push(v.text);
     left.splice(left.indexOf(v), 1);
@@ -328,6 +387,7 @@ export function walkContext(s: SaveState, placeId?: string): string {
   return [
     `## WHERE\n${place.name}: ${place.blurb}${place.condition <= 35 ? " It is run down." : ""}`,
     `## THE CITY'S HABITS\n${cultureBrief(s) || "Nothing settled yet; citizens behave in all sorts of ways."}`,
+    genomeBrief(s) ? `## WHAT THE OWNER'S GENE PROGRAMS DID (people here carry these; show at least one of the changes at work in this scene, concretely: who, doing what, that they couldn't before)\n${genomeBrief(s)}` : "",
     ownLaws(s) ? `## THE OWNER'S OWN LAWS (people here obey these; show at least one of them happening in this scene, spelled out bluntly: who does exactly what, to whom)\n${ownLaws(s)}` : "",
     lawsBrief(s) ? `## LAWS IN FORCE\n${lawsBrief(s)}` : "",
     docs ? `## DOCTRINES\n${docs}` : "",

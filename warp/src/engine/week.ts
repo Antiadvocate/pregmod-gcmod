@@ -59,6 +59,9 @@ import { tickGlobe } from "./globe";
 import { tickWorks } from "./works";
 import { tickGenome, menialResistance } from "./genome";
 import { tickMenials } from "./menials";
+import { pruneFaces, syncStoryCast } from "./faces";
+import { cityThisWeek } from "./citylife";
+import "./systemevents";
 import { tickRun } from "./run";
 import { tickCity, cityYield } from "./city";
 import { tickThreads } from "./threads";
@@ -308,6 +311,8 @@ export function endWeek(s: SaveState): WeekReport {
   tickWorks(s, led);
   for (const l of tickGenome(s)) push(l, "neutral", 5);
   for (const l of tickMenials(s, led, menialResistance(s))) push(l, "warning", 5);
+  syncStoryCast(s);
+  pruneFaces(s);
   ageMoments(s);
   for (const e of tickDeeds(s)) push(e.text, "warning", 8, e.person);
   // The city's habits move with what it saw you do this week, and the court writes them down.
@@ -385,7 +390,7 @@ export function endWeek(s: SaveState): WeekReport {
   }
 
   if (arc.cash < 0) problems.push(`You are ${Math.abs(arc.cash)} in the red.`);
-  if (arc.food.stores < 100 && arc.food.consumption > 0) problems.push("Food stores are nearly out, and the shortfall is being bought at import prices. Hydroponic towers or a food stockpile (Arcology → Public works) fix it.");
+  if (arc.food.stores < 100 && arc.food.consumption > 0) problems.push(`Food stores are nearly out: the city eats ${arc.food.consumption.toLocaleString()} a week${s.menials?.owned ? ` (${(s.menials.owned * 2).toLocaleString()} of it your menials)` : ""}, and the shortfall is bought at ¤8 a unit. Automated farm decks or hydroponic towers (Arcology → Public works), or menials on the farms (each grows 14 and eats 2), fix it.`);
   const overworked = alive(s).filter((p) => p.health.energy < 12);
   if (overworked.length) problems.push(`${overworked.length} of your slaves are exhausted.`);
   const wornOut = alive(s).filter((p) => wear(p.psyche) > 0.7);
@@ -409,6 +414,7 @@ export function endWeek(s: SaveState): WeekReport {
     rep_start: repStart,
     rep_end: arc.rep,
     problems,
+    city: cityThisWeek(s),
   };
   s.reports.push(report);
   if (s.reports.length > 24) s.reports.shift();

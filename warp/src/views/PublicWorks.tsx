@@ -3,11 +3,12 @@
  * built a level at a time and works every week; emergency spending takes any amount and fixes as
  * much of the problem as that buys, now.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Section, cx } from "../lib/ui";
 import { worldOf } from "../engine/world";
 import { cityYield } from "../engine/city";
+import { foodEats } from "../engine/menials";
 import { build, emergency, emergencyPreview, EMERGENCIES, foodCap, levelOf, nextCost, WORKS } from "../engine/works";
 
 /** Where each problem stands right now, so the cards say what they are fixing. */
@@ -15,8 +16,9 @@ function readings(save: ReturnType<typeof useGame>["save"]): Record<string, stri
   const a = save.arcology;
   const w = worldOf(save);
   return {
-    food: `stores ${Math.round(a.food.stores).toLocaleString()} of ${foodCap(save).toLocaleString()}; the city eats ${a.food.consumption}/wk`,
+    food: `stores ${Math.round(a.food.stores).toLocaleString()} of ${foodCap(save).toLocaleString()}; the city eats ${foodEats(save).toLocaleString()}/wk`,
     "food stores": `the stores hold ${foodCap(save).toLocaleString()}`,
+    "food, at scale": `the city eats ${foodEats(save).toLocaleString()}/wk`,
     pollution: `pollution ${Math.round(w.pollution)}`,
     "pollution at the source": `pollution ${Math.round(w.pollution)}`,
     crime: `crime ${Math.round(a.crime)}, security ${Math.round(a.security)}`,
@@ -29,8 +31,19 @@ function readings(save: ReturnType<typeof useGame>["save"]): Record<string, stri
   };
 }
 
+const GROUPS: [string, string][] = [["all", "Everything"], ["food", "Food"], ["air", "Pollution & climate"], ["order", "Crime & housing"], ["city", "Prosperity & standing"], ["household", "Your household"]];
+const GROUP_OF: Record<string, string> = {
+  hydroponics: "food", autofarm: "food", granary: "food", "e:food": "food",
+  scrubbers: "air", clean_industry: "air", climate_fund: "air", "e:cleanup": "air", "e:offsets": "air",
+  police: "order", housing: "order", "e:surge": "order",
+  amenities: "city", civic_media: "city", "e:handouts": "city", "e:stimulus": "city",
+  hospital: "household", comforts: "household",
+};
+
 export default function PublicWorks() {
   const { save, mutate } = useGame();
+  const [group, setGroup] = useState(() => { try { return localStorage.getItem("warp:works-group") ?? "all"; } catch { return "all"; } });
+  useEffect(() => { try { localStorage.setItem("warp:works-group", group); } catch { /* fine */ } }, [group]);
   const [said, setSaid] = useState("");
   const [amounts, setAmounts] = useState<Record<string, number>>({});
   const r = readings(save);
@@ -40,9 +53,12 @@ export default function PublicWorks() {
   return (
     <Section title="Public works" right={<span className="text-[11px] dim">every problem has a price</span>}>
       {said ? <Card className="mb-2.5"><p className="font-prose text-[14px]">{said}</p></Card> : null}
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar mb-2.5">
+        {GROUPS.map(([id, label]) => <button key={id} className={cx("chip shrink-0 !text-[11.5px]", group === id && "on")} onClick={() => setGroup(id)}>{label}</button>)}
+      </div>
       <div className="text-[10.5px] uppercase tracking-wider dim mb-1.5">Build: works every week, a level at a time</div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 mb-4">
-        {WORKS.map((w) => {
+        {WORKS.filter((w) => group === "all" || GROUP_OF[w.id] === group).map((w) => {
           const l = levelOf(save, w.id);
           const cost = nextCost(save, w.id);
           return (
@@ -61,7 +77,7 @@ export default function PublicWorks() {
 
       <div className="text-[10.5px] uppercase tracking-wider dim mb-1.5">Emergency: spend any amount on it now</div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {EMERGENCIES.map((e) => {
+        {EMERGENCIES.filter((e) => group === "all" || GROUP_OF[`e:${e.id}`] === group).map((e) => {
           const room = e.room(save);
           const amount = amounts[e.id] ?? Math.min(cash, room * e.per, Math.max(e.per * 2, 10000));
           const pv = emergencyPreview(save, e.id, amount);
