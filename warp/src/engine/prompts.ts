@@ -13,6 +13,7 @@
  * is something the engine can be held to — if the prose contradicts the card, the card is right and
  * the guards in turn.ts say so.
  */
+import { coarsen } from "./register";
 import { sentinelsLine } from "./battles";
 import { othersBrief } from "./household";
 import { memoryLine, dedupeLines } from "./memory";
@@ -157,7 +158,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(`SHE CALLS YOU: ${s.player.owned_by === p.id ? (s.reign?.your_name ?? "whatever she likes") : calledBy(s, p)}${s.player.owned_by === p.id ? "" : " (always this; never another title unless she is defying you)"}.`);
   if (memories.length) lines.push(`REMEMBERS: ${memories.map(memoryLine).join(" | ")}`);
   if (p.psyche.state !== "intact") lines.push(`She is ${p.psyche.state}${p.psyche.break_mode ? ` (${p.psyche.break_mode})` : ""}. Write her that way, not as fine.`);
-  return lines.join("\n");
+  // Old soft wording in her background or memories would set the register; read her in plain words.
+  return coarsen(lines.join("\n"));
 }
 
 /** THE WORLD, AS OF NOW. Rebuilt every turn; nothing accumulates. */
@@ -243,7 +245,7 @@ export function digest(s: SaveState, action = "", focus?: string): string {
     out.push(...older);
     out.push(`[wk ${last.week}] ${last.action ? `owner: ${last.action}\n` : ""}${last.summary}`);
   }
-  return out.join("\n");
+  return coarsen(out.join("\n"));
 }
 
 /** The bookkeeper reads a smaller document: the ids it may use, and what is currently true. */
@@ -276,4 +278,4 @@ export const FORGE_SYSTEM = `You are fleshing out a slave for Free Cities, an ad
  "defining_memory": {"content":"one thing that happened to her, in her own words","charge":"warm|cold|sharp|bright","importance":8}
 }
 
-Write a specific, ordinary person from the place she actually comes from: a Ukrainian bookkeeper had a Ukrainian bookkeeper's life. Plain words. No gestures or body language in the traits, no tragic boilerplate, no lines that sound like sayings.`;
+Write a specific, ordinary person from the place she actually comes from: a Ukrainian bookkeeper had a Ukrainian bookkeeper's life. Plain words, the way people talk; nothing literary, lyrical or pretty (the narrator copies whatever wording it's given). No gestures or body language in the traits, no tragic boilerplate, no lines that sound like sayings.`;

@@ -17,6 +17,7 @@
  *   visit     go somewhere you don't own. Something happens there. A narrator model writes it when
  *             one is set, choosing its consequences from a closed table; without one, the game does.
  */
+import { REGISTER_TAIL } from "./register";
 import type { SaveState } from "./types";
 import { clamp } from "./psyche";
 import { rng } from "./rng";
@@ -412,6 +413,8 @@ export async function startVisit(s: SaveState, p: Place, model?: string, fallbac
         `Each option has a short label, one or two sentences of what happens ("outcome"), and one to three effects from this table and no other:`,
         ...Object.entries(VISIT_EFFECTS).map(([k, e]) => `- ${k}: ${e.note}`),
         `Answer: {"scene": "...", "options": [{"label": "...", "outcome": "...", "effects": [{"effect": "cash", "value": -3000}]}]}`,
+        ``,
+        REGISTER_TAIL,
       ].join("\n"),
       model, fallback, json: true, maxTokens: 1200, temperature: 0.95,
     });

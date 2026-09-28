@@ -8,6 +8,7 @@
  * on the Penthouse, and picks up where it left off. With no model, the written game answers in her
  * voice and still offers you the next thing to say.
  */
+import { coarsen, REGISTER_TAIL } from "./register";
 import { sentinelsLine } from "./battles";
 import { cultureBrief } from "./culture";
 import { lawsLine } from "./lawlife";
@@ -185,8 +186,9 @@ export async function playMoment(
     walking ? "" : lawsLine(s),
     walking || city ? "" : sentinelsLine(s),
     castBrief(s, `${m.title}\n${transcript(m)}\n${reply ?? ""}`),
-    `## THE SCENE SO FAR (${m.title})\n${transcript(m)}`,
+    `## THE SCENE SO FAR (${m.title})\n${coarsen(transcript(m))}`,
     reply ? `## THE PLAYER'S REPLY\n${reply}` : `## WRITE THIS MOMENT OUT IN FULL, then offer the options.`,
+    REGISTER_TAIL,
   ].filter(Boolean).join("\n\n");
 
   let shown = "";
@@ -209,7 +211,7 @@ export async function playMoment(
   }
   const { prose: uncast, cast } = parseCast(salvage(res.text));
   const { prose: raw, options } = splitOptions(uncast);
-  const prose = raw || uncast.trim();
+  const prose = coarsen(raw || uncast.trim());
   // Anyone new the model put in the scene goes on file with their face; anyone on file who turned up is seen again.
   const ours = new Set(Object.values(s.people).filter((x) => x.status === "owned" || x.status === "indentured").map((x) => keyOf(x.name)));
   for (const c of cast) if (!ours.has(keyOf(c.name))) meet(s, c);
