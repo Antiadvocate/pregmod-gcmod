@@ -39,6 +39,7 @@ import "./llm.test.ts";
 import "./lawguard.test.ts";
 import "./face.test.ts";
 import "./faces.test.ts";
+import "./saga.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);

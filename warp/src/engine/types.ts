@@ -898,6 +898,8 @@ export interface SaveState {
   menials?: import("./menials").Menials;
   /** Faces of people who aren't yours but keep turning up. See engine/faces.ts. */
   faces?: Record<string, import("./faces").Face>;
+  /** Long stories grown from this arcology. See engine/saga.ts. */
+  sagas?: import("./saga").SagaState;
   /** Scenes of city life shown recently, by key, so the week report doesn't repeat itself. */
   citylife_seen?: Record<string, number>;
   /** The content switches, which the original carried as V.seeExtreme, V.seeCircumcision and the

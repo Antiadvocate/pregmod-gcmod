@@ -10,6 +10,7 @@ import { arcDef, type NPC } from "../engine/story";
 import { ORIGIN_BY_ID } from "../data/story";
 import { SlaveHead } from "./SlaveArt";
 import Ambitions from "./Ambitions";
+import Sagas from "./Sagas";
 import { deedsOf, DEED_TAGS } from "../engine/deeds";
 
 export default function Journal() {
@@ -22,6 +23,7 @@ export default function Journal() {
 
   return (
     <>
+      <Sagas />
       <Card className="mb-5">
         <div className="text-[11px] uppercase tracking-wider dim mb-1">who you were</div>
         <div className="font-display text-[20px] leading-tight">{origin?.name ?? "An owner with a past"}</div>

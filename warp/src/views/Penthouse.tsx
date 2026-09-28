@@ -20,6 +20,7 @@ import { generateDynamicEvent, resolveDynamic, dynamicReadiness } from "../engin
 import { voiceAsk } from "../engine/asks";
 import { AskList } from "./AskCard";
 import StoryCard from "./StoryCard";
+import { SagaNotice } from "./Sagas";
 import WorldCard from "./WorldCard";
 import Ambitions from "./Ambitions";
 import { theKeeper, inHousehold } from "../engine/romance";
@@ -101,6 +102,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
 
       {/* YOUR STORY FIRST. It is the thing that is only about you. */}
       <StoryCard />
+      <SagaNotice onOpen={() => go("story")} />
 
       <AssistantCard />
 
