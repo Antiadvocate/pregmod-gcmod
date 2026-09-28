@@ -29,7 +29,7 @@
 import type { Person, ReportLine, SaveState } from "./types";
 import { clamp, shove, addState } from "./psyche";
 import { read, applyTreatment, memoryTilt } from "./obedience";
-import { remember } from "./memory";
+import { remember, ownerSide } from "./memory";
 import { startRumor, moveEdge } from "./social";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { rng } from "./rng";
@@ -372,7 +372,8 @@ export function shiftDominion(s: SaveState, p: Person, amount: number, why: stri
   }
   const mem = s.memory[p.id];
   if (mem && Math.abs(amount) >= 8) {
-    remember(mem, { content: amount > 0 ? `the owner did what she asked — ${why}` : `the owner said no — ${why}`, week: s.arcology.week, importance: 6, charge: amount > 0 ? "warm" : "cold" });
+    const what = ownerSide(why, s.player.pronouns);
+    remember(mem, { content: amount > 0 ? `${p.name.split(" ")[0]} asked, and the owner gave it to her: ${what}` : `${p.name.split(" ")[0]} asked, and the owner said no: ${what}`, week: s.arcology.week, importance: 6, charge: amount > 0 ? "warm" : "cold" });
   }
 }
 

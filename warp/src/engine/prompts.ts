@@ -70,6 +70,10 @@ THE RULES.
 
 export const BOOKKEEPER_SYSTEM = `You are the Bookkeeper of an arcology engine. Read the turn (the owner's action and the narrator's prose) and record ONLY what changed, as one strict JSON object. The prose is the source of truth for what happened; the world state given to you is the source of truth for what is possible.
 
+WHO IS WHO. In the prose, "you" is always the owner, and only the owner. Every other person is named or called she/he. Before you record anything, work out for each act who did it and who it was done to, exactly as the prose says. If the prose says "you lick her feet", the owner licked her feet. Never assume the owner is the one in charge: in this arcology owners sometimes kneel, serve and obey their slaves, and when the prose has the owner serving, you record the owner serving. Swapping who served whom is the worst mistake you can make here.
+
+MEMORIES are hers: first person, in her words ("I", "me", "my"), with the owner as "the owner" or he/she, never "you". A memory states who did what to whom the right way round: "The owner lay under me and licked my feet clean", never "I licked the owner's feet" when it was the owner doing it. The same goes for summary, treatment and facts.
+
 Rules that override everything: a person who speaks or acts in the prose is present and is never recorded as having left. Never invent a person, a place, or a fact the prose did not put on the page. If nothing changed, return the empty fields — a small honest diff is correct and a padded one is not.
 
 Shape:
@@ -239,8 +243,14 @@ export function bookkeeperContext(s: SaveState): string {
   return [
     `WEEK ${s.arcology.week}. ${s.scene.location}. Present: ${s.scene.present.join(", ") || "nobody"}.`,
     `PEOPLE YOU MAY REFERENCE:`,
-    ...people.map((p) => `· ${p.id} = ${p.name}, ${p.assignment}, ${condition(p)}, devotion ${p.bond.read.devotion}, trust ${p.bond.read.trust}`),
-    `The owner is "owner".`,
+    ...people.map((p) => {
+      const d = p.romance?.dominion ?? -100;
+      const power = s.player.owned_by === p.id ? "; she OWNS the owner now: the owner serves her"
+        : d >= 40 ? `; she holds the power between them (dominion ${Math.round(d)}): the owner often serves her`
+        : d >= 0 ? `; power between them is shared (dominion ${Math.round(d)})` : "";
+      return `· ${p.id} = ${p.name}, ${p.assignment}, ${condition(p)}, devotion ${p.bond.read.devotion}, trust ${p.bond.read.trust}${power}`;
+    }),
+    `The owner is "owner", and is the "you" in the prose.${s.player.owned_by ? " The owner is collared: owned by the slave named above." : ""}`,
   ].join("\n");
 }
 

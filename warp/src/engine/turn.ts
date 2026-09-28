@@ -110,7 +110,7 @@ export async function runTurn(
   if (modelsAvailable()) {
     const res = await call({
       system: BOOKKEEPER_SYSTEM,
-      user: `${bookkeeperContext(s)}\n\n## THE TURN\nOwner (${mode}): ${action}\n\n${prose}`,
+      user: `${bookkeeperContext(s)}\n\n## THE TURN\nWHAT THE OWNER DID OR SAID (${mode}; "I" here is the owner): ${action}\n\nTHE PROSE ("you" is the owner):\n${prose}`,
       model: s.models.bookkeeper_model,
       fallback: s.models.fallback_model,
       json: true,
