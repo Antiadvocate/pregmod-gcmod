@@ -1,7 +1,7 @@
 import { check } from "./harness.ts";
 import { newGame } from "../src/engine/state.ts";
 import { writeLaw } from "../src/engine/court.ts";
-import { answerOwn, choose, cleanOption, locked, pickSeed, running, sagasOf, seedsFor, tickSagas, writeNext, type Writer } from "../src/engine/saga.ts";
+import { answerOwn, choose, cleanOption, locked, pickSeed, running, sagasOf, seedsFor, tickSagas, writeNext, type Saga, type Writer } from "../src/engine/saga.ts";
 import { facesOf, pruneFaces } from "../src/engine/faces.ts";
 
 const s = newGame({ seed: "saga-a" });
@@ -86,3 +86,37 @@ t.faces = { "oren kade": { name: "Oren Kade", pronoun: "he", age: 40, first: 1, 
 t.arcology.week = 60;
 pruneFaces(t);
 check("a face in a running story is kept", !!t.faces["oren kade"]);
+
+// Sex is the engine: seeds from fetishes and customs, and effects that change bodies, tastes and the city.
+{
+  const u = newGame({ seed: "saga-c" });
+  const p = Object.values(u.people).find((q) => q.status === "owned")!;
+  p.persona.fetishes = [{ name: "humiliation", strength: 80, known: false }];
+  const { cultureOf } = await import("../src/engine/culture.ts");
+  cultureOf(u).norms.exposure = 60;
+  const ids = seedsFor(u).map((x) => x.seed.id);
+  check("a strong fetish seeds a story", ids.includes(`slave:${p.id}:fetish:humiliation`), ids);
+  check("so does a city where public sex is ordinary", ids.some((i) => i.startsWith("custom:exposure:hi")), ids);
+  check("so does the dress code", ids.some((i) => i.startsWith("dress:")), ids);
+
+  const y: Saga = { id: "h", seed: { id: "h", kind: "desire" as const, text: "" }, status: "running" as const, title: "Heat", premise: "", stakes: "", acts: ["a", "b", "c"], act: 0,
+    cast: [{ name: p.name, person: p.id, role: "", want: "", fear: "", toward: 0, now: "", turns: [] }], facts: [], paths: [], history: [], due: u.arcology.week, started: 0 };
+  sagasOf(u).list.push(y);
+  const o = cleanOption(u, { label: "Show her off on the concourse", outcome: "She comes in front of a crowd.",
+    needs: [{ fetish: { name: p.name, fetish: "humiliation", at: 90 } }, { norm: { norm: "exposure", at: 70 } }],
+    effects: [{ act: { name: p.name, act: "exposure", public: true } }, { fetish: { name: p.name, fetish: "humiliation", by: 15 } }, { fetish: { name: p.name, fetish: "masochist", by: 12 } }, { libido: { name: p.name, by: 8 } }, { norm: { norm: "exposure", by: 4 } }, { act: { name: p.name, act: "not-an-act" } }],
+    develops: [{ name: p.name, desire: "to be watched by strangers", limit: "being touched by them", turn: "She asks to go back." }] })!;
+  check("an unknown act is dropped", o.effects!.length === 5);
+  y.chapter = { title: "t", text: "x", options: [o], week: u.arcology.week };
+  check("her taste has to have gone far enough", /want it more/.test(locked(u, y, o) ?? ""), locked(u, y, o));
+  p.persona.fetishes[0].strength = 95;
+  check("and the city has to be there", /isn't there yet/.test(locked(u, y, o) ?? ""), locked(u, y, o));
+  cultureOf(u).norms.exposure = 75;
+  const lib = p.psyche.libido, acts = p.acts?.exposure ?? 0;
+  const r = choose(u, "h", 0)!;
+  check("the act is run by the intimacy engine", (p.acts?.exposure ?? 0) === acts + 1 && r.consequences.some((c) => /in public/.test(c)), [p.acts, r.consequences]);
+  check("her taste deepens, and a new one wakes", p.persona.fetishes.find((f) => f.name === "humiliation")!.strength >= 105 && (p.persona.fetishes.find((f) => f.name === "masochist")?.strength ?? 0) === 12, p.persona.fetishes);
+  check("her appetite grows", p.psyche.libido === Math.min(100, lib + 8));
+  check("the city's customs move", cultureOf(u).norms.exposure === 79);
+  check("and what she wants is written down", y.cast[0].desire === "to be watched by strangers" && y.cast[0].limit === "being touched by them");
+}

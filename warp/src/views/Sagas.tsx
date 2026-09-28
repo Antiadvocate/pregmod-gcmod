@@ -220,6 +220,7 @@ function Threads({ x }: { x: Saga }) {
               </div>
               <div className="text-[12px] dim">{c.role}</div>
               <div className="text-[12.5px] mid mt-1">Now: {c.now}</div>
+              {c.desire || c.limit ? <div className="text-[12.5px] mt-0.5"><span className="acc">{c.desire ? `Wants: ${c.desire}.` : ""}</span>{c.limit ? <span className="dim"> Won't, yet: {c.limit}.</span> : null}</div> : null}
               <div className="text-[12px] dim mt-0.5">Wants {c.want.replace(/^to /i, "to ")}. Fears {c.fear}.{c.known && c.secret ? <span className="acc"> Secret: {c.secret}</span> : c.secret ? " Hiding something." : ""}</div>
               {c.turns.length ? (
                 <ol className="mt-1.5 space-y-0.5 border-l pl-2.5" style={{ borderColor: "var(--line)" }}>

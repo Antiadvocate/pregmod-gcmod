@@ -39,13 +39,17 @@ import { genomeOf, genomeBrief } from "./genome";
 import { menialsOf } from "./menials";
 import { facesOf, keyOf, meet, nationFrom, type Face } from "./faces";
 import { deedsOf } from "./deeds";
+import { cultureOf, NORMS, NORM_IDS, normLine, pushNorm, type Norm } from "./culture";
+import { resolveAct } from "./intimacy";
+import { ACTS, ACT_BY_ID, FETISHES, FLAW_BY_ID, fetishBand } from "../data/intimacy";
+import { household, societies } from "./compare";
 
 /* ── what a saga is ─────────────────────────────────────────────────────────────────────────── */
 
 export interface SagaSeed {
   /** Stable, so the same thing never seeds two sagas. */
   id: string;
-  kind: "law" | "slave" | "face" | "cast" | "neighbour" | "world" | "gene" | "menials" | "doctrine" | "deed" | "city";
+  kind: "law" | "slave" | "face" | "cast" | "neighbour" | "world" | "gene" | "menials" | "doctrine" | "deed" | "city" | "desire" | "custom" | "dress";
   /** What it grew from, in a sentence, for the narrator. */
   text: string;
   /** Your people it's about. */
@@ -69,6 +73,9 @@ export interface SagaChar {
   toward: number;
   /** Where they are now, in a few words: "loyal, but lying about the ledger". */
   now: string;
+  /** What they want in bed, and what they won't do (yet). */
+  desire?: string;
+  limit?: string;
   /** Every turn they've taken, in order. */
   turns: { week: number; text: string }[];
 }
@@ -77,13 +84,22 @@ export interface SagaPath { id: string; label: string; state: "open" | "closed" 
 
 export type Need =
   | { cash: number } | { rep: number } | { standing: number } | { security: number }
-  | { toward: { name: string; at: number } } | { fact: string };
+  | { toward: { name: string; at: number } } | { fact: string }
+  | { fetish: { name: string; fetish: string; at: number } } | { norm: { norm: Norm; at: number } };
 
 export type Effect =
   | { cash: number } | { rep: number } | { standing: number } | { prosperity: number } | { security: number } | { crime: number }
   | { toward: { name: string; by: number } }
   | { treat: { name: string; kind: Treatment["kind"]; size: number } }
-  | { rumor: string };
+  | { rumor: string }
+  /** Sex, for real: an act the intimacy engine runs on one of your slaves in the cast (her memory, fetishes and bond all move). */
+  | { act: { name: string; act: string; public?: boolean } }
+  | { arousal: { name: string; by: number } }
+  | { libido: { name: string; by: number } }
+  /** A taste grows, fades, or wakes: one of the game's fetishes, on one of your slaves. */
+  | { fetish: { name: string; fetish: string; by: number } }
+  /** What the city thinks is normal moves: public sex, cruelty, feet, owners serving… */
+  | { norm: { norm: Norm; by: number } };
 
 export interface SagaOption {
   label: string;
@@ -93,7 +109,7 @@ export interface SagaOption {
   /** What happens, written ahead: two to five sentences. */
   outcome: string;
   effects?: Effect[];
-  develops?: { name: string; now?: string; turn?: string; secret_revealed?: boolean }[];
+  develops?: { name: string; now?: string; turn?: string; desire?: string; limit?: string; secret_revealed?: boolean }[];
   facts?: string[];
   opens?: { id: string; label: string }[];
   closes?: string[];
@@ -148,7 +164,7 @@ export function seedsFor(s: SaveState): { seed: SagaSeed; weight: number }[] {
     if (!def) continue;
     const c = compliance(s, def).total;
     const custom = l.id.startsWith("custom_");
-    add({ id: `law:${l.id}`, kind: "law", text: `The ${def.name} ("${def.text}") is ${c < 45 ? "widely broken, and someone is organising against it" : c < 70 ? "kept grudgingly; not everyone is keeping it" : "kept, and some people have made a living or a cause out of enforcing it"}.` }, (custom ? 3 : 1) * (c < 45 ? 3 : c < 70 ? 2 : 1));
+    add({ id: `law:${l.id}`, kind: "law", text: `The ${def.name} ("${def.text}") is ${c < 45 ? "widely broken, and someone is organising against it" : c < 70 ? "kept grudgingly; not everyone is keeping it" : "kept, and some people have made a living or a cause out of enforcing it"}. Follow it into bedrooms and onto the concourse: what it makes people do to each other, what it makes them want, and who gets off on enforcing it.` }, (custom ? 4 : 1.5) * (c < 45 ? 3 : c < 70 ? 2 : 1));
   }
 
   for (const p of owned(s)) {
@@ -156,8 +172,32 @@ export function seedsFor(s: SaveState): { seed: SagaSeed; weight: number }[] {
     if (p.bond.resentment >= 55) add({ id: `slave:${p.id}:hate`, kind: "slave", people: [p.id], text: `${p.name} has resented the player for a long time (resentment ${Math.round(p.bond.resentment)}), and has started doing something about it.` }, 3 + p.bond.resentment / 25);
     if (r.devotion >= 65) add({ id: `slave:${p.id}:love`, kind: "slave", people: [p.id], text: `${p.name} is devoted to the player (devotion ${Math.round(r.devotion)}), and that devotion is about to cost someone something.` }, 2 + r.devotion / 40);
     if (p.bond.fear >= 70) add({ id: `slave:${p.id}:fear`, kind: "slave", people: [p.id], text: `${p.name} is terrified of the player (fear ${Math.round(p.bond.fear)}); fear like that goes somewhere.` }, 2);
+    // What she wants, grown past a preference: the richest seam there is.
+    for (const f of p.persona.fetishes.filter((x) => x.strength >= 60 && x.name !== "none")) {
+      const def = FETISHES.find((d) => d.id === f.name || d.name === f.name);
+      add({ id: `slave:${p.id}:fetish:${f.name}`, kind: "desire", people: [p.id], text: `${p.name} ${fetishBand(f.strength)} ${def?.name ?? f.name} (${def?.note ?? ""}). It is getting stronger${p.persona.paraphilia ? `; it has already become ${p.persona.paraphilia}` : ""}, and this arcology's laws and customs decide what she's allowed to do about it, and who else gets pulled in.` }, 3 + f.strength / 35);
+    }
+    if (p.persona.flaw && p.psyche.libido >= 50) add({ id: `slave:${p.id}:flaw`, kind: "desire", people: [p.id], text: `${p.name} is ${p.persona.flaw.id} (${FLAW_BY_ID[p.persona.flaw.id]?.note ?? ""}), and her body wants more than her principles allow (libido ${Math.round(p.psyche.libido)}). Something is going to give.` }, 2.5);
     if (p.psyche.state === "broken") add({ id: `slave:${p.id}:broken`, kind: "slave", people: [p.id], text: `${p.name} is broken, and someone from her old life has come looking for the woman she was.` }, 1.5);
   }
+
+  // The city's own appetites, where they have gone furthest.
+  const norms = cultureOf(s).norms;
+  const era = Math.floor(s.arcology.week / 20);
+  const HOT: Partial<Record<Norm, [string, string]>> = {
+    exposure: ["Public sex has become ordinary here; somebody is building a business, a religion or a scandal out of how far it can go.", "Sex is kept behind closed doors here, which means there is a very private club, and the player has been invited."],
+    cruelty: ["Cruelty to slaves is entertainment here; a new spectacle is drawing crowds and the player is expected to attend, or to host.", "Cruelty is frowned on here, and someone respectable has been caught enjoying it."],
+    feet: ["Slaves' feet are worshipped here; a devotion, a fashion and a black market have grown up around it.", "Feet are ignored here, which makes one owner's obsession the talk of the upper floors."],
+    reversal: ["Owners kneeling to their slaves is fashionable; one household has taken it all the way, and the player is asked to judge it.", "No owner here would ever serve a slave, which is exactly what one of them has started doing in secret."],
+    modification: ["Bodies are remade freely here; a surgeon's latest fashion is spreading through the upper floors.", "Changing bodies is distrusted here; an underground surgeon has a waiting list."],
+  };
+  for (const [n, [hi, lo]] of Object.entries(HOT) as [Norm, [string, string]][]) {
+    const v = norms[n];
+    if (Math.abs(v) >= 30) add({ id: `custom:${n}:${v > 0 ? "hi" : "lo"}:${era}`, kind: "custom", text: `${NORMS[n].name}: ${normLine(n, v)} ${v > 0 ? hi : lo}` }, 2 + Math.abs(v) / 30);
+  }
+  const mine = societies(s).find((x) => x.kind === "yours");
+  const dress = mine ? household(mine).dress?.code : undefined;
+  if (dress && dress.id !== "street") add({ id: `dress:${dress.id}:${era}`, kind: "dress", text: `The arcology's dress code is ${dress.name}: ${dress.look} Citizens wear ${dress.citizen}; slaves wear ${dress.slave}. Someone is going to break it, flaunt it, or push it further.` }, 2.5);
 
   for (const f of Object.values(s.faces ?? {})) {
     if (f.role || f.seen < 2) continue;
@@ -195,7 +235,7 @@ export function seedsFor(s: SaveState): { seed: SagaSeed; weight: number }[] {
 
   for (const [id, d] of Object.entries(s.arcology.doctrines ?? {})) {
     const def = DOCTRINE_BY_ID[id];
-    if (def && d && d.adoption >= 40) add({ id: `doctrine:${id}`, kind: "doctrine", text: `${def.noun} has taken hold of the arcology ("${def.creed}"). Its most zealous believers want to take it further than the player meant.` }, 1.5);
+    if (def && d && d.adoption >= 40) add({ id: `doctrine:${id}`, kind: "doctrine", text: `${def.noun} has taken hold of the arcology ("${def.creed}"). Its most zealous believers want to take it further than the player meant, in public and in bed.` }, 2.5);
   }
 
   for (const d of deedsOf(s).filter((x) => x.public && s.arcology.week - x.week <= 12).slice(-3)) {
@@ -256,6 +296,16 @@ export function locked(s: SaveState, x: Saga, o: SagaOption): string | null {
     if ("security" in n && s.arcology.security < n.security) return `needs security ${n.security}`;
     if ("toward" in n) { const c = charOf(x, n.toward.name); if (c && c.toward < n.toward.at) return `${c.name} would need to think better of you`; }
     if ("fact" in n && !x.facts.some((f) => f.toLowerCase().includes(n.fact.toLowerCase().slice(0, 40)))) return `you'd need to know: ${n.fact}`;
+    if ("fetish" in n) {
+      const c = charOf(x, n.fetish.name);
+      const p = c?.person ? s.people[c.person] : undefined;
+      const have = p?.persona.fetishes.find((f) => f.name === n.fetish.fetish)?.strength ?? 0;
+      if (p && have < n.fetish.at) return `${p.name.split(" ")[0]} would have to want it more (${FETISH_NAME(n.fetish.fetish)} ${Math.round(have)}/${n.fetish.at})`;
+    }
+    if ("norm" in n) {
+      const v = cultureOf(s).norms[n.norm.norm];
+      if (n.norm.at >= 0 ? v < n.norm.at : v > n.norm.at) return `the city isn't there yet (${NORMS[n.norm.norm].name.toLowerCase()} ${Math.round(v)}, needs ${n.norm.at})`;
+    }
   }
   return null;
 }
@@ -263,6 +313,8 @@ export function locked(s: SaveState, x: Saga, o: SagaOption): string | null {
 const num = (v: unknown, lo: number, hi: number) => (typeof v === "number" && Number.isFinite(v) ? clamp(Math.round(v), lo, hi) : undefined);
 const str = (v: unknown, max = 400) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined);
 const TREAT = ["kindness", "cruelty", "coercion", "promise_kept", "promise_broken"] as const;
+const FETISH_NAME = (id: string) => FETISHES.find((f) => f.id === id)?.name ?? id;
+const fetishId = (v: unknown) => { const t = String(v ?? "").toLowerCase().trim(); return FETISHES.find((f) => f.id !== "none" && (f.id === t || f.name === t))?.id; };
 
 /** Whatever the model wrote, made into something the rules can run. Unknown keys drop; sizes are held to the scale of the game. */
 export function cleanOption(s: SaveState, raw: Record<string, unknown>): SagaOption | null {
@@ -284,6 +336,14 @@ export function cleanOption(s: SaveState, raw: Record<string, unknown>): SagaOpt
       const t = o.toward as Record<string, unknown>;
       const name = str(t.name, 60), at = num(t.at, -100, 100);
       if (name && at !== undefined) needs.push({ toward: { name, at } });
+    } else if (o.fetish && typeof o.fetish === "object") {
+      const t = o.fetish as Record<string, unknown>;
+      const name = str(t.name, 60), fetish = fetishId(t.fetish), at = num(t.at, 0, 150);
+      if (name && fetish && at !== undefined) needs.push({ fetish: { name, fetish, at } });
+    } else if (o.norm && typeof o.norm === "object") {
+      const t = o.norm as Record<string, unknown>;
+      const norm = NORM_IDS.find((k) => k === t.norm), at = num(t.at, -100, 100);
+      if (norm && at !== undefined) needs.push({ norm: { norm, at } });
     }
   }
   const effects: Effect[] = [];
@@ -307,13 +367,33 @@ export function cleanOption(s: SaveState, raw: Record<string, unknown>): SagaOpt
       const t = o.treat as Record<string, unknown>;
       const name = str(t.name, 60), size = num(t.size, 1, 10), kind = TREAT.find((k) => k === t.kind);
       if (name && size !== undefined && kind) effects.push({ treat: { name, kind, size } });
+    } else if (o.act && typeof o.act === "object") {
+      const t = o.act as Record<string, unknown>;
+      const name = str(t.name, 60), act = typeof t.act === "string" && ACT_BY_ID[t.act] ? t.act : undefined;
+      if (name && act) effects.push({ act: { name, act, public: t.public === true } });
+    } else if (o.arousal && typeof o.arousal === "object") {
+      const t = o.arousal as Record<string, unknown>;
+      const name = str(t.name, 60), by = num(t.by, -50, 50);
+      if (name && by !== undefined) effects.push({ arousal: { name, by } });
+    } else if (o.libido && typeof o.libido === "object") {
+      const t = o.libido as Record<string, unknown>;
+      const name = str(t.name, 60), by = num(t.by, -20, 20);
+      if (name && by !== undefined) effects.push({ libido: { name, by } });
+    } else if (o.fetish && typeof o.fetish === "object") {
+      const t = o.fetish as Record<string, unknown>;
+      const name = str(t.name, 60), fetish = fetishId(t.fetish), by = num(t.by, -30, 40);
+      if (name && fetish && by !== undefined) effects.push({ fetish: { name, fetish, by } });
+    } else if (o.norm && typeof o.norm === "object") {
+      const t = o.norm as Record<string, unknown>;
+      const norm = NORM_IDS.find((k) => k === t.norm), by = num(t.by, -6, 6);
+      if (norm && by) effects.push({ norm: { norm, by } });
     }
   }
   const develops = (Array.isArray(raw.develops) ? raw.develops : []).flatMap((d) => {
     if (!d || typeof d !== "object") return [];
     const o = d as Record<string, unknown>;
     const name = str(o.name, 60);
-    return name ? [{ name, now: str(o.now, 120), turn: str(o.turn, 300), secret_revealed: o.secret_revealed === true }] : [];
+    return name ? [{ name, now: str(o.now, 120), turn: str(o.turn, 300), desire: str(o.desire, 160), limit: str(o.limit, 160), secret_revealed: o.secret_revealed === true }] : [];
   });
   const opens = (Array.isArray(raw.opens) ? raw.opens : []).flatMap((p) => {
     const o = p as Record<string, unknown>;
@@ -365,6 +445,30 @@ export function apply(s: SaveState, x: Saga, ch: Chapter, o: SagaOption): { outc
       const c = charOf(x, e.treat.name);
       const p = c?.person ? s.people[c.person] : undefined;
       if (p) { applyTreatment(p, { kind: e.treat.kind, size: e.treat.size, why: `${x.title}: ${o.label}`.slice(0, 80) }, week); out.push(`${p.name.split(" ")[0]} ${/kind|kept/.test(e.treat.kind) ? "won't forget it" : "will remember that"}`); }
+    } else if ("norm" in e) {
+      pushNorm(s, e.norm.norm, e.norm.by, `${x.title}: ${o.label}`.slice(0, 80));
+      out.push(`${NORMS[e.norm.norm].name.toLowerCase()}: the city moves ${e.norm.by > 0 ? "toward" : "away from"} it`);
+    } else {
+      const who = "act" in e ? e.act.name : "arousal" in e ? e.arousal.name : "libido" in e ? e.libido.name : e.fetish.name;
+      const c = charOf(x, who);
+      const p = c?.person ? s.people[c.person] : undefined;
+      if (!p) continue;
+      const first = p.name.split(" ")[0];
+      if ("act" in e) {
+        const r = resolveAct(s, p, e.act.act, { public: e.act.public });
+        if (!("error" in r)) out.push(`${first}: ${ACT_BY_ID[e.act.act]?.name ?? e.act.act}${e.act.public ? ", in public" : ""}`);
+      } else if ("arousal" in e) p.psyche.arousal = clamp(p.psyche.arousal + e.arousal.by, 0, 100);
+      else if ("libido" in e) { p.psyche.libido = clamp(p.psyche.libido + e.libido.by, 0, 100); out.push(`${first}'s appetite ${e.libido.by > 0 ? "grows" : "fades"}`); }
+      else {
+        let f = p.persona.fetishes.find((q) => q.name === e.fetish.fetish);
+        if (!f && e.fetish.by > 0) { f = { name: e.fetish.fetish, strength: 0, known: true }; p.persona.fetishes.push(f); }
+        if (f) {
+          const was = f.strength;
+          f.strength = clamp(f.strength + e.fetish.by, 0, 120);
+          f.known = true;
+          out.push(was < 10 && f.strength >= 10 ? `${first} discovers she likes ${FETISH_NAME(f.name)}` : `${first}'s taste for ${FETISH_NAME(f.name)} ${e.fetish.by > 0 ? "deepens" : "fades"}`);
+        }
+      }
     }
   }
   for (const d of o.develops ?? []) {
@@ -372,6 +476,8 @@ export function apply(s: SaveState, x: Saga, ch: Chapter, o: SagaOption): { outc
     if (!c) continue;
     if (d.now) c.now = d.now;
     if (d.turn) c.turns.push({ week, text: d.turn });
+    if (d.desire) c.desire = d.desire;
+    if (d.limit) c.limit = d.limit;
     if (d.secret_revealed && c.secret) { c.known = true; out.push(`you learn ${c.name.split(" ")[0]}'s secret`); }
   }
   for (const f of o.facts ?? []) if (!x.facts.includes(f)) x.facts.push(f);
@@ -416,17 +522,59 @@ export function arcologyBrief(s: SaveState): string {
   ].filter(Boolean).join("\n");
 }
 
-const castLine = (c: SagaChar) => `· ${c.name} — ${c.role}. Wants: ${c.want}. Fears: ${c.fear}.${c.secret ? ` Secret${c.known ? " (the player knows)" : " (the player doesn't know)"}: ${c.secret}.` : ""} Toward the player: ${c.toward}. Now: ${c.now}.${c.turns.length ? ` How they've changed: ${c.turns.slice(-4).map((t) => `week ${t.week}, ${t.text}`).join("; ")}.` : ""}`;
+/** Her tastes as the rules hold them, for a slave of yours in the cast. */
+function tastes(p: Person): string {
+  const fs = p.persona.fetishes.filter((f) => f.strength >= 10 && f.name !== "none").map((f) => `${fetishBand(f.strength)} ${FETISH_NAME(f.name)} (${Math.round(f.strength)})`);
+  return [
+    fs.length ? fs.join(", ") : "no particular fetish yet",
+    p.persona.paraphilia ? `paraphilia: ${p.persona.paraphilia}` : "",
+    p.persona.quirk ? `quirk: ${p.persona.quirk.id}` : "",
+    p.persona.flaw ? `flaw: ${p.persona.flaw.id}` : "",
+    `attracted to ${p.persona.attracted_to}`,
+    `libido ${Math.round(p.psyche.libido)}, arousal ${Math.round(p.psyche.arousal)}`,
+    p.acts && Object.keys(p.acts).length ? `has done: ${Object.entries(p.acts).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => `${k} ×${v}`).join(", ")}` : "",
+  ].filter(Boolean).join("; ");
+}
 
-export const SAGA_SYSTEM = `You write the long stories of a single arcology in a dark, adult management game about owning people. A saga is a novel told in chapters, with branching choices; it grows out of what this arcology actually is, and it is about people who change.
+const castLine = (s: SaveState) => (c: SagaChar) => {
+  const p = c.person ? s.people[c.person] : undefined;
+  return `· ${c.name}${p ? " (the player's slave)" : ""} — ${c.role}. Wants: ${c.want}. Fears: ${c.fear}.${c.desire ? ` In bed, wants: ${c.desire}.` : ""}${c.limit ? ` Won't (yet): ${c.limit}.` : ""}${p ? ` Her tastes, as they stand: ${tastes(p)}.` : ""}${c.secret ? ` Secret${c.known ? " (the player knows)" : " (the player doesn't know)"}: ${c.secret}.` : ""} Toward the player: ${c.toward}. Now: ${c.now}.${c.turns.length ? ` How they've changed: ${c.turns.slice(-5).map((t) => `week ${t.week}, ${t.text}`).join("; ")}.` : ""}`;
+};
 
-Write like a good novelist: specific people, places and objects; dialogue in each person's own voice; consequences that land weeks later. Every character wants something, fears something, and most hide something. Nobody exists only to serve the plot. They change because of what the player does, and you show it.
+/** What sex is here: the law, the custom, what people wear, what the doctrines preach, and what the household wants. */
+export function desireBrief(s: SaveState): string {
+  const n = cultureOf(s).norms;
+  const mine = societies(s).find((x) => x.kind === "yours");
+  const h = mine ? household(mine) : undefined;
+  const code = h?.dress?.code;
+  const doctrines = Object.entries(s.arcology.doctrines ?? {}).filter(([, d]) => d && d.adoption >= 25).map(([id, d]) => { const def = DOCTRINE_BY_ID[id]; return def ? `${def.noun} (${Math.round(d.adoption)}% adopted): "${def.creed}"` : ""; }).filter(Boolean);
+  const wants = owned(s).slice(0, 10).map((p) => `${p.name}: ${tastes(p)}`);
+  const done = deedsOf(s).slice(-5).map((d) => `· ${d.summary}`);
+  return [
+    `## SEX IN THIS ARCOLOGY (the saga lives here)`,
+    `What the city thinks is normal: ${NORM_IDS.map((k) => `${NORMS[k].name.toLowerCase()} ${Math.round(n[k])} (${normLine(k, n[k])})`).join("; ")}.`,
+    code ? `The dress code, ${code.name}: ${code.look} Citizens wear ${code.citizen}; slaves wear ${code.slave}${code.collar ? ` and ${code.collar}` : ""}.` : "",
+    doctrines.length ? `What the doctrines preach: ${doctrines.join("; ")}.` : "",
+    wants.length ? `What the household wants:\n${wants.join("\n")}` : "",
+    done.length ? `What the player has done lately:\n${done.join("\n")}` : "",
+  ].filter(Boolean).join("\n");
+}
 
-Choices are real. Each option leads somewhere different: different people helped or hurt, different facts established, different endings opened or closed. Never offer three versions of the same thing. At least one option in every chapter costs something the player cares about. Options may need things (money, reputation, a fact the player learned earlier, someone's regard); an option the player can't take yet is still worth showing.
+export const SAGA_SYSTEM = `You write the long stories of a single arcology in a dark, explicit adult game about owning people. A saga is an erotic novel told in chapters, with branching choices. It grows out of what this arcology actually is — its laws, its customs, its dress code, its doctrines, and what the people in it want in bed — and it is about people who change.
 
-Reply with JSON only.`;
+Sex is the engine. Every saga is driven by desire, power and appetite as this arcology shapes them: what the laws allow in public and forbid in private, what the customs make ordinary or shameful, what the dress code puts on show, what the doctrines preach about bodies. Every chapter has sexual content on the page, written explicitly and specifically, in the characters' own tastes: their fetishes, the acts they crave, the things they won't do yet. Write the society into it: who watches, who's allowed, who gets punished, what's fashionable, what's scandalous here that wouldn't be elsewhere.
 
-const OPTION_SCHEMA = `{"label":"what the player does, 4-14 words","note":"cost or risk, a few words","needs":[{"cash":N}|{"rep":N}|{"standing":N}|{"security":N}|{"fact":"a fact from FACTS"}|{"toward":{"name":"cast name","at":N}}],"outcome":"what happens, 2-5 sentences of prose","effects":[{"cash":±N}|{"rep":±N}|{"standing":±1..3}|{"prosperity":±N}|{"security":±N}|{"crime":±N}|{"toward":{"name":"cast name","by":±N}}|{"treat":{"name":"one of the player's slaves in the cast","kind":"kindness|cruelty|coercion|promise_kept|promise_broken","size":1-10}}|{"rumor":"what people say"}],"develops":[{"name":"cast name","now":"where they are now, a few words","turn":"how this changed them, one sentence","secret_revealed":true|false}],"facts":["something now true that later chapters should remember"],"opens":[{"id":"short_id","label":"a new way this could end"}],"closes":["path id this rules out"],"advance":true|false,"ends":"path id, only in the last act"}`;
+Characters develop sexually as well as in every other way. Appetites wake up and deepen; shame turns into pride, or pride into need; limits hold, or break, or move; someone discovers what they actually want. Record it. Every character wants something, fears something, and most hide something; their desires are part of all three.
+
+Write like a good novelist: specific bodies, rooms and objects; dialogue in each person's voice; consequences that land weeks later. Nobody exists only to serve the plot.
+
+Choices are real, and most of them are sexual choices: what the player does to whom, what they allow, who they give to whom, what they make public. Each option leads somewhere different: different people aroused or hurt, tastes fed or starved, the city's customs pushed or defied, endings opened or closed. Never offer three versions of the same thing. At least one option costs something the player cares about. Options may need things (money, reputation, a fact learned earlier, someone's regard, how far someone's tastes have gone, how far the city's customs have gone); an option the player can't take yet is still worth showing.
+
+Every character is an adult, eighteen or older. Reply with JSON only.`;
+
+const VOCAB = () => `FETISH is one of: ${FETISHES.filter((f) => f.id !== "none").map((f) => f.id).join(", ")}. ACT is one of: ${ACTS.map((a) => a.id).join(", ")}. NORM is one of: ${NORM_IDS.join(", ")}. Use "act" whenever a slave of the player's has sex in the outcome, so it counts.`;
+
+const OPTION_SCHEMA = `{"label":"what the player does, 4-14 words","note":"cost or risk, a few words","needs":[{"cash":N}|{"rep":N}|{"standing":N}|{"security":N}|{"fact":"a fact from FACTS"}|{"toward":{"name":"cast name","at":N}}|{"fetish":{"name":"player's slave","fetish":"FETISH","at":N}}|{"norm":{"norm":"NORM","at":±N}}],"outcome":"what happens, 2-5 sentences of prose","effects":[{"cash":±N}|{"rep":±N}|{"standing":±1..3}|{"prosperity":±N}|{"security":±N}|{"crime":±N}|{"toward":{"name":"cast name","by":±N}}|{"treat":{"name":"one of the player's slaves in the cast","kind":"kindness|cruelty|coercion|promise_kept|promise_broken","size":1-10}}|{"rumor":"what people say"}|{"act":{"name":"player's slave","act":"ACT","public":true|false}}|{"arousal":{"name":"player's slave","by":±N}}|{"libido":{"name":"player's slave","by":±N}}|{"fetish":{"name":"player's slave","fetish":"FETISH","by":±N}}|{"norm":{"norm":"NORM","by":±1..6}}],"develops":[{"name":"cast name","now":"where they are now, a few words","turn":"how this changed them, one sentence","desire":"what they want in bed now, if it changed","limit":"what they still won't do, if it changed","secret_revealed":true|false}],"facts":["something now true that later chapters should remember"],"opens":[{"id":"short_id","label":"a new way this could end"}],"closes":["path id this rules out"],"advance":true|false,"ends":"path id, only in the last act"}`;
 
 /** Write the bible: who, what's at stake, the acts, the ways it can end. */
 export function biblePrompt(s: SaveState, x: Saga): string {
@@ -434,13 +582,14 @@ export function biblePrompt(s: SaveState, x: Saga): string {
   const faces = (x.seed.faces ?? []).map((k) => facesOf(s)[k]).filter((f): f is Face => !!f);
   return [
     arcologyBrief(s),
+    desireBrief(s),
     `## WHAT IT GROWS FROM\n${x.seed.text}`,
     people.length ? `## THE PLAYER'S PEOPLE AT ITS CENTRE\n${people.map((p) => `${p.name}: ${p.persona?.background ?? ""} ${p.persona?.speech_pattern ? `Speaks: ${p.persona.speech_pattern}.` : ""}`.trim()).join("\n")}` : "",
     faces.length ? `## PEOPLE ALREADY MET\n${faces.map((f) => `${f.name} — ${f.pronoun}, about ${f.age}${f.nation ? `, ${f.nation}` : ""}${f.detail ? `; ${f.detail}` : ""}`).join("\n")}` : "",
     `## WRITE THE SAGA'S BIBLE
-Three to five acts. Three to six people in it: use the player's people and the people already met above by their exact names; invent the rest with full names. At least one character must be someone who is not the player's slave. Give three or four ways it could end, each genuinely different (who wins, who's lost, what the arcology becomes).
+It is an erotic story: its premise is a desire, a taboo, an appetite or a sexual power struggle that could only happen under these laws and customs. Three to five acts, each with a sexual turn. Three to six people in it, all adults: use the player's people and the people already met above by their exact names; invent the rest with full names. At least one character must be someone who is not the player's slave. Give three or four ways it could end, each genuinely different (who wins, who's lost, who becomes what in bed, what the arcology's customs become).
 
-JSON: {"title":"2-5 words","premise":"2-3 sentences","stakes":"one sentence: what the player could win or lose","tone":"a few words","acts":["act 1 aim","act 2 aim","..."],"paths":[{"id":"short_id","label":"one way it ends"}],"cast":[{"name":"full name","role":"their part in this","want":"...","fear":"...","secret":"...","toward":-100..100,"now":"where they stand, a few words","pronoun":"she|he","age":N,"nationality":"...","skin":"...","hair":"colour, style","eyes":"...","detail":"one visible detail"}]}`,
+JSON: {"title":"2-5 words","premise":"2-3 sentences","stakes":"one sentence: what the player could win or lose","tone":"a few words","acts":["act 1 aim","act 2 aim","..."],"paths":[{"id":"short_id","label":"one way it ends"}],"cast":[{"name":"full name","role":"their part in this","want":"...","fear":"...","secret":"...","toward":-100..100,"now":"where they stand, a few words","desire":"what they want in bed","limit":"what they won't do, yet","pronoun":"she|he","age":N,"nationality":"...","skin":"...","hair":"colour, style","eyes":"...","detail":"one visible detail"}]}`,
   ].filter(Boolean).join("\n\n");
 }
 
@@ -450,16 +599,19 @@ export function chapterPrompt(s: SaveState, x: Saga, own?: string): string {
   const recent = x.history.slice(-5).map((h) => `### ${h.title} (week ${h.week}, act ${h.act + 1})\n${h.text.slice(0, 1200)}\nTHE PLAYER CHOSE: ${h.chose}\n${h.outcome}`).join("\n\n");
   return [
     arcologyBrief(s),
+    desireBrief(s),
     `## THE SAGA: ${x.title}\n${x.premise}\nStakes: ${x.stakes}${x.tone ? `\nTone: ${x.tone}` : ""}\nActs: ${x.acts.map((a, i) => `${i + 1}. ${a}${i === x.act ? " ← NOW" : ""}`).join(" ")}`,
-    `## THE PEOPLE IN IT\n${x.cast.map(castLine).join("\n")}`,
+    `## THE PEOPLE IN IT\n${x.cast.map(castLine(s)).join("\n")}`,
     x.facts.length ? `## FACTS (established; keep them)\n${x.facts.map((f) => `· ${f}`).join("\n")}` : "",
     `## WAYS IT COULD END\n${x.paths.map((p) => `· ${p.id}: ${p.label} [${p.state}]`).join("\n")}`,
     past ? `## EARLIER\n${past}` : "",
     recent ? `## THE LAST CHAPTERS\n${recent}` : "## THIS IS THE FIRST CHAPTER",
     own
-      ? `## THE PLAYER'S OWN ANSWER to "${x.chapter?.title}"\n${own}\n\nResolve it as ONE option in the same JSON shape (the label is what they did, in a few words; the outcome is what happens). Be fair: what they tried may work, half-work, or cost them. JSON: {"option": ${OPTION_SCHEMA}}`
+      ? `## THE PLAYER'S OWN ANSWER to "${x.chapter?.title}"\n${own}\n\n${VOCAB()}
+Resolve it as ONE option in the same JSON shape (the label is what they did, in a few words; the outcome is what happens). Be fair: what they tried may work, half-work, or cost them. JSON: {"option": ${OPTION_SCHEMA}}`
       : `## WRITE THE NEXT CHAPTER${last ? "\nThis is the last act. Every option ends the saga by one of the open paths (set \"ends\"), and the outcome is its epilogue: what became of each person." : `\nAct ${x.act + 1} of ${x.acts.length}. Set "advance": true on an option only when it completes this act's aim.`}
-Four to seven paragraphs, in the present tense, second person for the player. Something happens; somebody changes. Then three or four options.
+Four to eight paragraphs, in the present tense, second person for the player. Something happens, sex is on the page, and somebody changes. Then three or four options, most of them sexual choices with sexual consequences.
+${VOCAB()}
 
 JSON: {"title":"chapter title","text":"the chapter; paragraphs separated by blank lines","options":[${OPTION_SCHEMA}]}`,
   ].filter(Boolean).join("\n\n");
@@ -498,7 +650,7 @@ export function takeBible(s: SaveState, x: Saga, raw: Record<string, unknown>): 
       const f = meet(s, { name, pronoun: /^he$/i.test(String(o.pronoun ?? "")) ? "he" : "she", age: num(o.age, 18, 85), nation: nationFrom(str(o.nationality, 40)), skin: str(o.skin, 40), hair: str(o.hair, 60)?.split(",")[0].trim(), hair_style: str(o.hair, 60)?.split(",").slice(1).join(",").trim() || undefined, eyes: str(o.eyes, 30), detail: str(o.detail, 120) });
       if (f) at = { face: keyOf(f.name) };
     }
-    return [{ name, ...at, role: str(o.role, 160) ?? "", want: str(o.want, 200) ?? "", fear: str(o.fear, 200) ?? "", secret: str(o.secret, 300), toward: num(o.toward, -100, 100) ?? 0, now: str(o.now, 120) ?? "", turns: [] }];
+    return [{ name, ...at, role: str(o.role, 160) ?? "", want: str(o.want, 200) ?? "", fear: str(o.fear, 200) ?? "", secret: str(o.secret, 300), toward: num(o.toward, -100, 100) ?? 0, now: str(o.now, 120) ?? "", desire: str(o.desire, 200), limit: str(o.limit, 200), turns: [] }];
   }).slice(0, 7);
   if (!title || !premise || acts.length < 2 || paths.length < 2 || !cast.length) return false;
   Object.assign(x, { title, premise, stakes: str(raw.stakes, 300) ?? "", tone: str(raw.tone, 80), acts, paths, cast, status: "running" as const });
