@@ -186,7 +186,7 @@ export async function playMoment(
     walking ? "" : lawsLine(s),
     walking || city ? "" : sentinelsLine(s),
     castBrief(s, `${m.title}\n${transcript(m)}\n${reply ?? ""}`),
-    `## THE SCENE SO FAR (${m.title})\n${transcript(m)}`,
+    `## THE SCENE SO FAR (${m.title})\n${coarsen(transcript(m))}`,
     reply ? `## THE PLAYER'S REPLY\n${reply}` : `## WRITE THIS MOMENT OUT IN FULL, then offer the options.`,
     REGISTER_TAIL,
   ].filter(Boolean).join("\n\n");
