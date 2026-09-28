@@ -40,6 +40,7 @@ import { menialsOf } from "./menials";
 import { facesOf, keyOf, meet, nationFrom, type Face } from "./faces";
 import { deedsOf } from "./deeds";
 import { HOUSE_STYLE } from "./prompts";
+import { coarsen, REGISTER_TAIL } from "./register";
 import { cultureOf, NORMS, NORM_IDS, normLine, pushNorm, type Norm } from "./culture";
 import { resolveAct } from "./intimacy";
 import { ACTS, ACT_BY_ID, FETISHES, FLAW_BY_ID, fetishBand } from "../data/intimacy";
@@ -312,7 +313,8 @@ export function locked(s: SaveState, x: Saga, o: SagaOption): string | null {
 }
 
 const num = (v: unknown, lo: number, hi: number) => (typeof v === "number" && Number.isFinite(v) ? clamp(Math.round(v), lo, hi) : undefined);
-const str = (v: unknown, max = 400) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined);
+// Everything the narrator writes is kept coarse, so the next chapter reads plain words, not soft ones.
+const str = (v: unknown, max = 400) => (typeof v === "string" && v.trim() ? coarsen(v.trim().slice(0, max)) : undefined);
 const TREAT = ["kindness", "cruelty", "coercion", "promise_kept", "promise_broken"] as const;
 const FETISH_NAME = (id: string) => FETISHES.find((f) => f.id === id)?.name ?? id;
 const fetishId = (v: unknown) => { const t = String(v ?? "").toLowerCase().trim(); return FETISHES.find((f) => f.id !== "none" && (f.id === t || f.name === t))?.id; };
@@ -561,21 +563,21 @@ export function desireBrief(s: SaveState): string {
   ].filter(Boolean).join("\n");
 }
 
-export const SAGA_SYSTEM = `You write the long stories of a single arcology in a dark, explicit adult game about owning people. A saga is a long, filthy porn story told in chapters, with branching choices: think a serialised dirty story with a plot, not a novel. It grows out of what this arcology actually is — its laws, its customs, its dress code, its doctrines, and what the people in it want in bed — and it is about people who change.
+export const SAGA_SYSTEM = `You write the long stories of one arcology in an explicit porn game about owning people. A saga is a dirty story in chapters, with a plot and choices. It comes out of this arcology: its laws, its customs, its dress code, its doctrines, and what the people in it like to fuck and how.
 
-Sex is the engine. Every saga is driven by desire, power and appetite as this arcology shapes them: what the laws allow in public and forbid in private, what the customs make ordinary or shameful, what the dress code puts on show, what the doctrines preach about bodies. Every chapter has sex on the page, written crude and explicit, in the characters' own tastes: their fetishes, the acts they crave, the things they won't do yet. Write the society into it: who watches, who's allowed, who gets punished, what's fashionable, what's scandalous here that wouldn't be elsewhere.
+Sex is what the story is about. Every chapter has sex in it, written out, crude and explicit, in what these people are into: their fetishes, what they want done to them, what they won't do yet. Show how this city's rules shape it: who's allowed to watch, what's normal in public here, who gets punished, what's in fashion, what would be a scandal.
 
-Characters develop sexually as well as in every other way. Appetites wake up and deepen; shame turns into pride, or pride into need; limits hold, or break, or move; someone discovers what they actually want. Record it. Every character wants something, fears something, and most hide something; their desires are part of all three.
+People change. Someone finds out they like getting pissed on. Someone who wouldn't take it up the ass begs for it by act three. Someone stops being ashamed, or starts. Write it down when it happens. Everyone wants something, is scared of something, and most are hiding something; sex is part of all three.
 
-Specific bodies, rooms and objects; dialogue in each person's own voice, dirty when they're dirty; consequences that land weeks later. Nobody exists only to serve the plot.
+Concrete bodies, rooms and things. Everyone talks like themselves, dirty if they're dirty. What happens comes back weeks later. Nobody is only there for the plot.
 
 ${HOUSE_STYLE}
 
 The same goes for every field you write: chapter text, outcomes, what people want in bed and what they won't do. Plain crude words, never a euphemism or a poetic turn.
 
-Choices are real, and most of them are sexual choices: what the player does to whom, what they allow, who they give to whom, what they make public. Each option leads somewhere different: different people aroused or hurt, tastes fed or starved, the city's customs pushed or defied, endings opened or closed. Never offer three versions of the same thing. At least one option costs something the player cares about. Options may need things (money, reputation, a fact learned earlier, someone's regard, how far someone's tastes have gone, how far the city's customs have gone); an option the player can't take yet is still worth showing.
+Choices matter, and most of them are about sex: what the player does to who, what they allow, who they hand to who, what they do in public. Each option goes somewhere different: different people get off or get hurt, a taste gets fed or starved, the city's customs get pushed or broken, endings open or close. Never three versions of the same thing. At least one option costs the player something they care about. An option can need something (money, reputation, a fact learned earlier, someone's regard, how far someone's taste has gone, how far the city has gone); show it even when the player can't take it yet.
 
-Every character is an adult, eighteen or older. Reply with JSON only.`;
+Everyone is an adult, eighteen or older. Reply with JSON only.`;
 
 const VOCAB = () => `FETISH is one of: ${FETISHES.filter((f) => f.id !== "none").map((f) => f.id).join(", ")}. ACT is one of: ${ACTS.map((a) => a.id).join(", ")}. NORM is one of: ${NORM_IDS.join(", ")}. Use "act" whenever a slave of the player's has sex in the outcome, so it counts.`;
 
@@ -595,6 +597,7 @@ export function biblePrompt(s: SaveState, x: Saga): string {
 It is an erotic story: its premise is a desire, a taboo, an appetite or a sexual power struggle that could only happen under these laws and customs. Three to five acts, each with a sexual turn. Three to six people in it, all adults: use the player's people and the people already met above by their exact names; invent the rest with full names. At least one character must be someone who is not the player's slave. Give three or four ways it could end, each genuinely different (who wins, who's lost, who becomes what in bed, what the arcology's customs become).
 
 JSON: {"title":"2-5 words","premise":"2-3 sentences","stakes":"one sentence: what the player could win or lose","tone":"a few words","acts":["act 1 aim","act 2 aim","..."],"paths":[{"id":"short_id","label":"one way it ends"}],"cast":[{"name":"full name","role":"their part in this","want":"...","fear":"...","secret":"...","toward":-100..100,"now":"where they stand, a few words","desire":"what they want in bed","limit":"what they won't do, yet","pronoun":"she|he","age":N,"nationality":"...","skin":"...","hair":"colour, style","eyes":"...","detail":"one visible detail"}]}`,
+    REGISTER_TAIL,
   ].filter(Boolean).join("\n\n");
 }
 
@@ -619,6 +622,7 @@ Four to eight paragraphs, in the present tense, second person for the player. So
 ${VOCAB()}
 
 JSON: {"title":"chapter title","text":"the chapter; paragraphs separated by blank lines","options":[${OPTION_SCHEMA}]}`,
+    REGISTER_TAIL,
   ].filter(Boolean).join("\n\n");
 }
 

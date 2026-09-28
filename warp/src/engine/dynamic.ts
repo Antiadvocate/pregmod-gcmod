@@ -20,6 +20,7 @@
  * it likes about what is happening in the room and it still cannot invent a state change, break an
  * invariant, reach a person it was not given, or touch anybody the age gate excludes.
  */
+import { coarsen, REGISTER_TAIL } from "./register";
 import { memoryLine } from "./memory";
 import { agreementsBrief, calledBy } from "./agreements";
 import { deedsBrief } from "./deeds";
@@ -139,7 +140,7 @@ export async function generateDynamicEvent(s: SaveState, subject?: Person): Prom
 
   const res = await call({
     system: SYSTEM,
-    user: `${dossier(s, p)}\n\nEFFECT IDS YOU MAY USE:\n${effectList()}\n\nACT IDS (for the "act" effect): ${Object.keys(ACT_BY_ID).join(", ")}`,
+    user: `${dossier(s, p)}\n\nEFFECT IDS YOU MAY USE:\n${effectList()}\n\nACT IDS (for the "act" effect): ${Object.keys(ACT_BY_ID).join(", ")}\n\n${REGISTER_TAIL}`,
     model: s.models.narrator_model,
     fallback: s.models.fallback_model,
     json: true,
@@ -147,7 +148,7 @@ export async function generateDynamicEvent(s: SaveState, subject?: Person): Prom
     temperature: 1,
   });
   if (!res.ok) return null;
-  const out = parseJson<GeneratedEvent>(res.text);
+  const out = parseJson<GeneratedEvent>(coarsen(res.text));
   if (!out?.situation || !Array.isArray(out.options) || out.options.length < 2) return null;
 
   // Everything unrecognised is dropped here rather than trusted anywhere downstream.

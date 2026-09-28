@@ -41,6 +41,7 @@ import "./face.test.ts";
 import "./faces.test.ts";
 import "./saga.test.ts";
 import "./pov.test.ts";
+import "./register.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);

@@ -10,6 +10,7 @@
  * month cannot undo a bad year: the bad year is still in the bank, at full weight, and it is what
  * she is comparing this month to.
  */
+import { coarsen } from "./register";
 import type { EpisodicMemory, PersonMemory, MemorySource } from "./types";
 import { clamp } from "./psyche";
 
@@ -34,7 +35,7 @@ export interface RecordMemory {
 export function remember(mem: PersonMemory, m: RecordMemory): EpisodicMemory {
   const e: EpisodicMemory = {
     id: memId(),
-    content: m.content,
+    content: coarsen(m.content),
     week: m.week,
     importance: clamp(m.importance ?? 5, 0, 10),
     charge: m.charge ?? "dull",

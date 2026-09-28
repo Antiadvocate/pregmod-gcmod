@@ -11,6 +11,7 @@
  * from state — who is there, what their bodies are doing, what the action was — and the rest of the
  * pipeline runs identically. You lose the paragraph. You do not lose the game.
  */
+import { coarsen, REGISTER_TAIL } from "./register";
 import { inventsLaw } from "./lawguard";
 import { captureInstructions, keep, houseRules, agreementsOf } from "./agreements";
 import type { ActionMode, Person, SaveState, TurnEntry } from "./types";
@@ -88,7 +89,7 @@ export async function runTurn(
   if (modelsAvailable()) {
     const res = await call({
       system: NARRATOR_SYSTEM,
-      user: `${digest(s, action)}\n\n## THIS TURN\n${MODE_FRAME[mode](action)}`,
+      user: `${digest(s, action)}\n\n## THIS TURN\n${MODE_FRAME[mode](action)}\n\n${REGISTER_TAIL}`,
       model: s.models.narrator_model,
       fallback: s.models.fallback_model,
       onDelta: opts?.onDelta,
@@ -97,7 +98,7 @@ export async function runTurn(
       maxTokens: 1200,
     });
     if (res.ok) {
-      prose = salvage(res.text);
+      prose = coarsen(salvage(res.text));
       tokensIn += res.usage.prompt_tokens; tokensOut += res.usage.completion_tokens; cost += res.usage.cost ?? 0;
     } else {
       notes.push(`the narrator did not answer (${res.error ?? "unknown"}) — the turn stands as a stage direction`);
