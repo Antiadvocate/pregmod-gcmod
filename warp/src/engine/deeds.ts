@@ -251,7 +251,7 @@ export const CONSEQUENCE_SYSTEM = `You read a finished scene from Free Cities, a
  "lasting_fact":"one sentence that is now true of the world because of this, or empty",
  "follow_up":{"weeks":2,"situation":"2-4 sentences, present tense: something that happens later BECAUSE of this scene, ending where the player has to decide","options":[{"label":"what the player does, 2-8 words","effect":"one EFFECT id","value":"optional"}]}}
 
-In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to and serve their slaves; never swap who served whom. Only tag what actually happened in the scene. Tag the player's actions, not what they considered. public is true only if citizens, guests or other slaves saw it or will obviously hear. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.`;
+In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to and serve their slaves; never swap who served whom. Only tag what actually happened in the scene. Tag the player's actions, not what they considered. public is true only if citizens, guests or other slaves saw it or will obviously hear. Write the summary, memory and follow-up in plain crude words (cock, pussy, ass, cum, fuck, piss…), never euphemisms or flowery phrasing. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.`;
 
 /** For reading the consequences: everything the player said (that's what the deed is made of),
  *  and the prose only from the last few beats. */

@@ -403,7 +403,7 @@ export async function startVisit(s: SaveState, p: Place, model?: string, fallbac
   let v: Visit | null = null;
   if (model) {
     const res = await call({
-      system: "You write events for a dark management game about a slave-owning arcology city-state. Answer only with JSON. Every person is an adult. Do not write consequences as numbers in the prose; the game applies them.",
+      system: "You write events for a dark management game about a slave-owning arcology city-state. Answer only with JSON. Every person is an adult. Write plain and blunt, like a porn game and not literature: when sex comes into it, crude explicit words (cock, pussy, ass, tits, cum, fuck), never euphemism or flowery prose. Do not write consequences as numbers in the prose; the game applies them.",
       user: [
         `THE PLAYER, owner of ${s.arcology.name} (reputation ${Math.round(s.arcology.rep)}, cash ¤${Math.round(s.arcology.cash).toLocaleString()}), is visiting:`,
         placeBrief(s, p),

@@ -8,6 +8,7 @@
  * make an example of somebody. Whatever you do out there is done in public, and the city takes it
  * back into its habits when the walk ends.
  */
+import { HOUSE_STYLE } from "./prompts";
 import { genomeOf, citizenShare, slaveShare, traitsFor, genomeBrief } from "./genome";
 import { sentinelsLine } from "./battles";
 import type { Person, SaveState } from "./types";
@@ -364,6 +365,8 @@ export function startWalk(s: SaveState, placeId: string, escortId?: string): str
 }
 
 export const WALK_SYSTEM = `You write a walk through the player's arcology in Free Cities, an adult text game about owning an arcology where slavery is legal. The player owns the arcology and is out in public.
+
+${HOUSE_STYLE}
 
 Show the city as it is now, through what citizens and slaves are doing: how owners treat their slaves, how slaves carry themselves, what people say to each other and about the player. Everything you show must fit the CITY'S HABITS, the LAWS and what people know the player did. The laws are real and people live under them. Show citizens doing exactly what THE OWNER'S OWN LAWS require, here, in front of the player, and be blunt and explicit about it: write out plainly who does what the law requires, to whom, with the same crude directness as everything else, never a vague \"they comply\". The owner's security forces (patrols, guards, the security chief, the militia, mercenaries, knights, any soldier) obey the owner's orders at once and completely: they never ignore, stall, question, argue with or refuse an order from the owner, and they enforce the owner's laws. (If a slave holds the owner's collar, they obey her first.) The laws in force are exactly as written, word for word. Never invent clauses, subsections, articles, exemptions, amendments, penalties, loopholes or technicalities, and never attribute any provision to a law that isn't in its text. Only the owner changes a law. When a law applies to someone present (the player's slave included), show it being done to or by them in full. If the city is against a law, show it being dodged, and show patrols forcing people to do it. Name people with ordinary names and give them a line or two of their own. Every place has its own people, shops and venues: never bring people, restaurants or businesses from an earlier walk somewhere else into this one. Two to four paragraphs. If the player does something, write it happening and write how the people around react; everyone can see. Do not write the player's feelings. Do not end the walk; stop where the player can act.
 
