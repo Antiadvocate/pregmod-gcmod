@@ -189,3 +189,31 @@ export function learn(mem: PersonMemory, text: string, week: number, from?: stri
   mem.facts.push({ text, week, from });
   if (mem.facts.length > 40) mem.facts.shift();
 }
+
+/**
+ * A line written to the player ("You lay beneath Martina and cleaned her feet") made fit to keep
+ * as something that happened to her: "you" becomes the owner, so who did what to whom survives.
+ * Filing the line as it was put the player's "you" inside her memory, and the next model to read it
+ * took the "you" for her.
+ */
+export function ownerSide(text: string, pronouns: "she/her" | "he/him" | "they/them" = "he/him"): string {
+  const [subj, obj, pos, refl, poss] = pronouns === "she/her" ? ["she", "her", "her", "herself", "hers"] : pronouns === "they/them" ? ["they", "them", "their", "themselves", "theirs"] : ["he", "him", "his", "himself", "his"];
+  const plural = pronouns === "they/them";
+  let named = false;
+  const first = (then: string) => (named ? then : ((named = true), "the owner"));
+  // One pass, left to right, so the first mention is the one that names the owner.
+  const out = text.replace(/\b(yourself|yours|your|you)(\s+(?:are|were|have|haven't|do|don't))?\b/gi, (_m, w: string, verb: string | undefined, at: number, all: string) => {
+    const word = w.toLowerCase();
+    if (word === "yourself") return refl;
+    if (word === "yours") return named ? poss : ((named = true), "the owner's");
+    if (word === "your") return named ? pos : ((named = true), "the owner's");
+    const before = all.slice(0, at);
+    const subject = !!verb || /(^|[.!?;:,—–(-]\s*|\b(?:and|but|as|when|while|that|if|then|until|so|because|where)\s+)$/i.test(before);
+    const who = subject ? first(subj) : first(obj);
+    if (!verb) return who;
+    const v = verb.trim().toLowerCase();
+    const agree = plural && who !== "the owner" ? v : ({ are: "is", were: "was", have: "has", "haven't": "hasn't", do: "does", "don't": "doesn't" } as Record<string, string>)[v] ?? v;
+    return `${who} ${agree}`;
+  });
+  return out;
+}

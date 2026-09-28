@@ -222,7 +222,7 @@ export async function playMoment(
   if (p) {
     const book = await call({
       system: BOOKKEEPER_SYSTEM,
-      user: `${bookkeeperContext(s)}\n\n## THE TURN\nOwner: ${reply ?? m.title}\n\n${prose}`,
+      user: `${bookkeeperContext(s)}\n\n## THE TURN\nWHAT THE OWNER DID OR SAID ("I" here is the owner): ${reply ?? m.title}\n\nTHE PROSE ("you" is the owner):\n${prose}`,
       model: s.models.bookkeeper_model, fallback: s.models.fallback_model, json: true, signal: opts?.signal,
     });
     const diff = book.ok ? parseJson<Diff>(book.text) : null;

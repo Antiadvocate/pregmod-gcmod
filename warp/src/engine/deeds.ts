@@ -18,7 +18,7 @@ import type { PendingEvent, Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { applyTreatment, refresh, type Treatment } from "./obedience";
-import { remember } from "./memory";
+import { ownerSide, remember } from "./memory";
 import { startRumor, moveEdge } from "./social";
 import { clamp, shove } from "./psyche";
 import { romanceOf, rungIndex, shiftDominion, LADDER } from "./romance";
@@ -187,7 +187,7 @@ export const DEED_TAGS: Record<string, TagDef> = {
   cruelty: {
     label: "you were cruel to her", when: "the player hurt her badly, tortured her, or did something she will not get over",
     household: { kind: "cruelty", size: 3 },
-    apply: (c) => { treat(c, "cruelty", 9, c.d.summary); if (c.p) { c.p.bond.fear = clamp(c.p.bond.fear + 12, 0, 100); const m = c.s.memory[c.p.id]; if (m) remember(m, { content: c.d.summary, week: c.s.arcology.week, importance: 9, charge: "sharp", core: true }); } },
+    apply: (c) => { treat(c, "cruelty", 9, c.d.summary); if (c.p) { c.p.bond.fear = clamp(c.p.bond.fear + 12, 0, 100); const m = c.s.memory[c.p.id]; if (m) remember(m, { content: ownerSide(c.d.summary, c.s.player.pronouns), week: c.s.arcology.week, importance: 9, charge: "sharp", core: true }); } },
     echo: { after: [4, 8], situation: (s, d, p) => `Your security chief brings you a note found under ${nm(p)}'s mattress. It's a list of your movements for the last two weeks, in her handwriting.`,
       options: [{ label: "Confront her with it", effect: "coercion", value: 6 }, { label: "Break her for it", effect: "cruelty", value: 9 }, { label: "Ask her what she wants", effect: "recognition", value: 5 }, { label: "Put it back and watch", effect: "nothing" }] },
   },
@@ -247,11 +247,11 @@ export const CONSEQUENCE_SYSTEM = `You read a finished scene from Free Cities, a
  "tags":["ids from the TAGS list that happened, most important first, 1 to 4 of them"],
  "public":false,
  "witnesses":["names of other people who were there, if any"],
- "her_memory":"one sentence, in her terms, what she will remember",
+ "her_memory":"one sentence, in her own first person (I, me, my), with the player as 'the owner', what she will remember, with who did what to whom exactly as the scene had it: if the owner served her, the owner is the one serving",
  "lasting_fact":"one sentence that is now true of the world because of this, or empty",
  "follow_up":{"weeks":2,"situation":"2-4 sentences, present tense: something that happens later BECAUSE of this scene, ending where the player has to decide","options":[{"label":"what the player does, 2-8 words","effect":"one EFFECT id","value":"optional"}]}}
 
-Only tag what actually happened in the scene. Tag the player's actions, not what they considered. public is true only if citizens, guests or other slaves saw it or will obviously hear. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.`;
+In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to and serve their slaves; never swap who served whom. Only tag what actually happened in the scene. Tag the player's actions, not what they considered. public is true only if citizens, guests or other slaves saw it or will obviously hear. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.`;
 
 /** For reading the consequences: everything the player said (that's what the deed is made of),
  *  and the prose only from the last few beats. */
@@ -347,7 +347,7 @@ export function applyDeed(s: SaveState, deed: Deed, herMemory?: string): void {
 
   // She remembers it, in her terms.
   const mem = p ? s.memory[p.id] : undefined;
-  if (mem) remember(mem, { content: herMemory || deed.summary, week: s.arcology.week, importance: deed.tags.length >= 2 ? 8 : 6, charge: deed.tags.some((t) => ["cruelty", "humiliated_her", "punished", "promise_broken", "threatened_sale"].includes(t)) ? "sharp" : "warm", core: deed.tags.includes("owner_enslaved") || deed.tags.includes("cruelty") });
+  if (mem) remember(mem, { content: herMemory || ownerSide(deed.summary, s.player.pronouns), week: s.arcology.week, importance: deed.tags.length >= 2 ? 8 : 6, charge: deed.tags.some((t) => ["cruelty", "humiliated_her", "punished", "promise_broken", "threatened_sale"].includes(t)) ? "sharp" : "warm", core: deed.tags.includes("owner_enslaved") || deed.tags.includes("cruelty") });
 
   // The household: witnesses always know; everyone knows if it was public.
   const house = Object.values(s.people).filter((x) => (x.status === "owned" || x.status === "indentured") && x.id !== p?.id && x.age >= 18);

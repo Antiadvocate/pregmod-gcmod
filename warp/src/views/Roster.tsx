@@ -620,7 +620,12 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
                   <div key={m.id} className="card-2 px-3 py-2 flex gap-3 items-baseline">
                     <span className="font-mono text-[11px] dim shrink-0">wk {m.week}</span>
                     <span className="text-[12.5px] flex-1" style={{ opacity: 0.4 + m.decay * 0.6 }}>{m.content}</span>
-                    <span className="text-[10.5px] dim">{m.charge}{m.core ? " · core" : ""}</span>
+                    <span className="text-[10.5px] dim shrink-0">{m.charge}{m.core ? " · core" : ""}</span>
+                    <button className="text-[11px] dim underline shrink-0" title="Correct what she remembers; she'll remember it this way from now on" onClick={() => {
+                      const t = window.prompt("What she remembers:", m.content);
+                      if (t && t.trim() && t.trim() !== m.content) mutate((s) => { const x = s.memory[id]?.episodic.find((e) => e.id === m.id); if (x) x.content = t.trim(); });
+                    }}>edit</button>
+                    <button className="text-[11px] dim underline shrink-0" title="She forgets this; it won't come up in scenes again" onClick={() => mutate((s) => { const pm = s.memory[id]; if (pm) pm.episodic = pm.episodic.filter((e) => e.id !== m.id); })}>forget</button>
                   </div>
                 ))}
               </div>
