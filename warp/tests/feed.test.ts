@@ -53,3 +53,20 @@ const bad: Writer = async () => ({ ok: false, text: "", error: "429" });
 const before = feedOf(s).last;
 await writePosts(s, bad);
 check("a failed batch still counts as a try", (feedOf(s).last ?? 0) >= (before ?? 0) && feedOf(s).posts.length === 2);
+
+{
+  // The rewrite: a voice, examples, the owner's people, and replies.
+  const t = newGame({ seed: "feed-b", kit: "cock", address: "Master" });
+  const girl = Object.values(t.people).find((p) => p.status === "owned" && p.age >= 18)!;
+  const src = sources(t);
+  check("the owner's slaves are people the city has noticed", src.some((x) => x.id === `slave:${girl.id}` && x.text.includes(girl.name)));
+  const pr = feedPrompt(t);
+  check("the writer is given the crude voice and told no euphemisms", /IT'S A PORN GAME/.test(pr.system) && /Never a euphemism/.test(pr.system));
+  check("and posters with an angle who take their world for granted", /EVERY POSTER HAS AN ANGLE/.test(pr.system) && /never explain it/.test(pr.system));
+  check("and examples of the voice", /EXAMPLES OF THE VOICE/.test(pr.system));
+  check("and doesn't read the facts like a report any more", !/LAW IN FORCE|DOCTRINE,|GENE PROGRAM,/.test(pr.user));
+  const got = takePosts(t, "```json\n" + JSON.stringify({ posts: [{ board: "The Concourse", author: "lift pervert", kind: "citizen", title: `Saw ${girl.name} on the tram`, body: `The owner's girl was on the 6 tram this morning and every man in the car forgot his stop. Somebody's getting a raise.`, replies: [{ author: "tram driver", text: "can confirm, missed three stops" }, { author: "x", text: "" }], draws_on: [`slave:${girl.id}`] }] }) + "\n```", 5000);
+  check("a post about one of your slaves is kept", got.length === 1 && got[0].draws[0] === `slave:${girl.id}`);
+  check("with its replies, empty ones dropped", got[0].replies?.length === 1 && got[0].replies[0].author === "tram_driver");
+  check("the narrator reads the replies too", storyPrompt(t, got[0]).user.includes("can confirm, missed three stops"));
+}

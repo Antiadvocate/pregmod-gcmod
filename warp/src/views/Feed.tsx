@@ -19,7 +19,7 @@ export const feedModel = (s: SaveState) => s.models.feed_model || s.models.bookk
 export const feedPace = (s: SaveState) => s.models.feed_pace ?? 5;
 
 const writerFor = (s: SaveState): Writer => async (system, user) => {
-  const r = await call({ system, user, model: feedModel(s), fallback: s.models.fallback_model, json: true, maxTokens: 1400, temperature: 1 });
+  const r = await call({ system, user, model: feedModel(s), fallback: s.models.fallback_model, json: true, maxTokens: 2200, temperature: 1.05 });
   return { ok: r.ok, text: r.text, error: r.error };
 };
 
@@ -129,6 +129,11 @@ function PostCard({ p, onOpen, onLike }: { p: Post; onOpen: () => void; onLike: 
       </div>
       <h3 className="text-[15px] font-semibold leading-snug mb-1">{p.title}</h3>
       <p className="text-[13.5px] mid leading-relaxed clamp-3">{p.body}</p>
+      {p.replies?.[0] ? (
+        <div className="mt-2 pl-2.5 text-[12.5px] leading-snug truncate" style={{ borderLeft: "2px solid var(--line-strong)" }}>
+          <span className="dim">{p.replies[0].author}</span> <span className="mid">{p.replies[0].text}</span>
+        </div>
+      ) : null}
       <div className="flex items-center gap-3 mt-2.5 text-[12px] dim">
         <button className={cx("flex items-center gap-1", p.liked && "acc")} onClick={(e) => { e.stopPropagation(); onLike(); }} aria-label="upvote">
           <ArrowBigUp size={16} fill={p.liked ? "currentColor" : "none"} /> {p.score}
@@ -173,6 +178,16 @@ function PostOpen({ p }: { p: Post }) {
       </div>
       <h2 className="text-[18px] font-semibold leading-snug mb-2">{p.title}</h2>
       <p className="text-[14px] mid leading-relaxed">{p.body}</p>
+      {p.replies?.length ? (
+        <div className="mt-3 space-y-2">
+          {p.replies.map((q, i) => (
+            <div key={i} className="pl-3 text-[13px] leading-snug" style={{ borderLeft: "2px solid var(--line-strong)" }}>
+              <div className="text-[11.5px] dim mb-0.5">u/{q.author}</div>
+              <div className="mid">{q.text}</div>
+            </div>
+          ))}
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-1.5 mt-3">
         {sourceLabels(save, p).map((l) => <span key={l} className="chip">{l}</span>)}
       </div>
