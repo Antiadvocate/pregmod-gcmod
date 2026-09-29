@@ -9,7 +9,8 @@ import { Dice5 } from "lucide-react";
 import { ORIGINS } from "../data/story";
 import { TWISTS, TWIST_BY_ID } from "../engine/run";
 import { modelsAvailable } from "../config";
-import { KITS, type Kit } from "../engine/you";
+import { KITS, inferPronouns, type Kit } from "../engine/you";
+import type { Pronouns } from "../engine/types";
 
 const ADDRESSES = ["Master", "Mistress", "Sir", "Ma'am", "Owner"];
 
@@ -23,6 +24,10 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
   const [supplication, setSupplication] = useState(false);
   const [plot, setPlot] = useState(true);
   const [kit, setKit] = useState<Kit | null>(null);
+  const [chosenPronouns, setPronouns] = useState<Pronouns | null>(null);
+  const said = address === "custom" ? custom.trim() : address;
+  // Until you pick, your pronouns follow what they call you and what you have.
+  const pronouns: Pronouns = chosenPronouns ?? inferPronouns(kit ?? "cock", said);
   const [twists, setTwists] = useState<string[]>([]);
   const [difficulty, setDifficulty] = useState<"generous" | "standard" | "hard">("standard");
   const [busy, setBusy] = useState(false);
@@ -33,7 +38,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
     setBusy(true);
     const s = newGame({
       arcology_name: name || undefined, player_name: player || undefined, difficulty, origin,
-      address: address === "custom" ? custom.trim() || "Master" : address, supplication, plot, twists, kit: kit ?? undefined,
+      address: address === "custom" ? custom.trim() || (pronouns === "she/her" ? "Mistress" : "Master") : address, supplication, plot, twists, kit: kit ?? undefined, pronouns,
     });
     await putSave(s);
     localStorage.setItem("warp-last", s.id);
@@ -76,6 +81,13 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
             <div className="flex flex-wrap gap-1.5">
               {(Object.keys(KITS) as Kit[]).map((k) => (
                 <button key={k} className={cx("chip !text-[12px] !py-1 !px-3", kit === k && "on")} onClick={() => setKit(k)}>{KITS[k].label}</button>
+              ))}
+            </div>
+          </Field>
+          <Field label="You are" hint={chosenPronouns ? "Every scene, and everyone in them, calls you this." : "Picked from what they call you and what you have. Tap to change."}>
+            <div className="flex flex-wrap gap-1.5">
+              {([["he/him", "a man · he"], ["she/her", "a woman · she"], ["they/them", "neither · they"]] as [Pronouns, string][]).map(([k, label]) => (
+                <button key={k} className={cx("chip !text-[12px] !py-1 !px-3", pronouns === k && "on")} onClick={() => setPronouns(k)}>{label}</button>
               ))}
             </div>
           </Field>

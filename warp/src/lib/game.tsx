@@ -13,6 +13,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { SaveState } from "../engine/types";
 import { putSave } from "../store";
+import { setOwnerContext } from "../llm";
+import { ownerLine, settlePronouns } from "../engine/you";
 
 interface Ctx {
   save: SaveState;
@@ -27,6 +29,8 @@ const GameCtx = createContext<Ctx | null>(null);
 export function GameProvider({ initial, children }: { initial: SaveState; children: ReactNode }) {
   const ref = useRef<SaveState>(initial);
   const [rev, setRev] = useState(0);
+  // Every model call is told who the owner is, from whatever the save says now.
+  useMemo(() => { settlePronouns(ref.current); setOwnerContext(ownerLine(ref.current)); }, [rev]);
   const timer = useRef<number | undefined>(undefined);
 
   const persist = useCallback(() => {

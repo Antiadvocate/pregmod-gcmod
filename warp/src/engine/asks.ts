@@ -13,6 +13,12 @@
  * local model can be pointed at this without it being able to break anything.
  *
  * At high dominion the grammar changes. She stops asking.
+ *
+ * SHE LIVES HERE. What she asks for is weighed against the arcology she is asking in: its laws
+ * (yours as written, the court's, and your own custom laws by their words), its habits, its
+ * doctrines and the dress code its slaves wear, and against who she is. A devoted girl under a
+ * Nudity Ordinance does not ask to be dressed; a defiant one might, and knows what she is asking.
+ * Granting that costs you standing, because your household broke your own law in front of people.
  */
 import type { Person, SaveState } from "./types";
 import { ACT_BY_ID, FETISH_BY_ID } from "../data/intimacy";
@@ -25,6 +31,13 @@ import { registerOf, say } from "./voice";
 import { canDo, resolveAct } from "./intimacy";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
+import { lawsOf } from "./court";
+import { cultureOf, normLine, NORMS, NORM_IDS, type Norm } from "./culture";
+import { LAW_BY_ID } from "../data/laws";
+import { DOCTRINE_BY_ID } from "../data/doctrines";
+import { societies, household, lawDress } from "./compare";
+import { WARDROBE } from "../data/wardrobe";
+import { FLAW_BY_ID } from "../data/intimacy";
 
 export type AskKind = "intimate" | "comfort" | "household" | "personal" | "instruction";
 
@@ -48,6 +61,8 @@ export interface Ask {
   /** Which request this is, for the cooldown. Separate from the payload because "take me off the
    *  pill" and "put me on it" are the same payload and different requests. */
   key?: string;
+  /** The law or custom it goes against, when it does. She knows. */
+  against?: string;
 }
 
 /** Everything an ask can actually DO. Closed on purpose: a generated ask is only ever a rewording
@@ -117,6 +132,131 @@ function recentlyAnswered(p: Person, kind: string, week: number): boolean {
   return (g !== undefined && week - g < COOLDOWN.granted) || (r !== undefined && week - r < COOLDOWN.refused);
 }
 
+/* ── the arcology she is asking in ──────────────────────────────────────────────────────────── */
+
+export interface AskWorld {
+  laws: { id: string; name: string; text: string; exempt: boolean }[];
+  norms: Record<Norm, number>;
+  doctrine: (id: string) => number;
+  /** What the city's slaves wear, by its dress code and laws together. */
+  slaveDress?: string;
+  /** What the laws say about slaves' clothes, read from their words. */
+  dressLaw?: "naked" | "covered";
+}
+
+export function askWorld(s: SaveState): AskWorld {
+  const yours = societies(s).find((x) => x.kind === "yours");
+  const laws = lawsOf(s).map((x) => ({ def: LAW_BY_ID[x.id], exempt: !!x.exempt })).filter((x) => x.def)
+    .map((x) => ({ id: x.def.id, name: x.def.name, text: x.def.text, exempt: x.exempt }));
+  return {
+    laws,
+    norms: cultureOf(s).norms,
+    doctrine: (id) => s.arcology.doctrines[id]?.adoption ?? 0,
+    slaveDress: yours ? household(yours).slave?.clothes : undefined,
+    dressLaw: yours ? lawDress(yours).slave : undefined,
+  };
+}
+
+/** A law by id, or the first law whose words match; custom laws are read by what they say. */
+function lawSaying(w: AskWorld, id: string | null, words: RegExp): AskWorld["laws"][number] | undefined {
+  return w.laws.find((l) => l.id === id) ?? w.laws.find((l) => words.test(l.text));
+}
+
+type Stance = { law?: AskWorld["laws"][number]; custom?: string; fits?: boolean; weight?: number };
+
+const PUBLIC_ACTS = new Set(["public use", "exposure", "degradation"]);
+
+/**
+ * Where a request stands in this arcology: against a law, against the city's habits, in keeping
+ * with them, or neither. Laws are matched by id for the built-in ones and by their words for the
+ * ones you wrote yourself, so "all slaves shall be kept pregnant" is read as what it says.
+ */
+function stance(w: AskWorld, key: string, value?: string | number): Stance {
+  const n = w.norms;
+  switch (key) {
+    case "clothes": case "clothes_code": {
+      if (w.dressLaw === "naked") return { law: lawSaying(w, "nudity_ordinance", /naked|nude|unclothed|no cloth/i) ?? { id: "dress", name: "the law on slaves' clothes", text: "", exempt: false } };
+      if (n.exposure >= 50) return { custom: "the city's habit of keeping slaves naked" };
+      return { fits: w.dressLaw === "covered" || n.exposure <= -15 };
+    }
+    case "contraceptives_on": {
+      const law = lawSaying(w, null, /(ban|forbid|prohibit|outlaw|illegal)[^.]{0,40}(contracept|pill)|(contracept|pill)[^.]{0,40}(banned|forbidden|illegal|not allowed)|kept pregnant|must be (bred|pregnant)|(breed|impregnate)[^.]{0,30}(every|all) slaves?/i);
+      if (law) return { law };
+      if (w.doctrine("repopulation") >= 40) return { custom: "the city's Repopulation Focus" };
+      return { fits: w.doctrine("eugenics") >= 40 };
+    }
+    case "contraceptives_off": {
+      const law = lawSaying(w, null, /(contracept|pill)[^.]{0,30}(mandatory|required|compulsory)|must (take|be on|use)[^.]{0,20}(contracept|pill)|(forbid|ban|prohibit)[^.]{0,30}(breeding|pregnan)/i);
+      if (law) return { law };
+      if (w.doctrine("eugenics") >= 40) return { custom: "the city's Eugenics, which decides who breeds" };
+      return { fits: w.doctrine("repopulation") >= 40, weight: w.doctrine("repopulation") >= 40 ? 1.6 : 1 };
+    }
+    case "name": {
+      const law = lawSaying(w, "chattel_act", /(no|never|forbid\w*|may not|shall not)[^.]{0,40}\b(own )?names?\b/i);
+      if (law) return { law };
+      if (n.personhood <= -45) return { custom: "a city that treats slaves as furniture" };
+      return { fits: n.personhood >= 35 || w.laws.some((l) => l.id === "slave_testimony"), weight: n.personhood >= 35 ? 1.6 : 1 };
+    }
+    case "unlock": {
+      const law = lawSaying(w, null, /(chastity|cage|belt)[^.]{0,40}(must|required|mandatory|at all times)|must[^.]{0,30}(chastity|caged|locked)/i);
+      return law ? { law } : {};
+    }
+    case "off_drugs": {
+      const law = lawSaying(w, null, /aphrodisiac[^.]{0,40}(must|required|mandatory)|must[^.]{0,30}aphrodisiac/i);
+      return law ? { law } : {};
+    }
+    case "act": case "serve": {
+      if (!PUBLIC_ACTS.has(String(value))) return {};
+      const law = lawSaying(w, "decency_statute", /(sex|nudity)[^.]{0,30}(behind closed doors|in private|forbidden in public)/i);
+      if (law) return { law };
+      if (n.exposure <= -35) return { custom: "a city that keeps sex behind doors" };
+      return { fits: n.exposure >= 45, weight: n.exposure >= 45 ? 1.5 : 1 };
+    }
+    case "exclusive": case "answer":
+      return { weight: n.personhood >= 35 ? 1.4 : n.personhood <= -35 ? 0.5 : 1, fits: n.personhood >= 35 };
+    case "spare":
+      return { weight: w.laws.some((l) => l.id === "welfare_code") || n.cruelty <= -15 ? 1.5 : n.cruelty >= 50 ? 0.6 : 1 };
+    case "rest": case "spa":
+      return { weight: w.laws.some((l) => l.id === "welfare_code") ? 1.4 : 1 };
+    default:
+      return {};
+  }
+}
+
+/**
+ * Who she is, as a weight on what she asks. The fetish, quirk and arousal already decide the
+ * intimate asks; this is the rest of her: how she attaches, how much other people register, and
+ * the flaw that makes some requests urgent and others unthinkable.
+ */
+function temperament(p: Person, key: string): number {
+  const style = p.persona.attachment?.style;
+  const flaw = p.persona.flaw?.id, quirk = p.persona.quirk?.id;
+  let w = 1;
+  if (style === "anxious" && (key === "exclusive" || key === "stay" || key === "answer")) w *= 1.6;
+  if (style === "avoidant" && (key === "exclusive" || key === "stay")) w *= 0.35;
+  if (style === "avoidant" && (key === "rest" || key === "unlock")) w *= 1.3;
+  if (style === "disorganized" && key === "answer") w *= 1.5;
+  if (key === "spare") w *= 0.4 + (p.persona.conscience ?? 0.5) * 1.6;
+  if (quirk === "caring" && key === "spare") w *= 1.6;
+  if (quirk === "romantic" && key === "exclusive") w *= 1.6;
+  if (quirk === "perverted" && key === "act") w *= 1.4;
+  if ((flaw === "shamefast" || flaw === "repressed") && (key === "clothes" || key === "clothes_code")) w *= 2.2;
+  if (flaw === "idealistic" && (key === "exclusive" || key === "name")) w *= 1.6;
+  if (flaw === "apathetic" && (key === "act" || key === "getoff")) w *= 0.5;
+  return w;
+}
+
+/** A garment the city's own culture would put her in: what its leading doctrine wants, and covers. */
+function cultureGarment(s: SaveState, pick: <T>(xs: T[]) => T): string | undefined {
+  const bare = new Set(["no clothing", "chains", "restrictive gear", "shibari ropes", "body oil", "slutty jewelry", "clubslut netting", "a heavy gold collar", "an ancient Egyptian collar"]);
+  const lead = Object.entries(s.arcology.doctrines).filter(([, d]) => d.adoption >= 30).sort((a, b) => b[1].adoption - a[1].adoption).map(([id]) => id);
+  for (const id of lead) {
+    const fits = WARDROBE.filter((g) => g.wants?.includes(id) && !bare.has(g.name));
+    if (fits.length) return pick(fits).name;
+  }
+  return undefined;
+}
+
 /** The wording, by how she talks. `ask` is a request, `tell` is what she says once she has the
  *  standing not to ask. */
 const WORDING: Record<string, { ask: string[]; tell: string[]; timid?: string[]; sullen?: string[] }> = {
@@ -167,6 +307,12 @@ const WORDING: Record<string, { ask: string[]; tell: string[]; timid?: string[];
   clothes: {
     ask: ["She asks for something to wear. She has something in mind: {value}.", "\"Could I have {value}? I'm tired of being cold.\""],
     tell: ["\"Order me {value}. My size. This week.\""],
+    timid: ["She asks, very quietly, whether she could have something to cover herself with. {Value}, if it's not too much."],
+  },
+  clothes_code: {
+    ask: ["\"Every slave on the concourse is in {value}. Could I have the same? People stare.\"", "She asks to be dressed like the other girls in the city: {value}."],
+    tell: ["\"Get me {value}. I'm not the only one on the floor dressed wrong.\""],
+    timid: ["She mentions, looking at the floor, that the other slaves all wear {value}."],
   },
   spare: {
     ask: ["She asks you about {target}. Not for herself — for {target}. She wants her taken off what she's on.", "\"{Target} isn't going to last where she is. Please move her.\""],
@@ -202,7 +348,7 @@ function word(kind: string, instruction: boolean, reg: string, r: ReturnType<typ
 }
 
 /** Build one ask out of who she actually is. The model may reword it; it never changes what it is. */
-export function generateAsk(s: SaveState, p: Person): Ask | null {
+export function generateAsk(s: SaveState, p: Person, world: AskWorld = askWorld(s)): Ask | null {
   const rom = romanceOf(p);
   const r = read(p, s.memory[p.id]);
   const week = s.arcology.week;
@@ -218,16 +364,30 @@ export function generateAsk(s: SaveState, p: Person): Ask | null {
   if (p.psyche.state === "broken") return null;
   if (p.age < 18) return null;
 
-  type Cand = { kind: AskKind; key: string; payload: Ask["payload"]; vars?: Record<string, string>; cash?: number; gain: number; loss: number; weight: number };
+  type Cand = { kind: AskKind; key: string; payload: Ask["payload"]; vars?: Record<string, string>; cash?: number; gain: number; loss: number; weight: number; against?: Stance };
   const c: Cand[] = [];
   const instruction = rom.dominion >= 60;
-  const push = (x: Cand) => { if (!recentlyAnswered(p, x.key, week)) c.push(x); };
+  // Who asks for what the law forbids: a girl who trusts you more than she loves you, a sullen or
+  // bratty one, or one with the standing to tell you. A devoted or frightened girl keeps her head down.
+  const bold = (r.trust > 35 && r.devotion < 35) || reg === "sullen" || reg === "bratty" || reg === "crude" || rom.dominion >= 40;
+  const push = (x: Cand) => {
+    if (recentlyAnswered(p, x.key, week)) return;
+    const st = stance(world, x.key, x.payload.value);
+    const shame = (x.key === "clothes" || x.key === "clothes_code") && (p.persona.flaw?.id === "shamefast" || p.persona.flaw?.id === "repressed");
+    let weight = x.weight * temperament(p, x.key) * (st.weight ?? 1) * (st.fits ? 1.3 : 1);
+    if (st.law || st.custom) {
+      if (!bold && !shame) return;
+      weight *= 0.6;
+    }
+    c.push({ ...x, weight, against: st.law || st.custom ? st : undefined });
+  };
 
   // ── what her body wants ──────────────────────────────────────────────────────────────────
   const topFetish = [...p.persona.fetishes].sort((a, b) => b.strength - a.strength)[0];
   if (topFetish && topFetish.name !== "none" && topFetish.strength >= 40 && r.trust > 30) {
     const def = FETISH_BY_ID[topFetish.name];
-    const acts = (def?.acts ?? []).filter((a) => ACT_BY_ID[a] && !canDo(p, ACT_BY_ID[a], s));
+    const hates = new Set(FLAW_BY_ID[p.persona.flaw?.id ?? ""]?.hates ?? []);
+    const acts = (def?.acts ?? []).filter((a) => ACT_BY_ID[a] && !canDo(p, ACT_BY_ID[a], s) && !hates.has(a));
     const actId = acts.length ? rng_.pick(acts) : "slow";
     push({ kind: "intimate", key: "act", payload: { kind: "act", value: actId }, vars: { act: IN_HER_WORDS[actId] ?? "that" }, gain: 6, loss: 5, weight: 3 });
   }
@@ -257,9 +417,15 @@ export function generateAsk(s: SaveState, p: Person): Ask | null {
   if (p.chastity.vagina || p.chastity.anus || p.chastity.penis) {
     push({ kind: "comfort", key: "unlock", payload: { kind: "unlock" }, gain: 5, loss: 5, weight: 2 });
   }
+  // Clothes: what the city's slaves wear if that is clothing, else what its culture would dress
+  // her in, else something plain. A girl dressed differently from every other slave in the city
+  // may want to fit in, which is its own request.
+  const code = world.slaveDress && world.slaveDress !== "no clothing" ? world.slaveDress : undefined;
   if (p.clothes === "no clothing" && r.trust > 20) {
-    const want = rng_.pick(NAMED_CLOTHES);
-    push({ kind: "comfort", key: "clothes", payload: { kind: "clothes", value: want }, vars: { value: want }, cash: 1200, gain: 4, loss: 4, weight: 2 });
+    const want = code ?? cultureGarment(s, (xs) => rng_.pick(xs)) ?? rng_.pick(NAMED_CLOTHES);
+    push({ kind: "comfort", key: code ? "clothes_code" : "clothes", payload: { kind: "clothes", value: want }, vars: { value: want }, cash: 1200, gain: 4, loss: 4, weight: 2 });
+  } else if (code && p.clothes !== code && r.trust > 20 && r.devotion > 20) {
+    push({ kind: "comfort", key: "clothes_code", payload: { kind: "clothes", value: code }, vars: { value: code }, cash: 1200, gain: 4, loss: 4, weight: 1.2 });
   }
   // Contraception: only when what she wants is not already what she has. The old version asked
   // for the pill every week whether or not she was on it.
@@ -299,13 +465,19 @@ export function generateAsk(s: SaveState, p: Person): Ask | null {
   p.counters.asks_generated = nth + 1;
   const pick = rng_.weighted(c, (x) => x.weight);
   const tells = instruction || pick.key === "serve";
+  const law = pick.against?.law;
+  const against = law ? (law.name.startsWith("the ") ? law.name : `the ${law.name}`) : pick.against?.custom;
+  const knows = against ? (tells ? ` ${cap(against)} doesn't come into it.` : ` She knows it goes against ${against}, and asks anyway.`) : "";
   return {
     id: `ask-${p.id}-${week}-${pick.key}-${nth}`,
     person: p.id,
     kind: tells && pick.kind !== "household" ? "instruction" : pick.kind,
-    text: word(pick.key, tells, reg, rng_, pick.vars ?? {}),
+    text: word(pick.key, tells, reg, rng_, pick.vars ?? {}) + knows,
     payload: pick.payload,
     cash: pick.cash,
+    // Breaking your own law in your own house is seen. An exempt household breaks nothing.
+    rep: law && !law.exempt ? 12 : undefined,
+    against,
     gain: pick.gain,
     // An instruction refused costs far more than a request refused. That asymmetry IS the top of
     // the ladder: past a point, saying no to her is a thing you do at a price.
@@ -314,6 +486,8 @@ export function generateAsk(s: SaveState, p: Person): Ask | null {
     key: pick.key,
   };
 }
+
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 export interface AskReply { what: string; said: string }
 
@@ -368,9 +542,10 @@ export function collectAsks(s: SaveState): Ask[] {
     // A free woman asks only if she is still here: the keeper, not somebody who went home.
     .filter((p) => (p.status === "owned" || p.status === "indentured" || (p.status === "free" && (p.exit_week === undefined || s.player.owned_by === p.id))) && p.age >= 18)
     .sort((a, b) => (b.romance?.dominion ?? -100) - (a.romance?.dominion ?? -100));
+  const world = askWorld(s);
   for (const p of people) {
     if (out.length >= 2) break;
-    const ask = generateAsk(s, p);
+    const ask = generateAsk(s, p, world);
     if (ask) out.push(ask);
   }
   return out;
@@ -384,15 +559,30 @@ export async function voiceAsk(s: SaveState, ask: Ask): Promise<string> {
   const p = s.people[ask.person];
   if (!p) return ask.text;
   const rom = romanceOf(p);
+  const r = read(p, s.memory[p.id]);
+  const w = askWorld(s);
+  const habits = NORM_IDS.filter((k) => Math.abs(w.norms[k]) >= 25).map((k) => `${NORMS[k].name}: ${normLine(k, w.norms[k])}`);
+  const doctrines = Object.entries(s.arcology.doctrines).filter(([, d]) => d.adoption >= 30).map(([id, d]) => `${DOCTRINE_BY_ID[id]?.noun ?? id} (${Math.round(d.adoption)}%)`);
+  const flaw = p.persona.flaw ? FLAW_BY_ID[p.persona.flaw.id]?.note : undefined;
   const res = await call({
-    system: `You write one line for Free Cities, an adult text game about owning an arcology. A slave is asking her owner for something. Write what she says when she asks, in one or two sentences: her own words, the way this particular person would say it. Crude if she is crude. Do not change what she is asking for. Plain dialogue; no gestures, no sayings, nothing that sounds like a proverb. Output JSON only: {"says":"..."}`,
+    system: `You write one line for Free Cities, an adult text game about owning an arcology. A slave is asking her owner for something. Write what she says when she asks, in one or two sentences: her own words, the way this particular person would say it. Crude if she is crude, frightened if she is frightened, cold if she is cold. She lives in this arcology and knows its laws, its customs and how its slaves dress: her words fit that world, and if what she wants goes against a law or custom, she knows it and it shows. Do not change what she is asking for. Plain dialogue; no gestures, no sayings, nothing that sounds like a proverb. Output JSON only: {"says":"..."}`,
     user: [
       `HER: ${p.name}, ${p.age}. ${p.persona.speech_pattern}`,
       p.persona.voice?.example_lines?.length ? `SOUNDS LIKE: "${p.persona.voice.example_lines[0]}"` : "",
+      p.persona.voice?.never_says?.length ? `NEVER SAYS: ${p.persona.voice.never_says.join("; ")}` : "",
       `TRAITS: ${p.persona.core_traits.join("; ")}`,
+      p.persona.values?.length ? `WHAT SHE VALUES: ${p.persona.values.join("; ")}` : "",
+      `UNDER PRESSURE: ${p.persona.attachment.under_threat}`,
+      flaw ? `HER FLAW: ${flaw}` : "",
+      `HOW SHE FEELS ABOUT HER OWNER: devotion ${Math.round(r.devotion)}, trust ${Math.round(r.trust)} (−100 to 100); ${Math.round(r.fragility * 100)}% of her obedience is fear.`,
       `HER STANDING WITH HER OWNER: ${rom.standing} (${Math.round(rom.dominion)}/100 say in the household).`,
-      `HOW SHE IS: ${p.bond.read.label}, mood ${p.psyche.mood}.`,
+      `HOW SHE IS: ${p.bond.read.label}, mood ${p.psyche.mood}. Wearing ${p.clothes}.`,
+      w.laws.length ? `LAWS OF THE ARCOLOGY: ${w.laws.map((l) => `the ${l.name}: ${l.text}${l.exempt ? " (the owner's household is exempt)" : ""}`).join(" | ")}` : "",
+      habits.length ? `HOW THE CITY BEHAVES: ${habits.join(" ")}` : "",
+      doctrines.length ? `WHAT THE CITY BELIEVES: ${doctrines.join(", ")}` : "",
+      w.slaveDress ? `WHAT SLAVES IN THE CITY WEAR: ${w.slaveDress}` : "",
       `WHAT SHE IS ASKING FOR: ${ask.text}`,
+      ask.against ? `IT GOES AGAINST: ${ask.against}. She knows.` : "",
       ask.kind === "instruction" ? `She is not asking; she has enough standing to tell her owner, and does.` : "",
     ].filter(Boolean).join("\n"),
     model: s.models.narrator_model,

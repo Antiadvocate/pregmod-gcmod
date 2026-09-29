@@ -107,7 +107,22 @@ function queued<T>(fn: () => Promise<T>, signal?: AbortSignal): Promise<T> {
   return p;
 }
 
-export async function call(opts: CallOptions): Promise<LLMResult> {
+/**
+ * WHO THE OWNER IS, on every call. The game sets it from the save (engine/you.ts ownerLine) and it
+ * is appended to every system prompt unless the prompt already carries it, so no scene, memory,
+ * saga or ask has to remember to say what body the player has.
+ */
+let ownerContext = "";
+export function setOwnerContext(text: string): void { ownerContext = text; }
+const OWNER_MARK = "THE OWNER (the player";
+
+export function withOwner<T extends { system: string; user: string }>(raw: T): T {
+  return ownerContext && !raw.system.includes(OWNER_MARK) && !raw.user.includes(OWNER_MARK)
+    ? { ...raw, system: `${raw.system}\n\n${ownerContext}` } : raw;
+}
+
+export async function call(raw: CallOptions): Promise<LLMResult> {
+  const opts = withOwner(raw);
   const chain = [opts.model, opts.fallback].filter(Boolean) as string[];
   let lastErr = "";
   for (const model of chain) {

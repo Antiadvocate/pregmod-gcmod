@@ -75,6 +75,16 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
               </Field>
             ))}
           </div>
+          <Field label="City feed — the cheap model that writes the posts" hint="Short posts only, a few at a time; the narrator writes the full story when you open one. Blank uses the bookkeeper.">
+            <ModelPicker value={save.models.feed_model ?? ""} models={models} onChange={(id) => mutate((s) => { s.models.feed_model = id; })} />
+          </Field>
+          <Field label="How often the city posts" hint="While the game is open and in front of you. Each batch is one small call.">
+            <div className="flex gap-2 flex-wrap">
+              {[0, 2, 5, 10, 20].map((m) => (
+                <Chip key={m} on={(save.models.feed_pace ?? 5) === m} onClick={() => mutate((s) => { s.models.feed_pace = m; })}>{m ? `every ${m} min` : "off"}</Chip>
+              ))}
+            </div>
+          </Field>
           <Field label="Lean mode" hint="Only call the model when you ask for something: no automatic week summary and no automatic assistant brief (she gets a button instead). Scenes, conversations and events still use the model when you play them.">
             <div className="flex gap-1.5">
               <Chip on={!!save.models.lean_mode} onClick={() => mutate((s) => { s.models.lean_mode = true; })}>On</Chip>

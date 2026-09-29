@@ -21,6 +21,7 @@ import type { Person, SaveState } from "./types";
 import { generatePerson } from "./generate";
 import { NATIONS } from "../data/people";
 import { sagaFaces } from "./saga";
+import { isOwnerName } from "./you";
 
 export interface Face {
   name: string;
@@ -82,6 +83,8 @@ export function personOf(f: Face): Person {
 export function meet(s: SaveState, o: Partial<Face> & { name: string }): Face | undefined {
   const name = o.name.trim().replace(/\s+/g, " ");
   if (name.length < 2 || name.length > 48 || !/^[\p{L}][\p{L}'’.\- ]*$/u.test(name)) return undefined;
+  // The owner is never a stranger with a face on file.
+  if (isOwnerName(s, name)) return undefined;
   const all = facesOf(s);
   const k = keyOf(name);
   const week = s.arcology.week;

@@ -14,7 +14,7 @@ import { assWord } from "./generate";
 import { sane } from "./health";
 import { feetOf } from "./genitals";
 import { newWorld } from "./world";
-import type { Arcology, Facility, Person, SaveState, Sector, StandingOrder } from "./types";
+import type { Arcology, Facility, Person, Pronouns, SaveState, Sector, StandingOrder } from "./types";
 import { SCHEMA_VERSION, DEFAULT_MODELS } from "./types";
 import { FACILITIES } from "../data/facilities";
 import { generatePerson } from "./generate";
@@ -27,7 +27,8 @@ import { rng } from "./rng";
 import { newStory } from "./story";
 import { newRun } from "./run";
 import { ORIGIN_BY_ID } from "../data/story";
-import { settleBody, type Kit } from "./you";
+import { settleBody, settlePronouns, type Kit } from "./you";
+import { forgetOwnerAsStranger } from "./saga";
 import { cityOf, cityYield } from "./city";
 
 export interface NewGameOptions {
@@ -50,6 +51,7 @@ export interface NewGameOptions {
   twists?: string[];
   /** What you have between your legs, which the scenes follow. The rest is shaped on the You screen. */
   kit?: Kit;
+  pronouns?: Pronouns;
 }
 
 const ARC_NAMES = ["Aurelia", "Vireo", "Marrow", "Halcyon", "Sable Rock", "Ninth Terrace", "Corvid", "The Spindle", "Tessellate", "Antioch"];
@@ -138,7 +140,8 @@ export function newGame(opts: NewGameOptions = {}): SaveState {
     rumors: [],
     player: {
       name: opts.player_name ?? "you",
-      pronouns: "they/them",
+      pronouns: opts.pronouns ?? "they/them",
+      pronouns_set: !!opts.pronouns,
       age: 34,
       title: "owner",
       body: { appearance_facts: "ordinary-looking, in expensive but plain clothes" },
@@ -177,6 +180,7 @@ export function newGame(opts: NewGameOptions = {}): SaveState {
   // household changes are in place when its arc picks who it is about.
   if (opts.address) state.player.address = opts.address;
   if (opts.kit) settleBody(state, opts.kit);
+  settlePronouns(state);
   const origin = ORIGIN_BY_ID[opts.origin ?? ""];
   if (origin) {
     origin.setup(state, r);
@@ -202,6 +206,8 @@ export function sanitize(raw: SaveState): SaveState {
   s.models = { ...DEFAULT_MODELS, ...(s.models ?? {}) };
   s.people = s.people ?? {};
   s.memory = s.memory ?? {};
+  // The owner was "they" for everyone before there was a choice; settle it from body and address.
+  if (s.player) { settlePronouns(s); forgetOwnerAsStranger(s); }
   // Old saves filed the same beat week after week; fold the repeats together once, on load.
   for (const m of Object.values(s.memory)) if (m?.episodic) compactMemory(m);
   // Rumors that say the same thing are one rumor.

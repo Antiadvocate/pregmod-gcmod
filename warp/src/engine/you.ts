@@ -6,7 +6,7 @@
  * here is stored on `player.body` in the same shape as a slave's, so the same art draws you and
  * the same words describe you.
  */
-import type { Body, Person, SaveState } from "./types";
+import type { Body, Person, Pronouns, SaveState } from "./types";
 import { generatePerson } from "./generate";
 import { buildOf, kgFor } from "./build";
 
@@ -86,4 +86,70 @@ export function describeYou(s: SaveState): string {
   parts.push(g.join(" and ") || "nothing between the legs");
   parts.push(`${b.hair_color} hair`, `${b.skin} skin`);
   return parts.join(", ");
+}
+
+/**
+ * WHO YOU ARE, SAID PLAINLY.
+ *
+ * The owner used to be "they/them" for everyone, with a body described only in one line of one
+ * prompt, and every other call to the model was left to guess. It guessed differently each time:
+ * a cock in one scene, a pussy in the next. Your pronouns are now chosen, a sensible default is
+ * inferred for saves made before there was a choice, and this statement goes to every model call.
+ */
+const FEMININE = /^(mistress|ma'?am|madam|lady|queen|goddess|mommy|mother)$/i;
+const MASCULINE = /^(master|sir|lord|king|daddy|father)$/i;
+
+/** A default from what the household calls you, then from your body. */
+export function inferPronouns(kit: Kit, address?: string): Pronouns {
+  const a = (address ?? "").trim();
+  if (FEMININE.test(a)) return "she/her";
+  if (MASCULINE.test(a)) return "he/him";
+  return kit === "cock" ? "he/him" : "she/her";
+}
+
+/** Saves from before the choice existed get the inferred pronouns, once. */
+export function settlePronouns(s: SaveState): void {
+  if (s.player.pronouns_set) return;
+  if (s.player.pronouns === "they/them" || !s.player.pronouns) s.player.pronouns = inferPronouns(kitOf(s), s.player.address);
+  s.player.pronouns_set = true;
+}
+
+/** "a man", "a woman", "a futanari woman" — what the narrator should picture, from both halves. */
+export function genderWord(s: SaveState): string {
+  const pr = s.player.pronouns;
+  const cock = hasCock(s), pussy = hasPussy(s);
+  if (pr === "they/them") return cock && pussy ? "a person with both a cock and a pussy" : cock ? "a person with a cock" : "a person with a pussy";
+  if (pr === "he/him") return cock && pussy ? "a man who has a pussy as well as a cock" : cock ? "a man" : "a man with a pussy and no cock";
+  return cock && pussy ? "a futanari woman: a woman with a cock and balls as well as a pussy" : pussy ? "a woman" : "a woman with a cock and no pussy";
+}
+
+/**
+ * Whether a name a model wrote is the owner. The player is one person under several labels —
+ * "you", "the player", "the owner", their name, their title — and a model that sees the name in
+ * one place and "you" in another will happily make two people of them.
+ */
+export function isOwnerName(s: SaveState, name: string | undefined): boolean {
+  const n = (name ?? "").toLowerCase().replace(/[^\p{L}' ]/gu, " ").replace(/\s+/g, " ").trim();
+  if (!n) return false;
+  if (/^(you|yourself|the player|player|the owner|owner|the arcology owner|the arcologist)$/.test(n)) return true;
+  const full = (s.player.name ?? "").toLowerCase().trim();
+  if (full && full !== "you" && (n === full || n === full.split(" ")[0] || n.startsWith(`${full} `))) return true;
+  const title = (s.player.address ?? "").toLowerCase().trim();
+  return !!title && (n === title || n === `the ${title}`);
+}
+
+export function ownerLine(s: SaveState): string {
+  const b = playerBody(s);
+  const pr = s.player.pronouns ?? "he/him";
+  const [subj, obj, pos] = pr === "she/her" ? ["she", "her", "her"] : pr === "they/them" ? ["they", "them", "their"] : ["he", "him", "his"];
+  const has: string[] = [], hasnt: string[] = [];
+  (hasCock(s) ? has : hasnt).push("a cock");
+  (canSire(s) ? has : hasnt).push("balls");
+  (hasPussy(s) ? has : hasnt).push("a pussy");
+  (b.boobs >= 300 ? has : hasnt).push("breasts");
+  const named = s.player.name && s.player.name !== "you" ? s.player.name : "";
+  const name = named ? `${named}, ` : "";
+  const title = s.player.address || (pr === "she/her" ? "Mistress" : "Master");
+  const one = `"You", the player, the owner${named ? `, ${named}` : ""} and "${title}" are ONE person, the person reading. Write that person only as "you", in the second person. Never write the owner as a separate character in the third person${named ? ` ("${named} walks in", "${named}'s orders")` : ""}, never put the owner in a cast list, and never ask what the owner${named ? ` or ${named}` : ""} should do: every choice offered is something YOU do. Other characters may say ${named ? `"${named}" or ` : ""}"${title}" aloud when they speak to or about you.`;
+  return `THE OWNER (the player, written as "you"): ${name}${genderWord(s)}. ${one} Pronouns ${pr}: anyone speaking about the owner says ${subj}/${obj}/${pos}. Slaves call the owner "${s.player.address || (pr === "she/her" ? "Mistress" : "Master")}". The owner's body: ${describeYou(s)}. The owner HAS ${has.join(", ")}; the owner DOES NOT HAVE ${hasnt.join(", ") || "anything missing"}. Never give the owner a body part they do not have or take away one they do; every scene, memory and line of dialogue keeps to this.${s.player.body.appearance_facts ? ` ${s.player.body.appearance_facts}` : ""}`;
 }
