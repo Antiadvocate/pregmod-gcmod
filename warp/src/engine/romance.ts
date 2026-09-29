@@ -389,6 +389,17 @@ export function inHousehold(s: SaveState, p: Person): boolean {
   return p.status === "owned" || p.status === "indentured" || (p.status === "free" && !!s.player.owned_by && s.player.owned_by === p.id);
 }
 
+/** Free, and with you by choice: a woman you freed and are courting, engaged to or married to. She
+ *  is not household property (no upkeep, no assignment), but she is in your life and on your roster. */
+export function isPartner(s: SaveState, p: Person): boolean {
+  return p.status === "free" && !isKeeper(s, p) && ["courted", "betrothed", "wife"].includes(p.romance?.standing ?? "property") && !/^taken by /.test(p.exit_note ?? "");
+}
+
+/** Anyone who was yours and is free now: freed, escaped, taken or gone home. */
+export function wasYours(p: Person): boolean {
+  return p.status === "free" && p.exit_week !== undefined;
+}
+
 /** She owns you: you can be with her, but you don't assign, sell, dress or operate on her. */
 export function isKeeper(s: SaveState, p: Person): boolean {
   return !!s.player.owned_by && s.player.owned_by === p.id;
