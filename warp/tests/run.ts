@@ -43,6 +43,7 @@ import "./saga.test.ts";
 import "./pov.test.ts";
 import "./register.test.ts";
 import "./owner.test.ts";
+import "./feed.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);

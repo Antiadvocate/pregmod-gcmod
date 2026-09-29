@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import {
-  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, Globe2, BookOpen, Scale, GitCompareArrows, Earth, Dna } from "lucide-react";
+  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, Globe2, BookOpen, Scale, GitCompareArrows, Earth, Dna, Newspaper } from "lucide-react";
 import type { SaveState } from "./engine/types";
 import { GameProvider, useGame } from "./lib/game";
 import { listSaves, getSave } from "./store";
@@ -33,11 +33,14 @@ import Society from "./views/Society";
 import Compare from "./views/Compare";
 import World from "./views/World";
 import Genome from "./views/Genome";
+import Feed, { FeedTicker } from "./views/Feed";
+import { unread as feedUnread } from "./engine/feed";
 
-export type Route = "penthouse" | "people" | "story" | "scene" | "city" | "society" | "compare" | "world" | "genome" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
+export type Route = "penthouse" | "feed" | "people" | "story" | "scene" | "city" | "society" | "compare" | "world" | "genome" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
 
 const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "penthouse", label: "Penthouse", icon: Building2 },
+  { id: "feed", label: "Feed", icon: Newspaper },
   { id: "people", label: "People", icon: Users },
   { id: "story", label: "Story", icon: BookOpen },
   { id: "scene", label: "Scene", icon: Play },
@@ -93,7 +96,7 @@ export default function App() {
  */
 type Group = { id: string; label: string; icon: typeof Building2; routes: Route[] };
 const GROUPS: Group[] = [
-  { id: "home", label: "Home", icon: Building2, routes: ["penthouse", "report"] },
+  { id: "home", label: "Home", icon: Building2, routes: ["penthouse", "feed", "report"] },
   { id: "people", label: "People", icon: Users, routes: ["people", "orders", "you", "genome"] },
   { id: "story", label: "Story", icon: BookOpen, routes: ["story", "scene"] },
   { id: "city", label: "City", icon: Globe2, routes: ["city", "arcology", "society", "doctrine", "world", "compare"] },
@@ -156,7 +159,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
             {group.routes.map((r) => (
               <button key={r} role="tab" aria-selected={route === r} className={cx("segtab", route === r && "on")} onClick={() => setRoute(r)}>
                 {labelOf(r)}
-                {r === "penthouse" && unseen ? <span className="dot" /> : null}
+                {(r === "penthouse" && unseen) || (r === "feed" && route !== "feed" && feedUnread(save)) ? <span className="dot" /> : null}
               </button>
             ))}
           </div>
@@ -187,6 +190,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
         <main className="flex-1 min-w-0 overflow-y-auto">
           <div className={cx("mx-auto w-full", route === "scene" ? "max-w-3xl h-full" : "max-w-5xl p-4 sm:p-6")}>
             {route === "penthouse" && <Penthouse go={setRoute} />}
+            {route === "feed" && <Feed />}
             {route === "people" && <Roster />}
             {route === "story" && <Journal />}
             {route === "scene" && <Scene />}
@@ -220,6 +224,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
       </nav>
 
       <Ending onNewRun={onSwitch} />
+      <FeedTicker />
     </div>
   );
 }

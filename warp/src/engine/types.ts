@@ -754,6 +754,10 @@ export interface ModelSettings {
   tension: number;
   /** Repair the narrator's tics in place (see engine/reviser.ts). Off by default. */
   prose_reviser: boolean;
+  /** The cheap model that writes the city feed in the background. Empty uses the bookkeeper. */
+  feed_model?: string;
+  /** Minutes between feed batches while the game is open. 0 turns the background feed off. */
+  feed_pace?: number;
 }
 
 /** A standing order. The old game's Rules Assistant, rebuilt as data: a list of conditions and a
@@ -900,6 +904,8 @@ export interface SaveState {
   faces?: Record<string, import("./faces").Face>;
   /** Long stories grown from this arcology. See engine/saga.ts. */
   sagas?: import("./saga").SagaState;
+  /** The city's message boards, written in the background (engine/feed.ts). */
+  feed?: import("./feed").FeedState;
   /** Scenes of city life shown recently, by key, so the week report doesn't repeat itself. */
   citylife_seen?: Record<string, number>;
   /** The content switches, which the original carried as V.seeExtreme, V.seeCircumcision and the
