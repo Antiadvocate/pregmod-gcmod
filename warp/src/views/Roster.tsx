@@ -34,7 +34,7 @@ import FeetArt from "./FeetArt";
 import { IDOL_IMAGES, idolOf, type IdolImage } from "../engine/idols";
 import { OpenMoments, Reaction as MomentReaction } from "./MomentCard";
 import HerPanel from "./HerPanel";
-import { romanceOf, RUNG_BY_ID, inHousehold, isKeeper } from "../engine/romance";
+import { romanceOf, RUNG_BY_ID, inHousehold, isKeeper, isPartner, wasYours } from "../engine/romance";
 import { paintPortrait, paintRealistic } from "../engine/turn";
 import { getLocalImage, modelsAvailable } from "../config";
 import { POSES, restingPose, type Pose } from "../lib/rig";
@@ -53,9 +53,13 @@ export default function Roster() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [withId, setWithId] = useState<string | null>(null);
   const [dressId, setDressId] = useState<string | null>(null);
+  const [showFreed, setShowFreed] = useState(() => { try { return localStorage.getItem("warp:show-freed") === "1"; } catch { return false; } });
+  const toggleFreed = () => setShowFreed((v) => { try { localStorage.setItem("warp:show-freed", v ? "0" : "1"); } catch { /* private window */ } return !v; });
+  // Women who were yours and are free now, other than a partner (who is in the household list).
+  const freed = useMemo(() => Object.values(save.people).filter((p) => wasYours(p) && !inHousehold(save, p) && !isPartner(save, p)).sort((a, b) => (b.exit_week ?? 0) - (a.exit_week ?? 0)), [save]);
 
   const people = useMemo(() => {
-    const list = Object.values(save.people).filter((p) => inHousehold(save, p));
+    const list = Object.values(save.people).filter((p) => inHousehold(save, p) || isPartner(save, p));
     const filtered = q ? list.filter((p) => (p.name + " " + p.assignment + " " + p.origin.nationality).toLowerCase().includes(q.toLowerCase())) : list;
     const score = (p: Person) => {
       const r = read(p, save.memory[p.id]);
@@ -68,8 +72,9 @@ export default function Roster() {
         default: return -(r.flight_risk * 100 + (p.psyche.state !== "intact" ? 60 : 0) + Math.max(0, -p.health.health));
       }
     };
-    // She who holds your collar is always first.
-    return [...filtered].sort((a, b) => Number(isKeeper(save, b)) - Number(isKeeper(save, a)) || (sort === "name" ? a.name.localeCompare(b.name) : score(a) - score(b)));
+    // She who holds your collar is always first, then the woman you married.
+    const first = (p: Person) => (isKeeper(save, p) ? 2 : isPartner(save, p) ? 1 : 0);
+    return [...filtered].sort((a, b) => first(b) - first(a) || (sort === "name" ? a.name.localeCompare(b.name) : score(a) - score(b)));
   }, [save, q, sort]);
 
   return (
@@ -96,6 +101,29 @@ export default function Roster() {
           {people.map((p) => <RosterCard key={p.id} p={p} onOpen={() => setOpenId(p.id)} onWith={() => setWithId(p.id)} />)}
         </div>
       ) : <Empty>Nobody yet. Buy someone at the Market.</Empty>}
+
+      {freed.length ? (
+        <div className="mt-5">
+          <button className="foldhead" aria-expanded={showFreed} onClick={toggleFreed}>
+            Freed and gone <span className="fold-count">{freed.length}</span>
+          </button>
+          {showFreed ? (
+            <div className="grid gap-2.5 sm:grid-cols-2 mt-1">
+              {freed.map((p) => (
+                <Card key={p.id} onClick={() => setOpenId(p.id)} className="py-3 opacity-80">
+                  <div className="flex items-center gap-3">
+                    <SlaveHead person={p} size={42} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13.5px]">{p.name} <span className="text-[11px] dim font-mono">{p.age}</span></div>
+                      <div className="text-[11.5px] dim truncate">{p.exit_note ? `${p.exit_note} · ` : ""}week {p.exit_week}</div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
         </>) },
         { id: "menials", label: "Menials", badge: save.menials?.owned ? save.menials.owned.toLocaleString() : undefined, render: () => <MenialsPanel /> },
@@ -162,7 +190,7 @@ function RosterCard({ p, onOpen, onWith }: { p: Person; onOpen: () => void; onWi
           <div className="flex items-baseline gap-2">
             <span className="text-[14px]">{p.name}</span>
             <span className="text-[11px] dim font-mono">{p.age} · {p.origin.nationality}</span>
-            {isKeeper(save, p) ? <Chip tone="good">owns you</Chip> : null}
+            {isKeeper(save, p) ? <Chip tone="good">owns you</Chip> : p.status === "free" ? <Chip tone="good">free</Chip> : null}
             {p.status === "indentured" ? <Chip>indentured {p.indenture_weeks}w</Chip> : null}
             {p.age < 18 ? <Chip>child</Chip> : null}
             {p.romance && p.romance.standing !== "property" && !isKeeper(save, p) ? <Chip on>{RUNG_BY_ID[p.romance.standing].name.toLowerCase()}</Chip> : null}
@@ -206,7 +234,8 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
   const p = save.people[id];
   const r = read(p, save.memory[id]);
   const mem = save.memory[id];
-  const mine = isKeeper(save, p);
+  // Not yours to assign, dress or operate on: she owns you, or she is free.
+  const mine = isKeeper(save, p) || p.status === "free";
 
   return (
     <div>
@@ -235,7 +264,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
         <Chip on>{band(p.psyche)}</Chip>
         {p.womb.fetuses.length ? <Chip>{p.womb.weeks}w pregnant</Chip> : null}
         {p.body.lactation ? <Chip>lactating</Chip> : null}
-        <span className="ml-auto text-[11px] dim font-mono">owned {p.economics.weeks_owned}w</span>
+        <span className="ml-auto text-[11px] dim font-mono">{p.status === "free" ? `free since week ${p.exit_week ?? "?"}` : `owned ${p.economics.weeks_owned}w`}</span>
         {getLocalImage() ? (
           <>
             <Button size="sm" kind="ghost" disabled={painting} onClick={async () => {
@@ -293,10 +322,10 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
       ) : null}
 
       <div className="flex gap-2 mb-4">
-        {p.age >= 18 ? <Button kind="primary" className="flex-1" onClick={onWith}>{mine ? "Go to her" : "Be with her"}</Button> : null}
+        {p.age >= 18 && (inHousehold(save, p) || isPartner(save, p)) ? <Button kind="primary" className="flex-1" onClick={onWith}>{isKeeper(save, p) ? "Go to her" : "Be with her"}</Button> : null}
         {mine ? null : <Button className="flex-1" onClick={onDress}>Dress her</Button>}
       </div>
-      {mine ? <div className="text-[12px] dim -mt-2 mb-4">She owns you. You can go to her, ask her things and see how she is; what she wears, where she works and what's done to her body are hers to decide.</div> : null}
+      {mine ? <div className="text-[12px] dim -mt-2 mb-4">{isKeeper(save, p) ? "She owns you." : isPartner(save, p) ? "She's free, and your equal." : "She's free now."} You can {isKeeper(save, p) ? "go to" : "be with"} her, ask her things and see how she is; what she wears, where she works and what's done to her body are hers to decide.</div> : null}
 
       <div className="flex flex-wrap gap-1 mb-4">
         {(([["read", "how she is"], ["her", "you and her"], ["body", "body"], ["theatre", "surgery"], ["work", "work"], ["history", "history"]] as const).filter(([t]) => !mine || !["theatre", "work"].includes(t))).map(([t, label]) => (
