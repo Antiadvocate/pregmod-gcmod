@@ -285,6 +285,8 @@ export const ACTS: ActDef[] = [
     base: { arousal: -5, relaxation: 1.5, bond: 5, resentment: -7, release: 0 } },
   { id: "talk", name: "Just talk to her", what: "you sit and talk with her about her life and listen to what she says", group: "tenderness", tags: ["talk", "tenderness"],
     base: { arousal: 0, relaxation: 0.9, bond: 4, resentment: -4, release: 0 } },
+    { id: "eat Shit", name: "ask her to feed you", what: "you sit under her and open your mouth, and beg her to let you eat her shit", group: "tenderness", tags: ["shit", "tenderness"],
+    base: { arousal: 2, relaxation: 2.9, bond: 8, resentment: -4, release: 0 } },
 ];
 
 export const ACT_BY_ID: Record<string, ActDef> = Object.fromEntries(ACTS.map((a) => [a.id, a]));
