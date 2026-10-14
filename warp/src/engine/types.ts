@@ -948,6 +948,8 @@ export interface Player {
   /** Career before the arcology; sets starting skills and how citizens read you. */
   career: string;
   skills: Record<string, number>;
+  /** How the player describes themselves, for the narrator. Wins over what's read from the record. See engine/self. */
+  self?: string;
   /** A course of study you paid for, while it runs. See engine/player. */
   training?: { skill: string; tier: import("./player").Tier; left: number; gain: number };
   /** Reputation with your own household, as opposed to the city: what your slaves believe about

@@ -3,6 +3,7 @@
 import { useGame } from "../lib/game";
 import { Button, Card, Field, Meter, Section, Stat, cx } from "../lib/ui";
 import { genderWord } from "../engine/you";
+import { selfProfile } from "../engine/self";
 import { buyTraining, householdRead, PLAYER_SKILLS, TIERS, trainingCost, type Tier } from "../engine/player";
 import { useState } from "react";
 import { unrest } from "../engine/security";
@@ -58,6 +59,10 @@ export default function You() {
               onChange={(e) => mutate((s) => { s.player.body.appearance_facts = e.target.value; })} />
           </Field>
         </Card>
+      </Section>
+
+      <Section title="Who you are">
+        <WhoYouAre />
       </Section>
 
       <Section title="Standing orders">
@@ -135,6 +140,22 @@ function Skills() {
         ))}
       </div>
       <div className="text-[11px] dim mt-3">Tap a skill to pay for training. You also get better at each by doing it.</div>
+    </Card>
+  );
+}
+
+/** What the narrator reads about your character: your own words, and what your record says. */
+function WhoYouAre() {
+  const { save, mutate } = useGame();
+  const read = selfProfile({ ...save, player: { ...save.player, self: "" } });
+  return (
+    <Card>
+      <Field label="In your own words" hint="How you are with people, how you talk, what you're like with the ones you defer to. Every scene writes you this way; it wins over the record below.">
+        <textarea rows={3} value={save.player.self ?? ""} placeholder="e.g. Quiet and courteous with everyone. Generous with the household. With Sabine I'm hers: I ask permission and I mean it."
+          onChange={(e) => mutate((s) => { s.player.self = e.target.value || undefined; })} />
+      </Field>
+      <div className="text-[11px] uppercase tracking-wider dim mt-3 mb-1">What your record tells the narrator</div>
+      <ul className="space-y-1">{read.map((l, i) => <li key={i} className="text-[12.5px] mid flex gap-2"><span className="acc">·</span><span>{l}</span></li>)}</ul>
     </Card>
   );
 }

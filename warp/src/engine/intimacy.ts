@@ -298,6 +298,7 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
       ? `WHO DOES WHAT: ${p.name} is the active one here; she does this to you.`
       : `WHO DOES WHAT: you do this to ${p.name}, or have her do it for you, exactly as described above.`);
   lines.push(`Her genitals and feet are on her card under BETWEEN HER LEGS and FEET. Use exactly what is there.`);
+  lines.push(`Write the owner doing it in their own manner (WHO THE OWNER IS), and her as the power between you really stands (THE POWER BETWEEN YOU on her card): however she takes it, an owned slave shows it the way a slave would, not by telling her owner off.`);
   lines.push(`Write this act happening with ${p.name}, from start to finish. It is the whole scene. Do not write a scene about something else.`);
   lines.push(``);
   lines.push(`## HOW SHE TAKES IT (decided by the game; write it this way)`);

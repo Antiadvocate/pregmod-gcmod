@@ -15,6 +15,7 @@ import type { SaveState } from "../engine/types";
 import { putSave } from "../store";
 import { setOwnerContext } from "../llm";
 import { ownerLine, settlePronouns } from "../engine/you";
+import { selfBrief } from "../engine/self";
 
 interface Ctx {
   save: SaveState;
@@ -30,7 +31,7 @@ export function GameProvider({ initial, children }: { initial: SaveState; childr
   const ref = useRef<SaveState>(initial);
   const [rev, setRev] = useState(0);
   // Every model call is told who the owner is, from whatever the save says now.
-  useMemo(() => { settlePronouns(ref.current); setOwnerContext(ownerLine(ref.current)); }, [rev]);
+  useMemo(() => { settlePronouns(ref.current); setOwnerContext(`${ownerLine(ref.current)}\n\n${selfBrief(ref.current)}`); }, [rev]);
   const timer = useRef<number | undefined>(undefined);
 
   const persist = useCallback(() => {

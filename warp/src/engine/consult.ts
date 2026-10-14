@@ -11,6 +11,7 @@
  * deliberate: a channel where you can ask a woman what she thinks without it becoming an event is
  * a different and much more useful thing than another scene, and the genre has never had one.
  */
+import { powerBetween } from "./self";
 import { mannerLines } from "./manner";
 import { genomeBrief } from "./genome";
 import type { Person, SaveState } from "./types";
@@ -65,9 +66,10 @@ export async function askHer(s: SaveState, personId: string, question: string): 
       `WHAT YOU CARE ABOUT: ${p.persona.values.join("; ")}`,
       p.persona.texture.length ? `LIKES AND DISLIKES: ${p.persona.texture.join("; ")}` : "",
       `HOW YOU ARE RIGHT NOW: ${condition(p)}, ${p.psyche.mood}.${p.psyche.active_states.length ? ` You are holding: ${p.psyche.active_states.join(", ")}.` : ""}`,
-      `HOW OPEN YOU ARE WITH HIM: ${openness(s, p)}`,
+      `HOW OPEN YOU ARE WITH THE OWNER: ${openness(s, p)}`,
       mannerLines(p).length ? `HOW YOU ARE WITH PARTICULAR PEOPLE (this is settled; if you talk about them, it shows): ${mannerLines(p).join("; ")}` : "",
-      `WHERE YOU STAND WITH HIM: ${rom.standing}.`,
+      `WHERE YOU STAND WITH THE OWNER: ${rom.standing}.`,
+      powerBetween(s, p).replace(/^THE POWER BETWEEN YOU: /, "THE POWER BETWEEN YOU AND THE OWNER (\"you\" below is the owner, \"she\" is you): "),
       `YOUR JOB: ${p.assignment}${p.facility ? ` in the ${s.arcology.facilities[p.facility]?.name}` : ""}.`,
       relevant.length ? `WHAT YOU REMEMBER THAT BEARS ON THIS: ${relevant.map((m) => `${m.content} (week ${m.week})`).join(" | ")}` : "",
       mem?.beliefs.length ? `WHAT YOU HAVE CONCLUDED: ${mem.beliefs.map((b) => `"${b.text}"`).join(" ")}` : "",

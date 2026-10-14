@@ -20,6 +20,7 @@
  * Nudity Ordinance does not ask to be dressed; a defiant one might, and knows what she is asking.
  * Granting that costs you standing, because your household broke your own law in front of people.
  */
+import { powerBetween } from "./self";
 import { mannerLines } from "./manner";
 import type { Person, SaveState } from "./types";
 import { ACT_BY_ID, FETISH_BY_ID } from "../data/intimacy";
@@ -577,6 +578,7 @@ export async function voiceAsk(s: SaveState, ask: Ask): Promise<string> {
       flaw ? `HER FLAW: ${flaw}` : "",
       `HOW SHE FEELS ABOUT HER OWNER: devotion ${Math.round(r.devotion)}, trust ${Math.round(r.trust)} (−100 to 100); ${Math.round(r.fragility * 100)}% of her obedience is fear.`,
       `HER STANDING WITH HER OWNER: ${rom.standing} (${Math.round(rom.dominion)}/100 say in the household).`,
+      powerBetween(s, p),
       `HOW SHE IS: ${p.bond.read.label}, mood ${p.psyche.mood}. Wearing ${p.clothes}.`,
       mannerLines(p).length ? `HOW SHE IS WITH PARTICULAR PEOPLE (if what she asks touches one of them, it shows): ${mannerLines(p).join("; ")}` : "",
       w.laws.length ? `LAWS OF THE ARCOLOGY: ${w.laws.map((l) => `the ${l.name}: ${l.text}${l.exempt ? " (the owner's household is exempt)" : ""}`).join(" | ")}` : "",

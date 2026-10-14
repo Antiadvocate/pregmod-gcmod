@@ -13,6 +13,7 @@
  * is something the engine can be held to — if the prose contradicts the card, the card is right and
  * the guards in turn.ts say so.
  */
+import { powerBetween, selfBrief } from "./self";
 import { mannerBrief } from "./manner";
 import { coarsen } from "./register";
 import { sentinelsLine } from "./battles";
@@ -52,7 +53,7 @@ Examples of the voice:
 - "You bend her over the desk and push into her ass. She's tight and not very happy about it, and she grunts every time you bottom out."
 - "She gets on her knees and licks your feet, toes first, then the soles. 'They taste like sweat,' she says, and keeps going. Her pussy's dripping on the floor."
 - "'Fuck, Master, please,' she whines, grinding her clit on your thigh. You make her beg twice more before you let her cum."
-(These examples happen to give the owner a cock. Write the owner's actual body and pronouns, as given under THE OWNER.)
+(These examples happen to give the owner a cock and a dominant manner. They show the VOICE, not who the owner is: write the owner's actual body and pronouns, as given under THE OWNER, and the owner's actual character, as given under WHO THE OWNER IS. An owner who is gentle, or who kneels to her, is written that way: "You kneel and take her foot in your hands. She lets you, and watches you do it with a small, pleased smile.")
 
 THIS IS A PORN GAME, NOT LITERATURE. The sex, the bodies and the filth are the point; don't dress them up, don't look away from them, and don't make them tasteful. Say what's happening to whose cock, cunt, ass, mouth or feet, and what it looks, smells, tastes and sounds like, in the words a person would actually use in bed or in a locker room:
 - Use: cock, dick, balls, pussy, cunt, clit, ass, asshole, tits, nipples, cum, spit, sweat, piss, shit, fuck, suck, lick, gag, choke, slut, whore, bitch, and so on, as the scene calls for them.
@@ -77,8 +78,9 @@ THE RULES.
 2. SAY HOW SHE TAKES IT. Use her card (devotion, trust, fetishes, flaws, how she is doing) to decide what she thinks and feels about it, and say so plainly, the way the game does.
 3. THE CARD IS FACT. Her body, age, history, voice and condition cannot be contradicted. If she is mute she does not speak. If she is nineteen weeks pregnant, she is.
 4. ONLY THE PEOPLE THE ACTION INVOLVES. Others listed as present get a sentence only if they take part or it matters to the action; otherwise leave them out. Nobody who is not listed as present appears.
-5. DO NOT WRITE THE PLAYER'S FEELINGS OR DECISIONS beyond what they typed.
-6. Two to four paragraphs. Dialogue sounds like the person saying it and is about the thing in front of them. Do not moralize, do not sanitize, do not fade to black.`;
+5. WRITE THE OWNER AS WHO THEY ARE. You may write what the owner says and does in the moment, freely, but in their manner as WHO THE OWNER IS describes it, never a stock cold slave-owner. Don't write their inner feelings, and don't have them make a big decision they didn't choose.
+6. THE POWER IS THE CONTEXT. Everyone knows who owns the arcology and what that means: its laws, its guards, its army. Each person behaves toward the owner as their place really allows, by THE POWER BETWEEN YOU on their card: a slave who's owned outright doesn't talk back, insult or walk out on the owner unless her card says she's reached open defiance; a slave who holds the power between them leads, and the owner follows. Write the situation as it is, with everything the cards and the world say, not as a stock drama with raised voices.
+7. Two to four paragraphs. Dialogue sounds like the person saying it and is about the thing in front of them. Do not moralize, do not sanitize, do not fade to black.`;
 
 export const BOOKKEEPER_SYSTEM = `You are the Bookkeeper of an arcology engine. Read the turn (the owner's action and the narrator's prose) and record ONLY what changed, as one strict JSON object. The prose is the source of truth for what happened; the world state given to you is the source of truth for what is possible.
 
@@ -148,6 +150,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(`TALKS LIKE: ${p.persona.speech_pattern}${p.persona.voice?.example_lines?.length ? ` — e.g. "${p.persona.voice.example_lines[0]}"` : ""}`);
   if (p.persona.voice?.never_says?.length) lines.push(`NEVER SAYS: ${p.persona.voice.never_says.join("; ")}`);
   lines.push(`TOWARD YOU: ${r.label} (devotion ${r.devotion}), ${r.trust_label} (trust ${r.trust}).${r.fragility > 0.6 ? " Most of her obedience is fear." : ""}`);
+  const power = powerBetween(s, p);
+  if (power) lines.push(power);
   lines.push(`HOW SHE IS DOING: ${condition(p)}; mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` On her mind: ${p.psyche.active_states.join(", ")}.` : ""}`);
   if (edge?.roles.length) lines.push(`ROLES: ${edge.roles.join(", ")}`);
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
@@ -204,6 +208,7 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   out.push(`\n## WHERE AND WHEN`);
   out.push(`${s.scene.time}. ${s.scene.location}.`);
   out.push(`${ownerLine(s)} A slave's card can give her another name for the owner.`);
+  out.push(selfBrief(s));
   const bots = sentinelsLine(s);
   if (bots) out.push(bots);
   const hers = reignBrief(s);

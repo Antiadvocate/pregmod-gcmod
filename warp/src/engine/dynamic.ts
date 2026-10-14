@@ -20,6 +20,7 @@
  * it likes about what is happening in the room and it still cannot invent a state change, break an
  * invariant, reach a person it was not given, or touch anybody the age gate excludes.
  */
+import { powerBetween } from "./self";
 import { coarsen, REGISTER_TAIL } from "./register";
 import { memoryLine } from "./memory";
 import { agreementsBrief, calledBy } from "./agreements";
@@ -99,6 +100,7 @@ function dossier(s: SaveState, p: Person): string {
     `ANATOMY (hard rule): ${anatomyLock(p)}`,
     agreementsBrief(s, p),
     mannerBrief(s, p),
+    powerBetween(s, p),
     `SHE CALLS YOU: ${calledBy(s, p)}.`,
     `FEET: ${describeFeet(p)}`,
     p.womb.fetuses.length ? `${p.womb.weeks} weeks pregnant.` : "",
