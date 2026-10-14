@@ -16,6 +16,8 @@
  * afterwards to work out what must have happened, which is how the old end-of-week text and the
  * old budget screen ended up describing two different weeks.
  */
+import { occupants } from "./places";
+import { PLACE_BY_ID } from "../data/places";
 import { lawPulse } from "./lawlife";
 import { tickHousehold } from "./household";
 import { tickBattles } from "./battles";
@@ -377,6 +379,10 @@ export function endWeek(s: SaveState): WeekReport {
   arc.cash += led.cash;
   arc.rep = Math.max(0, arc.rep + led.rep);
   arc.week++;
+  // A new week starts somewhere new. Whatever room the last scene ended in, a week has gone by
+  // since: Monday morning, the penthouse, whoever works there.
+  s.scene = { ...s.scene, location: PLACE_BY_ID.penthouse.name, time: `Week ${arc.week}, Monday 09:00`,
+    present: occupants(s, PLACE_BY_ID.penthouse).map((p) => p.id), present_prev: [], arrivals_pending: [], departures_pending: [] };
 
   s.market = rollMarkets(s);
   // What the household wants from you this week. Two, at most, and the ones with the most standing

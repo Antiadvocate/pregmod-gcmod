@@ -14,7 +14,7 @@
  */
 import { inventsLaw } from "./lawguard";
 import { dedupeLines } from "./memory";
-import type { PendingEvent, Person, SaveState } from "./types";
+import type { Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { applyTreatment, refresh, type Treatment } from "./obedience";
@@ -249,9 +249,11 @@ export const CONSEQUENCE_SYSTEM = `You read a finished scene from Free Cities, a
  "witnesses":["names of other people who were there, if any"],
  "her_memory":"one sentence, in her own first person (I, me, my), with the player as 'the owner', what she will remember, with who did what to whom exactly as the scene had it: if the owner served her, the owner is the one serving",
  "lasting_fact":"one sentence that is now true of the world because of this, or empty",
- "follow_up":{"weeks":2,"situation":"2-4 sentences, present tense: something that happens later BECAUSE of this scene, ending where the player has to decide","options":[{"label":"what the player does, 2-8 words","effect":"one EFFECT id","value":"optional"}]}}
+ "follow_up":{"weeks":2,"situation":"2-4 sentences, present tense: something that happens that many weeks later BECAUSE of this scene, ending where the player has to decide","options":[{"label":"what the player does, 2-8 words","effect":"one EFFECT id","value":"optional"}]}}
 
-In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to and serve their slaves; never swap who served whom. Only tag what actually happened in the scene. Tag the player's actions, not what they considered. public is true only if citizens, guests or other slaves saw it or will obviously hear. Write the summary, memory and follow-up in plain crude words (cock, pussy, ass, cum, fuck, piss…), never euphemisms or flowery phrasing. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.`;
+In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to and serve their slaves; never swap who served whom. Only tag what actually happened in the scene. Tag the player's actions, not what they considered. public is true only if citizens, guests or other slaves saw it or will obviously hear. Write the summary, memory and follow-up in plain crude words (cock, pussy, ass, cum, fuck, piss…), never euphemisms or flowery phrasing. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.
+
+Each turn of the game is a week. The follow-up happens "weeks" weeks after the scene (1 to 8), not straight after it: the scene is over, the people in it have gone back to their lives, and what happened has had that long to sink in. Write where things stand THEN: what it changed, what she has done about it since, what people have said. Set it somewhere and at a time that fits that later day; do not put it back in the scene's room, mid-act, or the same night. Only if the scene itself sets up something for the very next day (a promise for tomorrow morning, an appointment, a hangover) use "weeks":0 and write it as the next day.`;
 
 /** For reading the consequences: everything the player said (that's what the deed is made of),
  *  and the prose only from the last few beats. */
@@ -331,10 +333,13 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
   const fu = r.follow_up;
   const options = (fu?.options ?? []).filter((o) => o?.label && o.effect && DYNAMIC_EFFECTS[String(o.effect)]).slice(0, 4)
     .map((o) => ({ label: String(o.label).slice(0, 70), effect: String(o.effect), value: o.value }));
-  if (fu?.situation && options.length >= 2) deed.follow = { due: s.arcology.week + clamp(Math.round(Number(fu.weeks) || 2), 1, 8), situation: String(fu.situation).slice(0, 900), options };
+  // 0 is the next day and comes up now; otherwise a week is a turn, and it waits that long.
+  const wait = Number(fu?.weeks);
+  if (fu?.situation && options.length >= 2) deed.follow = { due: s.arcology.week + clamp(Number.isFinite(wait) ? Math.round(wait) : 2, 0, 8), situation: String(fu.situation).slice(0, 900), options };
 
   applyDeed(s, deed, r.her_memory);
   m.concluded = deed.id;
+  if (deed.follow && deed.follow.due <= s.arcology.week) fireFollow(s, deed);
   return deed;
 }
 
@@ -403,7 +408,7 @@ export function applyDeed(s: SaveState, deed: Deed, herMemory?: string): void {
       deed.follow = { due: s.arcology.week + e.after[0] + (deedsOf(s).length % (span + 1)), situation: e.situation(s, deed, p), options: e.options };
     }
   }
-  if (deed.follow) out.push(`something will come of this in ${deed.follow.due - s.arcology.week} week${deed.follow.due - s.arcology.week === 1 ? "" : "s"}`);
+  if (deed.follow) { const n = deed.follow.due - s.arcology.week; out.push(n <= 0 ? "something comes of this the next day" : `something will come of this in ${n} week${n === 1 ? "" : "s"}`); }
   if (p) refresh(p, s.memory[p.id]);
   deed.effects = out;
   deedsOf(s).push(deed);
@@ -416,20 +421,32 @@ export function tickDeeds(s: SaveState): { text: string; person?: string }[] {
   for (const d of deedsOf(s)) {
     const f = d.follow;
     if (!f || f.fired || f.due > s.arcology.week) continue;
-    const p = d.person ? s.people[d.person] : undefined;
-    // She has to still be here for it to be about her.
-    if (d.person && (!p || (p.status !== "owned" && p.status !== "indentured" && p.status !== "free"))) { f.fired = true; continue; }
-    f.fired = true;
-    const e: PendingEvent = {
-      id: `echo-${d.id}`, kind: "dynamic", person: d.person,
-      seed: f.situation,
-      options: f.options.map((o, i) => ({ id: `d${i}:${o.effect}:${o.value ?? ""}`, label: o.label, note: DYNAMIC_EFFECTS[o.effect]?.note })),
-      week: s.arcology.week, severity: d.tags.includes("owner_enslaved") || d.tags.includes("cruelty") ? "major" : "notable",
-    };
-    s.events.push(e);
-    out.push({ text: `What you did in week ${d.week} comes back: ${d.summary}`, person: d.person });
+    if (fireFollow(s, d)) out.push({ text: `What you did in week ${d.week} comes back: ${d.summary}`, person: d.person });
   }
   return out;
+}
+
+/** Put a deed's follow-up on the table as an event. False if she's gone and it no longer can be. */
+function fireFollow(s: SaveState, d: Deed): boolean {
+  const f = d.follow;
+  if (!f || f.fired) return false;
+  f.fired = true;
+  const p = d.person ? s.people[d.person] : undefined;
+  // She has to still be here for it to be about her.
+  if (d.person && (!p || (p.status !== "owned" && p.status !== "indentured" && p.status !== "free"))) return false;
+  s.events.push({
+    id: `echo-${d.id}`, kind: "dynamic", person: d.person,
+    seed: f.situation,
+    options: f.options.map((o, i) => ({ id: `d${i}:${o.effect}:${o.value ?? ""}`, label: o.label, note: DYNAMIC_EFFECTS[o.effect]?.note })),
+    week: s.arcology.week, severity: d.tags.includes("owner_enslaved") || d.tags.includes("cruelty") ? "major" : "notable",
+  });
+  return true;
+}
+
+/** How long ago, in the game's weeks: each turn is one. */
+export function weeksAgo(week: number, now: number): string {
+  const n = now - week;
+  return n <= 0 ? "this week" : n === 1 ? "last week" : `${n} weeks ago`;
 }
 
 /** For the narrator: the things people in the arcology remember you doing. */
@@ -438,5 +455,5 @@ export function deedsBrief(s: SaveState, personId?: string): string {
   if (!list.length) return "";
   const weighty = list.filter((d) => d.public || d.tags.length >= 2 || d.tags.some((t) => ["owner_enslaved", "freed_her", "married_her", "cruelty", "promise_broken"].includes(t)));
   const pick = [...new Set([...weighty.slice(-6), ...list.slice(-4)])].slice(-8);
-  return dedupeLines(pick.filter((d) => !inventsLaw(s, d.summary)).map((d) => `week ${d.week}: ${d.summary}${d.where ? ` (on a walk through ${d.where === "concourse" ? "the concourse" : `the ${d.where} district`}; the people and places in it belong there)` : ""}${d.public ? " (everyone knows)" : ""}`)).map((l) => `· ${l}`).join("\n");
+  return dedupeLines(pick.filter((d) => !inventsLaw(s, d.summary)).map((d) => `week ${d.week} (${weeksAgo(d.week, s.arcology.week)}): ${d.summary}${d.where ? ` (on a walk through ${d.where === "concourse" ? "the concourse" : `the ${d.where} district`}; the people and places in it belong there)` : ""}${d.public ? " (everyone knows)" : ""}`)).map((l) => `· ${l}`).join("\n");
 }

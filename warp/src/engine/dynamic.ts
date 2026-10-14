@@ -109,11 +109,11 @@ function dossier(s: SaveState, p: Person): string {
     `TALKS LIKE: ${p.persona.speech_pattern}`,
     `TRAITS: ${p.persona.core_traits.join("; ")}`,
     p.persona.texture.length ? `LIKES AND DISLIKES: ${p.persona.texture.join("; ")}` : "",
-    mem?.episodic.length ? `SHE REMEMBERS: ${mem.episodic.slice(-5).map(memoryLine).join(" | ")}` : "",
+    mem?.episodic.length ? `SHE REMEMBERS (past weeks): ${mem.episodic.slice(-5).map(memoryLine).join(" | ")}` : "",
     p.acts && Object.keys(p.acts).length ? `WHAT HAS BEEN DONE TO HER: ${Object.entries(p.acts).map(([a, n]) => `${a} ×${n}`).join(", ")}` : "",
-    deedsBrief(s, p.id) ? `WHAT HAS HAPPENED BETWEEN YOU (build on this):\n${deedsBrief(s, p.id)}` : "",
+    deedsBrief(s, p.id) ? `WHAT HAS HAPPENED BETWEEN YOU (history, not the present: let it colour how she is now, never pick it back up):\n${deedsBrief(s, p.id)}` : "",
     s.world ? `THE WORLD: ${worldBrief(s).replace(/\n/g, " ")}` : "",
-    `THE PLACE: ${s.arcology.name}, week ${s.arcology.week}. ${Object.keys(s.arcology.doctrines).length ? `Its doctrine: ${Object.keys(s.arcology.doctrines).join(", ")}.` : "No doctrine adopted yet."}`,
+    `THE PLACE AND TIME: ${s.arcology.name}, now week ${s.arcology.week}. ${Object.keys(s.arcology.doctrines).length ? `Its doctrine: ${Object.keys(s.arcology.doctrines).join(", ")}.` : "No doctrine adopted yet."}`,
   ];
   return lines.filter(Boolean).join("\n");
 }
@@ -127,7 +127,9 @@ Write plainly and crudely, like a porn game, not literature: cock, dick, pussy, 
 Output ONE strict JSON object and nothing else:
 {"situation":"2-4 sentences, present tense, ending where you have to decide","options":[{"label":"what you do, 2-6 words","note":"short plain consequence","effect":"one id from the list","value":"optional"}]}
 
-Three or four options, each a genuinely different response, at least one of which is to leave it alone.`;
+Three or four options, each a genuinely different response, at least one of which is to leave it alone.
+
+It is now the week named under THE PLACE AND TIME, and each turn of the game is a week. Everything on her record happened in earlier weeks and is over: do not continue it, restage it, or set this in the same place and moment as any of it. This is something new, happening now. The past shows only as what it left behind: how she acts differently, what she wants now, what people say.`;
 
 function effectList(): string {
   return Object.entries(DYNAMIC_EFFECTS).map(([id, e]) => `${id} — ${e.note}`).join("\n");

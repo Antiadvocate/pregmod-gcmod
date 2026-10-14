@@ -149,7 +149,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (edge?.roles.length) lines.push(`ROLES: ${edge.roles.join(", ")}`);
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
   const between = deedsBrief(s, p.id);
-  if (between) lines.push(`BETWEEN YOU AND HER (these happened; she has not forgotten):\n${between}`);
+  if (between) lines.push(`BETWEEN YOU AND HER (these happened in earlier weeks and are over; she has not forgotten):\n${between}`);
   if (s.player.owned_by === p.id) lines.push(reignCard(s, p) || `SHE OWNS YOU: you gave yourself to her. She holds your collar and acts like it.`);
   else if (s.reign && theKeeper(s) && s.reign.keeper !== p.id) lines.push(householdUnderHer(s, p));
   const others = othersBrief(s, p);
@@ -239,8 +239,10 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   // are one line with a count, not ten lines the model reads every turn.
   const recent = s.history.slice(-Math.max(2, s.models.history_window));
   if (recent.length) {
-    out.push(`\n## EARLIER (for continuity; do not repeat)`);
     const last = recent.at(-1)!;
+    // Each turn of the game is a week. A scene from a week that has ended is history, not where we are.
+    const over = last.week < s.arcology.week;
+    out.push(`\n## EARLIER (for continuity; do not repeat)${over ? `\nIt is week ${s.arcology.week} now. Everything below happened in earlier weeks and is over: don't pick it back up or start in the place it ended. Start from WHERE AND WHEN.` : ""}`);
     const older = dedupeLines(recent.slice(0, -1).map((h) => `[wk ${h.week}] ${h.summary}`));
     out.push(...older);
     out.push(`[wk ${last.week}] ${last.action ? `owner: ${last.action}\n` : ""}${last.summary}`);

@@ -49,3 +49,32 @@ import { isRefusal } from "../src/llm.ts";
   check("an apology refusal is caught", isRefusal("I'm sorry, but I can't continue this scene."));
   check("a scene is not a refusal", !isRefusal("Halyna kneels at the foot of the bed. \"I can't,\" she whispers, and then she does."));
 }
+
+import { applyDeed, deedsBrief, tickDeeds, weeksAgo } from "../src/engine/deeds.ts";
+{
+  // Each turn is a week: the last scene's room doesn't follow you into the next one.
+  const s = newGame({ seed: "moments-week", starting_slaves: 3 } as never);
+  const her = Object.values(s.people).find((p) => p.status === "owned")!;
+  s.scene.location = "the pool";
+  s.scene.time = `Week ${s.arcology.week}, Saturday 23:10`;
+  s.scene.arrivals_pending = [her.id];
+  const was = s.arcology.week;
+  endWeek(s);
+  check("a new week starts back in the penthouse", s.scene.location === "the penthouse", s.scene.location);
+  check("on the new week's Monday morning", s.scene.time === `Week ${was + 1}, Monday 09:00`, s.scene.time);
+  check("with nobody still walking in from last week", s.scene.arrivals_pending.length === 0);
+
+  check("weeks are counted back from now", weeksAgo(4, 4) === "this week" && weeksAgo(3, 4) === "last week" && weeksAgo(1, 4) === "3 weeks ago");
+  applyDeed(s, { id: "deed-test", week: s.arcology.week - 2, person: her.id, summary: `You swam with ${her.name} at the pool.`, tags: [], public: false, witnesses: [], effects: [], source: "test" });
+  check("the narrator is told how long ago it was", deedsBrief(s, her.id).includes("2 weeks ago"), deedsBrief(s, her.id));
+
+  // A follow-up comes up when it's due, and not before.
+  const d = { id: "deed-later", week: s.arcology.week, person: her.id, summary: "x", tags: [], public: false, witnesses: [], effects: [], source: "test",
+    follow: { due: s.arcology.week + 2, situation: "Two weeks on, she brings it up.", options: [{ label: "Listen", effect: "kindness" }, { label: "Leave it", effect: "nothing" }] } };
+  applyDeed(s, d);
+  tickDeeds(s);
+  check("a follow-up waits its weeks", !s.events.some((e) => e.id === "echo-deed-later"));
+  s.arcology.week += 2;
+  tickDeeds(s);
+  check("and then comes up", s.events.some((e) => e.id === "echo-deed-later"));
+}
