@@ -3,7 +3,8 @@
 import { useGame } from "../lib/game";
 import { Button, Card, Field, Meter, Section, Stat, cx } from "../lib/ui";
 import { genderWord } from "../engine/you";
-import { householdRead, PLAYER_SKILLS } from "../engine/player";
+import { buyTraining, householdRead, PLAYER_SKILLS, TIERS, trainingCost, type Tier } from "../engine/player";
+import { useState } from "react";
 import { unrest } from "../engine/security";
 import { read } from "../engine/obedience";
 import YourBody from "./YourBody";
@@ -68,16 +69,7 @@ export default function You() {
       </Section>
 
       <Section title="What you are good at">
-        <Card>
-          <div className="space-y-3">
-            {PLAYER_SKILLS.map((sk) => (
-              <div key={sk.id}>
-                <Meter value={save.player.skills[sk.id] ?? 0} label={sk.name} />
-                <div className="text-[11px] dim mt-0.5">{sk.does}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
+        <Skills />
       </Section>
 
       <Section title="How reserved you are">
@@ -105,5 +97,44 @@ export default function You() {
         </div>
       </Section>
     </>
+  );
+}
+
+/** Your skills, what each one does, and money for getting better at them faster than practice. */
+function Skills() {
+  const { save, mutate } = useGame();
+  const [open, setOpen] = useState<string | null>(null);
+  const [said, setSaid] = useState("");
+  const t = save.player.training;
+  return (
+    <Card>
+      {t ? <div className="text-[12.5px] acc mb-3">{TIERS[t.tier].name} in {PLAYER_SKILLS.find((x) => x.id === t.skill)?.name.toLowerCase()}: {t.left} week{t.left === 1 ? "" : "s"} to go.</div> : null}
+      {said ? <div className="text-[12.5px] mid mb-3">{said}</div> : null}
+      <div className="space-y-3">
+        {PLAYER_SKILLS.map((sk) => (
+          <div key={sk.id}>
+            <button className="w-full text-left" onClick={() => setOpen(open === sk.id ? null : sk.id)}>
+              <Meter value={save.player.skills[sk.id] ?? 0} label={`${sk.name} · ${Math.round(save.player.skills[sk.id] ?? 0)}`} />
+            </button>
+            <div className="text-[11px] dim mt-0.5">{sk.does}</div>
+            {open === sk.id ? (
+              <div className="mt-2 space-y-1.5 fade-in">
+                {(Object.keys(TIERS) as Tier[]).map((tier) => {
+                  const cost = trainingCost(save, sk.id, tier);
+                  const busy = !!TIERS[tier].weeks && !!t;
+                  return (
+                    <button key={tier} className="choice" disabled={busy || save.arcology.cash < cost} onClick={() => { let r = { ok: false, line: "" }; mutate((s) => { r = buyTraining(s, sk.id, tier); }); setSaid(r.line); setOpen(null); }}>
+                      <span className="block text-[13.5px] leading-snug">{TIERS[tier].name} · ¤{cost.toLocaleString()}{TIERS[tier].weeks ? ` · ${TIERS[tier].weeks} weeks` : " · today"}</span>
+                      <span className="block text-[11.5px] dim mt-0.5">{TIERS[tier].note} About +{TIERS[tier].gain}, less the better you already are.</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      <div className="text-[11px] dim mt-3">Tap a skill to pay for training. You also get better at each by doing it.</div>
+    </Card>
   );
 }

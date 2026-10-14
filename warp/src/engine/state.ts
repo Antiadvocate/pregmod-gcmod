@@ -146,7 +146,7 @@ export function newGame(opts: NewGameOptions = {}): SaveState {
       title: "owner",
       body: { appearance_facts: "ordinary-looking, in expensive but plain clothes" },
       career: opts.player_career ?? "trader",
-      skills: { trading: 35, hacking: 15, slaving: 25, engineering: 15, medicine: 10 },
+      skills: { trading: 35, hacking: 15, slaving: 25, engineering: 15, medicine: 10, command: 10, diplomacy: 15 },
       household_read: { feared: 0, trusted: 0, label: "nobody in particular" },
     },
     scene: {

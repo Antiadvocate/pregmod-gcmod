@@ -20,6 +20,7 @@
  * whether the raid reaches the residential ring. A yield nobody can feel is a yield that should
  * not exist.
  */
+import { skill } from "./player";
 import { housingFromWorks } from "./works";
 import type { ReportLine, SaveState } from "./types";
 import { DISTRICT_BY_KIND, DISTRICTS, REGIONS, REGION_BY_ID, RINGS, type DistrictDef, type DistrictKind } from "../data/districts";
@@ -233,7 +234,7 @@ export function openRoute(s: SaveState, regionId: string): { ok: boolean; why?: 
  *  plus mercenaries, plus the security you have bought. */
 export function militaryStrength(s: SaveState): number {
   const y = cityYield(s);
-  return y.arms + (s.arcology.mercenaries.hired ? 30 + s.arcology.mercenaries.strength * 0.4 : 0) + s.arcology.security * 0.25;
+  return (y.arms + (s.arcology.mercenaries.hired ? 30 + s.arcology.mercenaries.strength * 0.4 : 0) + s.arcology.security * 0.25) * skill.command(s);
 }
 
 export function annexCost(s: SaveState, neighbourId: string): number {

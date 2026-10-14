@@ -9,6 +9,7 @@
  * An arcology owner who solves everything with drones discovers this the week the drones are
  * pointing outward and the problem is upstairs.
  */
+import { skill } from "./player";
 import type { Person, ReportLine, SaveState } from "./types";
 import { clamp, shove } from "./psyche";
 import { read } from "./obedience";
@@ -83,7 +84,7 @@ export function tickSecurity(s: SaveState): SecurityWeek {
   /* ── the neighbours ───────────────────────────────────────────────────────────────────────── */
   for (const n of arc.neighbours) {
     if (n.scheme) {
-      n.scheme.progress += 8 + Math.max(0, -n.attitude) / 12;
+      n.scheme.progress += (8 + Math.max(0, -n.attitude) / 12) * (n.scheme.kind === "cyber" || n.scheme.kind === "influence" ? skill.counterIntel(s) : 1);
       if (n.scheme.progress >= 100) {
         switch (n.scheme.kind) {
           case "embargo":

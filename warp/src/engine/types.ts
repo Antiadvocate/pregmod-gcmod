@@ -946,6 +946,8 @@ export interface Player {
   /** Career before the arcology; sets starting skills and how citizens read you. */
   career: string;
   skills: Record<string, number>;
+  /** A course of study you paid for, while it runs. See engine/player. */
+  training?: { skill: string; tier: import("./player").Tier; left: number; gain: number };
   /** Reputation with your own household, as opposed to the city: what your slaves believe about
    *  how you treat people, aggregated. Derived, cached here. */
   household_read: { feared: number; trusted: number; label: string };

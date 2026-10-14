@@ -46,7 +46,7 @@ import { runHeadGirl, runManager, type ManagerEffect } from "./managers";
 import { tickPolicies } from "./policies";
 import { tickSecurity, unrest } from "./security";
 import { GARMENT_BY_NAME } from "../data/wardrobe";
-import { refreshPlayer, practise, skill } from "./player";
+import { refreshPlayer, practise, skill, tickTraining } from "./player";
 import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf, inHousehold } from "./romance";
 import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
@@ -338,6 +338,7 @@ export function endWeek(s: SaveState): WeekReport {
   for (const l of tickFCTV(s, led)) push(l, "neutral", 3);
   for (const l of tickBattles(s)) push(l, "bad", 12);
   for (const l of tickFreed(s)) push(l, "neutral", 4);
+  for (const l of tickTraining(s)) push(l, "good", 6);
 
   const arc = s.arcology;
   const staff = alive(s).length;
@@ -350,7 +351,7 @@ export function endWeek(s: SaveState): WeekReport {
   /* ── 5. the world reacts to the arcology ────────────────────────────────────────────────── */
   for (const n of arc.neighbours) {
     n.prosperity = clamp(n.prosperity + r.normal(0, 2), 10, 200);
-    n.attitude = clamp(n.attitude + (arc.prosperity > n.prosperity ? -1.2 : 0.6), -100, 100);
+    n.attitude = clamp(n.attitude + (arc.prosperity > n.prosperity ? -1.2 : 0.6) + skill.diplomacy(s) * 1.2, -100, 100);
   }
   for (const proj of [...arc.projects]) {
     proj.weeks_left--;

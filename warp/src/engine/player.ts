@@ -64,7 +64,9 @@ export const PLAYER_SKILLS: { id: string; name: string; does: string }[] = [
   { id: "slaving", name: "Slaving", does: "training goes faster, and you can judge slaves accurately on sight" },
   { id: "medicine", name: "Medicine", does: "procedures are safer and recovery is shorter" },
   { id: "engineering", name: "Engineering", does: "construction and upgrades cost less" },
-  { id: "hacking", name: "Hacking", does: "you see the neighbours' schemes earlier" },
+  { id: "hacking", name: "Hacking", does: "you see the neighbours' schemes, and their cyber attacks and sabotage move slower" },
+  { id: "command", name: "Command", does: "your forces fight harder: every point is half a percent on your military strength, in defence and at war" },
+  { id: "diplomacy", name: "Diplomacy", does: "other powers warm to you each week, and your envoys, treaties and ultimatums land better" },
 ];
 
 /** THE FIVE SKILLS, AND THE ONE PLACE EACH OF THEM IS READ.
@@ -85,7 +87,67 @@ export const skill = {
   engineering: (s: SaveState): number => clamp(1 - (s.player.skills.engineering ?? 0) / 400, 0.75, 1),
   /** views/Arcology — whether you can see what a neighbour is actually running at you. */
   hacking: (s: SaveState): boolean => (s.player.skills.hacking ?? 0) >= 30,
+  /** security.ts — how much slower their cyber attacks and sabotage come together. */
+  counterIntel: (s: SaveState): number => clamp(1 - (s.player.skills.hacking ?? 0) / 160, 0.4, 1),
+  /** city.ts militaryStrength, and engine/war — how much harder your forces fight under you. */
+  command: (s: SaveState): number => 1 + (s.player.skills.command ?? 0) / 200,
+  /** week.ts and engine/powers — the weekly warming, and how far an envoy moves them. */
+  diplomacy: (s: SaveState): number => (s.player.skills.diplomacy ?? 0) / 100,
 };
+
+/* ── buying it ───────────────────────────────────────────────────────────────────────────────── */
+
+/** Three ways to get better at something with money instead of years. */
+export type Tier = "tutor" | "course" | "implant";
+export const TIERS: Record<Tier, { name: string; note: string; base: number; weeks: number; gain: number }> = {
+  tutor: { name: "Private tutor", note: "The best in the world at it, flown in to teach you one to one. Some weeks of your evenings.", base: 15000, weeks: 3, gain: 8 },
+  course: { name: "Intensive immersion", note: "A month away at a war college, a diplomatic academy or a lab, with people who don't know who you are.", base: 60000, weeks: 4, gain: 18 },
+  implant: { name: "Neural augmentation", note: "A procedure most of the world can't buy. Done in a day; the knowledge is just there when you wake.", base: 300000, weeks: 0, gain: 25 },
+};
+
+/** What a tier costs you for a skill, at the level you're at: the last points are the dear ones. */
+export function trainingCost(s: SaveState, id: string, tier: Tier): number {
+  const now = s.player.skills[id] ?? 0;
+  return Math.round(TIERS[tier].base * (1 + now / 40));
+}
+
+export function training(s: SaveState): { skill: string; tier: Tier; left: number; gain: number } | undefined {
+  return s.player.training;
+}
+
+/** Pay for it. A tutor or course runs for weeks (one at a time); an implant is done now. */
+export function buyTraining(s: SaveState, id: string, tier: Tier): { ok: boolean; line: string } {
+  const sk = PLAYER_SKILLS.find((x) => x.id === id);
+  if (!sk) return { ok: false, line: "No such skill." };
+  const now = s.player.skills[id] ?? 0;
+  if (now >= 99) return { ok: false, line: `You're as good at ${sk.name.toLowerCase()} as anyone alive.` };
+  if (TIERS[tier].weeks && s.player.training) return { ok: false, line: "You're already in the middle of one; finish it first." };
+  const cost = trainingCost(s, id, tier);
+  if (s.arcology.cash < cost) return { ok: false, line: `That costs ¤${cost.toLocaleString()}.` };
+  s.arcology.cash -= cost;
+  const gain = TIERS[tier].gain;
+  if (!TIERS[tier].weeks) {
+    s.player.skills[id] = clamp(now + gain * (1 - now / 140), 0, 100);
+    s.arcology.rep += 100;
+    return { ok: true, line: `You go under for an afternoon. When you wake, ${sk.name.toLowerCase()} is simply there, as if you'd always known it. (${Math.round(now)} → ${Math.round(s.player.skills[id])})` };
+  }
+  s.player.training = { skill: id, tier, left: TIERS[tier].weeks, gain };
+  return { ok: true, line: `${TIERS[tier].name} in ${sk.name.toLowerCase()}: ${TIERS[tier].weeks} weeks.` };
+}
+
+/** Weekly: a running course comes a week closer to done. */
+export function tickTraining(s: SaveState): string[] {
+  const t = s.player.training;
+  if (!t) return [];
+  const per = t.gain / TIERS[t.tier].weeks;
+  const now = s.player.skills[t.skill] ?? 0;
+  s.player.skills[t.skill] = clamp(now + per * (1 - now / 140), 0, 100);
+  t.left--;
+  if (t.left > 0) return [];
+  delete s.player.training;
+  const name = PLAYER_SKILLS.find((x) => x.id === t.skill)?.name ?? t.skill;
+  return [`Your ${TIERS[t.tier].name.toLowerCase()} in ${name.toLowerCase()} is finished. You're at ${Math.round(s.player.skills[t.skill])}.`];
+}
 
 /** Practice. Capped at 100, and slower the better you get. */
 export function practise(s: SaveState, id: string, amount = 1): void {
