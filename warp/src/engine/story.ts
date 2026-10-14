@@ -214,7 +214,7 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 const money = (n: number) => `¤${Math.abs(Math.round(n)).toLocaleString()}`;
 
 export function ownedAdults(s: SaveState): Person[] {
-  return Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 18);
+  return Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured"));
 }
 
 export function ctxFor(s: SaveState, st: StoryState, arc: ArcRun): Ctx {
