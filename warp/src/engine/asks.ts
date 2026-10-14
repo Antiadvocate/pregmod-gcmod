@@ -364,7 +364,6 @@ export function generateAsk(s: SaveState, p: Person, world: AskWorld = askWorld(
   // She has to have enough standing to open her mouth at all.
   if (r.trust < 10 && r.devotion < 30) return null;
   if (p.psyche.state === "broken") return null;
-  if (p.age < 18) return null;
 
   type Cand = { kind: AskKind; key: string; payload: Ask["payload"]; vars?: Record<string, string>; cash?: number; gain: number; loss: number; weight: number; against?: Stance };
   const c: Cand[] = [];
