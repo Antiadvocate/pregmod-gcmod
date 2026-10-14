@@ -36,11 +36,11 @@ export function portraitPrompt(s: SaveState, p: Person, mode: "face" | "body"): 
   const looks = p.body.appearance_facts;
   const collar = p.collar && p.collar !== "none" ? ` She wears ${p.collar} around her neck.` : "";
   if (mode === "face") {
-    return `This image is a stylised illustration of a character from a video game. Redraw it as a single photorealistic head-and-shoulders portrait photograph of the same character as a real person: ${who}. Keep her face shape, skin tone, hair colour and style, and eye colour exactly as in the illustration. What is known about her: ${looks}.${collar}
+    return `This image is a stylised illustration of a character from a video game. Redraw it as a single photorealistic head-and-shoulders portrait photograph of the same character as a real person: ${who}. Keep her face shape, age, skin tone, hair colour and style, and eye colour exactly as in the illustration. What is known about her: ${looks}.${collar}
 Her expression: ${expressionFor(s, p)}.
 Framed from the collarbones up, bare shoulders or a plain dark top; real skin texture, natural soft light, shallow depth of field, a plain dark background. No text.`;
   }
-  return `This image is a stylised, non-photographic 3D-style character model from an adult video game. Redraw it as a single photorealistic full-length photograph of the same character as a real adult woman: ${who}. Keep the pose, the body shape and proportions, skin tone, hair, and anything she is wearing exactly as in the illustration. What is known about her: ${looks}.${collar}
+  return `This image is a stylised, non-photographic 3D-style character model from an adult video game. Redraw it as a single photorealistic full-length photograph of the same character as a real adult woman: ${who}. Keep the pose, the body shape and proportions, age, skin tone, hair, and anything she is wearing exactly as in the illustration. What is known about her: ${looks}.${collar}
 Her expression: ${expressionFor(s, p)}.
 Show her whole body in the frame, from the top of her head to the soles of her feet, with the floor visible under her feet and a little space above her head. Do not crop at the waist, hips or knees, and do not zoom in on her face.
 Studio photograph, natural light, a plain dark background, nothing else in the frame. No text.`;
