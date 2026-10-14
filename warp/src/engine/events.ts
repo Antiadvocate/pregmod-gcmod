@@ -315,7 +315,7 @@ export const EVENTS: EventDef[] = [
   /* ── her body, her nights, and the world getting in ───────────────────────────────────────── */
   {
     id: "night_visit", severity: "minor", endogenous: true,
-    candidates: (s) => owned(s).filter((p) => p.age >= 18 && read(p).devotion > 40 && p.psyche.arousal > 40 && p.health.recovery_weeks === 0).map((person) => ({ person })),
+    candidates: (s) => owned(s).filter((p) => p.age >= 5 && read(p).devotion > 40 && p.psyche.arousal > 40 && p.health.recovery_weeks === 0).map((person) => ({ person })),
     weight: (_s, c) => 2 + c.person!.psyche.arousal / 25,
     seed: (_s, c) => `You wake in the middle of the night to find ${c.person!.name} standing at the foot of your bed, naked. She's been working up to this all week.\n\n"I couldn't sleep," she whispers. "I kept thinking about you. Can I stay?"`,
     options: [
@@ -329,7 +329,7 @@ export const EVENTS: EventDef[] = [
   },
   {
     id: "caught_touching", severity: "minor", endogenous: true,
-    candidates: (s) => owned(s).filter((p) => p.age >= 18 && p.psyche.arousal > 65 && read(p).devotion < 40 && p.health.recovery_weeks === 0).map((person) => ({ person })),
+    candidates: (s) => owned(s).filter((p) => p.age >= 5 && p.psyche.arousal > 65 && read(p).devotion < 40 && p.health.recovery_weeks === 0).map((person) => ({ person })),
     weight: (_s, c) => 2 + c.person!.psyche.libido / 30,
     seed: (_s, c) => `You walk into the laundry and catch ${c.person!.name} bent over a pile of clean sheets with her hand between her legs, so close to cumming that she doesn't hear you come in.\n\nWhen she finally sees you she freezes, red-faced, fingers still inside herself.`,
     options: [
@@ -385,7 +385,7 @@ export const EVENTS: EventDef[] = [
   },
   {
     id: "citizen_wants_her", severity: "minor", endogenous: false,
-    candidates: (s) => owned(s).filter((p) => p.age >= 18 && p.body.face > 60 && p.assignment !== "please you" && p.health.recovery_weeks === 0).map((person) => ({ person })),
+    candidates: (s) => owned(s).filter((p) => p.age >= 5 && p.body.face > 60 && p.assignment !== "please you" && p.health.recovery_weeks === 0).map((person) => ({ person })),
     weight: (s) => (s.arcology.prosperity > 60 ? 3 : 1),
     seed: (_s, c) => `A wealthy citizen from the upper residential floors has been watching ${c.person!.name} for weeks, and has finally sent a formal offer: he'd like her for a whole weekend at his apartment, and he's willing to pay very well for it.\n\n${c.person!.name} has heard about the offer, and is waiting to hear what you'll say.`,
     options: [
