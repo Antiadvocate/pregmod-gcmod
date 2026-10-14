@@ -145,7 +145,7 @@ export function tickCulture(s: SaveState): string[] {
   }
 
   // What your household visibly does, every week.
-  const house = Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 18);
+  const house = Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 5);
   const n = Math.max(1, house.length);
   const count = (f: (p: (typeof house)[number]) => boolean) => house.filter(f).length;
   const publicSex = count((p) => ["whore", "public servant", "work in the brothel", "serve in the club"].includes(p.assignment));
