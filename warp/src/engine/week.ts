@@ -16,6 +16,8 @@
  * afterwards to work out what must have happened, which is how the old end-of-week text and the
  * old budget screen ended up describing two different weeks.
  */
+import { tickPowers } from "./power";
+import { tickWars } from "./war";
 import { tickFreed } from "./freed";
 import { occupants } from "./places";
 import { PLACE_BY_ID } from "../data/places";
@@ -339,6 +341,12 @@ export function endWeek(s: SaveState): WeekReport {
   for (const l of tickBattles(s)) push(l, "bad", 12);
   for (const l of tickFreed(s)) push(l, "neutral", 4);
   for (const l of tickTraining(s)) push(l, "good", 6);
+  const pow = tickPowers(s);
+  led.entry("Empire", "Arsenal upkeep, tribute, pacts and sanctions", pow.cash);
+  for (const l of pow.lines) push(l, "warning", 9);
+  const wars = tickWars(s);
+  led.entry("Empire", "The cost of war", wars.cash);
+  for (const l of wars.lines) push(l, "warning", 11);
 
   const arc = s.arcology;
   const staff = alive(s).length;

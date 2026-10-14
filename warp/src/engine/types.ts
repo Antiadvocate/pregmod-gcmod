@@ -896,6 +896,8 @@ export interface SaveState {
   city?: import("./city").CityState;
   /** THE WORLD — weather, climate, the economy and the Old World regions. Built on demand. */
   world?: import("./world").WorldState;
+  /** Your arsenal, the other powers, and your wars. See engine/power and engine/war. */
+  empire?: import("./power").Empire;
   /** The world screen: research, involvement in wars, visits abroad. */
   globe?: import("./globe").Globe;
   /** Public works you have built, by id: how many levels of each. */

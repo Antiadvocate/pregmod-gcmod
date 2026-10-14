@@ -6,9 +6,10 @@
  * console with a scene attached. You are always one tap from the roster, the arcology, the week and
  * the story, and nothing ever navigates away from what you were reading.
  */
+import WarRoom from "./views/WarRoom";
 import { useEffect, useState } from "react";
 import {
-  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, Globe2, BookOpen, Scale, GitCompareArrows, Earth, Dna, Newspaper } from "lucide-react";
+  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, Globe2, BookOpen, Scale, GitCompareArrows, Earth, Dna, Newspaper, Swords } from "lucide-react";
 import type { SaveState } from "./engine/types";
 import { GameProvider, useGame } from "./lib/game";
 import { listSaves, getSave } from "./store";
@@ -36,7 +37,7 @@ import Genome from "./views/Genome";
 import Feed, { FeedTicker } from "./views/Feed";
 import { unread as feedUnread } from "./engine/feed";
 
-export type Route = "penthouse" | "feed" | "people" | "story" | "scene" | "city" | "society" | "compare" | "world" | "genome" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
+export type Route = "penthouse" | "feed" | "people" | "story" | "scene" | "city" | "society" | "compare" | "world" | "war" | "genome" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
 
 const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "penthouse", label: "Penthouse", icon: Building2 },
@@ -48,6 +49,7 @@ const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "society", label: "Society", icon: Scale },
   { id: "compare", label: "Compare", icon: GitCompareArrows },
   { id: "world", label: "World", icon: Earth },
+  { id: "war", label: "War Room", icon: Swords },
   { id: "genome", label: "Genome", icon: Dna },
   { id: "arcology", label: "Arcology", icon: Landmark },
   { id: "doctrine", label: "Doctrine", icon: ScrollText },
@@ -99,7 +101,7 @@ const GROUPS: Group[] = [
   { id: "home", label: "Home", icon: Building2, routes: ["penthouse", "feed", "report"] },
   { id: "people", label: "People", icon: Users, routes: ["people", "orders", "you", "genome"] },
   { id: "story", label: "Story", icon: BookOpen, routes: ["story", "scene"] },
-  { id: "city", label: "City", icon: Globe2, routes: ["city", "arcology", "society", "doctrine", "world", "compare"] },
+  { id: "city", label: "City", icon: Globe2, routes: ["city", "arcology", "society", "doctrine", "world", "war", "compare"] },
   { id: "market", label: "Market", icon: ShoppingBag, routes: ["market"] },
 ];
 const SYSTEM: Group = { id: "system", label: "Settings", icon: Cog, routes: ["settings", "cheats"] };
@@ -198,6 +200,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
             {route === "society" && <Society />}
             {route === "compare" && <Compare />}
             {route === "world" && <World />}
+            {route === "war" && <WarRoom />}
             {route === "genome" && <Genome />}
             {route === "arcology" && <ArcologyView />}
             {route === "doctrine" && <Doctrine />}

@@ -7,6 +7,7 @@
  * built: walls, drone racks, an armory, mercenaries, your militia and knights, a bodyguard. You pick
  * how to meet them; the dice only decide the margin.
  */
+import { forces } from "./power";
 import type { SaveState } from "./types";
 import { clamp } from "./psyche";
 import { applyTreatment, read } from "./obedience";
@@ -75,6 +76,7 @@ export function garrison(s: SaveState): { total: number; parts: string[] } {
     ["militia", f["plot_militia"] ? 1.5 : 0],
     ["knights", f["plot_knights"] ? 1.5 : 0],
     ["bodyguard", guardStrength(s)],
+    ["arsenal", forces(s).defence],
   ];
   const on = parts.filter(([, n]) => n > 0.05);
   return { total: +on.reduce((n, [, v]) => n + v, 0).toFixed(1), parts: on.map(([k, v]) => `${k} ${v.toFixed(1)}`) };

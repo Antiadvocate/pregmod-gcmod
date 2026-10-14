@@ -26,3 +26,49 @@ import { militaryStrength } from "../src/engine/city.ts";
   check("diplomacy warms the neighbours", skill.diplomacy(s) > 0);
   endWeek(s);
 }
+
+import { build, canBuild, empireOf, forces, makeMove, powers, dominion, tickPowers } from "../src/engine/power.ts";
+import { declareWar, tickWars, activeWars, suePeace, strike } from "../src/engine/war.ts";
+import { EVENT_BY_ID, resolveEvent } from "../src/engine/events.ts";
+{
+  const s = newGame({ seed: "arsenal", starting_slaves: 2 } as never);
+  s.arcology.cash = 50_000_000;
+  check("fighters need an airport", !!canBuild(s, "fighters"));
+  check("drones don't", build(s, "drones").ok);
+  build(s, "airport");
+  for (let i = 0; i < 6; i++) tickPowers(s);
+  check("a program is ready after its weeks", (empireOf(s).arsenal.airport ?? 0) === 1 && (empireOf(s).arsenal.drones ?? 0) === 1, empireOf(s).arsenal);
+  const f0 = forces(s).total;
+  check("then fighters can be bought", build(s, "fighters").ok);
+  for (let i = 0; i < 6; i++) tickPowers(s);
+  check("and they add to your strength", forces(s).total > f0 + 20, [f0, forces(s).total]);
+
+  const ps = powers(s);
+  check("the world is full of powers", ps.some((p) => p.kind === "neighbour") && ps.some((p) => p.kind === "freecity") && ps.some((p) => p.kind === "region"), ps.map((p) => p.kind));
+  const n = ps.find((p) => p.kind === "neighbour")!;
+  const a0 = n.attitude;
+  check("an envoy warms them", makeMove(s, n.id, "envoy").ok && powers(s).find((p) => p.id === n.id)!.attitude > a0);
+
+  // War with the weakest, and enough to win it.
+  const target = [...ps].sort((a, b) => a.strength - b.strength)[0];
+  for (const id of ["armour", "armour", "armour", "batteries", "batteries", "patrol", "patrol"]) if (!canBuild(s, id)) build(s, id);
+  for (let i = 0; i < 4; i++) tickPowers(s);
+  declareWar(s, target.id);
+  check("war is declared", activeWars(s).length === 1);
+  check("a strike moves the front", /front moves/.test(strike(s, activeWars(s)[0].id)));
+  let weeks = 0;
+  while (activeWars(s).length && weeks < 30) { tickWars(s); weeks++; }
+  check("a much stronger power wins its war", empireOf(s).wars[0].ended?.result === "won", [weeks, empireOf(s).wars[0]]);
+  const v = s.events.find((e) => e.kind === "victory");
+  check("and is asked what to do with it", !!v);
+  if (v) resolveEvent(s, v, "annex");
+  check("annexed, it's yours, and pays", powers(s).find((p) => p.id === target.id)?.rec.status === "conquered" || !s.arcology.neighbours.some((x) => x.id === target.id));
+  check("and the world is a little more yours", dominion(s).share > 0, dominion(s));
+
+  // Peace when it's even.
+  const other = powers(s).find((p) => p.rec.status === "free")!;
+  declareWar(s, other.id);
+  check("you can sue for peace", /peace|Peace|reparations/.test(suePeace(s, activeWars(s)[0].id)) && activeWars(s).length === 0);
+  check("the events of war are all there", ["victory", "defeat", "war_bombing", "war_hostage", "insurgency", "world_dictator", "assassins", "terror", "sabotage", "alliance_offer"].every((k) => !!EVENT_BY_ID[k]));
+  for (let i = 0; i < 4; i++) endWeek(s);
+}

@@ -273,6 +273,20 @@ export function annex(s: SaveState, neighbourId: string, how: "buy" | "force"): 
     }
   }
 
+  absorbNeighbour(s, neighbourId, how);
+  return {
+    ok: true,
+    line: how === "buy"
+      ? `${n.name} is yours. Three of its blocks are on your books by Friday.`
+      : `${n.name} is yours. It took a night of fighting, it cost you a lot of reputation, and the blocks you took are badly damaged.`,
+  };
+}
+
+/** A neighbour becomes part of your city: three districts on the verge, its people, its story. */
+export function absorbNeighbour(s: SaveState, neighbourId: string, how: "buy" | "force"): void {
+  const n = s.arcology.neighbours.find((x) => x.id === neighbourId);
+  if (!n) return;
+  const city = cityOf(s);
   // The neighbour becomes three districts on the verge, at the level its prosperity earned.
   const level = Math.max(1, Math.round(n.prosperity / 35));
   const kinds: DistrictKind[] = ["residential", "commercial", "industrial"];
@@ -291,13 +305,6 @@ export function annex(s: SaveState, neighbourId: string, how: "buy" | "force"): 
     ? `${n.name} was bought outright and folded into ${s.arcology.name}.`
     : `${n.name} was conquered. The other arcologies won't forget it.`);
   startRumor(s, how === "buy" ? `${n.name} belongs to us now` : `the owner conquered ${n.name} by force`, { salience: 10 });
-
-  return {
-    ok: true,
-    line: how === "buy"
-      ? `${n.name} is yours. Three of its blocks are on your books by Friday.`
-      : `${n.name} is yours. It took a night of fighting, it cost you a lot of reputation, and the blocks you took are badly damaged.`,
-  };
 }
 
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
