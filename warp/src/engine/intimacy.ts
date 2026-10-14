@@ -86,7 +86,6 @@ export function canDo(p: Person, act: ActDef, s?: SaveState): string | null {
   if (sane(p.health.recovery_weeks) > 0 && act.group !== "tenderness") return s ? `she is ${recoveryNote(s, p)}` : "she is recovering from surgery";
   if (s && act.you === "cock" && !hasCock(s)) return "you have no cock";
   if (s && act.you === "sire" && !canSire(s)) return hasCock(s) ? "you can't get anyone pregnant" : "you have no cock";
-  if (p.age < 18) return "she is a child";
   return null;
 }
 
