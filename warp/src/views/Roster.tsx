@@ -203,7 +203,7 @@ function RosterCard({ p, onOpen, onWith }: { p: Person; onOpen: () => void; onWi
             {p.psyche.state !== "intact" ? p.psyche.state : band(p.psyche)}
           </div>
           <div className="text-[11px] dim font-mono">{p.economics.income_last_week ? `¤${p.economics.income_last_week}` : ""}</div>
-          {p.age >= 18 ? (
+          {p.age >= 5 ? (
             <button className="btn btn-primary btn-sm mt-1.5" onClick={(e) => { e.stopPropagation(); onWith(); }}>be with her</button>
           ) : null}
         </div>
@@ -323,7 +323,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
       ) : null}
 
       <div className="flex gap-2 mb-4">
-        {p.age >= 18 && (inHousehold(save, p) || isPartner(save, p)) ? <Button kind="primary" className="flex-1" onClick={onWith}>{isKeeper(save, p) ? "Go to her" : "Be with her"}</Button> : null}
+        {p.age >= 5 && (inHousehold(save, p) || isPartner(save, p)) ? <Button kind="primary" className="flex-1" onClick={onWith}>{isKeeper(save, p) ? "Go to her" : "Be with her"}</Button> : null}
         {mine ? null : <Button className="flex-1" onClick={onDress}>Dress her</Button>}
       </div>
       {mine ? <div className="text-[12px] dim -mt-2 mb-4">{isKeeper(save, p) ? "She owns you." : isPartner(save, p) ? "She's free, and your equal." : "She's free now."} You can {isKeeper(save, p) ? "go to" : "be with"} her, ask her things and see how she is; what she wears, where she works and what's done to her body are hers to decide.</div> : null}
@@ -678,7 +678,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
                     <span className="text-[12.5px] flex-1">{save.people[e.to]?.name ?? e.to}{e.roles.length ? ` — ${e.roles.join(", ")}` : ""}</span>
                     <div className="w-20"><Meter value={e.warmth} range={[-100, 100]} showValue={false} /></div>
                     <span className="text-[11px] dim font-mono w-8 text-right">{Math.round(e.warmth)}</span>
-                    {save.people[e.to] && (save.people[e.to].status === "owned" || save.people[e.to].status === "indentured") && save.people[e.to].age >= 18 && p.age >= 18
+                    {save.people[e.to] && (save.people[e.to].status === "owned" || save.people[e.to].status === "indentured") && save.people[e.to].age >= 5 && p.age >= 5
                       ? <button className="btn btn-sm btn-ghost !px-2" title="Call them both in" onClick={() => setTogether(e.to)}>both</button> : null}
                   </div>
                 ))}
