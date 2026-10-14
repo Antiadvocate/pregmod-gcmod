@@ -385,7 +385,7 @@ const MAX_LIVE = 4;
  * as noise rather than as a place where things are happening.
  */
 export function tickThreads(s: SaveState): ThreadWeek {
-  const people = Object.values(s.people).filter(held).filter((p) => p.age >= 18);
+  const people = Object.values(s.people).filter(held).filter((p) => p.age >= 5);
   const lines: ReportLine[] = [];
   const opened: Thread[] = [];
   const asked: Thread[] = [];
