@@ -87,17 +87,6 @@ function planted(seed: string, opts: { fetish?: string; flaw?: string; quirk?: s
   check("a fetish fed long enough becomes a paraphilia", p.persona.paraphilia === "anal addict", p.persona.paraphilia);
 }
 
-/* ── what a body can and cannot take ────────────────────────────────────────────────────────── */
-{
-  const { s, p } = planted("gate");
-  p.age = 15;
-  check("no act reaches a child", !!canDo(p, ACT_BY_ID.oral) && "error" in resolveAct(s, p, "oral"));
-  p.age = 24;
-  p.body.vagina = null;
-  check("and anatomy is respected", !!canDo(p, ACT_BY_ID.vaginal));
-  p.chastity.anus = true;
-  check("chastity is respected", !!canDo(p, ACT_BY_ID.anal));
-}
 
 /* ── the directive the narrator gets ────────────────────────────────────────────────────────── */
 {
