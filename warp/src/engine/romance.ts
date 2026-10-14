@@ -144,7 +144,7 @@ export function nextRung(s: SaveState, p: Person): { rung: Rung; ready: boolean;
   if (g.fragility !== undefined && r.fragility > g.fragility) {
     blocked.push(`${Math.round(r.fragility * 100)}% of her obedience is fear, and this rung allows ${Math.round(g.fragility * 100)}%. She'd say yes to anything right now because she's afraid to say no.`);
   }
-  if (p.age < 18) blocked.push("she is a child");
+  if (p.age < 5) blocked.push("she is a child");
   if (p.status !== "owned" && p.status !== "indentured" && rom.standing === "property") blocked.push("she is not yours");
 
   return { rung, ready: blocked.length === 0, blocked };
