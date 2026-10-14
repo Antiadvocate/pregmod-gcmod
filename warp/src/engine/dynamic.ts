@@ -67,7 +67,7 @@ interface GeneratedEvent {
 /** Who is worth building a situation around this week — the one with the most live material on
  *  her record, rather than a random pick. */
 export function pickSubject(s: SaveState): Person | null {
-  const pool = Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 18);
+  const pool = Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 5);
   if (!pool.length) return null;
   const score = (p: Person): number => {
     const r = read(p, s.memory[p.id]);
@@ -124,7 +124,7 @@ function dossier(s: SaveState, p: Person): string {
 
 const SYSTEM = `You write one random event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. Write it the way the original game writes its random events: second person, present tense, plain and explicit, a short setup describing what one of your slaves is doing or has done, ending with you having to decide how to respond.
 
-Build it from her record: her fetish, her flaw, her job, what has been done to her, what she remembers, how she feels about you. It should be something that could only happen with her.
+Build it from her record: her fetish, her age, her flaw, her job, what has been done to her, what she remembers, how she feels about you. It should be something that could only happen with her.
 
 Write plainly and crudely, like a porn game, not literature: cock, dick, pussy, cunt, clit, ass, tits, cum, piss, spit, fuck, slut, as the situation calls for them. Short blunt sentences. No euphemism ("core", "heat", "folds", "manhood", "release"), no poetic sensation ("waves of pleasure", "came undone"), no fade to black, no moralizing. You may say what she thinks and feels. Do not invent people who are not on the record. Everyone is an adult. No aphorisms, no mood-setting, no filler gestures.
 
