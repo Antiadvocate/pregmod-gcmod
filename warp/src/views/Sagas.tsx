@@ -83,7 +83,7 @@ function SagaCard({ id }: { id: string }) {
   const [threads, setThreads] = useState(false);
   const [steering, setSteering] = useState(false);
   const [redo, setRedo] = useState(false);
-  const [after, setAfter] = useState<{ chose: string; outcome: string; consequences: string[]; ended?: string; people: string[]; title: string } | null>(null);
+  const [after, setAfter] = useState<{ chose: string; outcome: string; consequences: string[]; ended?: string; people: string[]; title: string; setup?: string } | null>(null);
   const stop = useRef<AbortController | null>(null);
   const due = x.due <= save.arcology.week;
 
@@ -103,12 +103,12 @@ function SagaCard({ id }: { id: string }) {
     const ch = x.chapter!;
     let r: ReturnType<typeof choose> = null;
     mutate((s) => { r = choose(s, x.id, i); });
-    if (r) setAfter({ ...(r as NonNullable<ReturnType<typeof choose>>), chose: ch.options[i].label, title: ch.title });
+    if (r) setAfter({ ...(r as NonNullable<ReturnType<typeof choose>>), chose: ch.options[i].label, title: ch.title, setup: ch.text });
   };
   const answer = () => run(async (w) => {
     const ch = x.chapter!;
     const res = await answerOwn(save, x.id, own, w);
-    if (res.ok && res.result) { setAfter({ ...res.result, chose: own.trim(), title: ch.title }); setOwn(""); }
+    if (res.ok && res.result) { setAfter({ ...res.result, chose: own.trim(), title: ch.title, setup: ch.text }); setOwn(""); }
     return res;
   });
 
@@ -165,7 +165,7 @@ function SagaCard({ id }: { id: string }) {
               <Paras text={after.outcome} />
               {after.consequences.length ? <div className="flex flex-wrap gap-1.5 mt-2">{after.consequences.map((c, i) => <span key={i} className="chip">{c}</span>)}</div> : null}
               {after.ended ? <div className="text-[12.5px] acc mt-2">The story ends: {after.ended}.</div> : null}
-              <Reaction key={after.outcome.slice(0, 40)} label="Play it out" seed={{ person: after.people[0], others: after.people.slice(1, 3), title: `${x.title}: ${after.title}`, source: "saga", you: after.chose, happened: after.outcome }} />
+              <Reaction key={after.outcome.slice(0, 40)} label="Play it out" seed={{ person: after.people[0], others: after.people.slice(1, 3), title: `${x.title}: ${after.title}`, source: "saga", setup: after.setup, you: after.chose, happened: after.outcome }} />
               <Button size="sm" kind="ghost" className="mt-3" onClick={() => setAfter(null)}>{after.ended ? "close" : `next chapter in ${Math.max(0, x.due - save.arcology.week)} week${x.due - save.arcology.week === 1 ? "" : "s"}`}</Button>
             </div>
           ) : ch ? (

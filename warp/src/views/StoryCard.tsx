@@ -17,7 +17,7 @@ import { facesIn, personOf } from "../engine/faces";
 
 export default function StoryCard() {
   const { save, mutate } = useGame();
-  const [done, setDone] = useState<Answer | null>(null);
+  const [done, setDone] = useState<(Answer & { setup?: string }) | null>(null);
   const [picking, setPicking] = useState<OptionView | null>(null);
   const p = pendingBeat(save);
 
@@ -34,7 +34,7 @@ export default function StoryCard() {
             {done.consequences.map((c, i) => <span key={i} className={cx("chip", /^−|less|cools|falls|dead|sold|gone/.test(c) ? "bad" : /^\+|warms|rises|better|heart|joins/.test(c) ? "good" : "")}>{c}</span>)}
           </div>
         ) : null}
-        <Reaction key={`${done.title}:${done.chose}`} label="Play it out" seed={{ person: done.person, title: done.title, source: "story", you: done.chose, happened: done.text }} />
+        <Reaction key={`${done.title}:${done.chose}`} label="Play it out" seed={{ person: done.person, title: done.title, source: "story", setup: done.setup, you: done.chose, happened: done.text }} />
         {done.ended ? <div className="text-[12px] dim mt-3">That's the end of that story: {done.ended}.</div> : null}
         <Button kind="primary" size="sm" className="mt-4" onClick={() => setDone(null)}>{pendingBeat(save) ? "Go on" : "Done"}</Button>
       </Card>
@@ -46,9 +46,10 @@ export default function StoryCard() {
   const opts = optionsFor(save);
   const choose = (o: OptionView, who?: string) => {
     let a: Answer | null = null;
+    const setup = p.beat.text(p.c);
     mutate((s) => { a = answer(s, o.id, who); });
     setPicking(null);
-    if (a) setDone(a);
+    if (a) setDone({ ...(a as Answer), setup });
   };
 
   return (

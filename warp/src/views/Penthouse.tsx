@@ -34,7 +34,7 @@ import { band, wear } from "../engine/psyche";
 import { modelsAvailable } from "../config";
 
 export default function Penthouse({ go }: { go: (r: Route) => void }) {
-  const [outcomes, setOutcomes] = useState<{ id: string; chose: string; text: string; person?: string; others?: string[]; moment?: string }[]>([]);
+  const [outcomes, setOutcomes] = useState<{ id: string; setup?: string; chose: string; text: string; person?: string; others?: string[]; moment?: string }[]>([]);
   /** Done: the card goes, and a scene played out under it ends where it is. */
   const finish = async (o: { id: string; moment?: string }) => {
     const m = o.moment ? momentsOf(save).find((x) => x.id === o.moment) : undefined;
@@ -44,7 +44,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
   const { save, mutate } = useGame();
   const [running_, setRunning] = useState(false);
   const [inventing, setInventing] = useState(false);
-  const [aftermath, setAftermath] = useState<{ line: string; reactions: Reaction[]; person?: string; others?: string[]; title?: string; chose?: string; key?: number } | null>(null);
+  const [aftermath, setAftermath] = useState<{ line: string; reactions: Reaction[]; setup?: string; person?: string; others?: string[]; title?: string; chose?: string; key?: number } | null>(null);
   const dyn = dynamicReadiness(save);
   const keeper = theKeeper(save);
   const arc = save.arcology;
@@ -151,7 +151,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             <div className="text-[14px] font-medium mb-1.5">{beat.title}</div>
             <p className="font-prose text-[15px] leading-relaxed whitespace-pre-line mb-3">{beat.text?.(c)}</p>
             <Options options={beat.options ?? []} onPick={(o) => mutate((st) => {
-              setAftermath({ line: answerThread(st, t.id, o.id).line, reactions: [], person: Object.values(t.cast)[0], others: Object.values(t.cast).slice(1), title: def.name, chose: o.label, key: Date.now() });
+              setAftermath({ line: answerThread(st, t.id, o.id).line, reactions: [], setup: beat.text?.(c), person: Object.values(t.cast)[0], others: Object.values(t.cast).slice(1), title: def.name, chose: o.label, key: Date.now() });
             })} />
           </Card>
         );
@@ -164,8 +164,9 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
           <p className="font-prose text-[15px] leading-relaxed whitespace-pre-line mb-3">{chain.text(save, her?.name)}</p>
           <Options options={chain.options} onPick={(o) => {
             let out: { line: string; reactions: Reaction[] } = { line: "", reactions: [] };
+            const setup = chain.text(save, her?.name);
             mutate((s) => { out = resolveChain(s, o.id); });
-            setAftermath(out);
+            setAftermath({ ...out, setup, title: chain.title, chose: o.label, key: Date.now() });
           }} />
         </Card>
       ) : null}
@@ -173,9 +174,10 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
       {aftermath ? (
         <Card className="mb-3 fade-in">
           <Kicker>{aftermath.title ?? "What came of it"}</Kicker>
+          {aftermath.setup ? <Setup text={aftermath.setup} /> : null}
           {aftermath.chose ? <div className="player-line !mt-0 !mb-2">{aftermath.chose}</div> : null}
           <p className="font-prose text-[15px] leading-relaxed">{aftermath.line}</p>
-          {aftermath.person || modelsAvailable() ? <MomentReaction key={aftermath.key} seed={{ person: aftermath.person, others: aftermath.others, title: aftermath.title ?? "Afterwards", source: "thread", you: aftermath.chose, happened: aftermath.line }} /> : null}
+          {aftermath.person || modelsAvailable() ? <MomentReaction key={aftermath.key} seed={{ person: aftermath.person, others: aftermath.others, title: aftermath.title ?? "Afterwards", source: "thread", setup: aftermath.setup, you: aftermath.chose, happened: aftermath.line }} /> : null}
           {aftermath.reactions.length ? (
             <ul className="mt-3 space-y-1.5 text-[13px]">
               {aftermath.reactions.map((rx) => (
@@ -194,12 +196,13 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
 
       {outcomes.map((o) => (
         <Card key={o.id} className="mb-3 fade-in">
+          {o.setup ? <Setup text={o.setup} /> : null}
           <div className="player-line !mt-0 !mb-3">{o.chose}</div>
           <div className="space-y-3">
             {o.text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[15px] leading-relaxed">{para}</p>)}
           </div>
-          <div className="flex items-center gap-2">
-            {o.person || modelsAvailable() ? <MomentReaction seed={{ person: o.person, others: o.others, title: o.chose, source: "event", you: o.chose, happened: o.text }} onOpen={(mid) => setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, moment: mid } : x)))} /> : null}
+          <div className="flex flex-wrap items-center gap-x-2">
+            {o.person || modelsAvailable() ? <MomentReaction seed={{ person: o.person, others: o.others, title: o.chose, source: "event", setup: o.setup, you: o.chose, happened: o.text }} onOpen={(mid) => setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, moment: mid } : x)))} /> : null}
             <Button size="sm" kind="primary" className="mt-3" onClick={() => void finish(o)}>Done</Button>
           </div>
         </Card>
@@ -219,7 +222,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             <Options options={e.kind === "dynamic" ? e.options : EVENT_BY_ID[e.kind]?.options ?? e.options} onPick={(o) => {
               let text = "";
               mutate((s) => { text = e.kind === "dynamic" ? resolveDynamic(s, e, o.id) : resolveEvent(s, e, o.id); });
-              setOutcomes((xs) => [...xs, { id: e.id, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined }]);
+              setOutcomes((xs) => [...xs, { id: e.id, setup: e.seed, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined }]);
             }} />
           </Card>
         );
@@ -357,6 +360,15 @@ function Options<O extends { id: string; label: string; note?: string }>({ optio
           {o.note ? <span className="block text-[11.5px] dim mt-0.5">{o.note}</span> : null}
         </button>
       ))}
+    </div>
+  );
+}
+
+/** The situation you answered, kept above what came of it so the card still says what it was about. */
+function Setup({ text }: { text: string }) {
+  return (
+    <div className="space-y-2 mb-3">
+      {text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[14px] leading-relaxed dim">{para}</p>)}
     </div>
   );
 }

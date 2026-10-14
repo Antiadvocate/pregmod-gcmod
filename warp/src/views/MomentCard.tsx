@@ -16,7 +16,7 @@ import { concludeMoment, deedsOf, DEED_TAGS } from "../engine/deeds";
 import { modelsAvailable } from "../config";
 import Portrait, { castOf } from "./Portrait";
 
-export interface Seed { person?: string; others?: string[]; title: string; source: string; you?: string; happened: string }
+export interface Seed { person?: string; others?: string[]; title: string; source: string; setup?: string; you?: string; happened: string }
 
 /** A moment that starts from something that just happened. */
 export function Reaction({ seed, className, auto = false, label = "Play it out", onOpen }: { seed: Seed; className?: string; auto?: boolean; label?: string; onOpen?: (id: string) => void }) {
@@ -33,7 +33,7 @@ export function Reaction({ seed, className, auto = false, label = "Play it out",
   };
   // With a model, every reaction is written out without asking.
   useEffect(() => { if (auto && modelsAvailable() && seed.person) start(); }, []);
-  if (id) return <MomentCard id={id} className={className} bare />;
+  if (id) return <MomentCard id={id} className={cx("basis-full", className)} bare />;
   if (!seed.person && !modelsAvailable()) return null;
   return (
     <button className={cx("btn btn-sm mt-3", className)} onClick={start} title={modelsAvailable() ? "Write it out with the model and answer it; what you do there has consequences" : "Answer it in the written game"}><MessageCircle size={13} /> {label}</button>
@@ -106,8 +106,8 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
   const p = m.person ? save.people[m.person] : undefined;
   // Their face follows the last thing written on their side, and the reply as it arrives.
   const said = stream || [...m.log].reverse().find((l) => l.role !== "you")?.text || "";
-  // In place under an event, the opening line is already on screen above.
-  const lines = bare ? m.log.slice(m.log.findIndex((l) => l.role === "scene") + 1) : m.log;
+  // In place under an event, what the game handed over is already on screen above.
+  const lines = bare ? m.log.slice(m.seeded ?? m.log.findIndex((l) => l.role === "scene") + 1) : m.log;
 
   if (folded) {
     return (

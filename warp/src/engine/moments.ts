@@ -48,6 +48,9 @@ export interface Moment {
   unexpanded?: boolean;
   /** A walk through the city: which place. See engine/walk. */
   walk?: string;
+  /** How many lines at the top came from the game rather than the model: the situation, what you
+   *  chose, what came of it. They are already on screen when it's played in place under an event. */
+  seeded?: number;
 }
 
 export const MOMENT_SYSTEM = `You continue a scene in Free Cities, an adult text game about owning an arcology where slavery is legal. The player owns the slave in the scene.
@@ -83,13 +86,15 @@ export function openMoments(s: SaveState, personId?: string): Moment[] {
 }
 
 /** Start a moment from something that just happened. Returns its id. */
-export function openMoment(s: SaveState, o: { person?: string; others?: string[]; title: string; source: string; you?: string; happened: string }): string {
+export function openMoment(s: SaveState, o: { person?: string; others?: string[]; title: string; source: string; setup?: string; you?: string; happened: string }): string {
   const list = momentsOf(s);
   const id = `mo-${s.arcology.week}-${s.turn}-${list.length}`;
   const log: MomentLine[] = [];
+  // The situation you were answering, so the scene is played from the event and not just its last line.
+  if (o.setup?.trim()) log.push({ role: "scene", text: o.setup.trim() });
   if (o.you) log.push({ role: "you", text: o.you });
   if (o.happened) log.push({ role: "scene", text: o.happened });
-  list.push({ id, person: o.person, others: o.others?.filter((x) => x && x !== o.person), title: o.title, source: o.source, week: s.arcology.week, updated: s.arcology.week, log, options: DEFAULT_OPTIONS, open: true, unexpanded: modelsAvailable() });
+  list.push({ id, person: o.person, others: o.others?.filter((x) => x && x !== o.person), title: o.title, source: o.source, week: s.arcology.week, updated: s.arcology.week, log, options: DEFAULT_OPTIONS, open: true, unexpanded: modelsAvailable(), seeded: log.length });
   // Keep the list from growing without end: close the oldest finished ones.
   if (list.length > 60) s.moments = list.slice(-60);
   return id;
@@ -130,11 +135,13 @@ export function closeMoment(s: SaveState, id: string): void {
  *  memory and the deeds. */
 function transcript(m: Moment, keep = 6): string {
   const line = (l: MomentLine) => (l.role === "you" ? `PLAYER: ${l.text}` : l.text);
-  if (m.log.length <= keep + 2) return m.log.map(line).join("\n\n");
-  const head = m.log.slice(0, 2);
+  // The head is everything the game handed over: the situation, your choice, what came of it.
+  const top = Math.max(2, m.seeded ?? 2);
+  if (m.log.length <= keep + top) return m.log.map(line).join("\n\n");
+  const head = m.log.slice(0, top);
   const tail = m.log.slice(-keep);
   const gap = m.log.length - head.length - tail.length;
-  const said = m.log.slice(2, -keep).filter((l) => l.role === "you").map((l) => l.text.slice(0, 60));
+  const said = m.log.slice(top, -keep).filter((l) => l.role === "you").map((l) => l.text.slice(0, 60));
   return [...head.map(line), `(${gap} lines later; the player had said: ${said.join(" / ")})`, ...tail.map(line)].join("\n\n");
 }
 
