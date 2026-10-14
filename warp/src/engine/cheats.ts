@@ -9,6 +9,8 @@
  * looks like it has no fetishes, no quirks and no flaws. That is not the generator being shy, it is
  * a save from before the generator knew about them.
  */
+import { cityOf, cityYield } from "./city";
+import { DISTRICTS } from "../data/districts";
 import type { Person, SaveState } from "./types";
 import { generatePerson } from "./generate";
 import { newMemory } from "./memory";
@@ -37,6 +39,18 @@ export function buildAll(s: SaveState, level = 3): void {
     f.capacity = Math.max(f.capacity, def.capacity_per_level * level);
     for (const u of def.upgrades) f.upgrades[u.id] = 1;
   }
+}
+
+/** Every plot in the city raised and yours, and as many people as it holds. */
+export function buildOutCity(s: SaveState, level = 3): void {
+  const kinds = DISTRICTS.map((d) => d.kind).filter((k) => k !== "spire");
+  cityOf(s).districts.forEach((d, i) => {
+    if (d.kind === "vacant") d.kind = kinds[i % kinds.length];
+    d.level = Math.max(d.level, d.kind === "spire" ? 1 : level + (i % 3) - 1);
+    d.owner = "you";
+    d.condition = 60 + (i * 7) % 40;
+  });
+  s.arcology.population = Math.max(s.arcology.population, Math.round(400 + cityYield(s).housing));
 }
 
 export function setFacility(s: SaveState, id: string, level: number): void {

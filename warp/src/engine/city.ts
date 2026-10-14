@@ -56,6 +56,8 @@ export interface CityState {
   routes: TradeRoute[];
   /** Cumulative, for the skyline's haze and the "this place has been here a while" feel. */
   founded_week: number;
+  /** How you want it to look from above: a style over the doctrine's, and a finish. See lib/iso. */
+  look?: import("../lib/iso").Look;
 }
 
 /* ── setting it up ─────────────────────────────────────────────────────────────────────────── */

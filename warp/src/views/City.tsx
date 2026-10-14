@@ -21,7 +21,9 @@ import {
 } from "../engine/city";
 import { DISTRICTS, DISTRICT_BY_KIND, REGIONS, RINGS, type DistrictKind } from "../data/districts";
 import { Skyline } from "./Skyline";
-import { STYLES, styleOf } from "../lib/cityart";
+import { STYLES, styleOf, type Style } from "../lib/cityart";
+import IsoCity from "./IsoCity";
+import { FINISHES, lookOf, type Finish, type Look } from "../lib/iso";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 
 type Tab = "build" | "trade" | "neighbours";
@@ -31,6 +33,8 @@ export default function City() {
   const [tab, setTab] = useState<Tab>("build");
   const [picked, setPicked] = useState<string | null>(null);
   const [note, setNote] = useState<{ text: string; bad?: boolean } | null>(null);
+  const [view, setView] = useState<"above" | "skyline">(() => { try { return localStorage.getItem("warp:city-view") === "skyline" ? "skyline" : "above"; } catch { return "above"; } });
+  const pickView = (v: "above" | "skyline") => { setView(v); try { localStorage.setItem("warp:city-view", v); } catch { /* private window */ } };
 
   const city = cityOf(save);
   const y = useMemo(() => cityYield(save), [save, save.arcology.week, city.districts.length]);
@@ -45,10 +49,18 @@ export default function City() {
       {/* THE PLACE. Sticky on a phone so it stays as an anchor while the list below scrolls. */}
       <div className="sticky top-0 z-10 -mx-4 sm:mx-0 mb-3 sm:mb-4 sm:rounded-xl overflow-hidden"
         style={{ background: "var(--bg)" }}>
-        <Skyline onPick={(id) => { setPicked(id); setNote(null); }} selected={picked} />
+        {view === "above"
+          ? <IsoCity onPick={(id) => { setPicked(id); setNote(null); }} selected={picked} />
+          : <Skyline onPick={(id) => { setPicked(id); setNote(null); }} selected={picked} />}
+      </div>
+
+      <div className="flex gap-1 mb-3">
+        <Button size="sm" kind={view === "above" ? "primary" : "ghost"} onClick={() => pickView("above")}>From above</Button>
+        <Button size="sm" kind={view === "skyline" ? "primary" : "ghost"} onClick={() => pickView("skyline")}>Skyline</Button>
       </div>
 
       <Architecture />
+      <LookPicker />
 
       {/* The city in one line each. Six numbers, and every one of them is a lever. */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 mb-4">
@@ -97,7 +109,10 @@ export default function City() {
 /** What the skyline is wearing, and which doctrine put it there. */
 function Architecture() {
   const { save } = useGame();
-  const { style, strength } = styleOf(save.arcology.doctrines);
+  const fromDoctrine = styleOf(save.arcology.doctrines);
+  const chosen = lookOf(cityOf(save)).style;
+  if (chosen && chosen !== "auto") return <div className="text-[12.5px] mb-2"><span className="font-medium">{STYLES[chosen].name}</span><span className="mid"> · {STYLES[chosen].note} Your choice, over what the culture would build.</span></div>;
+  const { style, strength } = fromDoctrine;
   const def = STYLES[style];
   const adoption = style === "modern" ? 0 : Math.round(save.arcology.doctrines[style]?.adoption ?? 0);
   return (
@@ -110,6 +125,27 @@ function Architecture() {
           ? <div className="text-[11.5px] dim mt-0.5">{DOCTRINE_BY_ID[style]?.noun ?? style} at {adoption}% · {strength >= 0.99 ? "the whole city wears it" : "more of the city takes it up as adoption rises"}</div>
           : <div className="text-[11.5px] dim mt-0.5">A revivalist doctrine past 25% adoption gives the city its architecture.</div>}
       </div>
+    </div>
+  );
+}
+
+/** How you want the city to look: a style over the doctrine's, and how much of the wasteland shows. */
+function LookPicker() {
+  const { save, mutate } = useGame();
+  const look = lookOf(cityOf(save));
+  const set = (l: Partial<Look>) => mutate((s) => { const c = cityOf(s); c.look = { ...lookOf(c), ...l }; });
+  return (
+    <div className="mb-4 space-y-2">
+      <div className="flex flex-wrap gap-1.5 items-center">
+        <span className="text-[11px] uppercase tracking-wider dim mr-1">Style</span>
+        <button className={`chip !text-[12px] !py-1 !px-2.5 ${!look.style || look.style === "auto" ? "on" : ""}`} onClick={() => set({ style: "auto" })}>As the culture has it</button>
+        {(Object.keys(STYLES) as Style[]).map((st) => <button key={st} className={`chip !text-[12px] !py-1 !px-2.5 ${look.style === st ? "on" : ""}`} onClick={() => set({ style: st })}>{STYLES[st].name}</button>)}
+      </div>
+      <div className="flex flex-wrap gap-1.5 items-center">
+        <span className="text-[11px] uppercase tracking-wider dim mr-1">Finish</span>
+        {(Object.keys(FINISHES) as Finish[]).map((f) => <button key={f} title={FINISHES[f].note} className={`chip !text-[12px] !py-1 !px-2.5 ${(look.finish ?? "rebuilt") === f ? "on" : ""}`} onClick={() => set({ finish: f })}>{FINISHES[f].name}</button>)}
+      </div>
+      <div className="text-[11.5px] dim">{FINISHES[look.finish ?? "rebuilt"].note} Blocks age from Old World ruin, through salvage, to Free City and then ascendant glass as you raise them, keep them up, and advance your tech.</div>
     </div>
   );
 }

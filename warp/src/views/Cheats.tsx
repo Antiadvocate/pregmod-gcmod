@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Chip, Field, Money, Section, Stat } from "../lib/ui";
 import {
-  addCash, setCash, setRep, buildAll, setFacility, ownAllSectors, forceDoctrine, enactAllPolicies,
+  addCash, setCash, setRep, buildAll, buildOutCity, setFacility, ownAllSectors, forceDoctrine, enactAllPolicies,
   spawn, perfect, maxSkills, setStanding, setBond, backfill, revealAll,
 } from "../engine/cheats";
 import { FACILITIES } from "../data/facilities";
@@ -87,6 +87,7 @@ export default function Cheats() {
           <div className="flex flex-wrap gap-2 mb-3">
             <Button size="sm" kind="primary" onClick={() => mutate((s) => { buildAll(s, 3); say("everything built to level 3, fully upgraded"); })}>build everything</Button>
             <Button size="sm" onClick={() => mutate((s) => { buildAll(s, 6); say("everything at level 6"); })}>and make it huge</Button>
+            <Button size="sm" onClick={() => mutate((s) => { buildOutCity(s, 3); say("every plot in the city built and filled"); })}>build out the city</Button>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {FACILITIES.map((def) => {

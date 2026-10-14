@@ -72,3 +72,14 @@ import { EVENT_BY_ID, resolveEvent } from "../src/engine/events.ts";
   check("the events of war are all there", ["victory", "defeat", "war_bombing", "war_hostage", "insurgency", "world_dictator", "assassins", "terror", "sabotage", "alliance_offer"].every((k) => !!EVENT_BY_ID[k]));
   for (let i = 0; i < 4; i++) endWeek(s);
 }
+
+import { eraOf } from "../src/lib/iso.ts";
+{
+  const d = (kind: string, level: number, condition: number) => ({ id: "x", kind, ring: 2, slot: 0, level, condition, owner: "you" }) as never;
+  check("empty ground is a ruin", eraOf(d("vacant", 0, 0), "rebuilt", 0) === "ruin");
+  check("a run-down block is salvage", eraOf(d("residential", 2, 20), "rebuilt", 0) === "salvage");
+  check("a kept one is Free City", eraOf(d("residential", 2, 70), "rebuilt", 0) === "freecity");
+  check("a tall one is ascendant", eraOf(d("residential", 4, 70), "rebuilt", 0) === "ascendant");
+  check("grit keeps the salvage longer", eraOf(d("residential", 2, 45), "grit", 0) === "salvage" && eraOf(d("residential", 2, 45), "rebuilt", 0) === "freecity");
+  check("gleaming builds glass sooner", eraOf(d("commercial", 2, 70), "gleaming", 0) === "ascendant");
+}
