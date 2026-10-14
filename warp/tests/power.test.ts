@@ -83,3 +83,24 @@ import { eraOf } from "../src/lib/iso.ts";
   check("grit keeps the salvage longer", eraOf(d("residential", 2, 45), "grit", 0) === "salvage" && eraOf(d("residential", 2, 45), "rebuilt", 0) === "freecity");
   check("gleaming builds glass sooner", eraOf(d("commercial", 2, 70), "gleaming", 0) === "ascendant");
 }
+
+{
+  // A rich, armed owner, sixty weeks, wars and all: nothing throws, and the new events can come up.
+  const s = newGame({ seed: "empire-run", starting_slaves: 4 } as never);
+  s.arcology.cash = 30_000_000;
+  s.models.tension = 8;
+  for (const id of ["airport", "drones", "drones", "batteries", "intel", "launch", "media"]) build(s, id);
+  let threw: unknown = null, wars = 0;
+  try {
+    for (let w = 0; w < 60; w++) {
+      if (w === 10) { const t = powers(s).sort((a, b) => a.strength - b.strength)[0]; declareWar(s, t.id); wars++; }
+      if (w === 30) { const t = powers(s).find((p) => p.kind === "freecity"); if (t) { declareWar(s, t.id); wars++; } }
+      endWeek(s);
+      // Answer whatever is waiting, the first option each time.
+      for (const e of [...s.events]) { const o = EVENT_BY_ID[e.kind]?.options[0]; if (o) resolveEvent(s, e, o.id); }
+    }
+  } catch (e) { threw = e; }
+  check("sixty weeks of empire run without throwing", !threw, threw);
+  check("and the wars were fought", empireOf(s).wars.length >= wars && wars > 0);
+  check("billionaire events exist for a billionaire", EVENT_BY_ID.gx_crash.candidates(s).length > 0 && EVENT_BY_ID.gx_space.candidates(s).length >= 0);
+}

@@ -16,6 +16,7 @@
  * afterwards to work out what must have happened, which is how the old end-of-week text and the
  * old budget screen ended up describing two different weeks.
  */
+import "./grandevents";
 import { tickPowers } from "./power";
 import { tickWars } from "./war";
 import { tickFreed } from "./freed";
