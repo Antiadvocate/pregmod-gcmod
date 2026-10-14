@@ -355,7 +355,7 @@ export function applyDeed(s: SaveState, deed: Deed, herMemory?: string): void {
   if (mem) remember(mem, { content: herMemory || ownerSide(deed.summary, s.player.pronouns), week: s.arcology.week, importance: deed.tags.length >= 2 ? 8 : 6, charge: deed.tags.some((t) => ["cruelty", "humiliated_her", "punished", "promise_broken", "threatened_sale"].includes(t)) ? "sharp" : "warm", core: deed.tags.includes("owner_enslaved") || deed.tags.includes("cruelty") });
 
   // The household: witnesses always know; everyone knows if it was public.
-  const house = Object.values(s.people).filter((x) => (x.status === "owned" || x.status === "indentured") && x.id !== p?.id && x.age >= 18);
+  const house = Object.values(s.people).filter((x) => (x.status === "owned" || x.status === "indentured") && x.id !== p?.id && x.age >= 5);
   const witnesses = house.filter((x) => deed.witnesses.some((w) => w.toLowerCase().includes(x.name.toLowerCase())));
   const hearers = deed.public ? house : witnesses;
   for (const h of hearers) {
