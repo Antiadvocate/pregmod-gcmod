@@ -16,6 +16,7 @@ import { AskList } from "./AskCard";
 import { runTurn } from "../engine/turn";
 import { modelsAvailable } from "../config";
 import { MannerCard, StandingOrders } from "./StandingOrders";
+import { FREE_HOW, freeHer, freeLine, type FreeHow } from "../engine/freed";
 
 export default function HerPanel({ id }: { id: string }) {
   const { save, mutate } = useGame();
@@ -155,10 +156,45 @@ export default function HerPanel({ id }: { id: string }) {
         }}>take it back</Button>
       ) : null}
 
+      <LetHerGo id={id} />
+
       <Card className="text-[11.5px] dim">
         {Math.round(r.fragility * 100)}% of her obedience is fear rather than bond. Courting needs it under 35%,
         marriage under 15%.
       </Card>
     </div>
+  );
+}
+
+/** Free her, and she goes on living in your city. Or, once she has, where she is now. */
+function LetHerGo({ id }: { id: string }) {
+  const { save, mutate } = useGame();
+  const [open, setOpen] = useState(false);
+  const [said, setSaid] = useState("");
+  const p = save.people[id];
+  if (!p) return null;
+  if (p.status === "free" && p.free_life) return <Card className="text-[13px]"><div className="text-[11px] uppercase tracking-wider dim mb-1">Her life now</div>{freeLine(save, p)}</Card>;
+  if (p.status !== "owned" && p.status !== "indentured") return said ? <Card className="text-[13px] acc">{said}</Card> : null;
+  return (
+    <Card>
+      <div className="flex items-center gap-2">
+        <div className="text-[11px] uppercase tracking-wider dim flex-1">Let her go</div>
+        <Button size="sm" kind="ghost" onClick={() => setOpen((v) => !v)}>{open ? "not now" : "free her"}</Button>
+      </div>
+      {open ? (
+        <div className="mt-2 space-y-1.5">
+          <div className="text-[12px] dim">She'll live in your city afterwards, off your roster: she takes work in one of your districts, and you'll run into her.</div>
+          {(Object.keys(FREE_HOW) as FreeHow[]).map((how) => {
+            const cost = FREE_HOW[how].cost(save);
+            return (
+              <button key={how} className="choice" disabled={save.arcology.cash < cost} onClick={() => { let r = { ok: false, line: "" }; mutate((s) => { r = freeHer(s, id, how); }); setSaid(r.line); setOpen(false); }}>
+                <span className="block text-[14px] leading-snug">{FREE_HOW[how].label}{cost ? ` · ¤${cost.toLocaleString()}` : ""}</span>
+                <span className="block text-[11.5px] dim mt-0.5">{FREE_HOW[how].note}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </Card>
   );
 }

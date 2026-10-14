@@ -14,6 +14,7 @@
  * draws on. A post that names none, or names ones that don't exist, is thrown away. The laws are
  * binding: people in a post keep them, or break them and it matters.
  */
+import { freedInCity, freeLine } from "./freed";
 import { mannerLines } from "./manner";
 import type { SaveState } from "./types";
 import { lawsOf } from "./court";
@@ -118,6 +119,8 @@ export function sources(s: SaveState): Source[] {
     const look = [p.body.boobs > 900 ? "huge tits" : p.body.boobs > 500 ? "big tits" : "", `${p.body.hair_color} hair`, p.clothes && p.clothes !== "no clothing" ? `usually in ${p.clothes}` : "usually naked"].filter(Boolean).join(", ");
     out.push({ id: `slave:${p.id}`, label: p.name, text: `${p.name}, ${p.age}, one of the owner's slaves (${p.assignment || "in the penthouse"}; ${look}). People in the city have seen her.${mannerLines(p).length ? ` How she is with people (seen when they're around): ${mannerLines(p).join("; ")}.` : ""}` });
   }
+  // Women the owner freed, who live in the city now and are known for it.
+  for (const p of freedInCity(s).slice(-3)) out.push({ id: `freed:${p.id}`, label: p.name, text: `${freeLine(s, p)} People in her district know she used to belong to the owner.` });
   // What happened last week, for posters to react to.
   const week = s.reports.at(-1)?.lines.filter((l) => !/^(The city: ¤|Weather: |News: )|wants something\.$/.test(l.text)).sort((x, y) => y.weight - x.weight).slice(0, 5) ?? [];
   if (week.length) out.push({ id: "week", label: "last week", text: `Last week in the arcology: ${week.map((l) => ownerSide(l.text, s.player.pronouns)).join(" ")}` });

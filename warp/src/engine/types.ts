@@ -438,6 +438,8 @@ export interface Person {
   indenture_weeks?: number;
   exit_week?: number;
   exit_note?: string;
+  /** Freed and living in your city: where, doing what, and how she feels about you. See engine/freed. */
+  free_life?: import("./freed").FreeLife;
   clothes: string;
   collar: string;
   shoes: string;

@@ -5,6 +5,7 @@
  * is she like that", which is the question the old game could not answer at any price because the
  * answer was distributed across every passage that had ever touched her.
  */
+import { freeLine } from "../engine/freed";
 import PhotoPortrait from "./PhotoPortrait";
 import MenialsPanel from "./Menials";
 import SubTabs from "./SubTabs";
@@ -105,7 +106,7 @@ export default function Roster() {
       {freed.length ? (
         <div className="mt-5">
           <button className="foldhead" aria-expanded={showFreed} onClick={toggleFreed}>
-            Freed and gone <span className="fold-count">{freed.length}</span>
+            Freed <span className="fold-count">{freed.length}</span>
           </button>
           {showFreed ? (
             <div className="grid gap-2.5 sm:grid-cols-2 mt-1">
@@ -115,7 +116,7 @@ export default function Roster() {
                     <SlaveHead person={p} size={42} />
                     <div className="flex-1 min-w-0">
                       <div className="text-[13.5px]">{p.name} <span className="text-[11px] dim font-mono">{p.age}</span></div>
-                      <div className="text-[11.5px] dim truncate">{p.exit_note ? `${p.exit_note} · ` : ""}week {p.exit_week}</div>
+                      <div className="text-[11.5px] dim truncate">{p.free_life ? freeLine(save, p).replace(`${p.name}, `, "") : `${p.exit_note ? `${p.exit_note} · ` : ""}week ${p.exit_week}`}</div>
                     </div>
                   </div>
                 </Card>

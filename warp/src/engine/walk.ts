@@ -8,6 +8,7 @@
  * make an example of somebody. Whatever you do out there is done in public, and the city takes it
  * back into its habits when the walk ends.
  */
+import { freedWalkLine } from "./freed";
 import { HOUSE_STYLE } from "./prompts";
 import { genomeOf, citizenShare, slaveShare, traitsFor, genomeBrief } from "./genome";
 import { sentinelsLine } from "./battles";
@@ -426,6 +427,7 @@ export function walkContext(s: SaveState, placeId?: string): string {
     `## THE PLAYER\nOwner of the arcology. Reputation ${Math.round(s.arcology.rep)}; the city's opinion of them is ${s.arcology.public_standing >= 3 ? "good" : s.arcology.public_standing <= -3 ? "poor" : "mixed"}.${s.player.owned_by ? ` Wears the collar of their slave ${s.people[s.player.owned_by]?.name ?? ""}, and people can see it.` : ""}`,
     deeds ? `## WHAT PEOPLE KNOW THE PLAYER DID\n${deeds}` : "",
     rumors ? `## WHAT PEOPLE ARE SAYING\n${rumors}` : "",
+    freedWalkLine(s, place.id),
   ].filter(Boolean).join("\n\n");
 }
 
