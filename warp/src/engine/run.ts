@@ -73,7 +73,7 @@ export interface Ambition {
   met: (s: SaveState) => boolean;
 }
 
-const owned = (s: SaveState): Person[] => Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 18);
+const owned = (s: SaveState): Person[] => Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured"));
 const money = (n: number) => `¤${Math.round(n).toLocaleString()}`;
 
 export const AMBITIONS: Ambition[] = [
