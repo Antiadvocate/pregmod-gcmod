@@ -466,6 +466,8 @@ export interface Person {
   hero?: string;
   /** What you told her about how you are to be treated, and (when she owns you) her rules for you. See engine/agreements. */
   agreements?: import("./agreements").Agreement[];
+  /** How she is with particular people, other slaves or anyone outside, kept between scenes. See engine/manner. */
+  manner?: import("./manner").Manner[];
   /** Gene treatments under way. See engine/fleshcraft. */
   growing?: import("./fleshcraft").Growing[];
   /** When she's been an idol. See engine/idols. */

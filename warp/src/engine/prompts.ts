@@ -13,6 +13,7 @@
  * is something the engine can be held to — if the prose contradicts the card, the card is right and
  * the guards in turn.ts say so.
  */
+import { mannerBrief } from "./manner";
 import { coarsen } from "./register";
 import { sentinelsLine } from "./battles";
 import { othersBrief } from "./household";
@@ -102,9 +103,11 @@ Shape:
  "rumors": [{"content":"...","truth":"true|distorted|false","from":"p1"}],
  "canon_add": ["only genuinely world-scale facts; usually empty"],
  "agreements": [{"id":"p1 or household","rule":"what she now does, e.g. kneels when the owner enters, or calls the owner \"Rabi\"","calls":"the name, only if the rule is what she calls the owner"}],
- "agreements_drop": [{"id":"p1","rule":"a standing order the owner explicitly cancelled"}]
+ "agreements_drop": [{"id":"p1","rule":"a standing order the owner explicitly cancelled"}],
+ "manner": [{"id":"p1","toward":"the other person's name","how":"how she is with them now, one plain line"}]
 }
 agreements: record every standing instruction the owner gave in this turn about how she (or the whole household) is to address or treat the owner from now on, when she accepted it or did not refuse. Not one-off orders for this moment.
+manner: record it when this turn settles how she is with a particular person other than the owner (another slave, or anyone else: a guest, a citizen, a trader), as something that will carry on: e.g. "subservient to him and nobody else; talks to him gently", "cold to her in front of others, sweet when they're alone". It counts when the prose shows it becoming how she is with them, and when the owner's own words say it ("and then she was subservient to him alone"). toward is that person's name as the prose gives it. It replaces whatever was kept for that person, so write the whole of how she is with them now, not only what changed. Not for a passing mood or one moment.
 Every id must be one given to you. Omit any key you have nothing for. Never record a new clause, exemption, amendment or technicality of a law as a fact, rumour or memory: laws are only what their text says.`;
 
 /** How she is holding up, in the words the game would use. */
@@ -149,6 +152,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (edge?.roles.length) lines.push(`ROLES: ${edge.roles.join(", ")}`);
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
   const between = deedsBrief(s, p.id);
+  const manner = mannerBrief(s, p);
+  if (manner) lines.push(manner);
   if (between) lines.push(`BETWEEN YOU AND HER (these happened in earlier weeks and are over; she has not forgotten):\n${between}`);
   if (s.player.owned_by === p.id) lines.push(reignCard(s, p) || `SHE OWNS YOU: you gave yourself to her. She holds your collar and acts like it.`);
   else if (s.reign && theKeeper(s) && s.reign.keeper !== p.id) lines.push(householdUnderHer(s, p));

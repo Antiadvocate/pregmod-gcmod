@@ -14,6 +14,7 @@
  * draws on. A post that names none, or names ones that don't exist, is thrown away. The laws are
  * binding: people in a post keep them, or break them and it matters.
  */
+import { mannerLines } from "./manner";
 import type { SaveState } from "./types";
 import { lawsOf } from "./court";
 import { LAW_BY_ID } from "../data/laws";
@@ -115,7 +116,7 @@ export function sources(s: SaveState): Source[] {
   // The owner's own people, as the city sees them: the ones who go out, and what they look like.
   for (const p of Object.values(s.people).filter((x) => (x.status === "owned" || x.status === "indentured") && x.age >= 18).slice(0, 6)) {
     const look = [p.body.boobs > 900 ? "huge tits" : p.body.boobs > 500 ? "big tits" : "", `${p.body.hair_color} hair`, p.clothes && p.clothes !== "no clothing" ? `usually in ${p.clothes}` : "usually naked"].filter(Boolean).join(", ");
-    out.push({ id: `slave:${p.id}`, label: p.name, text: `${p.name}, ${p.age}, one of the owner's slaves (${p.assignment || "in the penthouse"}; ${look}). People in the city have seen her.` });
+    out.push({ id: `slave:${p.id}`, label: p.name, text: `${p.name}, ${p.age}, one of the owner's slaves (${p.assignment || "in the penthouse"}; ${look}). People in the city have seen her.${mannerLines(p).length ? ` How she is with people (seen when they're around): ${mannerLines(p).join("; ")}.` : ""}` });
   }
   // What happened last week, for posters to react to.
   const week = s.reports.at(-1)?.lines.filter((l) => !/^(The city: ¤|Weather: |News: )|wants something\.$/.test(l.text)).sort((x, y) => y.weight - x.weight).slice(0, 5) ?? [];

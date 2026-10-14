@@ -24,6 +24,7 @@ import { coarsen, REGISTER_TAIL } from "./register";
 import { memoryLine } from "./memory";
 import { agreementsBrief, calledBy } from "./agreements";
 import { deedsBrief } from "./deeds";
+import { mannerBrief } from "./manner";
 import type { PendingEvent, Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable, isLocalModel } from "../config";
@@ -97,6 +98,7 @@ function dossier(s: SaveState, p: Person): string {
     `GENITALS: ${describeGenitals(p)}`,
     `ANATOMY (hard rule): ${anatomyLock(p)}`,
     agreementsBrief(s, p),
+    mannerBrief(s, p),
     `SHE CALLS YOU: ${calledBy(s, p)}.`,
     `FEET: ${describeFeet(p)}`,
     p.womb.fetuses.length ? `${p.womb.weeks} weeks pregnant.` : "",

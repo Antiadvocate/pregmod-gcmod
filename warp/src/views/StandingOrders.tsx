@@ -7,6 +7,7 @@ import { X } from "lucide-react";
 import { useGame } from "../lib/game";
 import { Button, Card, Meter, Section } from "../lib/ui";
 import { agreementsOf, captureInstructions, houseRules, keep } from "../engine/agreements";
+import { dropManner, mannerOf, setManner } from "../engine/manner";
 import { reignOf, STYLE_NOTE, askForLover } from "../engine/reign";
 import { LAW_BY_ID } from "../data/laws";
 
@@ -55,6 +56,44 @@ export function StandingOrders({ person }: { person?: string }) {
       <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); add(); }}>
         <input className="flex-1 min-w-0" value={text} onChange={(e) => setText(e.target.value)} placeholder={p ? `e.g. call me Rabi` : `e.g. kneel when I come in`} />
         <Button size="sm" kind="primary" disabled={!text.trim()} onClick={add}>Add</Button>
+      </form>
+    </Card>
+  );
+}
+
+/** How she is with particular people: kept from scenes, or written here. One line per person. */
+export function MannerCard({ person }: { person: string }) {
+  const { save, mutate } = useGame();
+  const [who, setWho] = useState("");
+  const [how, setHow] = useState("");
+  const p = save.people[person];
+  if (!p) return null;
+  const list = mannerOf(p);
+  const add = () => {
+    if (!who.trim() || !how.trim()) return;
+    mutate((s) => { setManner(s, s.people[person], who, how, "you"); });
+    setWho(""); setHow("");
+  };
+  return (
+    <Card>
+      <div className="text-[11px] uppercase tracking-wider dim mb-1.5">How {p.name} is with people</div>
+      {list.length ? (
+        <ul className="space-y-1 mb-2">
+          {list.map((m) => (
+            <li key={m.toward} className="flex items-start gap-2 text-[13px]">
+              <button className="flex-1 text-left" title="change it" onClick={() => { setWho(m.toward); setHow(m.how); }}>
+                <span className="font-medium">{m.toward}</span>: {m.how}
+                <span className="text-[11px] dim"> · {m.by === "you" ? "you wrote it" : "from a scene"}, week {m.week}</span>
+              </button>
+              <button className="dim mt-0.5" aria-label="strike it" title="strike it" onClick={() => mutate((s) => { dropManner(s.people[person], m.toward); })}><X size={13} /></button>
+            </li>
+          ))}
+        </ul>
+      ) : <div className="text-[12px] dim mb-2">Nothing yet. When a scene settles how she is with someone (another of yours, or anyone else), it's kept here and she stays that way with them. You can write one below.</div>}
+      <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); add(); }}>
+        <input className="w-28 min-w-0" value={who} onChange={(e) => setWho(e.target.value)} placeholder="who" />
+        <input className="flex-1 min-w-[10rem]" value={how} onChange={(e) => setHow(e.target.value)} placeholder="e.g. subservient to him alone; talks to him gently" />
+        <Button size="sm" kind="primary" disabled={!who.trim() || !how.trim()} onClick={add}>Keep</Button>
       </form>
     </Card>
   );

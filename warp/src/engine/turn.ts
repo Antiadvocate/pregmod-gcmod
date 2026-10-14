@@ -14,6 +14,7 @@
 import { coarsen, REGISTER_TAIL } from "./register";
 import { inventsLaw } from "./lawguard";
 import { captureInstructions, keep, houseRules, agreementsOf } from "./agreements";
+import { setManner } from "./manner";
 import type { ActionMode, Person, SaveState, TurnEntry } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
@@ -49,6 +50,8 @@ export interface Diff {
   /** Standing instructions she accepted about how she treats the owner. */
   agreements?: { id: string; rule: string; calls?: string }[];
   agreements_drop?: { id: string; rule: string }[];
+  /** How she is with a particular person, settled by this turn. Replaces what was kept for them. */
+  manner?: { id: string; toward: string; how: string }[];
 }
 
 export interface TurnResult {
@@ -413,6 +416,12 @@ export function applyDiff(s: SaveState, d: Diff, prose: string): string[] {
   for (const a of d.agreements_drop ?? []) {
     const list = a.id === "household" ? houseRules(s) : s.people[a.id] ? agreementsOf(s.people[a.id]) : null;
     if (list) { const i = list.findIndex((x) => x.rule.toLowerCase().includes(String(a.rule).toLowerCase().slice(0, 20))); if (i >= 0) list.splice(i, 1); }
+  }
+
+  // How she is with a particular person, kept for every scene after this one.
+  for (const m of (d.manner ?? []).slice(0, 4)) {
+    const p = m?.id ? s.people[m.id] : undefined;
+    if (p && m.toward && m.how) setManner(s, p, String(m.toward), String(m.how), "scene");
   }
 
   // Canon is a constraint on what may exist, so it is the one field a single turn cannot spray.

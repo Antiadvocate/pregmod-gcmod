@@ -20,6 +20,7 @@ import "./body.test.ts";
 import "./genitals.test.ts";
 import "./worldsim.test.ts";
 import "./moments.test.ts";
+import "./manner.test.ts";
 import "./feet.test.ts";
 import "./plot.test.ts";
 import "./deeds.test.ts";
