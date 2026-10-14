@@ -24,7 +24,7 @@ import { romanceOf } from "./romance";
 const adopted = (s: SaveState, id: string) => (s.arcology.doctrines as Record<string, { adoption: number }>)[id]?.adoption ?? 0;
 const flag = (s: SaveState, k: string) => Number(s.story?.flags[k] ?? 0);
 const skill = (s: SaveState, k: string) => s.player.skills[k] ?? 0;
-const owned = (s: SaveState) => Object.values(s.people).filter((p) => p.status === "owned" && p.age >= 18);
+const owned = (s: SaveState) => Object.values(s.people).filter((p) => p.status === "owned");
 const once = (s: SaveState, k: string) => !(s.story?.flags[`gx_${k}`]);
 const done = (s: SaveState, k: string) => { if (s.story) s.story.flags[`gx_${k}`] = s.arcology.week; };
 const friendliest = (s: SaveState) => powers(s).filter((p) => p.rec.status === "free" || p.rec.status === "allied").sort((a, b) => b.attitude - a.attitude)[0];
