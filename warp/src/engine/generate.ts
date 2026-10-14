@@ -85,7 +85,7 @@ export function generatePerson(opts: GenOptions = {}): Person {
   // or futa. Plain male is still generatable, it just has to be asked for — the alternative was
   // what the cheat screen turned up: a slave called Jonas, drawn as a woman.
   const sex = opts.sex ?? (r.chance(0.9) ? "female" : "futa");
-  const age = opts.age ?? Math.round(clamp(r.normal(23, 5), 18, 46));
+  const age = opts.age ?? Math.round(clamp(r.normal(23, 5), 5, 46));
   const female = sex !== "male";
   const pronouns: Pronouns = female ? "she/her" : "he/him";
 
@@ -396,7 +396,7 @@ function generatePsycheFrom(r: Rng, origin: (typeof ORIGINS)[number], persona: P
 }
 
 function generateSkills(r: Rng, career: (typeof CAREERS)[number], age: number, q: number): Skills {
-  const base = () => Math.round(clamp(r.normal(8 + q * 6 + (age - 18) * 0.7, 10), 0, 60));
+  const base = () => Math.round(clamp(r.normal(8 + q * 6 + (age - 5) * 0.7, 10), 0, 60));
   const s: Skills = {
     oral: base(), vaginal: base(), anal: Math.round(base() * 0.6), penetrative: Math.round(base() * 0.4),
     whoring: Math.round(base() * 0.5), entertainment: base(), combat: Math.round(base() * 0.3),
