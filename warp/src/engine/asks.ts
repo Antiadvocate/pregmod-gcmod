@@ -542,7 +542,7 @@ export function collectAsks(s: SaveState): Ask[] {
   const out: Ask[] = [];
   const people = Object.values(s.people)
     // A free woman asks only if she is still here: the keeper, not somebody who went home.
-    .filter((p) => (p.status === "owned" || p.status === "indentured" || (p.status === "free" && (p.exit_week === undefined || s.player.owned_by === p.id))) && p.age >= 18)
+    .filter((p) => (p.status === "owned" || p.status === "indentured" || (p.status === "free" && (p.exit_week === undefined || s.player.owned_by === p.id))) && p.age >= 5)
     .sort((a, b) => (b.romance?.dominion ?? -100) - (a.romance?.dominion ?? -100));
   const world = askWorld(s);
   for (const p of people) {
