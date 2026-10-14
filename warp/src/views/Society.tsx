@@ -318,7 +318,7 @@ function Walk() {
   const { save, mutate } = useGame();
   const [escort, setEscort] = useState("");
   const [on, setOn] = useState<string | null>(null);
-  const house = Object.values(save.people).filter((p) => p.status === "owned" && p.age >= 18 && p.health.recovery_weeks === 0);
+  const house = Object.values(save.people).filter((p) => p.status === "owned" && p.age >= 5 && p.health.recovery_weeks === 0);
   const open = momentsOf(save).filter((m) => m.source === "walk" && m.open && m.id !== on);
   return (
     <Section title="Walk the city">
