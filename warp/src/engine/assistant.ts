@@ -66,7 +66,7 @@ export function makeAssistant(s: SaveState, o: { name: string; look: PALook; man
 
 /* ── the facts she draws on ─────────────────────────────────────────────────────────────────── */
 
-const owned = (s: SaveState) => Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 18);
+const owned = (s: SaveState) => Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 5);
 
 export interface Fact { topic: string; lines: string[] }
 
