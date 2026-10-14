@@ -17,7 +17,7 @@ import { getEdge, moveEdge, addRole, startRumor } from "./social";
 import { registerEvents, type EventDef } from "./events";
 import { rng, type Rng } from "./rng";
 
-const adults = (s: SaveState) => Object.values(s.people).filter((p) => p.status === "owned" && p.age >= 18 && p.health.recovery_weeks === 0);
+const adults = (s: SaveState) => Object.values(s.people).filter((p) => p.status === "owned" && p.health.recovery_weeks === 0);
 const warmth = (s: SaveState, a: Person, b: Person) => getEdge(s.edges, a.id, b.id)?.warmth ?? 0;
 const attraction = (s: SaveState, a: Person, b: Person) => getEdge(s.edges, a.id, b.id)?.attraction ?? 0;
 const fet = (p: Person, n: string) => p.persona.fetishes.find((f) => f.name === n)?.strength ?? 0;
