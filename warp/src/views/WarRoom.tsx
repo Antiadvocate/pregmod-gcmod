@@ -11,6 +11,12 @@ import SubTabs from "./SubTabs";
 import { BRANCHES, PROGRAMS, PROGRAM_BY_ID, type Branch } from "../data/arsenal";
 import { attitudeWord, build, canBuild, canMove, dominion, empireOf, forces, makeMove, moveCost, MOVES, powers, units, type Move, type PowerView } from "../engine/power";
 import { activeWars, declareWar, setStrategy, STRATEGY, strike, suePeace, type Strategy, type War } from "../engine/war";
+import { rulerOf, talkLeft, talkOf } from "../engine/diplomacy";
+import { speakToGovernor, speakToPower } from "../engine/talk";
+import { canGovern, governedPlaces, governorCandidates, installGovernor, competence } from "../engine/governor";
+import { DOCTRINE_BY_ID } from "../data/doctrines";
+import Talk from "./Talk";
+import { SlaveHead } from "./SlaveArt";
 
 const money = (n: number) => `¤${Math.round(n).toLocaleString()}`;
 const KIND: Record<string, string> = { neighbour: "Neighbouring arcology", freecity: "Free City", region: "Old World state" };
@@ -40,6 +46,7 @@ export default function WarRoom() {
       <SubTabs id="warroom" tabs={[
         { id: "war", label: "War", badge: wars.length || undefined, render: () => <Wars /> },
         { id: "powers", label: "Powers", render: () => <Powers /> },
+        { id: "governors", label: "Governors", badge: governedPlaces(save).filter((x) => x.g.letters.some((l) => !l.read)).length || undefined, render: () => <Governors /> },
         { id: "arsenal", label: "Arsenal", badge: e.building.length || undefined, render: () => <Arsenal /> },
       ]} />
     </div>
@@ -139,9 +146,19 @@ function Dealings({ p }: { p: PowerView }) {
   const { save, mutate } = useGame();
   const [said, setSaid] = useState("");
   const [sure, setSure] = useState(false);
-  if (p.rec.status === "conquered") return <div className="text-[12.5px] mid mt-2">It's yours. It pays you {money(p.rec.pays ?? 0)} a week.</div>;
+  if (p.rec.status === "conquered") return <div className="mt-2"><div className="text-[12.5px] mid">It's yours. It pays you {money(p.rec.pays ?? 0)} a week.</div><Install p={p} /></div>;
+  const ruler = rulerOf(save, p);
   return (
     <div className="mt-3 fade-in">
+      <div className="text-[12.5px] mb-2"><span className="font-medium">{ruler.name}</span><span className="dim">, {ruler.title}. {ruler.manner}. Wants {ruler.wants}.</span></div>
+      {p.rec.governor ? null : (
+        <div className="card-2 p-3 mb-3">
+          <div className="text-[11px] uppercase tracking-wider dim mb-1.5">Talk to {ruler.name}</div>
+          <Talk who={ruler.name} log={talkOf(save, p.id).log} left={talkLeft(save, p.id)} send={(t) => speakToPower(save, p.id, t)}
+            ideas={["What would it take for you to adopt my laws?", "Send me your best girls and I'll forget the insult.", "Pay me, or I come for you.", "Let's talk about a pact."]} />
+        </div>
+      )}
+      <Install p={p} />
       <div className="text-[12px] mid mb-2">{p.lines.filter(Boolean).slice(0, 2).join(" ")}</div>
       <div className="flex flex-wrap gap-1.5">
         {(Object.keys(MOVES) as Move[]).map((m) => {
@@ -168,6 +185,80 @@ function Dealings({ p }: { p: PowerView }) {
         </div>
       ) : null}
       {said ? <p className="font-prose text-[13.5px] mt-2">{said}</p> : null}
+    </div>
+  );
+}
+
+/** Put one of your women in charge of a place you hold. */
+function Install({ p }: { p: PowerView }) {
+  const { save, mutate } = useGame();
+  const [pick, setPick] = useState(false);
+  const [said, setSaid] = useState("");
+  const why = canGovern(save, p.id);
+  if (p.rec.governor) return <div className="text-[12.5px] acc mt-2">Governed for you by {save.people[p.rec.governor]?.name}. Talk to her under Governors.</div>;
+  if (why) return null;
+  const who = governorCandidates(save).sort((a, b) => competence(save, b) - competence(save, a));
+  return (
+    <div className="mt-2">
+      {said ? <p className="font-prose text-[13.5px] mb-2">{said}</p> : null}
+      {!pick ? <Button size="sm" kind="primary" onClick={() => setPick(true)}><Crown size={12} /> Put one of your women in charge</Button> : (
+        <div className="list">
+          {who.length ? who.slice(0, 10).map((w) => (
+            <button key={w.id} className="list-row" onClick={() => { let r = { ok: false, line: "" }; mutate((s) => { r = installGovernor(s, p.id, w.id); }); setSaid(r.line); setPick(false); }}>
+              <SlaveHead person={w} size={32} />
+              <div className="flex-1 min-w-0 text-left">
+                <div className="text-[13px]">{w.name} <span className="dim">· {w.persona.intelligence}</span></div>
+                <div className="text-[11px] dim truncate">{w.persona.core_traits.slice(0, 2).join("; ")}</div>
+              </div>
+              <span className="text-[11px] dim">fit {Math.round(competence(save, w) * 100)}</span>
+            </button>
+          )) : <div className="text-[12.5px] dim">Nobody of yours can go: she needs to be an adult who can speak and think, and not broken.</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Governors() {
+  const { save, mutate } = useGame();
+  const [open, setOpen] = useState<string | null>(null);
+  const list = governedPlaces(save);
+  if (!list.length) return <Card className="text-[13px] mid">None of your women run a city yet. Win a war (and keep the city), make a power your vassal, or buy 55% of a neighbour, then put her in charge from the Powers tab. She runs it as herself, and stays yours.</Card>;
+  return (
+    <div className="space-y-3">
+      {list.map(({ g, p, place }) => {
+        const unread = g.letters.filter((l) => !l.read);
+        return (
+          <Card key={g.place}>
+            <div className="flex items-center gap-2.5">
+              {p ? <SlaveHead person={p} size={40} /> : null}
+              <div className="flex-1 min-w-0">
+                <div className="text-[14px] font-medium">{p?.name} <span className="dim font-normal">governs</span> {g.name}</div>
+                <div className="text-[11.5px] dim">since week {g.since} · {g.doctrines.map((d) => DOCTRINE_BY_ID[d]?.noun ?? d).join(", ")} · sends {money(place?.rec.pays ?? 0)}/wk</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mt-2.5">
+              <Meter value={g.prosperity} label="prosperity" />
+              <Meter value={g.order} label="order" />
+            </div>
+            <div className="mt-2.5 space-y-1">
+              {g.decrees.slice(-4).map((d, i) => <div key={i} className="text-[12.5px] mid font-prose">“{d.text}”</div>)}
+            </div>
+            {g.letters.length ? (
+              <div className="mt-3 card-2 p-3">
+                <div className="text-[11px] uppercase tracking-wider dim mb-1">{unread.length ? "new letter" : "her last letter"} · week {g.letters.at(-1)!.week}</div>
+                {g.letters.at(-1)!.text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[14px] leading-relaxed">{para}</p>)}
+                {unread.length ? <button className="text-[11.5px] underline dim mt-1" onClick={() => mutate(() => { for (const l of g.letters) l.read = true; })}>mark read</button> : null}
+              </div>
+            ) : null}
+            <div className="mt-3">
+              {open === g.place
+                ? <Talk who={p?.name ?? "her"} log={g.talk} send={(t) => speakToGovernor(save, g.place, t)} ideas={["How's my city?", "Make my laws your laws.", "Send me two of your best girls.", "Come home. I miss you."]} />
+                : <Button size="sm" kind="primary" onClick={() => { setOpen(g.place); mutate(() => { for (const l of g.letters) l.read = true; }); }}>Call her</Button>}
+            </div>
+          </Card>
+        );
+      })}
     </div>
   );
 }

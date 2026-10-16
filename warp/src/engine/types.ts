@@ -485,6 +485,10 @@ export interface Person {
   firsts?: Record<string, number>;
   /** Where she stands with you, and who is deciding. See engine/romance.ts. */
   romance?: Romance;
+  /** Where she sleeps and what's in it. See engine/rooms.ts. */
+  room?: import("./rooms").Room;
+  /** The arcology she governs for you, by power id. See engine/governor.ts. */
+  governs?: string;
   /** Set when the person is a background body — a Fuckdoll, a tank subject, or one of the many
    *  in a facility nobody is looking at. They still get a full nervous system (it is arithmetic
    *  and free); they do not get described in the prompt. See KERNEL.md on LOD. */
@@ -813,9 +817,21 @@ export interface PendingEvent {
   options: { id: string; label: string; note?: string }[];
   week: number;
   severity: "minor" | "notable" | "major";
+  /** Set once a model has written this event over the engine's version. See engine/living. */
+  written?: { model: string; title?: string };
+  /** Options a model added from the closed effect table, resolved by engine/dynamic. */
+  extra?: { id: string; label: string; note?: string }[];
+  /** What a generated event leaves open for a later one to pick up. See engine/chronicle. */
+  hook?: string;
 }
 
 export interface SaveState {
+  /** What has already happened, so the next thing can grow out of it. See engine/chronicle. */
+  chronicle?: import("./chronicle").ChronicleEntry[];
+  /** Rulers of the other powers, and what you've said to each other. See engine/diplomacy. */
+  diplomacy?: import("./diplomacy").DiplomacyState;
+  /** Arcologies your women run for you. See engine/governor. */
+  governors?: import("./governor").Governorship[];
   /** When each kind of event last fired, keyed by kind or kind:person. Stops repeats. */
   event_log?: Record<string, number>;
   id: string;

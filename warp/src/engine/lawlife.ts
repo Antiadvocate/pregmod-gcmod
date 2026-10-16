@@ -122,7 +122,12 @@ export function lawPassed(s: SaveState, l: LawDef): void {
 
 /** Every couple of weeks, one line on how the city is living with each of your laws. */
 export function lawPulse(s: SaveState): string[] {
-  const out: string[] = [];
+  return lawPulseTagged(s).map((x) => x.line);
+}
+
+/** The same, with the law each line is about, so a model can rewrite it in context later. */
+export function lawPulseTagged(s: SaveState): { law: string; line: string; total: number }[] {
+  const out: { law: string; line: string; total: number }[] = [];
   const week = s.arcology.week;
   for (const x of lawsOf(s)) {
     const l = LAW_BY_ID[x.id];
@@ -151,7 +156,7 @@ export function lawPulse(s: SaveState): string[] {
         : c.total > -30
           ? r.pick([`The ${l.name} is being ignored where the patrols can't see.`, `Someone has defaced the notices of the ${l.name} on the residential floors.`, `The ${l.name} is kept in the spire and ignored in the verge.`])
           : r.pick([`The city is openly defying the ${l.name}. There are petitions to repeal it in every block.`, `Nobody keeps the ${l.name} unless a patrol is watching. People have started calling it your law, not the city's.`]);
-    out.push(line + money);
+    out.push({ law: l.id, line: line + money, total: Math.round(c.total) });
   }
   return out;
 }

@@ -43,6 +43,11 @@ export interface PowerRec {
   /** Kept once they're conquered, for a neighbour that has been folded into your city and left the map. */
   name?: string;
   base?: number;
+  /** One of your women, running it for you. See engine/governor. */
+  governor?: string;
+  /** Your laws they agreed to keep, by id, and your doctrines they took up. See engine/diplomacy. */
+  laws?: string[];
+  doctrines_added?: string[];
 }
 
 export interface Empire {
@@ -345,9 +350,10 @@ export function tickPowers(s: SaveState): { lines: string[]; cash: number } {
     rec.hurt = Math.max(0, rec.hurt - 2);
     rec.grudge = Math.max(0, rec.grudge - 0.3);
     if (rec.status === "conquered") { cash += rec.pays ?? 0; continue; }
+    if (rec.governor) { rec.attitude = 100; rec.grudge = 0; const n = s.arcology.neighbours.find((x) => x.id === p.id); if (n) { n.attitude = 100; n.scheme = undefined; } }
     if (rec.status === "vassal") {
       cash += rec.pays ?? 0;
-      if (p.attitude < -50 && r.chance(0.06)) { rec.status = "free"; rec.pays = 0; lines.push(`${p.name} has stopped paying you, and thrown out your people. It's in revolt.`); note(s, `${p.name} revolted.`); }
+      if (!rec.governor && p.attitude < -50 && r.chance(0.06)) { rec.status = "free"; rec.pays = 0; lines.push(`${p.name} has stopped paying you, and thrown out your people. It's in revolt.`); note(s, `${p.name} revolted.`); }
       continue;
     }
     // Opinion drifts: your diplomacy, your media, pacts, and what they hold against you.

@@ -39,6 +39,11 @@ import { FETISH_BY_ID, ACT_BY_ID } from "../data/intimacy";
 import { condition } from "./prompts";
 import { describeGenitals, describeFeet, anatomyLock } from "./genitals";
 import { worldBrief } from "./world";
+import { HOUSE_STYLE } from "./prompts";
+import { PLAIN_RULES } from "./style";
+import { chronicle, chronicleBrief, closeHooks, openHooks } from "./chronicle";
+import { changeRoom, roomLine, roomWish } from "./rooms";
+import { EXTRA_BY_ID } from "../data/rooms";
 
 /** THE CLOSED TABLE. A generated option may name one of these and nothing else. */
 export const DYNAMIC_EFFECTS: Record<string, { note: string; run: (s: SaveState, p: Person, value?: string | number) => string }> = {
@@ -56,10 +61,14 @@ export const DYNAMIC_EFFECTS: Record<string, { note: string; run: (s: SaveState,
   rep: { note: "the arcology's opinion moves", run: (s, _p, v) => { const n = Number(v) || -200; s.arcology.rep = Math.max(0, s.arcology.rep + n); return `standing ${n >= 0 ? "+" : ""}${n}`; } },
   rumor: { note: "it gets around — value is what people say", run: (s, p, v) => { startRumor(s, String(v ?? `something about ${p.name}`), { about: p.id, salience: 7 }); return "everyone's heard about it by morning"; } },
   scar: { note: "she carries it permanently — value is the memory in her terms", run: (s, p, v) => { const mem = s.memory[p.id]; if (mem) remember(mem, { content: String(v ?? "the thing that happened"), week: s.arcology.week, importance: 9, charge: "sharp", core: true }); addState(p.psyche, "what happened", s.arcology.week); return "she'll never forget it"; } },
+  room_gift: { note: "you give her something for her room; value is one of the ROOM ITEM ids", run: (s, p, v) => { const id = String(v ?? ""); const wish = roomWish(s, p); const line = EXTRA_BY_ID[id] ? changeRoom(s, p, { extra: id }) : wish?.extra ? changeRoom(s, p, { extra: wish.extra }) : wish?.axis ? changeRoom(s, p, { axis: wish.axis, level: wish.level }) : ""; return line || "her room stays as it is"; } },
+  room_take: { note: "you take something out of her room as a punishment; value is one of the ROOM ITEM ids she has", run: (s, p, v) => { const have = p.room?.extras ?? []; const id = have.includes(String(v)) ? String(v) : have.find((x) => (EXTRA_BY_ID[x]?.comfort ?? 0) > 0); if (id) return changeRoom(s, p, { remove: id }); if ((p.room?.levels.bed ?? 0) > -1) return changeRoom(s, p, { axis: "bed", level: -1 }); return "there's nothing left in her room to take"; } },
   nothing: { note: "you do not engage", run: () => "you did nothing" },
 };
 
 interface GeneratedEvent {
+  title?: string;
+  hook?: string;
   situation?: string;
   options?: { label?: string; note?: string; effect?: string; value?: string | number }[];
 }
@@ -88,7 +97,7 @@ export function pickSubject(s: SaveState): Person | null {
 
 /** The dossier the model gets. Everything specific, nothing generic — a model handed "a slave"
  *  writes the average of every slave it has ever read, and a model handed THIS record writes her. */
-function dossier(s: SaveState, p: Person): string {
+export function dossier(s: SaveState, p: Person): string {
   const r = read(p, s.memory[p.id]);
   const rom = romanceOf(p);
   const mem = s.memory[p.id];
@@ -105,6 +114,7 @@ function dossier(s: SaveState, p: Person): string {
     `FEET: ${describeFeet(p)}`,
     p.womb.fetuses.length ? `${p.womb.weeks} weeks pregnant.` : "",
     p.body.lactation ? "Lactating." : "",
+    roomLine(p),
     `DOING: ${p.assignment}${p.facility ? ` in the ${s.arcology.facilities[p.facility]?.name}` : ""}.`,
     `FETISHES: ${fetish || "no particular fetish"}${p.persona.quirk ? ` · quirk: ${p.persona.quirk.id}` : ""}${p.persona.flaw ? ` · flaw: ${p.persona.flaw.id}` : ""}${p.persona.paraphilia ? ` · PARAPHILIA: ${p.persona.paraphilia}` : ""}.`,
     `HOW SHE IS: ${condition(p)}, arousal ${Math.round(p.psyche.arousal)}, mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` On her mind: ${p.psyche.active_states.join(", ")}.` : ""}`,
@@ -117,36 +127,40 @@ function dossier(s: SaveState, p: Person): string {
     p.acts && Object.keys(p.acts).length ? `WHAT HAS BEEN DONE TO HER: ${Object.entries(p.acts).map(([a, n]) => `${a} ×${n}`).join(", ")}` : "",
     deedsBrief(s, p.id) ? `WHAT HAS HAPPENED BETWEEN YOU (history, not the present: let it colour how she is now, never pick it back up):\n${deedsBrief(s, p.id)}` : "",
     s.world ? `THE WORLD: ${worldBrief(s).replace(/\n/g, " ")}` : "",
+    chronicleBrief(s, [p.id], 8),
     `THE PLACE AND TIME: ${s.arcology.name}, now week ${s.arcology.week}. ${Object.keys(s.arcology.doctrines).length ? `Its doctrine: ${Object.keys(s.arcology.doctrines).join(", ")}.` : "No doctrine adopted yet."}`,
   ];
   return lines.filter(Boolean).join("\n");
 }
 
-const SYSTEM = `You write one random event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. Write it the way the original game writes its random events: second person, present tense, plain and explicit, a short setup describing what one of your slaves is doing or has done, ending with you having to decide how to respond.
+const SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. An event is a short situation with one of the player's slaves that ends with the player having to decide what to do.
 
-Build it from her record: her fetish, her age, her flaw, her job, what has been done to her, what she remembers, how she feels about you. It should be something that could only happen with her.
+Build it from her record: her fetish, her flaw, her job, her body, her room, what has been done to her, what she remembers, how she feels about you, and above all WHAT HAS ALREADY HAPPENED between you. Emergent story is the point: the best event is the next step of something already on her record (a promise you made, a punishment she hasn't got over, something left open), with consequences that follow from it. If OPEN THREADS are listed, continue one of them. It should be something that could only happen with her, this week.
 
-Write plainly and crudely, like a porn game, not literature: cock, dick, pussy, cunt, clit, ass, tits, cum, piss, spit, fuck, slut, as the situation calls for them. Short blunt sentences. No euphemism ("core", "heat", "folds", "manhood", "release"), no poetic sensation ("waves of pleasure", "came undone"), no fade to black, no moralizing. You may say what she thinks and feels. Do not invent people who are not on the record. Everyone is an adult. No aphorisms, no mood-setting, no filler gestures.
+${HOUSE_STYLE}
+
+Do not invent people who are not on the record, except strangers with no name. Everyone is an adult.
 
 Output ONE strict JSON object and nothing else:
-{"situation":"2-4 sentences, present tense, ending where you have to decide","options":[{"label":"what you do, 2-6 words","note":"short plain consequence","effect":"one id from the list","value":"optional"}]}
+{"title":"2-5 words","situation":"one or two short paragraphs, present tense, ending where you have to decide","options":[{"label":"what you do, 2-8 words","note":"short plain consequence","effect":"one id from the list","value":"optional"}],"hook":"one line: what this leaves open for later, or empty"}
 
 Three or four options, each a genuinely different response, at least one of which is to leave it alone.
 
-It is now the week named under THE PLACE AND TIME, and each turn of the game is a week. Everything on her record happened in earlier weeks and is over: do not continue it, restage it, or set this in the same place and moment as any of it. This is something new, happening now. The past shows only as what it left behind: how she acts differently, what she wants now, what people say.`;
+It is now the week named under THE PLACE AND TIME, and each turn of the game is a week. Everything on her record happened in earlier weeks and is over: do not restage it. This is the next thing, happening now.`;
 
 function effectList(): string {
   return Object.entries(DYNAMIC_EFFECTS).map(([id, e]) => `${id} — ${e.note}`).join("\n");
 }
 
-export async function generateDynamicEvent(s: SaveState, subject?: Person): Promise<PendingEvent | null> {
+export async function generateDynamicEvent(s: SaveState, subject?: Person, hint = ""): Promise<PendingEvent | null> {
   if (!modelsAvailable()) return null;
   const p = subject ?? pickSubject(s);
   if (!p) return null;
 
+  const hooks = openHooks(s, [p.id]).slice(0, 3);
   const res = await call({
     system: SYSTEM,
-    user: `${dossier(s, p)}\n\nEFFECT IDS YOU MAY USE:\n${effectList()}\n\nACT IDS (for the "act" effect): ${Object.keys(ACT_BY_ID).join(", ")}\n\n${REGISTER_TAIL}`,
+    user: `${dossier(s, p)}${hooks.length ? `\n\nOPEN THREADS (continue one of these if you can):\n${hooks.map((h) => `· from week ${h.week}: ${h.hook}`).join("\n")}` : ""}${hint ? `\n\nWHAT THE GAME HAS NOTICED THIS WEEK (use it): ${hint}` : ""}\n\nEFFECT IDS YOU MAY USE:\n${effectList()}\n\nACT IDS (for the "act" effect): ${Object.keys(ACT_BY_ID).join(", ")}\n\nROOM ITEM IDS: ${Object.keys(EXTRA_BY_ID).join(", ")}${p.room?.extras.length ? ` (she has: ${p.room.extras.join(", ")})` : ""}\n\n${PLAIN_RULES}\n\n${REGISTER_TAIL}`,
     model: s.models.narrator_model,
     fallback: s.models.fallback_model,
     json: true,
@@ -172,17 +186,19 @@ export async function generateDynamicEvent(s: SaveState, subject?: Person): Prom
     id: `dyn-${s.arcology.week}-${p.id}`,
     kind: "dynamic",
     person: p.id,
-    seed: String(out.situation).slice(0, 900),
+    seed: String(out.situation).slice(0, 1600),
     options,
     week: s.arcology.week,
     severity: "notable",
+    written: { model: res.model, title: out.title ? String(out.title).slice(0, 60) : undefined },
+    hook: out.hook ? String(out.hook).slice(0, 200) : undefined,
   };
 }
 
 /** Resolve a generated option. The id carries the effect and its value, so nothing has to be
  *  stored alongside the event and a save that reloads mid-event still resolves correctly. */
 /** A follow-up with nobody of yours in it: what the effect means for the city and your name. */
-function npcEffect(s: SaveState, effect: string, value: string | undefined, seed: string): string {
+export function npcEffect(s: SaveState, effect: string, value: string | undefined, seed: string): string {
   const std = (n: number) => { s.arcology.public_standing = clamp(s.arcology.public_standing + n, -10, 10); };
   const who = seed.match(/\b([A-Z][a-z]+(?: [A-Z][a-z]+)?)\b/)?.[1] ?? "them";
   switch (effect) {
@@ -207,6 +223,9 @@ export function resolveDynamic(s: SaveState, e: PendingEvent, optionId: string):
   // too. Then the effect lands on your name in the city instead of on her.
   const line = p ? def.run(s, p, value || undefined) : npcEffect(s, effect, value, e.seed);
   s.events = s.events.filter((x) => x.id !== e.id);
+  const label = e.options.find((o) => o.id === optionId)?.label ?? "";
+  if (p) closeHooks(s, [p.id]);
+  chronicle(s, { keys: p ? [p.id] : ["city"], title: e.written?.title, text: `${e.seed.split(/\n/)[0].slice(0, 200)} You chose: ${label}. ${line}.`, hook: e.hook });
   s.notifications.push({ id: `n-${e.id}`, week: s.arcology.week, text: p ? `${p.name}: ${line}` : line, kind: "info", person: p?.id, seen: false });
   return line;
 }

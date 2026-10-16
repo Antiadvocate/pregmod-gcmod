@@ -253,6 +253,7 @@ export const WAR_EVENTS: EventDef[] = [
     options: [
       { id: "annex", label: "Annex it: it's yours now", note: "most income; they'll resent it", resolve: (s) => take(s, "annex") },
       { id: "vassal", label: "Leave it a government that answers to you", note: "tribute, less trouble", resolve: (s) => take(s, "vassal") },
+      { id: "govern", label: "Keep it, and put one of your women in charge of it", note: "pick her in the War Room; she runs it as herself, loyal to you", resolve: (s) => `${take(s, "vassal")} Its palace is empty, waiting for whoever you send. Choose her in the War Room.` },
       { id: "loot", label: "Strip it and leave", note: "a fortune now, hatred forever", resolve: (s) => take(s, "loot") },
       { id: "release", label: "Let it go", note: "reputation", resolve: (s) => take(s, "release") },
     ],

@@ -23,6 +23,8 @@ import { startRumor } from "./social";
 import { scoreFor } from "./society";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { resolveAct } from "./intimacy";
+import { chronicle } from "./chronicle";
+import { changeRoom, roomWish } from "./rooms";
 
 export interface EventOption {
   id: string;
@@ -89,10 +91,16 @@ export const EVENTS: EventDef[] = [
     id: "devoted_request", severity: "minor", endogenous: true,
     candidates: (s) => owned(s).filter((p) => read(p).devotion > 55 && p.bond.hope > 30).map((person) => ({ person })),
     weight: (_s, c) => 3 + c.person!.bond.hope / 25,
-    seed: (_s, c) => `${c.person!.name} has asked to speak to you. She comes into your office twisting her hands together, clearly nervous.\n\nShe's been working up the courage for days. She wants something small: a warmer blanket, a book, an afternoon off to see a friend in the Club. It matters to her a lot more than it costs you.`,
+    seed: (s, c) => `${c.person!.name} has asked to speak to you. She comes into your office twisting her hands together, clearly nervous.\n\nShe's been working up the courage for days. She wants something small: a warmer blanket, a book, an afternoon off to see a friend in the Club. It matters to her a lot more than it costs you.${(() => { const w = roomWish(s, c.person!); return w ? ` What she actually wants is ${w.name} for where she sleeps (about ¤${w.cost.toLocaleString()}).` : ""; })()}`,
     options: [
       { id: "grant", label: "Give her what she asks for",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "promise_kept", size: 6, why: "she asked and you said yes" }, s.arcology.week); s.arcology.cash -= 500; return `You say yes. It costs you about five hundred, which is nothing.\n\n${p!.name} thanks you three times on her way out, and you hear her telling the others in the corridor. She works harder all week.`; } },
+        resolve: (s, _e, p) => {
+          applyTreatment(p!, { kind: "promise_kept", size: 6, why: "she asked and you said yes" }, s.arcology.week);
+          // What she wants is for her room, and it goes in.
+          const wish = roomWish(s, p!);
+          const got = wish && s.arcology.cash >= wish.cost ? changeRoom(s, p!, wish.extra ? { extra: wish.extra } : { axis: wish.axis, level: wish.level }) : (s.arcology.cash -= 500, "");
+          return `You say yes.${got ? ` ${got}` : " It costs you about five hundred, which is nothing."}\n\n${p!.name} thanks you three times on her way out, and you hear her telling the others in the corridor. She works harder all week.`;
+        } },
       { id: "later", label: "Tell her later",
         resolve: (s, _e, p) => { applyTreatment(p!, { kind: "neglect", size: 3, why: "asked and got 'later'" }, s.arcology.week); return `You tell her you'll think about it. "Of course," she says, and leaves.\n\nYou never get back to her, and she never asks again. She's just a little more careful around you after that.`; } },
       { id: "refuse", label: "Refuse, and say why",
@@ -513,6 +521,13 @@ export function resolveEvent(s: SaveState, e: PendingEvent, optionId: string): s
   const person = e.person ? s.people[e.person] : undefined;
   const line = opt.resolve(s, e, person);
   s.events = s.events.filter((x) => x.id !== e.id);
+  const about = (s.empire?.about ?? {})[e.kind];
+  const label = e.options.find((o) => o.id === optionId)?.label ?? opt.label;
+  chronicle(s, {
+    keys: [e.person ?? "", e.other ?? "", about ? `place:${about}` : "", e.facility?.startsWith("law:") ? e.facility : "", !e.person && !about ? "city" : ""],
+    title: e.written?.title,
+    text: `${e.seed.split(/\n/)[0].slice(0, 220)} You chose: ${label}. ${line.split(/\n/)[0].slice(0, 200)}`,
+  });
   s.notifications.push({ id: `n-${e.id}`, week: s.arcology.week, text: line, kind: e.severity === "major" ? "warning" : "info", person: e.person, seen: false });
   return line;
 }

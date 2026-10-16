@@ -38,6 +38,9 @@ import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { threadBrief } from "./threads";
 import { getEdge } from "./social";
 import { ownerLine } from "./you";
+import { PLAIN_RULES } from "./style";
+import { roomLine } from "./rooms";
+import { governorLine } from "./governor";
 
 /**
  * HOW THE GAME WRITES. Shared by every prompt that puts words on the page, so the narrator, the
@@ -67,7 +70,9 @@ NEVER WRITE LIKE THIS:
 - Filler body language that carries no information: breath catching, throats moving, fingers tapping, weight shifting, shoulders settling, jaws tightening, eyes going somewhere, a rhythm faltering. Mention a gesture only when it is part of the action or tells the reader something the words don't.
 - Similes and mood-setting about light, air, weather, the city or the view. Name the room and get on with it.
 - A sentence that restates the one before it, or a closing line that sums up, hints at what's coming, or lands on a single word or fragment.
-- "Not X, but Y" / "not quite a question" / "just enough to" hedges.`;
+- "Not X, but Y" / "not quite a question" / "just enough to" hedges.
+
+${PLAIN_RULES}`;
 
 export const NARRATOR_SYSTEM = `You write the scenes for Free Cities, an adult text game about owning an arcology, a private city-state where slavery is legal and ordinary. The player is the owner. They choose an action; you write that action happening.
 
@@ -88,7 +93,7 @@ WHO IS WHO. In the prose, "you" is always the owner, and only the owner. Every o
 
 MEMORIES are hers: first person, in her words ("I", "me", "my"), with the owner as "the owner" or he/she, never "you". A memory states who did what to whom the right way round: "The owner lay under me and licked my feet clean", never "I licked the owner's feet" when it was the owner doing it. The same goes for summary, treatment and facts.
 
-Rules that override everything: a person who speaks or acts in the prose is present and is never recorded as having left. Never invent a person, a place, or a fact the prose did not put on the page. If nothing changed, return the empty fields — a small honest diff is correct and a padded one is not.
+Rules that override everything: a person who speaks or acts in the prose is present and is never recorded as having left. Never invent a person, a place, or a fact the prose did not put on the page. If nothing changed, return the empty fields. A small honest diff is correct and a padded one is not.
 
 Shape:
 {
@@ -154,6 +159,10 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (power) lines.push(power);
   lines.push(`HOW SHE IS DOING: ${condition(p)}; mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` On her mind: ${p.psyche.active_states.join(", ")}.` : ""}`);
   if (edge?.roles.length) lines.push(`ROLES: ${edge.roles.join(", ")}`);
+  const room = roomLine(p);
+  if (room) lines.push(room);
+  const gov = governorLine(s, p);
+  if (gov) lines.push(gov);
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
   const between = deedsBrief(s, p.id);
   const manner = mannerBrief(s, p);
