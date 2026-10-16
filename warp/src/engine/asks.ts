@@ -40,6 +40,10 @@ import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { societies, household, lawDress } from "./compare";
 import { WARDROBE } from "../data/wardrobe";
 import { FLAW_BY_ID } from "../data/intimacy";
+import { changeRoom, roomWish } from "./rooms";
+import { chronicle, chronicleBrief } from "./chronicle";
+import { HOUSE_STYLE } from "./prompts";
+import { roomLine } from "./rooms";
 
 export type AskKind = "intimate" | "comfort" | "household" | "personal" | "instruction";
 
@@ -103,6 +107,11 @@ const PAYLOADS: Record<string, (s: SaveState, p: Person, value?: string | number
   exclusive: (s, p) => { romanceOf(p).exclusive = true; applyTreatment(p, { kind: "promise_kept", size: 8, why: "she asked to be the only one and you agreed" }, s.arcology.week); return "she is the only one you touch"; },
   name: (s, p, value) => { p.slave_name = String(value); applyTreatment(p, { kind: "recognition", size: 6, why: "she asked to be called by her own name again" }, s.arcology.week); return `she is ${value} again`; },
   answer: (s, p) => { applyTreatment(p, { kind: "recognition", size: 5, why: "she asked you something and you answered honestly" }, s.arcology.week); p.bond.hope = clamp(p.bond.hope + 8, 0, 100); return "you told her the truth"; },
+  room: (s, p, value) => {
+    const [kind, id, level] = String(value ?? "").split(":");
+    const line = kind === "extra" ? changeRoom(s, p, { extra: id }) : kind === "axis" ? changeRoom(s, p, { axis: id as never, level: Number(level) }) : "";
+    return line || "her room is as it was";
+  },
   money: (s, p, value) => { const n = Number(value) || 2000; s.arcology.cash -= n; applyTreatment(p, { kind: "recognition", size: 4, why: "money spent on something that was only for her" }, s.arcology.week); return `you spent ¤${n} on something just for her`; },
 };
 
@@ -332,6 +341,11 @@ const WORDING: Record<string, { ask: string[]; tell: string[]; timid?: string[];
     ask: ["She asks what's going to happen to her in the long run.", "\"What are you going to do with me? Long term. I need to know.\""],
     tell: ["\"Tell me the plan. All of it.\""],
   },
+  room: {
+    ask: ["She asks if she could have {value} in her room. She's thought about where it would go.", "\"Could I have {value}? For my room. I'd look after it.\""],
+    tell: ["\"I want {value} in my room. This week.\""],
+    timid: ["She asks, so quietly you nearly miss it, whether she might have {value}. Only if it isn't any trouble."],
+  },
   money: {
     ask: ["She wants ¤{value} spent on something that's only for her, and she isn't going to justify it."],
     tell: ["\"I spent ¤{value}. It's on the account. It was for me.\"", "She hands you a receipt for ¤{value}. \"That's what that is.\""],
@@ -458,6 +472,12 @@ export function generateAsk(s: SaveState, p: Person, world: AskWorld = askWorld(
   if (p.bond.hope < 25 && r.trust > 20) {
     push({ kind: "personal", key: "answer", payload: { kind: "answer" }, gain: 8, loss: 10, weight: 2 });
   }
+  // Where she sleeps. Something for her room that would mean more to her than its price.
+  const wish = r.trust > 15 ? roomWish(s, p) : null;
+  if (wish && wish.cost <= 9000) {
+    const value = wish.extra ? `extra:${wish.extra}` : `axis:${wish.axis}:${wish.level}`;
+    push({ kind: "comfort", key: `room:${wish.extra ?? wish.axis}`, payload: { kind: "room", value }, vars: { value: wish.name }, cash: wish.cost, gain: 5, loss: 4, weight: 2.2 });
+  }
   if (reach.purchases) {
     push({ kind: "instruction", key: "money", payload: { kind: "money", value: 3000 }, vars: { value: "3,000" }, cash: 3000, gain: 5, loss: 8, weight: 1 });
   }
@@ -495,7 +515,8 @@ export interface AskReply { what: string; said: string }
 export function grantAsk(s: SaveState, ask: Ask): AskReply {
   const p = s.people[ask.person];
   if (!p) return { what: "", said: "" };
-  if (ask.cash) s.arcology.cash -= ask.cash;
+  // A room item is paid for when it goes in, by engine/rooms.
+  if (ask.cash && ask.payload.kind !== "room") s.arcology.cash -= ask.cash;
   if (ask.rep) s.arcology.rep -= ask.rep;
   const fn = PAYLOADS[ask.payload.kind];
   const what = fn ? fn(s, p, ask.payload.value, ask.payload.target) : "it was done";
@@ -505,6 +526,7 @@ export function grantAsk(s: SaveState, ask: Ask): AskReply {
   p.counters[`ask_granted:${ask.key ?? ask.payload.kind}`] = s.arcology.week;
   ask.answered = "granted";
   s.asks = (s.asks ?? []).filter((a) => a.id !== ask.id);
+  chronicle(s, { keys: [p.id], title: "her request", text: `${p.name} asked: ${ask.text.slice(0, 200)} You said yes. ${what}.` });
   const r = rng(`reply:${ask.id}`);
   return { what, said: say(s, p, ask.kind === "instruction" ? "praise" : "thank", r) };
 }
@@ -529,6 +551,7 @@ export function refuseAsk(s: SaveState, ask: Ask, harshly = false): AskReply {
   p.counters[`ask_refused:${ask.key ?? ask.payload.kind}`] = s.arcology.week;
   ask.answered = "refused";
   s.asks = (s.asks ?? []).filter((a) => a.id !== ask.id);
+  chronicle(s, { keys: [p.id], title: "her request", text: `${p.name} asked: ${ask.text.slice(0, 200)} You ${harshly ? "put her in her place for asking" : "said no"}.`, hook: ask.gain >= 8 ? `${p.name} hasn't forgotten being refused` : undefined });
   const r = rng(`reply:${ask.id}`);
   return {
     what: harshly ? "She's been put in her place. She won't ask again for a long time." : "You said no.",
@@ -541,7 +564,7 @@ export function collectAsks(s: SaveState): Ask[] {
   const out: Ask[] = [];
   const people = Object.values(s.people)
     // A free woman asks only if she is still here: the keeper, not somebody who went home.
-    .filter((p) => (p.status === "owned" || p.status === "indentured" || (p.status === "free" && (p.exit_week === undefined || s.player.owned_by === p.id))) && p.age >= 5)
+    .filter((p) => (p.status === "owned" || p.status === "indentured" || (p.status === "free" && (p.exit_week === undefined || s.player.owned_by === p.id))) && p.age >= 5 && !p.governs)
     .sort((a, b) => (b.romance?.dominion ?? -100) - (a.romance?.dominion ?? -100));
   const world = askWorld(s);
   for (const p of people) {
@@ -566,7 +589,11 @@ export async function voiceAsk(s: SaveState, ask: Ask): Promise<string> {
   const doctrines = Object.entries(s.arcology.doctrines).filter(([, d]) => d.adoption >= 30).map(([id, d]) => `${DOCTRINE_BY_ID[id]?.noun ?? id} (${Math.round(d.adoption)}%)`);
   const flaw = p.persona.flaw ? FLAW_BY_ID[p.persona.flaw.id]?.note : undefined;
   const res = await call({
-    system: `You write one line for Free Cities, an adult text game about owning an arcology. A slave is asking her owner for something. Write what she says when she asks, in one or two sentences: her own words, the way this particular person would say it. Crude if she is crude, frightened if she is frightened, cold if she is cold. She lives in this arcology and knows its laws, its customs and how its slaves dress: her words fit that world, and if what she wants goes against a law or custom, she knows it and it shows. Do not change what she is asking for. Plain dialogue; no gestures, no sayings, nothing that sounds like a proverb. Output JSON only: {"says":"..."}`,
+    system: `You write one short scene for Free Cities, an adult text game about owning an arcology where slavery is legal. One of the owner's slaves wants something from them. Write the moment she asks: where she catches the owner, why she is asking now (it comes out of her record and what has already happened between them), and what she says, in her own words, the way this particular person would say it. Crude if she is crude, frightened if she is frightened, cold if she is cold. She lives in this arcology and knows its laws, its customs and how its slaves dress; if what she wants goes against a law or custom, she knows it and it shows. Do not change what she is asking for. Three to six sentences, second person, present tense, with her line in quotes.
+
+${HOUSE_STYLE}
+
+Output JSON only: {"says":"the scene"}`,
     user: [
       `HER: ${p.name}, ${p.age}. ${p.persona.speech_pattern}`,
       p.persona.voice?.example_lines?.length ? `SOUNDS LIKE: "${p.persona.voice.example_lines[0]}"` : "",
@@ -584,6 +611,8 @@ export async function voiceAsk(s: SaveState, ask: Ask): Promise<string> {
       habits.length ? `HOW THE CITY BEHAVES: ${habits.join(" ")}` : "",
       doctrines.length ? `WHAT THE CITY BELIEVES: ${doctrines.join(", ")}` : "",
       w.slaveDress ? `WHAT SLAVES IN THE CITY WEAR: ${w.slaveDress}` : "",
+      roomLine(p),
+      chronicleBrief(s, [p.id], 6),
       `WHAT SHE IS ASKING FOR: ${ask.text}`,
       ask.against ? `IT GOES AGAINST: ${ask.against}. She knows.` : "",
       ask.kind === "instruction" ? `She is not asking; she has enough standing to tell her owner, and does.` : "",
@@ -591,9 +620,9 @@ export async function voiceAsk(s: SaveState, ask: Ask): Promise<string> {
     model: s.models.narrator_model,
     fallback: s.models.fallback_model,
     json: true,
-    maxTokens: 220,
+    maxTokens: 500,
   });
   if (!res.ok) return ask.text;
   const out = parseJson<{ says?: string }>(res.text);
-  return out?.says ? String(out.says).slice(0, 400) : ask.text;
+  return out?.says ? String(out.says).slice(0, 1200) : ask.text;
 }

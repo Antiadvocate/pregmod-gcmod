@@ -119,6 +119,8 @@ export interface Ending {
   kind: "done" | "lost";
   title: string;
   lines: string[];
+  /** The ending written by the narrator from the whole run. See engine/living writeEnding. */
+  prose?: { model: string; title?: string; text: string };
 }
 
 export function newRun(s: SaveState, seed: string, twists: string[] = []): RunState {

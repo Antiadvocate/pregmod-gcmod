@@ -13,6 +13,7 @@
  *     never takes the week with it.
  */
 import { getApiKey, getLocalEndpoint, getThinking, isLocalModel, localModelId } from "./config";
+import { plain } from "./engine/style";
 
 const OR_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -136,7 +137,8 @@ export async function call(raw: CallOptions): Promise<LLMResult> {
         opts.onReset?.();
         continue;
       }
-      return res;
+      // Every reply loses the dashes and the markdown before anything keeps it.
+      return { ...res, text: plain(res.text) };
     } catch (e) {
       // Stopped by the player: don't try the fallback, just stop.
       if (opts.signal?.aborted) return { ok: false, text: "", usage: { prompt_tokens: 0, completion_tokens: 0 }, model, error: "stopped" };

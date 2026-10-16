@@ -16,7 +16,7 @@ import { courtOf, lawsOf, decreeLaw, decreeCost, repealByDecree, cityMargin } fr
 import { CAMPAIGNS, CAMPAIGN_BY_ID, MAX_CAMPAIGNS, campaignsOf, canSpeak, speech, startCampaign, stopCampaign } from "../engine/civic";
 import { LAWS, LAW_BY_ID } from "../data/laws";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
-import { EVENT_BY_ID, resolveEvent } from "../engine/events";
+import { choicesOf, resolveAny } from "../engine/living";
 import { momentsOf } from "../engine/moments";
 import { places, startWalk } from "../engine/walk";
 import MomentCard from "./MomentCard";
@@ -101,8 +101,8 @@ function Court() {
           <div className="text-[11px] uppercase tracking-wider dim mb-1.5">Before the court · week {e.week}</div>
           <p className="font-prose text-[15px] leading-relaxed mb-3 whitespace-pre-line">{e.seed}</p>
           <div className="flex flex-wrap gap-2">
-            {(EVENT_BY_ID[e.kind]?.options ?? []).map((o) => (
-              <Button key={o.id} size="sm" title={o.note} onClick={() => { let t = ""; mutate((s) => { t = resolveEvent(s, e, o.id); }); setSaid((xs) => [...xs, t]); }}>{o.label}</Button>
+            {choicesOf(e).map((o) => (
+              <Button key={o.id} size="sm" title={o.note} onClick={() => { let t = ""; mutate((s) => { t = resolveAny(s, e, o.id); }); setSaid((xs) => [...xs, t]); }}>{o.label}</Button>
             ))}
           </div>
         </Card>

@@ -15,10 +15,9 @@ import type { Route } from "../App";
 import { useGame } from "../lib/game";
 import { Button, Card, Fold, Meter, Money, cx } from "../lib/ui";
 import { endWeek } from "../engine/week";
-import { writeWeekProse } from "../engine/forge";
-import { resolveEvent, EVENT_BY_ID } from "../engine/events";
-import { generateDynamicEvent, resolveDynamic, dynamicReadiness } from "../engine/dynamic";
-import { voiceAsk } from "../engine/asks";
+import { generateDynamicEvent, dynamicReadiness } from "../engine/dynamic";
+import { choicesOf, liveWeek, narrateOutcome, resolveAny } from "../engine/living";
+import { governedPlaces } from "../engine/governor";
 import { AskList } from "./AskCard";
 import StoryCard from "./StoryCard";
 import { pendingBeat } from "../engine/story";
@@ -34,7 +33,7 @@ import { band, wear } from "../engine/psyche";
 import { modelsAvailable } from "../config";
 
 export default function Penthouse({ go }: { go: (r: Route) => void }) {
-  const [outcomes, setOutcomes] = useState<{ id: string; setup?: string; chose: string; text: string; person?: string; others?: string[]; moment?: string }[]>([]);
+  const [outcomes, setOutcomes] = useState<{ id: string; setup?: string; chose: string; text: string; person?: string; others?: string[]; moment?: string; writing?: boolean; facts?: string }[]>([]);
   /** Done: the card goes, and a scene played out under it ends where it is. */
   const finish = async (o: { id: string; moment?: string }) => {
     const m = o.moment ? momentsOf(save).find((x) => x.id === o.moment) : undefined;
@@ -44,6 +43,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
   const { save, mutate } = useGame();
   const [running_, setRunning] = useState(false);
   const [inventing, setInventing] = useState(false);
+  const [writing, setWriting] = useState("");
   const [aftermath, setAftermath] = useState<{ line: string; reactions: Reaction[]; setup?: string; person?: string; others?: string[]; title?: string; chose?: string; key?: number } | null>(null);
   const dyn = dynamicReadiness(save);
   const keeper = theKeeper(save);
@@ -66,19 +66,14 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
     setRunning(true);
     let report = null as ReturnType<typeof endWeek> | null;
     mutate((s) => { report = endWeek(s); });
-    // In lean mode the week report stays as the game wrote it: no model call for the summary.
-    if (report && modelsAvailable() && !save.models.lean_mode) {
-      const text = await writeWeekProse(save, report);
-      if (text) mutate(() => { /* report is already in the save; the prose was written onto it */ });
+    // With a model, nothing the week puts in front of you is the canned text: the events, the
+    // requests, the law lines, the letters and the week's paragraph are all written from what is
+    // true now and what has already happened. The engine fixed what each of them does first.
+    if (modelsAvailable() && !save.models.lean_mode) {
+      await liveWeek(save, report, (what) => setWriting(what));
+      mutate(() => {});
     }
-    // Put the week's requests into their own mouths, when there is a model to do it. The payload
-    // was fixed before this ran and is not passed to the model; only the wording changes.
-    // One at a time: a burst of parallel calls is what trips a provider's per-minute limit.
-    if (modelsAvailable() && !save.models.lean_mode && save.asks?.length) {
-      const voiced: { id: string; says: string }[] = [];
-      for (const a of save.asks) voiced.push({ id: a.id, says: await voiceAsk(save, a) });
-      mutate((s) => { for (const v of voiced) { const a = s.asks?.find((x) => x.id === v.id); if (a) a.text = v.says; } });
-    }
+    setWriting("");
     setRunning(false);
     go("report");
   }
@@ -194,12 +189,25 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
 
       <div className="mb-3"><AskList asks={asks} /></div>
 
+      {governedPlaces(save).filter(({ g }) => g.letters.some((l) => !l.read)).map(({ g, p }) => (
+        <Card key={`letter-${g.place}`} className="mb-3">
+          <div className="flex items-center gap-2 mb-2">{p ? <SlaveHead person={p} size={26} /> : null}<span className="text-[13px] font-medium">{p?.name}, from {g.name}</span><span className="text-[11px] dim ml-auto">week {g.letters.at(-1)!.week}</span></div>
+          {g.letters.at(-1)!.text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[15px] leading-relaxed mb-2">{para}</p>)}
+          <div className="flex gap-2">
+            <Button size="sm" kind="primary" onClick={() => { mutate(() => { for (const l of g.letters) l.read = true; }); go("war"); }}>Call her</Button>
+            <Button size="sm" kind="ghost" onClick={() => mutate(() => { for (const l of g.letters) l.read = true; })}>Read</Button>
+          </div>
+        </Card>
+      ))}
+
       {outcomes.map((o) => (
         <Card key={o.id} className="mb-3 fade-in">
           {o.setup ? <Setup text={o.setup} /> : null}
           <div className="player-line !mt-0 !mb-3">{o.chose}</div>
           <div className="space-y-3">
+            {o.writing ? <div className="flex items-center gap-2 dim text-[12px]"><Loader2 size={13} className="animate-spin" /> writing what happens</div> : null}
             {o.text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[15px] leading-relaxed">{para}</p>)}
+            {o.facts ? <p className="text-[12px] dim">{o.facts.split(/\n\n+/)[0]}</p> : null}
           </div>
           <div className="flex flex-wrap items-center gap-x-2">
             {o.person || modelsAvailable() ? <MomentReaction seed={{ person: o.person, others: o.others, title: o.chose, source: "event", setup: o.setup, you: o.chose, happened: o.text }} onOpen={(mid) => setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, moment: mid } : x)))} /> : null}
@@ -218,11 +226,20 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
                 {e.severity === "major" ? <span className="chip bad ml-auto"><AlertTriangle size={11} /> urgent</span> : null}
               </div>
             ) : null}
-            <p className="font-prose text-[15px] leading-relaxed mb-3">{e.seed}</p>
-            <Options options={e.kind === "dynamic" ? e.options : EVENT_BY_ID[e.kind]?.options ?? e.options} onPick={(o) => {
+            {e.written?.title ? <div className="text-[14px] font-medium mb-1.5">{e.written.title}</div> : null}
+            <div className="space-y-2.5 mb-3">{e.seed.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[15px] leading-relaxed">{para}</p>)}</div>
+            {save.empire?.about[e.kind] && modelsAvailable() ? (
+              <button className="text-[12px] acc underline mb-2" onClick={() => go("war")}>or talk to them yourself, in the War Room</button>
+            ) : null}
+            <Options options={choicesOf(e)} onPick={(o) => {
               let text = "";
-              mutate((s) => { text = e.kind === "dynamic" ? resolveDynamic(s, e, o.id) : resolveEvent(s, e, o.id); });
-              setOutcomes((xs) => [...xs, { id: e.id, setup: e.seed, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined }]);
+              mutate((s) => { text = resolveAny(s, e, o.id); });
+              const out = { id: e.id, setup: e.seed, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined };
+              setOutcomes((xs) => [...xs, { ...out, writing: modelsAvailable() && !save.models.lean_mode }]);
+              // The choice played out, with what the engine decided as the facts.
+              if (modelsAvailable() && !save.models.lean_mode) void narrateOutcome(save, { ...out, happened: text, title: e.written?.title }).then((t) => {
+                setOutcomes((xs) => xs.map((x) => (x.id === e.id ? { ...x, text: t ? `${t}` : x.text, facts: t ? text : undefined, writing: false } : x)));
+              });
             }} />
           </Card>
         );
@@ -313,7 +330,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
       {/* The one irreversible control, always in reach, saying what is still open. */}
       <div className="endweek">
         <button className="endweek-btn" onClick={runWeek} disabled={running_}>
-          {running_ ? <><Loader2 size={15} className="animate-spin" /> Running the week</> : (
+          {running_ ? <><Loader2 size={15} className="animate-spin" /> {writing ? `Writing ${writing}` : "Running the week"}</> : (
             <>
               {waitingCount ? <span className="endweek-count">{waitingCount} open</span> : null}
               <span>End week {arc.week}</span>

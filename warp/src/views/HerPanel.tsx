@@ -17,6 +17,10 @@ import { runTurn } from "../engine/turn";
 import { modelsAvailable } from "../config";
 import { MannerCard, StandingOrders } from "./StandingOrders";
 import { FREE_HOW, freeHer, freeLine, type FreeHow } from "../engine/freed";
+import RoomCard from "./RoomCard";
+import { governorshipOf } from "../engine/governor";
+import { speakToGovernor } from "../engine/talk";
+import Talk from "./Talk";
 
 export default function HerPanel({ id }: { id: string }) {
   const { save, mutate } = useGame();
@@ -53,8 +57,16 @@ export default function HerPanel({ id }: { id: string }) {
 
   return (
     <div className="space-y-4">
+      {p.governs && governorshipOf(save, p.governs) ? (() => { const g = governorshipOf(save, p.governs!)!; return (
+        <Card>
+          <div className="text-[14px] mb-1">She governs {g.name} for you</div>
+          <div className="text-[12px] dim mb-2">since week {g.since} · prosperity {Math.round(g.prosperity)} · order {Math.round(g.order)}</div>
+          <Talk who={p.name} log={g.talk} send={(t) => speakToGovernor(save, g.place, t)} ideas={["How's my city?", "Tell me what you've done there.", "Come home for a week."]} />
+        </Card>
+      ); })() : null}
       <StandingOrders person={id} />
       <MannerCard person={id} />
+      {p.governs ? null : <RoomCard id={id} />}
       <Card>
         <div className="flex items-center gap-2 mb-3">
           <Heart size={14} className="acc" />

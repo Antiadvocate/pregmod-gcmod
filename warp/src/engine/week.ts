@@ -22,7 +22,7 @@ import { tickWars } from "./war";
 import { tickFreed } from "./freed";
 import { occupants } from "./places";
 import { PLACE_BY_ID } from "../data/places";
-import { lawPulse } from "./lawlife";
+import { lawPulseTagged } from "./lawlife";
 import { tickHousehold } from "./household";
 import { tickBattles } from "./battles";
 import { tickFCTV } from "./fctv";
@@ -75,6 +75,8 @@ import { tickCity, cityYield } from "./city";
 import { tickThreads } from "./threads";
 import { THREAD_BY_KIND } from "../data/threads";
 import { canSire } from "./you";
+import { comfort, tickRoom } from "./rooms";
+import { tickGovernors } from "./governor";
 
 // The woman who holds your collar is free, but she still lives here: her body, her mind and her memory keep going.
 const alive = (s: SaveState): Person[] => Object.values(s.people).filter((p) => inHousehold(s, p));
@@ -114,6 +116,8 @@ export function endWeek(s: SaveState): WeekReport {
   /* ── 2. the work ────────────────────────────────────────────────────────────────────────── */
   const schooling = cityYield(s).schooling;
   const dead: Person[] = [];
+  const housed = alive(s);
+  const meanComfort = housed.length ? housed.reduce((n, p) => n + comfort(p), 0) / housed.length : 0;
   for (const p of alive(s)) {
     p.economics.weeks_owned++;
     const fac = p.facility ? s.arcology.facilities[p.facility] : undefined;
@@ -229,6 +233,10 @@ export function endWeek(s: SaveState): WeekReport {
     } else if (facDef?.id === "spa" || facDef?.id === "master_suite") {
       applyTreatment(p, { kind: "kindness", size: 2, why: `a week in the ${facDef.name.toLowerCase()}` }, week);
     }
+    // Where she sleeps, every night of it.
+    const room = tickRoom(s, p, meanComfort);
+    if (room.upkeep) led.spend("upkeep", `${p.name}'s room`, room.upkeep, p.id);
+    if (room.line) push(room.line, "neutral", 4, p.id);
     tickBond(p);
     lines.push(...tickRomance(s, p));
     refresh(p, mem);
@@ -332,7 +340,7 @@ export function endWeek(s: SaveState): WeekReport {
   for (const l of camp.lines) push(l, "neutral", 4);
   for (const l of tickCulture(s)) push(l, "neutral", 7);
   for (const l of tickCourt(s)) push(l, "warning", 7);
-  for (const l of lawPulse(s)) push(l, "neutral", 6);
+  for (const l of lawPulseTagged(s)) push(l.line, "neutral", 6, undefined, `law:${l.law}`);
   // If she holds your collar, the week is hers: her orders, her household, her laws.
   for (const l of tickReign(s)) push(l.text, l.tone, l.weight, l.person);
 
@@ -345,6 +353,9 @@ export function endWeek(s: SaveState): WeekReport {
   const pow = tickPowers(s);
   led.entry("Empire", "Arsenal upkeep, tribute, pacts and sanctions", pow.cash);
   for (const l of pow.lines) push(l, "warning", 9);
+  const gov = tickGovernors(s);
+  if (gov.cash) led.earn("Empire", "What your governors send home", gov.cash);
+  for (const l of gov.lines) push(l.text, l.tone, 9, l.person);
   const wars = tickWars(s);
   led.entry("Empire", "The cost of war", wars.cash);
   for (const l of wars.lines) push(l, "warning", 11);
