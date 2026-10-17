@@ -199,7 +199,8 @@ export const DEED_TAGS: Record<string, TagDef> = {
   she_defied: {
     label: "she defied you and got away with it", when: "she refused an order or talked back and the player let it stand",
     household: { kind: "recognition", size: 1 },
-    apply: (c) => { if (!c.p) return; shiftDominion(c.s, c.p, 8, "she defied you and it stood"); c.out.push("the other slaves wonder what else they could get away with"); },
+    // Only if it really stood: a defiance that ended in a cell or a whipping didn't.
+    apply: (c) => { if (!c.p || c.d.tags.some((t) => ["punished", "cruelty", "threatened_sale", "humiliated_her"].includes(t))) return; shiftDominion(c.s, c.p, 8, "she defied you and it stood"); c.out.push("the other slaves wonder what else they could get away with"); },
     echo: { after: [2, 4], situation: (s, d, p) => `Two of your other slaves refuse the same order ${nm(p)} refused, in the same words she used.`,
       options: [{ label: "Punish all three", effect: "coercion", value: 6 }, { label: "Let it go again", effect: "dominion_up", value: 5 }, { label: "Talk to her about it", effect: "recognition", value: 3 }] },
   },

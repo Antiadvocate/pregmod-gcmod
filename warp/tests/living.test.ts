@@ -247,3 +247,14 @@ import { GOV_VOICE } from "../src/engine/talk.ts";
   check("every prompt says the owner's threats land", /AFRAID of it/.test(HOUSE_STYLE) && /never shrugs it off/.test(GOV_VOICE));
   check("a governor is still a slave to the owner", /Governing a city doesn't change that/.test(GOV_VOICE));
 }
+
+// Tastes aren't rank: her terms don't become your orders, a punished defiance didn't stand.
+import { ownerSaidIt } from "../src/engine/turn.ts";
+import { selfBrief } from "../src/engine/self.ts";
+{
+  check("her terms aren't filed as your orders", !ownerSaidIt("if the owner visits her, he visits Cinder too and sits at her table first", "No. My calendar is my own. I will not be coming back."));
+  check("your own words are", ownerSaidIt("Kayode gets her cock and the owner gets her soles", "She gets your cock. I get to be with your feet and soles. Kayode gets it."));
+  const s = newGame({ seed: "rank", starting_slaves: 2 } as never);
+  s.player.self = "very submissive to slaves that use their feet around me";
+  check("the owner's self-description is read as tastes, not rank", /TASTES ARE NOT RANK/.test(selfBrief(s)) && /play is over/.test(selfBrief(s)));
+}

@@ -132,7 +132,7 @@ export async function runTurn(
     }
   }
 
-  if (diff) notes.push(...applyDiff(s, diff, prose));
+  if (diff) notes.push(...applyDiff(s, diff, prose, action));
   else if (!modelsAvailable()) applyOfflineDiff(s, action, mode);
 
   // ── detectors: what the narrator did wrong, quoted back at it next turn ────────────────────
@@ -299,7 +299,18 @@ function present(s: SaveState): Person[] {
 
 /* ── APPLYING THE DIFF, WITH THE GUARDS ON ─────────────────────────────────────────────────── */
 
-export function applyDiff(s: SaveState, d: Diff, prose: string): string[] {
+/** Whether a rule the bookkeeper wants to keep was actually said by the owner: it has to share real
+ *  words with what the owner said. Without this a slave's own terms ("he sits at my table first")
+ *  were filed as the owner's standing orders and read back to every later scene as law. */
+export function ownerSaidIt(rule: string, said: string): boolean {
+  const words = (t: string) => new Set(t.toLowerCase().match(/[a-z']{4,}/g) ?? []);
+  const a = words(rule), b = words(said);
+  let n = 0;
+  for (const w of a) if (b.has(w)) n++;
+  return n >= 2 || (a.size > 0 && n / a.size >= 0.4);
+}
+
+export function applyDiff(s: SaveState, d: Diff, prose: string, said?: string): string[] {
   const notes: string[] = [];
   // Nothing that adds clauses, exemptions or amendments to a law gets recorded as true.
   d = {
@@ -410,6 +421,7 @@ export function applyDiff(s: SaveState, d: Diff, prose: string): string[] {
     if (!a?.rule) continue;
     const rule = String(a.rule).slice(0, 140);
     const calls = a.calls ? String(a.calls).slice(0, 32) : undefined;
+    if (said !== undefined && !calls && !ownerSaidIt(rule, said)) continue;
     if (a.id === "household") { keep(houseRules(s), { rule, week: s.arcology.week, by: "you", calls }); if (calls) s.player.address = calls; }
     else if (s.people[a.id]) keep(agreementsOf(s.people[a.id]), { rule, week: s.arcology.week, by: "you", calls });
   }

@@ -238,7 +238,7 @@ export async function playMoment(
     if (diff) {
       const before = s.scene.present;
       s.scene.present = [p.id, ...others.map((o) => o.id)];
-      applyDiff(s, { ...diff, present_add: [], present_remove: [], location: undefined, ...(walking ? { canon_add: [] } : {}) }, prose);
+      applyDiff(s, { ...diff, present_add: [], present_remove: [], location: undefined, ...(walking ? { canon_add: [] } : {}) }, prose, reply ?? "");
       s.scene.present = before;
       refresh(p, s.memory[p.id]);
     }

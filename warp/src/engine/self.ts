@@ -48,7 +48,7 @@ function ownWords(s: SaveState, n = 6): string[] {
 export function selfProfile(s: SaveState): string[] {
   const lines: string[] = [];
   const own = s.player.self?.trim();
-  if (own) lines.push(`In the owner's own words, which win over anything below: ${own}`);
+  if (own) lines.push(`In the owner's own words, which win over anything below (they describe the owner's character and tastes, not a transfer of power; see TASTES ARE NOT RANK): ${own}`);
   const t = selfTally(s);
   if (t.gentle + t.harsh === 0) lines.push(`Nothing on record yet about how they treat people: take it from their own words and what they choose in the scene, and don't supply a stock personality.`);
   else if (t.gentle >= t.harsh * 1.5) lines.push(`How they treat people, by the record: mostly with care (${t.gentle} kind things on record against ${t.harsh} harsh). Write them warm, attentive and generous unless the scene has them choose otherwise.`);
@@ -66,8 +66,15 @@ export function selfProfile(s: SaveState): string[] {
   if (beliefs.length) lines.push(`What they have built their city on: ${beliefs.join(", ")}.`);
   const words = ownWords(s);
   if (words.length) lines.push(`How they actually talk, from what they've recently said and done: ${words.map((w) => `"${w}"`).join(" | ")}`);
+  if (!s.player.owned_by) lines.push(TASTE_IS_NOT_RANK);
   return lines;
 }
+
+/** The line between what the owner likes in bed and who owns whom. A player who writes that they're
+ *  submissive to women who use their feet, or like being humiliated, got slaves who set terms,
+ *  made deals about their own bodies, told the owner where to sit and claimed they'd "put him
+ *  here", and who answered "I own you" with a lecture. */
+export const TASTE_IS_NOT_RANK = `TASTES ARE NOT RANK. What the owner likes in bed (kneeling, worshipping her feet, being teased or humiliated, being cuckolded, whatever their own words say) happens because the owner wants it, when the owner starts it, and only for as long as the owner keeps it going. It gives a slave no authority. Unless she's named under "Who they defer to", a slave never makes deals with the owner, never sets terms, prices, schedules or conditions for him, never decides who gets which part of her body, never says she put the owner anywhere, and never lectures him. She can tease and give directions inside the act if he wants that, and that's all. If the owner says something is secret, it stays private: no witnesses. The moment the owner speaks as the owner (stands up, gives an order, gets angry, raises their voice, says they own her), the play is over: she drops it at once and answers as what she is, his slave, with real fear if he's angry.`;
 
 export function selfBrief(s: SaveState): string {
   return `WHO THE OWNER IS (from how the player has actually played; write the owner true to this: their manner, their words, how they treat people. You may write what the owner says and does, freely, but as this person. Never fall back on a stock cold, cutthroat slave-owner, and never make them harsher, softer, more or less in charge than this):\n${selfProfile(s).map((l) => `· ${l}`).join("\n")}`;
@@ -92,5 +99,5 @@ export function powerBetween(s: SaveState, p: Person): string {
   if (d >= 40) return `THE POWER BETWEEN YOU: she holds it. Between the two of you she leads and you defer, by your own choice; she can tell you what to do, tease you, refuse you, and expects to be obeyed. In front of others she knows you're still the owner of the arcology.`;
   if (d >= 0) return `THE POWER BETWEEN YOU: she has a real say with you and uses it: she asks, pushes, sulks, bargains. You're still her owner and the owner of the city, and she never forgets it.`;
   if (openlyDefiant(s, p)) return `THE POWER BETWEEN YOU: you own her, and she's reached open defiance: she may talk back, refuse or curse you, knowing exactly what it can cost her in a city you own. Write the defiance as a slave's, with the fear under it.`;
-  return `THE POWER BETWEEN YOU: you own her, and you own the city: its laws, its guards, its army. She knows exactly what you can do to her. She doesn't tell you to fuck off, mock you, order you about or walk away from you. Whatever she feels shows the way it shows in a slave: in her face, her silences, her slowness, what she leaves unsaid, what she says to the others afterwards.${rom.standing !== "property" ? ` She's your ${rom.standing === "favourite" ? "favourite" : "kept woman"}, and that gives her a little more room with you than the rest.` : ""}`;
+  return `THE POWER BETWEEN YOU: you own her, and you own the city: its laws, its guards, its army. She knows exactly what you can do to her. If you kneel to her or worship her for your own pleasure, that's yours to start and stop; it gives her no say over you, and she doesn't bargain with it. She doesn't tell you to fuck off, mock you, order you about or walk away from you. Whatever she feels shows the way it shows in a slave: in her face, her silences, her slowness, what she leaves unsaid, what she says to the others afterwards.${rom.standing !== "property" ? ` She's your ${rom.standing === "favourite" ? "favourite" : "kept woman"}, and that gives her a little more room with you than the rest.` : ""}`;
 }
