@@ -470,7 +470,7 @@ export function pressure(s: SaveState): number {
 
 /** Choose this week's events. Never more than two, because a week that is all events is a week
  *  where nothing you decided mattered. */
-export function selectEvents(s: SaveState): PendingEvent[] {
+export function selectEvents(s: SaveState, opts: { writer?: boolean } = {}): PendingEvent[] {
   const p = pressure(s);
   const r = rng(`events:${s.arcology.week}`);
   const pool: { def: EventDef; c: { person?: Person; facility?: string }; w: number }[] = [];
@@ -483,6 +483,9 @@ export function selectEvents(s: SaveState): PendingEvent[] {
     if (!def.endogenous && s.models.tension === 0) continue;
     if (waiting.has(def.id)) continue;
     for (const c of def.candidates(s)) {
+      // With a model writing the week, what a woman wants is engine/wants's job, built from her
+      // reasons; the stock events about one woman stay out.
+      if (opts.writer && c.person) continue;
       const key = c.person ? `${def.id}:${c.person.id}` : def.id;
       if (s.arcology.week - (recent[key] ?? -99) < 6) continue;
       const w = def.weight(s, c);
@@ -491,7 +494,8 @@ export function selectEvents(s: SaveState): PendingEvent[] {
   }
   if (!pool.length) return [];
 
-  const howMany = p > 8 ? 2 : p > 3 ? 1 : r.chance(p / 6) ? 1 : 0;
+  // With a model, fewer and only under real pressure: an event is something, not filler.
+  const howMany = opts.writer ? (p > 8 ? 1 : p > 5 && r.chance(0.5) ? 1 : 0) : p > 8 ? 2 : p > 3 ? 1 : r.chance(p / 6) ? 1 : 0;
   const out: PendingEvent[] = [];
   const used = new Set<string>();
   for (let i = 0; i < howMany && pool.length; i++) {

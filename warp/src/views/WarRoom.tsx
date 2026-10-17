@@ -13,7 +13,7 @@ import { attitudeWord, build, canBuild, canMove, dominion, empireOf, forces, mak
 import { activeWars, declareWar, setStrategy, STRATEGY, strike, suePeace, type Strategy, type War } from "../engine/war";
 import { rulerOf, talkLeft, talkOf } from "../engine/diplomacy";
 import { speakToGovernor, speakToPower } from "../engine/talk";
-import { canGovern, governedPlaces, governorCandidates, installGovernor, competence } from "../engine/governor";
+import { canGovern, governedPlaces, governorCandidates, installGovernor, competence, styleOf, supportBlocked, supportGovernor, sendDeputy, NEED_WORDS, type Governorship } from "../engine/governor";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import Talk from "./Talk";
 import { SlaveHead } from "./SlaveArt";
@@ -219,6 +219,45 @@ function Install({ p }: { p: PowerView }) {
   );
 }
 
+/** What's going wrong in her city, and what you can send. */
+function Help({ g }: { g: Governorship }) {
+  const { save, mutate } = useGame();
+  const [said, setSaid] = useState("");
+  const [picking, setPicking] = useState(false);
+  const send = (kind: "cash" | "troops" | "labour") => { let t = ""; mutate((s) => { t = supportGovernor(s, g.place, kind, 10000); }); setSaid(t); };
+  const why = (k: "cash" | "troops" | "labour") => supportBlocked(save, g.place, k, 10000);
+  return (
+    <div className="mt-3">
+      {(g.problems ?? []).length ? (
+        <ul className="space-y-1.5 mb-2">
+          {g.problems!.map((x) => (
+            <li key={x.id} className="text-[12.5px] flex gap-2">
+              <span className={x.severity >= 7 ? "bad" : "warn"}>·</span>
+              <span className="flex-1"><span className="font-prose">{x.text}</span> <span className="dim">She needs {NEED_WORDS[x.need]}.{x.severity >= 7 ? " It's bad." : ""}</span></span>
+            </li>
+          ))}
+        </ul>
+      ) : <div className="text-[12px] dim mb-2">Nothing badly wrong there right now.</div>}
+      <div className="flex flex-wrap gap-1.5">
+        <Button size="sm" kind="ghost" disabled={!!why("cash")} title={why("cash") ?? ""} onClick={() => send("cash")}>Send ¤10,000</Button>
+        <Button size="sm" kind="ghost" disabled={!!why("troops")} title={why("troops") ?? "¤3,500 a week while they're there"} onClick={() => send("troops")}>Send soldiers{why("troops") ? ` · ${why("troops")}` : ` (${["none", "a company", "a battalion", "a garrison"][g.garrison ?? 0]} now)`}</Button>
+        <Button size="sm" kind="ghost" disabled={!!why("labour")} title={why("labour") ?? ""} onClick={() => send("labour")}>Send workers</Button>
+        <Button size="sm" kind="ghost" onClick={() => setPicking(!picking)}>{g.deputy && save.people[g.deputy] ? `Deputy: ${save.people[g.deputy].name}` : "Send her a deputy"}</Button>
+      </div>
+      {picking ? (
+        <div className="list mt-2">
+          {governorCandidates(save).sort((a, b) => competence(save, b) - competence(save, a)).slice(0, 8).map((w) => (
+            <button key={w.id} className="list-row" onClick={() => { let t = ""; mutate((s) => { t = sendDeputy(s, g.place, w.id); }); setSaid(t); setPicking(false); }}>
+              <SlaveHead person={w} size={28} /><span className="text-[13px] flex-1 text-left">{w.name} <span className="dim">· {w.persona.intelligence}</span></span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {said ? <p className="text-[12.5px] acc mt-2">{said}</p> : null}
+    </div>
+  );
+}
+
 function Governors() {
   const { save, mutate } = useGame();
   const [open, setOpen] = useState<string | null>(null);
@@ -238,12 +277,15 @@ function Governors() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mt-2.5">
-              <Meter value={g.prosperity} label="prosperity" />
-              <Meter value={g.order} label="order" />
+              <Meter value={g.prosperity} label="how it's doing" showValue={false} />
+              <Meter value={g.order} label="how calm it is" showValue={false} />
             </div>
-            <div className="mt-2.5 space-y-1">
-              {g.decrees.slice(-4).map((d, i) => <div key={i} className="text-[12.5px] mid font-prose">“{d.text}”</div>)}
+            {p ? <p className="text-[12.5px] mid mt-2.5">{styleOf(p).map((x) => x.line).join(" ")}</p> : null}
+            <div className="mt-2 space-y-1">
+              {g.decrees.slice(-3).map((d, i) => <div key={i} className="text-[12.5px] mid font-prose">“{d.text}”</div>)}
             </div>
+            {g.faces?.length ? <div className="text-[11.5px] dim mt-2">{g.faces.map((f) => `${f.name}, ${f.role}${f.leaning < -0.3 ? " (against her)" : f.leaning > 0.3 ? " (with her)" : ""}`).join(" · ")}</div> : null}
+            <Help g={g} />
             {g.letters.length ? (
               <div className="mt-3 card-2 p-3">
                 <div className="text-[11px] uppercase tracking-wider dim mb-1">{unread.length ? "new letter" : "her last letter"} · week {g.letters.at(-1)!.week}</div>

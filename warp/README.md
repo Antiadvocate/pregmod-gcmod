@@ -76,9 +76,12 @@ happened, so the next thing grows out of the last one.
   still do what the engine says; sometimes a choice or two more is added from a closed table.
 - **What you chose plays out**: the outcome is written as a scene, with the engine's result as the
   facts, and "Play it out" carries on from there.
-- **One story event a week** is invented for whoever has the most going on, and picks up a thread
-  left open earlier (a promise, a refusal she hasn't got over) when there is one.
-- **Requests** are written as the moment she asks: where she catches you, why now, her words.
+- **What a woman wants.** The stock per-slave events and the automatic requests are gone. Each
+  week every woman is read for reasons: a friend sold, a law that just passed, something you did
+  to her, a refusal she's still angry about, a thread left open, her body, her fear, her room.
+  Only a woman with enough reasons, at least one of them from this week, gets an event, and
+  usually only one woman a week or nobody. The model writes what she wants out of her reasons,
+  her past and the week's events.
 - **Your laws** get a fresh line each fortnight that follows on from the last.
 - **The ending** is written from the whole run.
 - Every prompt carries a list of the tics that give a machine writer away, and every reply has its
@@ -97,8 +100,12 @@ your strength, their opinion of you and your money can actually get before it ha
 Hold a city (keep it after a war, make it a vassal, talk it into submitting, or own 55% of a
 neighbour) and you can put one of your women in charge of it. Its loyalty is locked to you through
 her, but it's her city: its doctrine comes from what she's into and who she is, she writes its
-decrees, and how well it does depends on how sharp she is. She writes home every couple of weeks,
-sometimes with a decision for you. Call her from the Governors tab or her page to talk, give
+decrees, and she runs it in her own style (by fear, gently, on pleasure, like a queen, like a
+business, or without a clue), which moves the city. Her weaknesses make trouble: riots, raiders,
+shortages, sickness, contracts she botched, locals who won't take orders from a slave, or her
+own nerves. Trouble left alone gets worse until it's a crisis. She needs things: money, soldiers
+(only if your forces can spare them, and they cost upkeep), workers, a deputy, or just a call
+from you. She writes when something happens, about that thing and the people in it. Call her from the Governors tab or her page to talk, give
 orders (new decrees, your laws, money, women from her city, a crackdown, a festival, come home),
 and treat her however you treat her.
 

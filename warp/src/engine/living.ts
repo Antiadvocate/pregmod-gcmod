@@ -28,8 +28,8 @@ import { modelsAvailable } from "../config";
 import { coarsen, REGISTER_TAIL } from "./register";
 import { HOUSE_STYLE, personCard } from "./prompts";
 import { PLAIN_RULES } from "./style";
-import { chronicle, chronicleBrief, chronicleOf, openHooks } from "./chronicle";
-import { DYNAMIC_EFFECTS, dossier, generateDynamicEvent, npcEffect, pickSubject, resolveDynamic } from "./dynamic";
+import { chronicle, chronicleBrief, chronicleOf } from "./chronicle";
+import { DYNAMIC_EFFECTS, dossier, npcEffect, resolveDynamic } from "./dynamic";
 import { EVENT_BY_ID, resolveEvent } from "./events";
 import { ACT_BY_ID } from "../data/intimacy";
 import { EXTRA_BY_ID } from "../data/rooms";
@@ -40,7 +40,10 @@ import { lawsBrief } from "./court";
 import { cultureBrief } from "./culture";
 import { worldBrief } from "./world";
 import { activeGovernors, governorBrief, governorshipOf, GOV_ORDERS } from "./governor";
-import { voiceAsk } from "./asks";
+import { grantAsk, refuseAsk, voiceAsk } from "./asks";
+import { generateWant, pickWants } from "./wants";
+import { weekSnapshot } from "./snapshot";
+import { GOV_VOICE } from "./talk";
 import { writeWeekProse } from "./forge";
 import { runOf } from "./run";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
@@ -100,7 +103,7 @@ Output ONE strict JSON object and nothing else:
 {"title":"2-5 words","situation":"the scene","choices":[{"id":"the original choice id","label":"new label"}],"extra":[{"label":"...","note":"short plain consequence","effect":"effect id","value":"optional"}]}`;
 
 /** Rewrite one pending event. Mutates it in place; returns whether it was written. */
-export async function writeEvent(s: SaveState, e: PendingEvent): Promise<boolean> {
+export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Promise<boolean> {
   if (!ready(s) || e.written || e.kind === "dynamic") return false;
   const def = EVENT_BY_ID[e.kind];
   const opts = def?.options ?? e.options;
@@ -108,6 +111,7 @@ export async function writeEvent(s: SaveState, e: PendingEvent): Promise<boolean
   const res = await call({
     system: WRITE_SYSTEM,
     user: [
+      snap,
       ctx.text,
       `## THE FACTS (the game's own version; rewrite it)\n${e.seed}`,
       `## THE CHOICES (id: what the player does → what it does)\n${opts.map((o) => `· ${o.id}: ${o.label}${o.note ? ` → ${o.note}` : ""}`).join("\n")}`,
@@ -144,6 +148,17 @@ export function choicesOf(e: PendingEvent): { id: string; label: string; note?: 
 /** Resolve any event, any choice: the engine's own, a generated one, or an extra. */
 export function resolveAny(s: SaveState, e: PendingEvent, optionId: string): string {
   if (e.kind === "gov") return resolveGovEvent(s, e, optionId);
+  if (e.kind === "dynamic" && e.ask) {
+    const [, effect] = optionId.split(":");
+    if (effect === "grant" || effect === "refuse" || effect === "refuse_harsh") {
+      const r = effect === "grant" ? grantAsk(s, e.ask) : refuseAsk(s, e.ask, effect === "refuse_harsh");
+      s.events = s.events.filter((x) => x.id !== e.id);
+      const p = e.person ? s.people[e.person] : undefined;
+      const label = e.options.find((o) => o.id === optionId)?.label ?? "";
+      if (p) chronicle(s, { keys: [p.id], title: e.written?.title, text: `${e.seed.split(/\n/)[0].slice(0, 200)} You chose: ${label}. ${r.what}`, hook: e.hook });
+      return [r.what, r.said ? `"${r.said}"` : ""].filter(Boolean).join(" ");
+    }
+  }
   if (e.kind === "dynamic") return resolveDynamic(s, e, optionId);
   if (/^x\d+:/.test(optionId)) {
     const [, effect, value] = optionId.split(":");
@@ -189,33 +204,14 @@ export async function narrateOutcome(s: SaveState, o: { person?: string; others?
   return res.ok ? coarsen(res.text).trim() : "";
 }
 
-/** One event a week that the engine didn't seed: whoever has the most going on, continuing an open
- *  thread if she has one, and never the same woman two weeks running. */
-export async function storyEvent(s: SaveState): Promise<PendingEvent | null> {
-  if (!ready(s) || s.models.tension === 0) return null;
-  if (s.events.some((e) => e.kind === "dynamic" && e.week === s.arcology.week)) return null;
-  const last = (s.event_log ??= {})["story:last"];
-  const lastWho = Object.entries(s.event_log).find(([k, v]) => k.startsWith("story:who:") && v === last)?.[0]?.slice(10);
-  const pool = Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 18 && !p.governs && p.id !== lastWho);
-  const hooked = pool.filter((p) => openHooks(s, [p.id]).length);
-  const subject = hooked.length && Math.random() < 0.7 ? hooked[Math.floor(Math.random() * hooked.length)] : pickSubject({ ...s, people: Object.fromEntries(pool.map((p) => [p.id, p])) });
-  if (!subject) return null;
-  const e = await generateDynamicEvent(s, subject);
-  if (!e) return null;
-  e.id = `dyn-${s.arcology.week}-${subject.id}-${Date.now() % 100000}`;
-  s.event_log[`story:who:${subject.id}`] = s.arcology.week;
-  s.event_log["story:last"] = s.arcology.week;
-  return e;
-}
-
-const PULSE_SYSTEM = `You write the lines of an arcology's weekly report about how its citizens are living with its laws, for Free Cities, an adult game about owning an arcology. For each law you get its text, how well it's kept (a number: above 30 kept willingly, 0 to 30 kept grudgingly, below 0 broken or resisted), the game's own line, and what was said about it in earlier weeks. Write one or two sentences per law about something specific that happened this fortnight because of it: a person, a place, what they did. Make it follow on from the earlier weeks (the same people can come back, a quarrel can get worse, a habit can spread). Never repeat an earlier line. Keep any number in the game's line.
+const PULSE_SYSTEM = `You write the lines of an arcology's weekly report about how its citizens are living with its laws, for Free Cities, an adult game about owning an arcology. For each law you get its text, how well it's kept (a number: above 30 kept willingly, 0 to 30 kept grudgingly, below 0 broken or resisted), the game's own line, and what was said about it in earlier weeks. Only write about a law if something specific happened this fortnight because of it: a person, a place, what they did, ideally tied to something in THIS WEEK. Leave out any law where you'd only be saying it's being kept or broken; fewer, better lines. Make it follow on from the earlier weeks (the same people can come back, a quarrel can get worse, a habit can spread). Never repeat an earlier line. Keep any number in the game's line.
 
 ${HOUSE_STYLE}
 
 Output JSON only: {"lines":[{"law":"law id","text":"..."}]}`;
 
 /** Rewrite this week's law lines in the report. */
-export async function writeLawPulse(s: SaveState, report: WeekReport): Promise<void> {
+export async function writeLawPulse(s: SaveState, report: WeekReport, snap = ""): Promise<void> {
   if (!ready(s)) return;
   const tagged = report.lines.filter((l) => l.facility?.startsWith("law:"));
   if (!tagged.length) return;
@@ -226,11 +222,15 @@ export async function writeLawPulse(s: SaveState, report: WeekReport): Promise<v
   });
   const res = await call({
     system: PULSE_SYSTEM,
-    user: [cityBrief(s), `THE LAWS:\n${items.join("\n")}`, PLAIN_RULES].join("\n\n"),
+    user: [snap || cityBrief(s), `THE LAWS:\n${items.join("\n")}`, PLAIN_RULES].join("\n\n"),
     model: s.models.narrator_model, fallback: s.models.fallback_model, json: true, maxTokens: 900,
   });
   if (!res.ok) return;
   const out = parseJson<{ lines?: { law?: string; text?: string }[] }>(coarsen(res.text));
+  if (!out) return;
+  // A law nothing worth telling happened under this fortnight gets no line at all.
+  const written = new Set((out.lines ?? []).filter((x) => x?.text).map((x) => `law:${x.law}`));
+  report.lines = report.lines.filter((l) => !l.facility?.startsWith("law:") || written.has(l.facility));
   for (const x of out?.lines ?? []) {
     const line = tagged.find((l) => l.facility === `law:${x.law}`);
     if (!line || !x.text) continue;
@@ -239,12 +239,14 @@ export async function writeLawPulse(s: SaveState, report: WeekReport): Promise<v
   }
 }
 
-const LETTER_SYSTEM = `You write a letter, or a short recorded message, from one of the player's slaves to the player, for Free Cities, an adult game about owning an arcology where slavery is legal. The player put her in charge of another city and she runs it for them, completely loyal, but entirely as herself. Write it in her voice, first person, to the player as she addresses them. She tells them what she has done in her city since she last wrote: real things, following from her decrees, its beliefs and its numbers, and from what has already happened. She says how she feels, about the city and about the player, the way she would. Sometimes she wants a decision from the player.
+const LETTER_SYSTEM = `You write a letter, or a recorded message, from one of the player's slaves to the player, for Free Cities, an adult game about owning an arcology where slavery is legal. The player put her in charge of another city and she runs it for them, completely loyal, entirely as herself. She writes because something happened (it's under WHAT'S GOING WRONG and RECENTLY THERE, or in THIS WEEK): write about THAT, as it happened to her, with the people involved by name, what they said and did, what she did, and how she feels about it. Then what she wants from the player, if anything. First person, to the player as she addresses them, in her own voice from her card. Short: one to three paragraphs.
+
+${GOV_VOICE}
 
 ${HOUSE_STYLE}
 
-Output JSON only: {"letter":"the letter, 1-3 short paragraphs","decide":{"question":"what she wants decided, or empty","choices":[{"label":"what the player tells her, 2-8 words","order":"an order id","value":"if it takes one"}]}}
-Leave decide.question empty most of the time. If you ask, give two or three choices from ORDERS.`;
+Output JSON only: {"letter":"the letter","decide":{"question":"what she wants decided, or empty","choices":[{"label":"what the player tells her or sends, 2-8 words","order":"an order id","value":"if it takes one"}]}}
+If she needs something, ask in decide with two or three choices from ORDERS (the support_ orders are help the player sends; the others are things she does). Otherwise leave decide.question empty.`;
 
 /** Every other week, each governor writes. A letter that asks for a decision becomes an event. */
 export async function writeLetters(s: SaveState): Promise<number> {
@@ -253,11 +255,13 @@ export async function writeLetters(s: SaveState): Promise<number> {
   for (const g of activeGovernors(s)) {
     const p = s.people[g.person];
     if (!p) continue;
+    // She writes when something happened, or when she hasn't for a long time. Never to say all is well.
     const last = g.letters.at(-1)?.week ?? g.since - 1;
-    if (s.arcology.week - last < 2) continue;
+    const fresh = (g.news ?? []).filter((n) => n.week > last).length;
+    if (!fresh && s.arcology.week - last < 5) continue;
     const res = await call({
       system: LETTER_SYSTEM,
-      user: [personCard(s, p), governorBrief(s, g), chronicleBrief(s, [`gov:${g.place}`, p.id], 8),
+      user: [personCard(s, p), governorBrief(s, g), chronicleBrief(s, [`gov:${g.place}`, p.id], 8), weekSnapshot(s),
         `ORDERS:\n${Object.entries(GOV_ORDERS).map(([id, o]) => `· ${id}: ${o.note}`).join("\n")}`, PLAIN_RULES, REGISTER_TAIL].join("\n\n"),
       model: s.models.narrator_model, fallback: s.models.fallback_model, json: true, maxTokens: 900, temperature: 0.95,
     });
@@ -294,17 +298,23 @@ function resolveGovEvent(s: SaveState, e: PendingEvent, optionId: string): strin
   return line || `${p.name} does as you say.`;
 }
 
-/** Everything that needs writing after a week ends. One call at a time; each failure is skipped. */
+/** Everything that needs writing after a week ends. One call at a time; each failure is skipped.
+ *  Fewer things, each of them earned: the world events the week threw up, the one or two women
+ *  with real reasons to want something, letters only from cities where something happened. */
 export async function liveWeek(s: SaveState, report: WeekReport | null, step: (what: string) => void = () => {}): Promise<void> {
   if (!ready(s)) return;
+  const snap = weekSnapshot(s, report);
   if (report) { step("the week"); await writeWeekProse(s, report); }
   const fresh = s.events.filter((e) => s.arcology.week - e.week <= 1 && !e.written && e.kind !== "dynamic" && e.kind !== "gov");
-  for (const e of fresh) { step(e.person ? `${s.people[e.person]?.name ?? "her"}` : "what happened"); await writeEvent(s, e); }
-  step("someone in the house");
-  const story = await storyEvent(s);
-  if (story) s.events.push(story);
+  for (const e of fresh) { step(e.person ? `${s.people[e.person]?.name ?? "her"}` : "what happened"); await writeEvent(s, e, snap); }
+  for (const w of pickWants(s)) {
+    step(w.p.name);
+    const e = await generateWant(s, w.p, w.reasons, snap);
+    if (e) s.events.push(e);
+  }
+  // Any request still waiting (a model failed, or it came from her page) is written as a moment too.
   for (const a of s.asks ?? []) { step(`${s.people[a.person]?.name ?? "her"}'s request`); a.text = await voiceAsk(s, a); }
-  if (report) { step("the laws"); await writeLawPulse(s, report); }
+  if (report) { step("the laws"); await writeLawPulse(s, report, snap); }
   if (activeGovernors(s).length) { step("letters"); await writeLetters(s); }
 }
 
