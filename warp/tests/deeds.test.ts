@@ -6,7 +6,7 @@ import "../src/data/story/index.ts";
 import { newGame } from "../src/engine/state.ts";
 import { endWeek } from "../src/engine/week.ts";
 import { openMoment, playMoment, momentsOf } from "../src/engine/moments.ts";
-import { concludeMoment, deedsOf, applyDeed } from "../src/engine/deeds.ts";
+import { concludeMoment, deedsOf, applyDeed, affirms, othersInScene } from "../src/engine/deeds.ts";
 import { romanceOf } from "../src/engine/romance.ts";
 import { reversalOf } from "../src/engine/reversal.ts";
 import { digest, personCard } from "../src/engine/prompts.ts";
@@ -73,4 +73,33 @@ import { makeAssistant, askAssistant, briefWeek, facts } from "../src/engine/ass
   const about = await askAssistant(s, `What about ${her.name}?`);
   check("she answers about a girl by name", about.includes(her.name), about);
   check("every quick question has something to say", ["money", "danger", "loyal", "bonds", "coming", "city"].every((t) => facts(s, t).lines.length > 0));
+}
+
+{
+  // Week 73 of a real save: the owner told her she did NOT own him, and the phrase "you own me"
+  // inside that denial handed her his collar.
+  const s = newGame({ seed: "deeds-denial", starting_slaves: 3, plot: false } as never);
+  const [her] = Object.values(s.people).filter((p) => p.status === "owned" && p.age >= 18);
+  const id = openMoment(s, { person: her.id, title: "Kneel and kiss her wet sole", source: "test", you: "Kneel and kiss her wet sole", happened: `${her.name} looks down at you.` });
+  await playMoment(s, id, `"I. Sit. At. Your. Feet. At. My. Leisure. It doesn't make you own me or me submitting to you. You... get that right?" I stand up annoyed.`);
+  const d = await concludeMoment(s, momentsOf(s).find((x) => x.id === id)!);
+  check("saying she doesn't own you is not giving yourself to her", !d?.tags.includes("owner_enslaved"), d?.tags);
+  check("and she doesn't get your collar", romanceOf(her).standing !== "keeper" && s.player.owned_by !== her.id, romanceOf(her).standing);
+  check("a denial is not a match", !affirms("It doesn't make you own me.", /\b(you own me)\b/i));
+  check("but the same words said straight are", affirms("Fine. You own me.", /\b(you own me)\b/i));
+  check("a denial in one sentence doesn't cancel the next", affirms("I don't care. You own me.", /\b(you own me)\b/i));
+}
+
+{
+  // Selling someone in the middle of a scene with somebody else sells her, and a threat lands on
+  // the woman it was made to, not on whoever the scene is about.
+  const s = newGame({ seed: "deeds-sale", starting_slaves: 4, plot: false } as never);
+  const [her, ashley, chloe] = Object.values(s.people).filter((p) => p.status === "owned" && p.age >= 18);
+  const cash = s.arcology.cash, fear = chloe.bond.fear, herFear = her.bond.fear;
+  const deed = { id: "d-test", week: s.arcology.week, person: her.id, summary: "You had the guards take Ashley to the dock to be sold.", tags: [], public: false, witnesses: [], effects: [] };
+  const out = othersInScene(s, deed as never, { sold: [ashley.name.split(" ")[0]], threatened: [chloe.name] });
+  check("a sale ordered in a scene is a sale", ashley.status === "sold" && s.arcology.cash > cash, { status: ashley.status, out });
+  check("the threat lands on the woman threatened", chloe.bond.fear > fear, { before: fear, after: chloe.bond.fear });
+  check("not on the woman the scene was with", her.bond.fear <= herFear + 4, { before: herFear, after: her.bond.fear });
+  check("and the effects say so", out.some((l) => l.includes(ashley.name)) && out.some((l) => l.includes(chloe.name)), out);
 }
