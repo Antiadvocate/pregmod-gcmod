@@ -294,27 +294,30 @@ App.UI.SlaveInteract.records = function(slave, refresh) {
 				"Discard Confirm",
 			)
 		);
-		if (V.seeExtreme) {
-			if (V.threatened[0].includes(slave.ID)) {
-				linkArray.push(
-					App.UI.DOM.disabledLink(
-						`Threaten ${his} life`,
-						[
-							`You've already threatened ${him} this week.`,
-						]
-					)
-				);
-			} else {
-				linkArray.push(
-					App.UI.DOM.passageLink(
-						`Threaten ${his} life`,
-						"KillSlave",
-						() => {
-							V.threatened[0].push(slave.ID);
-						}
-					)
-				);
-			}
+	}
+	// Outside the sale checks: a slave you can't sell is still yours to kill
+	if (V.seeExtreme) {
+		if (V.threatened[0].includes(slave.ID)) {
+			linkArray.push(
+				App.UI.DOM.passageLink(
+					`Execute ${him}`,
+					"KillSlave",
+					() => {
+						V.temp.executeOnly = true;
+					}
+				)
+			);
+		} else {
+			linkArray.push(
+				App.UI.DOM.passageLink(
+					`Threaten ${his} life`,
+					"KillSlave",
+					() => {
+						V.threatened[0].push(slave.ID);
+						delete V.temp.executeOnly;
+					}
+				)
+			);
 		}
 	}
 	linkArray.push(
