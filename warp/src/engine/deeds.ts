@@ -511,7 +511,9 @@ function fireFollow(s: SaveState, d: Deed): boolean {
   s.events.push({
     id: `echo-${d.id}`, kind: "dynamic", person: d.person,
     seed: f.situation,
-    options: f.options.map((o, i) => ({ id: `d${i}:${o.effect}:${o.value ?? ""}`, label: o.label, note: DYNAMIC_EFFECTS[o.effect]?.note })),
+    // The effect notes are instructions for the model ("value is the amount, negative to spend"),
+    // not words for the player; the label says what you do.
+    options: f.options.map((o, i) => ({ id: `d${i}:${o.effect}:${o.value ?? ""}`, label: o.label })),
     week: s.arcology.week, severity: d.tags.includes("owner_enslaved") || d.tags.includes("cruelty") ? "major" : "notable",
   });
   return true;
