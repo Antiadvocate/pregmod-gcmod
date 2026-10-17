@@ -50,7 +50,9 @@ function world(seed: string, sex: "female" | "male" | "futa" = "futa") {
   p.body.height_cm = 160; p.body.dick = 3; p.body.balls = 3;
   check("an average cock gets hard", erection(p) === "full");
   p.body.dick = 14;
-  check("a hyper cock on a short body can't", erection(p) === "soft");
+  check("a hyper cock on a short body still gets hard", erection(p) === "full");
+  p.body.dick = 30;
+  check("so does the biggest there is", erection(p) === "full");
   p.body.dick = 4; p.body.balls = null; p.health.drugs = [];
   check("no balls, no erection", erection(p) === "soft");
   p.body.balls = 40;

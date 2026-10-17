@@ -38,7 +38,7 @@ import { personCard } from "../src/engine/prompts.ts";
   check("she never prefers a hole she doesn't have", m.persona.preferred_hole.hole !== "vagina");
   m.body.dick = 12; m.body.balls = 5; m.body.height_cm = 165; m.health.drugs = [];
   const big = erectionWhy(m);
-  check("a huge cock says why it won't get hard", big.state !== "full" && !!big.fix, big);
+  check("a huge cock gets hard: size never stops it", big.state === "full", big);
   PROCEDURE_BY_ID["penile_implant"].apply(m);
   check("a penile implant makes her hard at any size", erectionWhy(m).state === "full");
   let flat = 0;
