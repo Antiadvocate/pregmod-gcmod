@@ -27,7 +27,7 @@ import { coarsen, REGISTER_TAIL } from "./register";
 import { HOUSE_STYLE, personCard } from "./prompts";
 import { PLAIN_RULES } from "./style";
 import { chronicleBrief } from "./chronicle";
-import { DYNAMIC_EFFECTS } from "./dynamic";
+import { DYNAMIC_EFFECTS, effectList } from "./dynamic";
 import { ACT_BY_ID } from "../data/intimacy";
 import { EXTRA_BY_ID } from "../data/rooms";
 
@@ -157,14 +157,14 @@ Then three or four choices for the owner, each a genuinely different response, a
 ${HOUSE_STYLE}
 
 Output ONE strict JSON object and nothing else:
-{"title":"2-5 words","situation":"...","options":[{"label":"what you do, 2-9 words","note":"short plain consequence","effect":"effect id","value":"optional"}],"hook":"what this leaves open for later, or empty"}`;
+{"title":"2-5 words","situation":"...","options":[{"label":"what you do, 2-9 words","note":"a few plain words for the player, like \"she won't forget it\" or \"costs you ¤2,000\"; never the effect's description","effect":"effect id","value":"optional"}],"hook":"what this leaves open for later, or empty"}`;
 
 /** Write her event. Null when there's no model or it came back unusable. */
 export async function generateWant(s: SaveState, p: Person, reasons: Reason[], snapshot: string): Promise<PendingEvent | null> {
   const ask: Ask | null = generateAsk(s, p);
   const effects = [
     ...(ask ? [`grant: give her the ENGINE REQUEST${ask.cash ? ` (costs ¤${ask.cash.toLocaleString()})` : ""}`, "refuse: say no to it", "refuse_harsh: say no, and punish her for asking"] : []),
-    ...Object.entries(DYNAMIC_EFFECTS).map(([id, e]) => `${id}: ${e.note}`),
+    ...effectList().split("\n"),
   ];
   const res = await call({
     system: WANT_SYSTEM,

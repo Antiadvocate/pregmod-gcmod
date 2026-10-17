@@ -344,7 +344,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <Meter value={r.devotion} range={[-100, 100]} label={`devotion — ${r.label}`} />
             <Meter value={r.trust} range={[-100, 100]} label={`trust — ${r.trust_label}`} />
-            <Meter value={p.psyche.relaxation} range={[-10, 10]} label="relaxation" />
+            <Meter value={p.psyche.relaxation} range={[-10, 10]} label="at ease" />
             <Meter value={p.health.health} range={[-100, 100]} label="health" />
           </div>
 
@@ -359,25 +359,24 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
           <Section title="Why she obeys">
             <Card>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <Meter value={p.bond.bond} range={[-100, 100]} label="bond (slow, sticky)" />
-                <Meter value={p.bond.fear} range={[0, 100]} invert label="fear (fast, brittle)" />
+                <Meter value={p.bond.bond} range={[-100, 100]} label="attached to you" />
+                <Meter value={p.bond.fear} range={[0, 100]} invert label="afraid of you" />
                 <Meter value={p.bond.resentment} range={[0, 100]} invert label="resentment" />
                 <Meter value={p.bond.hope} range={[0, 100]} label="hope" />
               </div>
-              <p className="text-[11.5px] dim mt-3">Fear drops about 15% a week unless you keep it up. Bond stays.</p>
+              <p className="text-[11.5px] dim mt-3">Fear wears off in a few weeks unless you keep it up. Attachment lasts.</p>
             </Card>
           </Section>
 
           <Section title="Mental state">
             <Card>
               <div className="text-[12.5px] space-y-1.5 mid">
-                <div>Resting point <span className="font-mono hi">{p.psyche.capacity.toFixed(1)}</span> (born {p.psyche.capacity_born.toFixed(1)}) · recovery <span className="font-mono">{p.psyche.recovery.toFixed(2)}</span>/tick</div>
-                <div>Attachment: <span className="hi">{p.persona.attachment.style}</span> — under threat she {p.persona.attachment.under_threat}. Settled by {p.persona.attachment.soothed_by}.</div>
-                <div>Conscience <span className="font-mono">{p.persona.conscience.toFixed(2)}</span> — {p.persona.conscience <= 0.35 ? "other people's experience does not register as mattering. Calm makes her effective, not kinder." : "other people's pain lands on her."}</div>
-                <div>Sees: {perception(p.psyche, p.persona.conscience).note}</div>
-                <div>Speech: {aperture(p.psyche).note}</div>
-                {wear(p.psyche) > 0.2 ? <div className="bad">Worn {Math.round(wear(p.psyche) * 100)}% — ordinary friction has stopped landing.</div> : null}
-                {p.psyche.active_states.length ? <div>Holding: {p.psyche.active_states.join(", ")}</div> : null}
+                <div>{p.psyche.capacity_born > 1 ? "Easygoing by nature" : p.psyche.capacity_born > -0.5 ? "Even-tempered by nature" : "Highly strung by nature"}{p.psyche.capacity < p.psyche.capacity_born - 0.5 ? ", and this place has made her jumpier than she was" : ""}. {p.psyche.recovery > 0.3 ? "She gets over things fast." : p.psyche.recovery < 0.1 ? "She takes a long time to get over things." : "She gets over things in her own time."}</div>
+                <div>When she's scared she {p.persona.attachment.under_threat}. What calms her down: {p.persona.attachment.soothed_by}.</div>
+                <div>{p.persona.conscience <= 0.35 ? "Other people getting hurt doesn't bother her. Being calm makes her better at things, not kinder." : "It gets to her when other people are hurt."}</div>
+                <div>Right now she {perception(p.psyche, p.persona.conscience).note}, and {aperture(p.psyche).note}.</div>
+                {wear(p.psyche) > 0.2 ? <div className="bad">This place has hardened her. Small things don't get to her any more.</div> : null}
+                {p.psyche.active_states.length ? <div>On her mind: {p.psyche.active_states.join(", ")}</div> : null}
               </div>
             </Card>
           </Section>
