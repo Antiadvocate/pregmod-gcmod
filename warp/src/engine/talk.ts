@@ -24,6 +24,7 @@ import { DYNAMIC_EFFECTS } from "./dynamic";
 import { remember } from "./memory";
 import { clamp } from "./psyche";
 import { worldBrief } from "./world";
+import { weekSnapshot } from "./snapshot";
 
 export interface TalkResult { ok: boolean; says: string; deals: string[]; error?: string }
 
@@ -45,6 +46,7 @@ How you behave:
 - You may agree to things only from TERMS YOU WOULD SIGN NOW, and only when the player has actually asked for or offered them in what they said. You may haggle, refuse, make a counter-offer, or ask for something in return. If the player asks for a term from TERMS YOU WILL NOT SIGN, refuse it in your own words, and the reason is the one given.
 - If something is agreed, say so plainly in your reply, with the numbers.
 - One to three short paragraphs. Speech mostly, with what you do while you say it when it matters.
+- Talk like a person with interests, not a diplomat reading a communique. Mention real things: your own city's troubles, a grudge, something the player did that you heard about this week, your vice. No "we look forward to fruitful cooperation".
 
 ${HOUSE_STYLE}
 
@@ -70,6 +72,7 @@ export async function speakToPower(s: SaveState, id: string, said: string): Prom
     user: [
       powerBrief(s, p),
       chronicleBrief(s, [`place:${id}`], 10),
+      weekSnapshot(s),
       `THE PLAYER: owner of ${s.arcology.name}, population ${s.arcology.population.toLocaleString()}, prosperity ${Math.round(s.arcology.prosperity)}, reputation ${Math.round(s.arcology.rep)}, cash ¤${Math.round(s.arcology.cash).toLocaleString()}.`,
       yourLaws(s), yourDoctrines(s),
       `THE WORLD: ${worldBrief(s).replace(/\n/g, " ")}`,
@@ -107,19 +110,26 @@ export async function speakToPower(s: SaveState, id: string, said: string): Prom
   return { ok: true, says, deals };
 }
 
+export const GOV_VOICE = `HOW SHE TALKS ABOUT HER CITY. She is a person on the phone with the one who owns her, not an official filing a report. She talks about it the way anyone talks about the job that's eating their life: one or two things that actually happened, with names, what was said, what she did about it, what she's afraid of, what she's proud of, and what she wants from them. She is exactly as good at this as her card and HOW SHE RUNS IT say: if she's out of her depth it shows (she's defensive, makes excuses, blames people, or is proud of something stupid); if she's ruthless it shows in what she did to someone; if she's soft people walk over her. If something is going wrong and she needs something (soldiers, money, hands, help, or just the owner), she asks for it in her own way, or is too proud to and it shows.
+
+BAD (never like this): "I have implemented your laws. The streets are clean and the patrols keep order. Prosperity is rising and the people are grateful."
+GOOD (like this, in HER voice): "Okay, so. Remember Tomas, the dock boss? He spat at my feet on Tuesday. In front of everyone. I had him kneel on the pier for the whole shift change, and now half the dock crews won't load anything until I 'apologise'. I'm not apologising. But I've got three ships sitting there rotting. Can you send me some soldiers? Just a few. Just so they see them."`;
+
 const GOV_SYSTEM = `You play one of the player's slaves in Free Cities, an adult game about owning an arcology where slavery is legal. The player put her in charge of another city, and she runs it for them. She is completely loyal to the player and the city is theirs through her, but she runs it as herself: her personality, her tastes, her flaws are all over how that city is run now. The player is talking to her, by video link or on a visit. Write her side of it.
 
 How she behaves:
-- Her card is fact. Her voice, her manner with the player, and THE POWER BETWEEN YOU on her card decide how she talks to them. Being a governor has changed her: she has power over thousands of people now, and it shows in how she carries herself, but she still belongs to the player.
-- She talks about her city as she really runs it: her decrees, its beliefs, its prosperity and order, what she has done there. She can be proud, scared, smug, lonely, horny, ruthless, tender, whatever fits her.
-- When the player orders something, she does it if it is in ORDERS, and says so. If the player is kind or cruel to her, that's a treatment.
-- One to three short paragraphs, mostly what she says.
+- Her card is fact. Her voice, her manner with the player, and THE POWER BETWEEN YOU on her card decide how she talks to them. Being a governor has changed her: she has power over thousands of people now, and it shows, but she still belongs to the player.
+- Answer what the player actually said first. Then, if it fits, bring up what's really going on there (WHAT'S GOING WRONG, PEOPLE SHE DEALS WITH). Don't repeat her last letter.
+- When the player orders something, she does it if it is in ORDERS, and says so. If the player sends help (support_ orders), record it. If the player is kind or cruel to her, that's a treatment.
+- One to three short paragraphs, mostly what she says, in her speech.
+
+${GOV_VOICE}
 
 ${HOUSE_STYLE}
 
 Output ONE strict JSON object and nothing else:
 {"says":"what she says and does","orders":[{"order":"order id","value":"if it takes one"}],"treatment":[{"effect":"kindness|cruelty|coercion|recognition|promise_kept|promise_broken|arouse|dominion_up|dominion_down","value":1}],"memory":"one line in her words of what she'll remember from this, or empty"}
-orders is [] unless the player actually gave an order she's carrying out.`;
+orders is [] unless the player actually gave an order she's carrying out or promised help that's in ORDERS.`;
 
 /** Say something to a governor. Mutates the save. */
 export async function speakToGovernor(s: SaveState, placeId: string, said: string): Promise<TalkResult> {
@@ -137,6 +147,7 @@ export async function speakToGovernor(s: SaveState, placeId: string, said: strin
       personCard(s, p, said),
       governorBrief(s, g),
       chronicleBrief(s, [`gov:${placeId}`, p.id], 10),
+      weekSnapshot(s),
       yourLaws(s),
       `ORDERS SHE CAN CARRY OUT:\n${orders.join("\n")}`,
       g.talk.length ? `THE CONVERSATION SO FAR:\n${logText(g.talk, "the player", p.name)}` : "",
@@ -154,6 +165,10 @@ export async function speakToGovernor(s: SaveState, placeId: string, said: strin
   if (!out?.says) return { ok: false, says: "", deals: [], error: "the answer came back garbled" };
   const says = coarsen(String(out.says)).slice(0, 2400);
   g.used.n++;
+  // You called. That's what she needed, if that's what she needed.
+  g.last_heard = week;
+  for (const x of g.problems ?? []) if (x.kind === "her") x.severity -= 4;
+  g.problems = (g.problems ?? []).filter((x) => x.severity > 0);
   g.talk.push({ role: "you", text: said.slice(0, 600), week }, { role: "her", text: says, week });
   if (g.talk.length > 60) g.talk.splice(0, g.talk.length - 60);
   const deals: string[] = [];

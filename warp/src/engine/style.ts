@@ -15,7 +15,13 @@ export const PLAIN_RULES = `WORDS AND HABITS THAT GIVE AWAY A MACHINE WRITER. Ne
 - Lists of three adjectives or three short clauses in a row for effect.
 - Ending on a line that sums up, foreshadows, or reflects on what it all means.
 - Explaining the emotion after showing it. Say it once.
-Write the way a person tells a story to a friend: what happened, who said what, what it cost.`;
+Write the way a person tells a story to a friend: what happened, who said what, what it cost.
+
+NO REPORT VOICE. Nobody in this game talks like a status report, a press release or an accounting ledger.
+- Never: "I have implemented", "as you commanded", "the streets are clean/quiet/safe", "order is maintained", "the city is thriving/prospering", "productivity", "compliance", "efficiency", "morale is high", "everything is under control", "the people are grateful", "your laws are being enforced", "the patrols make sure of it", "rest assured", "I am pleased to report".
+- Never recite numbers or stats at the reader. If a number matters, it comes up the way a person would mention it ("we're down to two weeks of grain").
+- Say something specific instead: a named person, a place, a thing somebody did or said, what it led to, what it looks like now. One real incident beats a summary of ten.
+THE TEST: would someone who loves building this world want to read it? If a line only confirms that things are fine, or could be said about any city and any week, cut it and write the incident instead.`;
 
 /** Fix what can be fixed mechanically. Dashes between words become commas; a dash before a
  *  closing quote or at a break becomes a full stop. Markdown emphasis is dropped. */

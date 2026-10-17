@@ -354,7 +354,7 @@ export function endWeek(s: SaveState): WeekReport {
   led.entry("Empire", "Arsenal upkeep, tribute, pacts and sanctions", pow.cash);
   for (const l of pow.lines) push(l, "warning", 9);
   const gov = tickGovernors(s);
-  if (gov.cash) led.earn("Empire", "What your governors send home", gov.cash);
+  if (gov.cash) led.entry("Empire", "Your soldiers in the cities your women run", gov.cash);
   for (const l of gov.lines) push(l.text, l.tone, 9, l.person);
   const wars = tickWars(s);
   led.entry("Empire", "The cost of war", wars.cash);
@@ -410,12 +410,15 @@ export function endWeek(s: SaveState): WeekReport {
   s.market = rollMarkets(s);
   // What the household wants from you this week. Two, at most, and the ones with the most standing
   // to ask go first — a screen of twelve requests is a queue, and a queue is not a decision.
-  s.asks = collectAsks(s);
+  // With a model writing the week, requests come out of engine/wants (only when she has reasons);
+  // without one, the game's own two a week.
+  const writer = modelsAvailable() && !s.models.lean_mode;
+  s.asks = writer ? [] : collectAsks(s);
   for (const ask of s.asks) {
     const who = s.people[ask.person];
     if (who) push(`${who.name} wants something.`, "neutral", 7, who.id);
   }
-  const fresh = selectEvents(s);
+  const fresh = selectEvents(s, { writer });
   s.events = [...s.events.filter((e) => week - e.week < 2), ...fresh];
   for (const e of fresh) {
     push(e.seed, e.severity === "major" ? "warning" : "neutral", 10, e.person);

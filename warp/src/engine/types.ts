@@ -823,6 +823,8 @@ export interface PendingEvent {
   extra?: { id: string; label: string; note?: string }[];
   /** What a generated event leaves open for a later one to pick up. See engine/chronicle. */
   hook?: string;
+  /** A concrete request the engine found for her, which "grant"/"refuse" choices act on. See engine/wants. */
+  ask?: import("./asks").Ask;
 }
 
 export interface SaveState {

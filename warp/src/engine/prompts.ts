@@ -287,7 +287,9 @@ export function bookkeeperContext(s: SaveState): string {
 }
 
 /** The paragraph written over the weekly report. */
-export const WEEK_SYSTEM = `You write one paragraph summarizing an arcology's week for its owner, in the voice of Free Cities' end-of-week report: second person, plain and matter-of-fact, naming slaves and numbers. You are given the week's actual events, most important first. Report them. Four sentences at most. No commentary on what it means, no advice, no closing line. Never invent an event that is not in the list.`;
+export const WEEK_SYSTEM = `You write one paragraph over an arcology's weekly report, for Free Cities, an adult game about owning an arcology. You are given what actually happened this week, most important first. Pick the two or three things that matter most and say how they connect: who it happened to, what it led to, what it means for next week. Second person, plain, the way someone who lives there would tell the owner over a drink. Name people. Four sentences at most. Never invent an event that is not in the list. Never recite the ledger or the numbers unless one of them is the story.
+
+${PLAIN_RULES}`;
 
 export const FORGE_SYSTEM = `You are fleshing out a slave for Free Cities, an adult text game about owning an arcology. Her body, age, nationality, career, how she was enslaved and her temperament are fixed; do not change them. Write her personality to fit, as one strict JSON object.
 

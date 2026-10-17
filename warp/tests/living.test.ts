@@ -165,3 +165,61 @@ import { grantAsk, generateAsk } from "../src/engine/asks.ts";
   const e2 = fireEvent(s, "devoted_request", { person: p });
   if (e2) check("an effect not on the table does nothing", resolveAny(s, e2, "x1:bogus:1") === "");
 }
+
+// Wants: only a woman with real reasons gets an event, and not two weeks running.
+import { reasonsOf, pickWants, wantScore, WANT_THRESHOLD } from "../src/engine/wants.ts";
+import { selectEvents } from "../src/engine/events.ts";
+import { styleOf, supportGovernor, sendDeputy, tickGovernors as tickGov, governorCandidates as cands, installGovernor as install, governorshipOf as govOf } from "../src/engine/governor.ts";
+import { weekSnapshot } from "../src/engine/snapshot.ts";
+{
+  const s = newGame({ seed: "wants", starting_slaves: 5 } as never);
+  endWeek(s);
+  const calm = pickWants(s);
+  check("a quiet house with nothing going on throws up nobody", calm.every((x) => x.score >= WANT_THRESHOLD), calm.map((x) => x.score));
+  const [a, b] = Object.values(s.people).filter((x) => x.status === "owned");
+  // Her friend is sold this week, and she's been thinking about running.
+  s.edges.push({ from: a.id, to: b.id, warmth: 70, trust: 50, attraction: 0, power: 0, roles: [], weeks_known: 10 });
+  b.status = "sold"; b.exit_week = s.arcology.week - 1; b.exit_note = "sold to a broker";
+  a.bond.resentment = 80; a.bond.fear = 10; a.bond.hope = 5;
+  const why = reasonsOf(s, a);
+  check("her friend being sold is a reason", why.some((r) => r.tag === "friend" && r.why.includes(b.name)), why);
+  check("and with enough of them she wants something", pickWants(s).some((x) => x.p.id === a.id), [wantScore(s, a), why]);
+  s.event_log = { ...(s.event_log ?? {}), [`want:${a.id}`]: s.arcology.week, "want:last": s.arcology.week };
+  check("but not the week after she had one", wantScore(s, a) < wantScore(s, a) / 0.25 && !pickWants(s).some((x) => x.p.id === a.id && x.score < WANT_THRESHOLD * 1.5));
+  check("the snapshot carries the sale", weekSnapshot(s).includes(b.name));
+  // With a model writing, the stock one-woman events stay out.
+  s.models.tension = 10;
+  const ev = selectEvents(s, { writer: true });
+  check("with a writer, no stock events about one woman", ev.every((e) => !e.person), ev.map((e) => e.kind));
+  check("and at most one a week", ev.length <= 1);
+}
+
+// Governors who can fail, and what helping does.
+{
+  const s = newGame({ seed: "govtrouble", starting_slaves: 4 } as never);
+  s.arcology.cash = 300_000;
+  const place = powers(s).find((p) => p.kind === "neighbour")!;
+  empireOf(s).powers[place.id].status = "vassal";
+  const her = cands(s)[0];
+  her.persona.intelligence = "slow"; her.persona.education = 10; her.persona.conscience = 0.2;
+  check("a slow, cold woman runs it hard and badly", styleOf(her).map((x) => x.id).join() === "iron,lost", styleOf(her).map((x) => x.id));
+  install(s, place.id, her.id);
+  const g = govOf(s, place.id)!;
+  check("her city has people in it", (g.faces ?? []).length === 3);
+  const p0 = g.prosperity;
+  for (let i = 0; i < 12; i++) { s.arcology.week++; tickGov(s); }
+  check("left alone, she gets into trouble", (g.problems ?? []).length > 0 || (g.news ?? []).length > 0, g.problems);
+  check("and the city goes downhill", g.prosperity < p0 + 2, [p0, g.prosperity]);
+  check("trouble is told as what happened, with names", (g.news ?? []).every((n) => !/prosperity|order \d/i.test(n.text)), g.news);
+  g.problems = [{ id: "x", kind: "raiders", text: "raiders", need: "troops", severity: 5, since: s.arcology.week }];
+  check("with no army to spare, no soldiers go", /can't/.test(supportGovernor(s, place.id, "troops")) || (g.garrison ?? 0) === 1);
+  s.arcology.mercenaries = { hired: true, strength: 100, loyalty: 80, upkeep: 0 };
+  supportGovernor(s, place.id, "troops");
+  check("soldiers help", (g.garrison ?? 0) === 1 && !(g.problems ?? []).some((x) => x.kind === "raiders" && x.severity >= 5), g.problems);
+  const r0 = endWeekCost(s, place.id);
+  check("and cost money every week", r0 < 0, r0);
+  const d = cands(s).find((x) => x.id !== her.id)!;
+  sendDeputy(s, place.id, d.id);
+  check("a deputy goes with her", g.deputy === d.id && d.governs === place.id && d.assignment === "be your agent");
+}
+function endWeekCost(s: ReturnType<typeof newGame>, _id: string): number { return tickGov(s).cash; }
