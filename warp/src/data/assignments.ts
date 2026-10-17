@@ -63,6 +63,8 @@ export const ASSIGNMENTS: AssignmentDef[] = [
   { id: "recruit girls", label: "Recruit", group: "management", blurb: "She goes out and recruits new slaves for you.",
     base_income: 0, rep: 2, psyche: { relaxation: 0.4, wear: 0.3, health: 0, energy: 35 },
     trains: { entertainment: 0.8 }, demands: ["speak", "walk", "think"], wants_devotion: 50 },
+  { id: "be confined in the cellblock", label: "Locked up", group: "care", blurb: "Locked in a cell. Without a cellblock built, it's a storeroom under the penthouse with a lock on the outside.",
+    base_income: -50, rep: 0, psyche: { relaxation: -1.8, wear: -2.2, health: -2, energy: 20 }, trains: {} },
   { id: "be your agent", label: "Run a holding", group: "management", blurb: "She manages your interests in another arcology.",
     base_income: 0, rep: 6, psyche: { relaxation: 0.5, wear: 0.5, health: 0, energy: 30 },
     trains: {}, demands: ["speak", "think"], wants_devotion: 70 },

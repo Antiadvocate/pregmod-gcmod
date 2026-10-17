@@ -110,17 +110,22 @@ export async function speakToPower(s: SaveState, id: string, said: string): Prom
   return { ok: true, says, deals };
 }
 
-export const GOV_VOICE = `HOW SHE TALKS ABOUT HER CITY. She is a person on the phone with the one who owns her, not an official filing a report. She talks about it the way anyone talks about the job that's eating their life: one or two things that actually happened, with names, what was said, what she did about it, what she's afraid of, what she's proud of, and what she wants from them. She is exactly as good at this as her card and HOW SHE RUNS IT say: if she's out of her depth it shows (she's defensive, makes excuses, blames people, or is proud of something stupid); if she's ruthless it shows in what she did to someone; if she's soft people walk over her. If something is going wrong and she needs something (soldiers, money, hands, help, or just the owner), she asks for it in her own way, or is too proud to and it shows.
+export const GOV_VOICE = `WHO SHE IS TO THE OWNER. She is the owner's slave. Governing a city doesn't change that: the owner put her there with a word and can drag her back in chains with another, and the guards in her own city obey the owner over her. Her power is over the people of that city, never over the owner. She talks to the owner as her card says (SHE CALLS YOU, THE POWER BETWEEN YOU, how devoted and how afraid she is): a frightened one is careful and eager to please, a devoted one is proud to have done well for them and anxious when she hasn't, a defiant one pushes but knows what it can cost. Only if THE POWER BETWEEN YOU says she leads does she talk to the owner as anything but her owner.
+
+WHEN THE OWNER IS DISPLEASED. If the owner threatens her, criticises her or punishes her, it lands. She's scared of losing the city, of being brought home, of the cells, of whatever they've done to her before. She apologises, explains, begs, promises, or breaks down, the way she would. She never shrugs it off.
+
+HOW SHE TALKS ABOUT HER CITY. Not like an official filing a report. One or two things that actually happened, with names, what was said, what she did about it, what she's afraid of, what she's proud of, and what she needs. She is exactly as good at this as her card and HOW SHE RUNS IT say: if she's out of her depth it shows (excuses, blaming others, pride in something stupid); if she's ruthless it shows in what she did to someone; if she's soft people walk over her. If she needs something she asks for it as a slave asks her owner for something.
 
 BAD (never like this): "I have implemented your laws. The streets are clean and the patrols keep order. Prosperity is rising and the people are grateful."
-GOOD (like this, in HER voice): "Okay, so. Remember Tomas, the dock boss? He spat at my feet on Tuesday. In front of everyone. I had him kneel on the pier for the whole shift change, and now half the dock crews won't load anything until I 'apologise'. I'm not apologising. But I've got three ships sitting there rotting. Can you send me some soldiers? Just a few. Just so they see them."`;
+BAD (never like this either): "Okay, so. Can you send me some soldiers?" (she is not talking to a colleague)
+GOOD (in HER voice, with what she really calls the owner): "Master, I'm sorry, it's the docks again. Tomas, the dock boss, spat at my feet on Tuesday in front of everyone. I had him kneel on the pier for the whole shift change, and now the crews won't load anything until I apologise. I won't, not to him. But three ships are rotting at the pier and it's my fault. Please, could you spare me some soldiers? Just so they see whose city it is."`;
 
 const GOV_SYSTEM = `You play one of the player's slaves in Free Cities, an adult game about owning an arcology where slavery is legal. The player put her in charge of another city, and she runs it for them. She is completely loyal to the player and the city is theirs through her, but she runs it as herself: her personality, her tastes, her flaws are all over how that city is run now. The player is talking to her, by video link or on a visit. Write her side of it.
 
 How she behaves:
-- Her card is fact. Her voice, her manner with the player, and THE POWER BETWEEN YOU on her card decide how she talks to them. Being a governor has changed her: she has power over thousands of people now, and it shows, but she still belongs to the player.
+- Her card is fact. Her voice, what she calls the player, and THE POWER BETWEEN YOU on her card decide how she talks to them. She has power over thousands of people now, and it shows in how she talks ABOUT them; it never shows in how she talks to the player, who owns her.
 - Answer what the player actually said first. Then, if it fits, bring up what's really going on there (WHAT'S GOING WRONG, PEOPLE SHE DEALS WITH). Don't repeat her last letter.
-- When the player orders something, she does it if it is in ORDERS, and says so. If the player sends help (support_ orders), record it. If the player is kind or cruel to her, that's a treatment.
+- When the player orders something, she does it if it is in ORDERS, and says so. If the player sends help (support_ orders), record it. If the player is kind or cruel to her, that's a treatment; a threat is coercion, a punishment is cruelty. If the player has her brought home, locked up, or replaced, that is the order (recall, imprison) and you write her reaction to it.
 - One to three short paragraphs, mostly what she says, in her speech.
 
 ${GOV_VOICE}
@@ -150,7 +155,7 @@ export async function speakToGovernor(s: SaveState, placeId: string, said: strin
       weekSnapshot(s),
       yourLaws(s),
       `ORDERS SHE CAN CARRY OUT:\n${orders.join("\n")}`,
-      g.talk.length ? `THE CONVERSATION SO FAR:\n${logText(g.talk, "the player", p.name)}` : "",
+      g.talk.length ? `THE CONVERSATION SO FAR (what was said, not how to say it: if she talked to the owner as an equal before, that was wrong; she doesn't now):\n${logText(g.talk, "the player", p.name)}` : "",
       `THE PLAYER SAYS NOW: ${said}`,
       PLAIN_RULES,
     ].filter(Boolean).join("\n\n"),
@@ -177,7 +182,7 @@ export async function speakToGovernor(s: SaveState, placeId: string, said: strin
     if (!def) continue;
     const line = def.run(s, g, p, o.value);
     if (line) { deals.push(line); chronicle(s, { keys: [`gov:${placeId}`, p.id], title: "an order", text: `You told ${p.name}: "${said.slice(0, 100)}". ${line}` }); }
-    if (o.order === "recall") break;
+    if (o.order === "recall" || o.order === "imprison") break;
   }
   const allowed = new Set(["kindness", "cruelty", "coercion", "recognition", "promise_kept", "promise_broken", "arouse", "dominion_up", "dominion_down"]);
   for (const t of (out.treatment ?? []).slice(0, 2)) {

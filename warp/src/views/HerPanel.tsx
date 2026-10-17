@@ -18,7 +18,7 @@ import { modelsAvailable } from "../config";
 import { MannerCard, StandingOrders } from "./StandingOrders";
 import { FREE_HOW, freeHer, freeLine, type FreeHow } from "../engine/freed";
 import RoomCard from "./RoomCard";
-import { governorshipOf } from "../engine/governor";
+import { governorshipOf, lockUp } from "../engine/governor";
 import { speakToGovernor } from "../engine/talk";
 import Talk from "./Talk";
 
@@ -67,6 +67,11 @@ export default function HerPanel({ id }: { id: string }) {
       <StandingOrders person={id} />
       <MannerCard person={id} />
       {p.governs ? null : <RoomCard id={id} />}
+      {p.status === "owned" && !p.governs ? (
+        p.assignment === "be confined in the cellblock"
+          ? <Button size="sm" kind="ghost" onClick={() => mutate((s) => { const q = s.people[id]; q.facility = undefined; for (const f of Object.values(s.arcology.facilities)) f.workers = f.workers.filter((w) => w !== id); q.assignment = "rest"; })}>Let her out of the cell</Button>
+          : <Button size="sm" kind="danger" onClick={() => mutate((s) => { lockUp(s, s.people[id], "locked in a cell"); })}>Lock her up</Button>
+      ) : null}
       <Card>
         <div className="flex items-center gap-2 mb-3">
           <Heart size={14} className="acc" />

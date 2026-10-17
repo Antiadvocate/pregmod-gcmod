@@ -44,6 +44,7 @@ import { PLAIN_RULES } from "./style";
 import { chronicle, chronicleBrief, closeHooks, openHooks } from "./chronicle";
 import { changeRoom, roomLine, roomWish } from "./rooms";
 import { EXTRA_BY_ID } from "../data/rooms";
+import { lockUp } from "./governor";
 
 /** THE CLOSED TABLE. A generated option may name one of these and nothing else. */
 export const DYNAMIC_EFFECTS: Record<string, { note: string; run: (s: SaveState, p: Person, value?: string | number) => string }> = {
@@ -63,6 +64,7 @@ export const DYNAMIC_EFFECTS: Record<string, { note: string; run: (s: SaveState,
   scar: { note: "she carries it permanently — value is the memory in her terms", run: (s, p, v) => { const mem = s.memory[p.id]; if (mem) remember(mem, { content: String(v ?? "the thing that happened"), week: s.arcology.week, importance: 9, charge: "sharp", core: true }); addState(p.psyche, "what happened", s.arcology.week); return "she'll never forget it"; } },
   room_gift: { note: "you give her something for her room; value is one of the ROOM ITEM ids", run: (s, p, v) => { const id = String(v ?? ""); const wish = roomWish(s, p); const line = EXTRA_BY_ID[id] ? changeRoom(s, p, { extra: id }) : wish?.extra ? changeRoom(s, p, { extra: wish.extra }) : wish?.axis ? changeRoom(s, p, { axis: wish.axis, level: wish.level }) : ""; return line || "her room stays as it is"; } },
   room_take: { note: "you take something out of her room as a punishment; value is one of the ROOM ITEM ids she has", run: (s, p, v) => { const have = p.room?.extras ?? []; const id = have.includes(String(v)) ? String(v) : have.find((x) => (EXTRA_BY_ID[x]?.comfort ?? 0) > 0); if (id) return changeRoom(s, p, { remove: id }); if ((p.room?.levels.bed ?? 0) > -1) return changeRoom(s, p, { axis: "bed", level: -1 }); return "there's nothing left in her room to take"; } },
+  imprison: { note: "you have her locked in a cell", run: (s, p) => lockUp(s, p, "locked in a cell") },
   nothing: { note: "you do not engage", run: () => "you did nothing" },
 };
 

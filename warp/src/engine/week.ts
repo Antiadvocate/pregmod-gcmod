@@ -230,6 +230,9 @@ export function endWeek(s: SaveState): WeekReport {
     // The bond ledger, and what the week did to it without anybody deciding.
     if (facDef?.id === "arcade" || facDef?.id === "cellblock") {
       applyTreatment(p, { kind: "cruelty", size: facDef.id === "arcade" ? 4 : 3, why: `a week in the ${facDef.name.toLowerCase()}` }, week);
+    } else if (p.assignment === "be confined in the cellblock") {
+      applyTreatment(p, { kind: "cruelty", size: 3, why: "a week locked in a storeroom" }, week);
+      addState(p.psyche, "dread of the cell", week);
     } else if (facDef?.id === "spa" || facDef?.id === "master_suite") {
       applyTreatment(p, { kind: "kindness", size: 2, why: `a week in the ${facDef.name.toLowerCase()}` }, week);
     }
