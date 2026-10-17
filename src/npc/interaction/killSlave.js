@@ -217,6 +217,17 @@ App.UI.SlaveInteract.killSlave = function(slave) {
 
 		const combatLinkText = `Let ${him} win ${his} life in combat`;
 
+		// Already threatened and spared this week: no second round of mercy, just the kill
+		if (V.temp.executeOnly) {
+			delete V.temp.executeOnly;
+			linksDiv.appendChild(App.UI.DOM.generateLinksStrip([
+				App.UI.DOM.link(`Kill ${him}`, () => {
+					App.UI.DOM.replace(linksDiv, kill);
+				}),
+			]));
+			return linksDiv;
+		}
+
 		links.push(
 			App.UI.DOM.link(`Kill ${him}`, () => {
 				App.UI.DOM.replace(linksDiv, kill);
