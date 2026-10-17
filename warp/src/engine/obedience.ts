@@ -51,7 +51,7 @@ const DEVOTION_BANDS: [number, string][] = [
   [-10, "careless"], [-50, "resistant"], [-101, "hateful"],
 ];
 const TRUST_BANDS: [number, string][] = [
-  [95, "edonic"], [70, "trusting"], [45, "trusting enough"], [20, "careful"],
+  [95, "trusts you completely"], [70, "trusting"], [45, "trusting enough"], [20, "careful"],
   [-10, "wary"], [-50, "frightened"], [-101, "terrified"],
 ];
 
@@ -241,7 +241,7 @@ export function explain(p: Person, mem?: PersonMemory): string[] {
   if (r.fragility > 0.65) out.push(`${Math.round(r.fragility * 100)}% of her obedience is fear. If you stop keeping it up, it'll be gone in a month.`);
   else if (r.fragility < 0.25 && b.bond > 20) out.push(`She obeys because she's attached to you, not out of fear. It would last if you were away.`);
 
-  if (b.resentment > 55) out.push(`She resents how she's been treated (${Math.round(b.resentment)}), and it's dragging everything else down.`);
+  if (b.resentment > 55) out.push(`She resents how she's been treated, and it's dragging everything else down.`);
   if (b.hope < 12) out.push(`She's lost hope. Promises mean nothing to her until you keep one.`);
   else if (b.hope > 60) out.push(`She's hopeful about her future, and she works hard because of it.`);
 
@@ -253,10 +253,10 @@ export function explain(p: Person, mem?: PersonMemory): string[] {
   else if (p.psyche.state === "fracturing") out.push(`She's close to breaking after four weeks of constant stress.`);
 
   const w = wear(p.psyche);
-  if (w > 0.55) out.push(`Long-term stress has permanently worn her down (${(p.psyche.capacity_born - p.psyche.capacity).toFixed(1)}). Small things don't bother her any more, but big ones still do.`);
+  if (w > 0.55) out.push(`Months of stress have hardened her for good. Small things don't bother her any more, but big ones still do.`);
 
   if (b.weeks_since_kindness > 8) out.push(`You haven't done anything nice for her in ${b.weeks_since_kindness} weeks.`);
-  if (r.flight_risk > 0.35) out.push(`Flight risk: ${Math.round(r.flight_risk * 100)}%. She's thinking about running.`);
+  if (r.flight_risk > 0.35) out.push(`She's thinking about running.`);
 
   if (!out.length) out.push(`She's neither attached to you nor afraid of you. She just does her work.`);
   return out;

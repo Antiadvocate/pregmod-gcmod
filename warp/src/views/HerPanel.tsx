@@ -98,7 +98,7 @@ export default function HerPanel({ id }: { id: string }) {
             <Chip on={reach.policy}>doctrine</Chip>
             <Chip on={reach.everything}>the books</Chip>
           </div>
-          <div className="text-[11px] dim mt-2 font-mono">granted {rom.granted} · refused {rom.refused}</div>
+          <div className="text-[11px] dim mt-2">You've given her what she asked for {rom.granted} time{rom.granted === 1 ? "" : "s"} and said no {rom.refused} time{rom.refused === 1 ? "" : "s"}.</div>
         </div>
       </Card>
 
@@ -178,8 +178,7 @@ export default function HerPanel({ id }: { id: string }) {
       <KillHer id={id} />
 
       <Card className="text-[11.5px] dim">
-        {Math.round(r.fragility * 100)}% of her obedience is fear rather than bond. Courting needs it under 35%,
-        marriage under 15%.
+        {r.fragility > 0.5 ? "She obeys you more out of fear than love." : "She obeys you more out of love than fear."} To court her it has to be mostly love; to marry her, almost all of it.
       </Card>
     </div>
   );

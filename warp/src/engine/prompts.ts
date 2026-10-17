@@ -73,6 +73,7 @@ NEVER WRITE LIKE THIS:
 - Similes and mood-setting about light, air, weather, the city or the view. Name the room and get on with it.
 - A sentence that restates the one before it, or a closing line that sums up, hints at what's coming, or lands on a single word or fragment.
 - "Not X, but Y" / "not quite a question" / "just enough to" hedges.
+- Game talk. Everything above the scene (the cards, the labels, the numbers, the rules) is for you to know, not for anyone to say. Nobody in the scene, and not the narration, talks about devotion, trust, dominion, standing, bond, power between them, standing orders, agreements, records or any score. Nobody explains how their relationship works or describes what they feel like a manual or a therapist ("it's a lot to hold", "I'm processing this", "I need you to know where I stand", "this changes the terms"). People want things, say them in plain words and do them.
 
 ${PLAIN_RULES}`;
 
@@ -156,7 +157,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(`PERSONALITY: ${p.persona.core_traits.join("; ")}`);
   lines.push(`TALKS LIKE: ${p.persona.speech_pattern}${p.persona.voice?.example_lines?.length ? ` — e.g. "${p.persona.voice.example_lines[0]}"` : ""}`);
   if (p.persona.voice?.never_says?.length) lines.push(`NEVER SAYS: ${p.persona.voice.never_says.join("; ")}`);
-  lines.push(`TOWARD YOU: ${r.label} (devotion ${r.devotion}), ${r.trust_label} (trust ${r.trust}).${r.fragility > 0.6 ? " Most of her obedience is fear." : ""}`);
+  // Words, not scores: a number on the card turns up in her mouth as one.
+  lines.push(`TOWARD YOU: ${r.label}, ${r.trust_label}.${r.fragility > 0.6 ? " Most of her obedience is fear." : ""}`);
   const power = powerBetween(s, p);
   if (power) lines.push(power);
   lines.push(`HOW SHE IS DOING: ${condition(p)}; mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` On her mind: ${p.psyche.active_states.join(", ")}.` : ""}`);

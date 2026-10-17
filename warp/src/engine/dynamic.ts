@@ -50,25 +50,27 @@ import { lockUp } from "./governor";
 /** How an act landed, as words: the landing ids are not verbs ("she nothing it"). */
 const LANDED: Record<string, string> = { wanted: "she loved it", willing: "she was into it", endured: "she put up with it", hated: "she hated it", nothing: "it did nothing for her" };
 
-export const DYNAMIC_EFFECTS: Record<string, { note: string; run: (s: SaveState, p: Person, value?: string | number) => string }> = {
+/** What the player reads is `note`: plain words. What the model needs to fill in is `value`, kept
+ *  apart so its wording never ends up on a button. */
+export const DYNAMIC_EFFECTS: Record<string, { note: string; value?: string; run: (s: SaveState, p: Person, value?: string | number) => string }> = {
   kindness: { note: "you're kind to her", run: (s, p, v) => { applyTreatment(p, { kind: "kindness", size: Number(v) || 4, why: "how you handled it" }, s.arcology.week); shove(p.psyche, 0.8); return "she's surprised and grateful"; } },
   cruelty: { note: "you're cruel to her", run: (s, p, v) => { applyTreatment(p, { kind: "cruelty", size: Number(v) || 5, why: "how you handled it" }, s.arcology.week); shove(p.psyche, -1.5, { hard: true }); return "she takes it, and resents you for it"; } },
-  coercion: { note: "you punish her to enforce the rules", run: (s, p, v) => { applyTreatment(p, { kind: "coercion", size: Number(v) || 4, why: "punished to enforce the rules" }, s.arcology.week); return "she gets the message"; } },
+  coercion: { note: "you punish her to keep her in line", run: (s, p, v) => { applyTreatment(p, { kind: "coercion", size: Number(v) || 4, why: "punished to enforce the rules" }, s.arcology.week); return "she gets the message"; } },
   recognition: { note: "you treat her like a person", run: (s, p, v) => { applyTreatment(p, { kind: "recognition", size: Number(v) || 5, why: "you treated her like a person" }, s.arcology.week); return "she appreciates being treated like a person"; } },
-  promise_kept: { note: "you do the thing you said you would", run: (s, p, v) => { applyTreatment(p, { kind: "promise_kept", size: Number(v) || 6, why: "you kept your word" }, s.arcology.week); return "you kept your word, and she appreciates it"; } },
-  promise_broken: { note: "you go back on it", run: (s, p, v) => { applyTreatment(p, { kind: "promise_broken", size: Number(v) || 6, why: "you went back on it" }, s.arcology.week); return "she's lost faith in your promises"; } },
-  act: { note: "it becomes a scene — name an act id", run: (s, p, v) => { const out = resolveAct(s, p, String(v)); return "error" in out ? "nothing came of it" : `${ACT_BY_ID[String(v)]?.what ?? "it happened"} — ${LANDED[out.landing]}`; } },
-  arouse: { note: "she is wound up by it", run: (_s, p, v) => { p.psyche.arousal = clamp(p.psyche.arousal + (Number(v) || 20), 0, 100); return "she's very turned on"; } },
+  promise_kept: { note: "you keep your word", run: (s, p, v) => { applyTreatment(p, { kind: "promise_kept", size: Number(v) || 6, why: "you kept your word" }, s.arcology.week); return "you kept your word, and she appreciates it"; } },
+  promise_broken: { note: "you go back on your word", run: (s, p, v) => { applyTreatment(p, { kind: "promise_broken", size: Number(v) || 6, why: "you went back on it" }, s.arcology.week); return "she's lost faith in your promises"; } },
+  act: { note: "it turns into sex", value: "which act, by its id", run: (s, p, v) => { const out = resolveAct(s, p, String(v)); return "error" in out ? "nothing came of it" : `${ACT_BY_ID[String(v)]?.what ?? "it happened"} — ${LANDED[out.landing]}`; } },
+  arouse: { note: "it gets her worked up", run: (_s, p, v) => { p.psyche.arousal = clamp(p.psyche.arousal + (Number(v) || 20), 0, 100); return "she's very turned on"; } },
   dominion_up: { note: "she gets her way", run: (s, p, v) => { shiftDominion(s, p, Number(v) || 6, "she got her way"); return "she got her way"; } },
-  dominion_down: { note: "she is put back in her place", run: (s, p, v) => { shiftDominion(s, p, -(Number(v) || 6), "she was put back in her place"); return "she's been put back in her place"; } },
-  cash: { note: "it costs or makes money — value is the amount, negative to spend", run: (s, _p, v) => { const n = Number(v) || -2000; s.arcology.cash += n; return `¤${Math.abs(n).toLocaleString()} ${n < 0 ? "spent" : "made"}`; } },
-  rep: { note: "the arcology's opinion moves", run: (s, _p, v) => { const n = Number(v) || -200; s.arcology.rep = Math.max(0, s.arcology.rep + n); return `standing ${n >= 0 ? "+" : ""}${n}`; } },
-  rumor: { note: "it gets around — value is what people say", run: (s, p, v) => { startRumor(s, String(v ?? `something about ${p.name}`), { about: p.id, salience: 7 }); return "everyone's heard about it by morning"; } },
-  scar: { note: "she carries it permanently — value is the memory in her terms", run: (s, p, v) => { const mem = s.memory[p.id]; if (mem) remember(mem, { content: String(v ?? "the thing that happened"), week: s.arcology.week, importance: 9, charge: "sharp", core: true }); addState(p.psyche, "what happened", s.arcology.week); return "she'll never forget it"; } },
-  room_gift: { note: "you give her something for her room; value is one of the ROOM ITEM ids", run: (s, p, v) => { const id = String(v ?? ""); const wish = roomWish(s, p); const line = EXTRA_BY_ID[id] ? changeRoom(s, p, { extra: id }) : wish?.extra ? changeRoom(s, p, { extra: wish.extra }) : wish?.axis ? changeRoom(s, p, { axis: wish.axis, level: wish.level }) : ""; return line || "her room stays as it is"; } },
-  room_take: { note: "you take something out of her room as a punishment; value is one of the ROOM ITEM ids she has", run: (s, p, v) => { const have = p.room?.extras ?? []; const id = have.includes(String(v)) ? String(v) : have.find((x) => (EXTRA_BY_ID[x]?.comfort ?? 0) > 0); if (id) return changeRoom(s, p, { remove: id }); if ((p.room?.levels.bed ?? 0) > -1) return changeRoom(s, p, { axis: "bed", level: -1 }); return "there's nothing left in her room to take"; } },
+  dominion_down: { note: "you put her back in her place", run: (s, p, v) => { shiftDominion(s, p, -(Number(v) || 6), "she was put back in her place"); return "she's been put back in her place"; } },
+  cash: { note: "money changes hands", value: "how much; negative when you pay", run: (s, _p, v) => { const n = Number(v) || -2000; s.arcology.cash += n; return `¤${Math.abs(n).toLocaleString()} ${n < 0 ? "spent" : "made"}`; } },
+  rep: { note: "it changes what the arcology thinks of you", value: "how much; negative when it costs you", run: (s, _p, v) => { const n = Number(v) || -200; s.arcology.rep = Math.max(0, s.arcology.rep + n); return `standing ${n >= 0 ? "+" : ""}${n}`; } },
+  rumor: { note: "people talk about it", value: "what they say", run: (s, p, v) => { startRumor(s, String(v ?? `something about ${p.name}`), { about: p.id, salience: 7 }); return "everyone's heard about it by morning"; } },
+  scar: { note: "she never forgets it", value: "the memory, as she'd put it", run: (s, p, v) => { const mem = s.memory[p.id]; if (mem) remember(mem, { content: String(v ?? "the thing that happened"), week: s.arcology.week, importance: 9, charge: "sharp", core: true }); addState(p.psyche, "what happened", s.arcology.week); return "she'll never forget it"; } },
+  room_gift: { note: "you give her something for her room", value: "which room item, by its id", run: (s, p, v) => { const id = String(v ?? ""); const wish = roomWish(s, p); const line = EXTRA_BY_ID[id] ? changeRoom(s, p, { extra: id }) : wish?.extra ? changeRoom(s, p, { extra: wish.extra }) : wish?.axis ? changeRoom(s, p, { axis: wish.axis, level: wish.level }) : ""; return line || "her room stays as it is"; } },
+  room_take: { note: "you take something out of her room as a punishment", value: "which room item she has, by its id", run: (s, p, v) => { const have = p.room?.extras ?? []; const id = have.includes(String(v)) ? String(v) : have.find((x) => (EXTRA_BY_ID[x]?.comfort ?? 0) > 0); if (id) return changeRoom(s, p, { remove: id }); if ((p.room?.levels.bed ?? 0) > -1) return changeRoom(s, p, { axis: "bed", level: -1 }); return "there's nothing left in her room to take"; } },
   imprison: { note: "you have her locked in a cell", run: (s, p) => lockUp(s, p, "locked in a cell") },
-  nothing: { note: "you do not engage", run: () => "you did nothing" },
+  nothing: { note: "you leave it alone", run: () => "you did nothing" },
 };
 
 interface GeneratedEvent {
@@ -147,14 +149,15 @@ ${HOUSE_STYLE}
 Do not invent people who are not on the record, except strangers with no name. Everyone is an adult.
 
 Output ONE strict JSON object and nothing else:
-{"title":"2-5 words","situation":"one or two short paragraphs, present tense, ending where you have to decide","options":[{"label":"what you do, 2-8 words","note":"short plain consequence","effect":"one id from the list","value":"optional"}],"hook":"one line: what this leaves open for later, or empty"}
+{"title":"2-5 words","situation":"one or two short paragraphs, present tense, ending where you have to decide","options":[{"label":"what you do, 2-8 words","note":"a few plain words for the player, like \"she won't forget it\" or \"costs you ¤2,000\"; never the effect's description","effect":"one id from the list","value":"optional"}],"hook":"one line: what this leaves open for later, or empty"}
 
 Three or four options, each a genuinely different response, at least one of which is to leave it alone.
 
 It is now the week named under THE PLACE AND TIME, and each turn of the game is a week. Everything on her record happened in earlier weeks and is over: do not restage it. This is the next thing, happening now.`;
 
-function effectList(): string {
-  return Object.entries(DYNAMIC_EFFECTS).map(([id, e]) => `${id} — ${e.note}`).join("\n");
+/** The effects as the model reads them: id, what it does, and what to put in "value". */
+export function effectList(): string {
+  return Object.entries(DYNAMIC_EFFECTS).map(([id, e]) => `${id}: ${e.note}${e.value ? ` (value: ${e.value})` : ""}`).join("\n");
 }
 
 export async function generateDynamicEvent(s: SaveState, subject?: Person, hint = ""): Promise<PendingEvent | null> {

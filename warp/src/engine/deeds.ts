@@ -23,7 +23,7 @@ import { startRumor, moveEdge } from "./social";
 import { clamp, shove } from "./psyche";
 import { romanceOf, rungIndex, shiftDominion, LADDER } from "./romance";
 import { reversalOf } from "./reversal";
-import { DYNAMIC_EFFECTS } from "./dynamic";
+import { DYNAMIC_EFFECTS, effectList } from "./dynamic";
 import { personCard } from "./prompts";
 import type { Moment } from "./moments";
 import { hasWomb } from "./pregnancy";
@@ -336,7 +336,7 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
 
   let r: Read | null = null;
   if (modelsAvailable() && !opts?.offline) {
-    const effects = Object.entries(DYNAMIC_EFFECTS).map(([id, e]) => `${id} — ${e.note}`).join("\n");
+    const effects = effectList();
     const tags = Object.entries(DEED_TAGS).map(([id, t]) => `${id} — ${t.when}`).join("\n");
     const res = await call({
       system: CONSEQUENCE_SYSTEM,

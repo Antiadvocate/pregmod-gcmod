@@ -16,6 +16,7 @@ import { ACT_BY_ID } from "../src/data/intimacy.ts";
 import { ascend, nextRung, renounce, romanceOf, shiftDominion, herReach, keeperRunsTheWeek, theKeeper } from "../src/engine/romance.ts";
 import { generateAsk, grantAsk, refuseAsk } from "../src/engine/asks.ts";
 import { DYNAMIC_EFFECTS, resolveDynamic } from "../src/engine/dynamic.ts";
+import { personCard, NARRATOR_SYSTEM } from "../src/engine/prompts.ts";
 import { visualSignature, scenePrompt } from "../src/engine/portrait.ts";
 import { goTo, openPlaces, isPublic, groundShove } from "../src/engine/places.ts";
 import { PLACE_BY_ID } from "../src/data/places.ts";
@@ -332,4 +333,13 @@ function planted(seed: string, opts: { fetish?: string; flaw?: string; quirk?: s
   const { s, p } = planted("landed-words");
   const line = DYNAMIC_EFFECTS.act.run(s, p, "vaginal");
   check("an act from an event says how it landed in words", !/she (nothing|willing|wanted|endured|hated) it/.test(line) && / — /.test(line), line);
+}
+
+{
+  // What a player can read never carries the model's instructions, and her card carries words, not scores.
+  const { s, p } = planted("plain-notes");
+  check("effect notes are plain words, with what to fill in kept apart", Object.values(DYNAMIC_EFFECTS).every((e) => !/value is|\bids?\b|—|negative to/.test(e.note)), Object.values(DYNAMIC_EFFECTS).map((e) => e.note));
+  const card = personCard(s, p);
+  check("her card says how she feels about you in words, without a score", /TOWARD YOU: [a-z ,]+\./.test(card) && !/TOWARD YOU:[^\n]*\d/.test(card), card.split("\n").find((l) => l.startsWith("TOWARD")));
+  check("and the narrator is told nobody talks game", NARRATOR_SYSTEM.includes("Game talk"));
 }

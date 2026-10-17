@@ -257,9 +257,9 @@ export function perception(p: Psyche, conscience: number): { accuracy: number; n
   const accuracy = clamp((p.relaxation + 10) / 20, 0, 1);
   if (accuracy < 0.3)
     return { accuracy, note: conscience <= 0.35
-      ? "hostile and suspicious of everyone"
-      : "paranoid; sees threats everywhere" };
-  if (accuracy < 0.5) return { accuracy, note: "suspicious of everything said to her" };
+      ? "is hostile and suspicious of everyone"
+      : "is paranoid and sees threats everywhere" };
+  if (accuracy < 0.5) return { accuracy, note: "is suspicious of everything said to her" };
   if (accuracy > 0.75) return { accuracy, note: "sees people clearly" };
   return { accuracy, note: "reads people normally" };
 }
@@ -272,7 +272,7 @@ export function aperture(p: Psyche): { width: number; note: string } {
   if (p.relaxation <= T.NARROW)
     return { width: 0.15, note: "talks in short, tense sentences" };
   if (p.relaxation >= T.OPEN)
-    return { width: 0.9, note: "chatty and relaxed" };
+    return { width: 0.9, note: "is chatty and relaxed" };
   return { width: 0.5, note: "talks normally" };
 }
 

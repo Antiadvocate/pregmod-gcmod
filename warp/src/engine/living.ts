@@ -29,7 +29,7 @@ import { coarsen, REGISTER_TAIL } from "./register";
 import { HOUSE_STYLE, personCard } from "./prompts";
 import { PLAIN_RULES } from "./style";
 import { chronicle, chronicleBrief, chronicleOf } from "./chronicle";
-import { DYNAMIC_EFFECTS, dossier, npcEffect, resolveDynamic } from "./dynamic";
+import { DYNAMIC_EFFECTS, effectList, dossier, npcEffect, resolveDynamic } from "./dynamic";
 import { EVENT_BY_ID, resolveEvent } from "./events";
 import { ACT_BY_ID } from "../data/intimacy";
 import { EXTRA_BY_ID } from "../data/rooms";
@@ -100,7 +100,7 @@ Rules:
 ${HOUSE_STYLE}
 
 Output ONE strict JSON object and nothing else:
-{"title":"2-5 words","situation":"the scene","choices":[{"id":"the original choice id","label":"new label"}],"extra":[{"label":"...","note":"short plain consequence","effect":"effect id","value":"optional"}]}`;
+{"title":"2-5 words","situation":"the scene","choices":[{"id":"the original choice id","label":"new label"}],"extra":[{"label":"...","note":"a few plain words for the player, like \"she won't forget it\" or \"costs you ¤2,000\"; never the effect's description","effect":"effect id","value":"optional"}]}`;
 
 /** Rewrite one pending event. Mutates it in place; returns whether it was written. */
 export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Promise<boolean> {
@@ -115,7 +115,7 @@ export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Prom
       ctx.text,
       `## THE FACTS (the game's own version; rewrite it)\n${e.seed}`,
       `## THE CHOICES (id: what the player does → what it does)\n${opts.map((o) => `· ${o.id}: ${o.label}${o.note ? ` → ${o.note}` : ""}`).join("\n")}`,
-      `## EXTRA EFFECTS (only for extra choices)\n${Object.entries(DYNAMIC_EFFECTS).map(([id, x]) => `${id}: ${x.note}`).join("\n")}${e.person ? `\nACT IDS: ${Object.keys(ACT_BY_ID).join(", ")}\nROOM ITEM IDS: ${Object.keys(EXTRA_BY_ID).join(", ")}` : ""}`,
+      `## EXTRA EFFECTS (only for extra choices)\n${effectList()}${e.person ? `\nACT IDS: ${Object.keys(ACT_BY_ID).join(", ")}\nROOM ITEM IDS: ${Object.keys(EXTRA_BY_ID).join(", ")}` : ""}`,
       PLAIN_RULES,
       e.person ? REGISTER_TAIL : "",
     ].filter(Boolean).join("\n\n"),
