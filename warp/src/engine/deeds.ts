@@ -26,6 +26,8 @@ import { reversalOf } from "./reversal";
 import { DYNAMIC_EFFECTS } from "./dynamic";
 import { personCard } from "./prompts";
 import type { Moment } from "./moments";
+import { hasWomb } from "./pregnancy";
+import { sell } from "./market";
 
 export interface Deed {
   id: string;
@@ -223,8 +225,9 @@ export const DEED_TAGS: Record<string, TagDef> = {
     apply: (c) => { treat(c, "recognition", 3, c.d.summary); doctrine(c, "podolatry", c.d.public ? 4 : 1); if (c.s.story && c.s.story.flags["feet_movement"] !== undefined) c.s.story.flags["feet_movement"] = clamp(Number(c.s.story.flags["feet_movement"]) + (c.d.public ? 5 : 1), 0, 100); },
   },
   breeding: {
-    label: "you decided she'll carry your child", when: "the player decided to get her pregnant or keep a pregnancy",
-    apply: (c) => { if (c.p) { c.p.womb.contraceptives = false; } doctrine(c, "repopulation", 2); c.out.push(`${nm(c.p)} is off contraceptives`); },
+    label: "you decided she'll carry your child", when: "the player decided to get HER pregnant or keep her pregnancy; never when she is the one breeding the player",
+    // She can only be taken off contraceptives if there's a womb for them to protect.
+    apply: (c) => { if (!c.p || !hasWomb(c.p)) return; c.p.womb.contraceptives = false; doctrine(c, "repopulation", 2); c.out.push(`${nm(c.p)} is off contraceptives`); },
   },
   outside_deal: {
     label: "you made a deal with an outsider", when: "the player struck a bargain with a citizen, a rival, a trader or a faction during the scene",
@@ -250,9 +253,11 @@ export const CONSEQUENCE_SYSTEM = `You read a finished scene from Free Cities, a
  "witnesses":["names of other people who were there, if any"],
  "her_memory":"one sentence, in her own first person (I, me, my), with the player as 'the owner', what she will remember, with who did what to whom exactly as the scene had it: if the owner served her, the owner is the one serving",
  "lasting_fact":"one sentence that is now true of the world because of this, or empty",
+ "sold":["names of the player's slaves the player actually had sold or taken away to be sold in this scene: an order carried out, not a threat; empty if none"],
+ "threatened":["names of OTHER people in the scene (not her) the player threatened to sell, exile or punish; empty if none"],
  "follow_up":{"weeks":2,"situation":"2-4 sentences, present tense: something that happens that many weeks later BECAUSE of this scene, ending where the player has to decide","options":[{"label":"what the player does, 2-8 words","effect":"one EFFECT id","value":"optional"}]}}
 
-In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to and serve their slaves; never swap who served whom. Only tag what actually happened in the scene. Tag the player's actions, not what they considered. public is true only if citizens, guests or other slaves saw it or will obviously hear. Write the summary, memory and follow-up in plain crude words (cock, pussy, ass, cum, fuck, piss…), never euphemisms or flowery phrasing. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.
+In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to and serve their slaves; never swap who served whom. Only tag what actually happened in the scene. The TAGS are about HER, the woman the scene is with; what the player did to anyone else in the room goes in sold or threatened, never in her tags. owner_enslaved means the player really gave themself to her; a player saying she does NOT own them is the opposite, and is never owner_enslaved. Tag the player's actions, not what they considered. public is true only if citizens, guests or other slaves saw it or will obviously hear. Write the summary, memory and follow-up in plain crude words (cock, pussy, ass, cum, fuck, piss…), never euphemisms or flowery phrasing. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.
 
 Each turn of the game is a week. The follow-up happens "weeks" weeks after the scene (1 to 8), not straight after it: the scene is over, the people in it have gone back to their lives, and what happened has had that long to sink in. Write where things stand THEN: what it changed, what she has done about it since, what people have said. Set it somewhere and at a time that fits that later day; do not put it back in the scene's room, mid-act, or the same night. Only if the scene itself sets up something for the very next day (a promise for tomorrow morning, an appointment, a hangover) use "weeks":0 and write it as the next day.`;
 
@@ -265,6 +270,7 @@ function transcript(m: Moment): string {
 
 interface Read {
   summary?: string; tags?: string[]; public?: boolean; witnesses?: string[]; her_memory?: string; lasting_fact?: string;
+  sold?: string[]; threatened?: string[];
   follow_up?: { weeks?: number; situation?: string; options?: { label?: string; effect?: string; value?: string | number }[] };
 }
 
@@ -287,10 +293,25 @@ const KEYWORDS: [RegExp, string][] = [
   [/\b(my secret|never told anyone|confess)\b/i, "confided"],
 ];
 
+const NEGATION = /\b(not|never|no|nor|doesn't|don't|didn't|isn't|won't|wouldn't|can't|ain't)\b|n't\b/i;
+
+/** Whether the player's words say this, as opposed to saying it isn't so. A match counts only when
+ *  nothing in the same sentence before it negates it: "it doesn't make you own me" is a denial,
+ *  and it once handed a slave the owner's collar. */
+export function affirms(text: string, re: RegExp): boolean {
+  const g = new RegExp(re.source, re.flags.includes("g") ? re.flags : re.flags + "g");
+  for (const m of text.matchAll(g)) {
+    const before = text.slice(0, m.index);
+    const sentence = before.slice(Math.max(before.lastIndexOf("."), before.lastIndexOf("!"), before.lastIndexOf("?"), before.lastIndexOf("\n")) + 1);
+    if (!NEGATION.test(sentence)) return true;
+  }
+  return false;
+}
+
 function offlineRead(m: Moment): Read {
   const mine = m.log.filter((l) => l.role === "you").map((l) => l.text).join(" \n ");
   const tags: string[] = [];
-  for (const [re, t] of KEYWORDS) if (re.test(mine) && !tags.includes(t)) tags.push(t);
+  for (const [re, t] of KEYWORDS) if (affirms(mine, re) && !tags.includes(t)) tags.push(t);
   if (tags.includes("owner_enslaved")) { const i = tags.indexOf("owner_submitted"); if (i >= 0) tags.splice(i, 1); }
   const last = m.log.filter((l) => l.role === "you").slice(-1)[0]?.text ?? m.title;
   const who = m.person ? m.title.replace(/^With (\S+).*/, "$1") : "";
@@ -319,8 +340,12 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
   }
   const offline = offlineRead(m);
   if (!r || !r.summary) r = offline;
-  // Keep the model honest: only known tags, and anything the player's own words make obvious.
-  const tags = [...new Set([...(r.tags ?? []).filter((t) => DEED_TAGS[t]), ...offline.tags!.filter((t) => t === "owner_enslaved")])].slice(0, 5);
+  // Keep the model honest: only known tags. Giving yourself away is the one tag that can't be
+  // undone, so it also needs the player not to have said the opposite in so many words.
+  const mine = m.log.filter((l) => l.role === "you").map((l) => l.text).join(" \n ");
+  const surrender = KEYWORDS[0][0];
+  const denied = surrender.test(mine) && !affirms(mine, surrender);
+  const tags = [...new Set((r.tags ?? []).filter((t) => DEED_TAGS[t] && !(t === "owner_enslaved" && denied)))].slice(0, 5);
 
   const deed: Deed = {
     id: `deed-${s.arcology.week}-${deedsOf(s).length}`,
@@ -339,9 +364,49 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
   if (fu?.situation && options.length >= 2) deed.follow = { due: s.arcology.week + clamp(Number.isFinite(wait) ? Math.round(wait) : 2, 0, 8), situation: String(fu.situation).slice(0, 900), options };
 
   applyDeed(s, deed, r.her_memory);
+  deed.effects.push(...othersInScene(s, deed, r));
   m.concluded = deed.id;
   if (deed.follow && deed.follow.due <= s.arcology.week) fireFollow(s, deed);
   return deed;
+}
+
+/** Your slaves, found by the name the scene used for them. */
+function byName(s: SaveState, name: string): Person | undefined {
+  const n = name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (!n) return undefined;
+  return Object.values(s.people).find((x) => (x.status === "owned" || x.status === "indentured") &&
+    x.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/\s+/).some((part) => part === n || x.name.toLowerCase() === n));
+}
+
+/** What the player did in the scene to people other than her: a sale ordered in a scene is a sale,
+ *  and a threat lands on the woman it was made to. */
+export function othersInScene(s: SaveState, deed: Deed, r: { sold?: string[]; threatened?: string[] }): string[] {
+  const out: string[] = [];
+  const week = s.arcology.week;
+  for (const name of (r.sold ?? []).map(String).slice(0, 4)) {
+    const x = byName(s, name);
+    if (!x || s.player.owned_by === x.id) continue;
+    for (const f of Object.values(s.arcology.facilities)) { f.workers = f.workers.filter((w) => w !== x.id); if (f.manager === x.id) f.manager = undefined; }
+    delete x.facility;
+    x.assignment = "rest";
+    s.asks = (s.asks ?? []).filter((a) => a.person !== x.id);
+    const { price } = sell(s, x);
+    x.exit_note = `sold from the scene: ${deed.summary}`.slice(0, 240);
+    startRumor(s, `the owner had ${x.name} taken to the dock and sold`, { about: x.id, salience: 8 });
+    out.push(`${x.name} is sold, ¤${price.toLocaleString()}`);
+  }
+  for (const name of (r.threatened ?? []).map(String).slice(0, 4)) {
+    const x = byName(s, name);
+    if (!x || x.id === deed.person) continue;
+    x.bond.fear = clamp(x.bond.fear + 10, 0, 100);
+    x.bond.hope = clamp(x.bond.hope - 8, 0, 100);
+    applyTreatment(x, { kind: "coercion", size: 4, why: deed.summary }, week);
+    const xm = s.memory[x.id];
+    if (xm) remember(xm, { content: `the owner threatened me: ${deed.summary.replace(/^You /, "the owner ")}`, week, importance: 8, charge: "sharp" });
+    refresh(x, xm);
+    out.push(`${x.name} is afraid of you`);
+  }
+  return out;
 }
 
 /** What a deed does, now. */
