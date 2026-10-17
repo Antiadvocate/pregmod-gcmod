@@ -658,6 +658,15 @@ const FIRST_TENDER: string[] = [
   "It's the first time you've done this for her, and it surprises her.",
 ];
 
+/** Finding the pregnancy fetish reads the act's direction: she can be the one doing the breeding,
+ *  and then "you finish inside her" is backwards. */
+function pregnancyFound(o: ActOutcome): string {
+  const act = ACT_BY_ID[o.act];
+  if (act?.group === "hers" && act.tags.includes("breeding")) return "When she finishes inside you she keeps a hand flat on your stomach and holds you there. Breeding is what gets her off.";
+  if (act?.tags.includes("belly worship")) return "She keeps your hands on her belly the whole time and doesn't want you to stop. She wants to be bred.";
+  return "When you finish inside her she puts a hand on her stomach and keeps it there. She wants to be bred.";
+}
+
 function discoveryLine(p: Person, o: ActOutcome, r: Rng): string {
   const f = p.persona.fetishes.find((x) => x.known && o.discovered?.includes(FETISH_BY_ID[x.name]?.name ?? "§"));
   if (f) {
@@ -670,7 +679,7 @@ function discoveryLine(p: Person, o: ActOutcome, r: Rng): string {
       dom: ["Given an inch of control she takes the whole thing and her eyes light up. She's a dom at heart."],
       masochist: ["It's the hurting that gets her there. She's a masochist."],
       sadist: ["She enjoys seeing someone else hurt. She's a sadist."],
-      pregnancy: ["When you finish inside her she puts a hand on her stomach and keeps it there. She wants to be bred."],
+      pregnancy: [pregnancyFound(o)],
     };
     return fill(r.pick(lines[f.name] ?? [`She's a ${FETISH_BY_ID[f.name]?.name}. It was obvious once you saw it.`]), bodyWords(p));
   }

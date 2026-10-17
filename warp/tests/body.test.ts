@@ -102,3 +102,18 @@ check("weight in kg rises with weight", kgFor(-60, 170) < kgFor(0, 170) && kgFor
   for (const p of Object.values(s.people)) { p.status = "free"; p.exit_week = 1; p.exit_note = "went home"; }
   check("women who left ask for nothing", collectAsks(s).length === 0);
 }
+
+{
+  // A man asks a woman with a cock to breed him. Finding out she has a breeding fetish must not
+  // narrate it the other way round.
+  const s = newGame({ seed: "breed me", starting_slaves: 1, kit: "cock" });
+  const p = Object.values(s.people)[0];
+  p.age = 25; p.body.dick = 4; p.body.balls = 3; p.chastity.penis = false; p.health.drugs = []; p.health.recovery_weeks = 0;
+  p.persona.fetishes = [{ ...(p.persona.fetishes[0] ?? {}), name: "pregnancy", strength: 60, known: true } as never];
+  const o = resolveAct(s, p, "breed her back");
+  if ("error" in o) check("letting her breed you resolves", false, o.error);
+  else {
+    const text = writeAct(s, p, { ...o, discovered: "pregnancy" }).paragraphs.join(" ");
+    check("her breeding fetish is found with her finishing in you", text.includes("finishes inside you") && !text.includes("you finish inside her"), text);
+  }
+}
