@@ -40,15 +40,10 @@ export function dickWord(d: number): string {
   return "impossibly hypertrophied";
 }
 
-/** The biggest cock her body has the blood pressure to get fully hard: the original's height rule. */
-export function maxErection(p: Person): number {
-  return Math.max(1, Math.floor(2 * (p.body.height_cm / 165) * 3));
-}
-
 export type Erection = "none" | "soft" | "partial" | "full";
 
-/** Whether she can get hard, and how hard. Balls and hormones decide it, chastity stops it, and a
- *  cock past what her body can pump stays half-soft however turned on she is. */
+/** Whether she can get hard. Balls and hormones decide it and chastity stops it. Size never does:
+ *  the original's height rule left big cocks soft, and it is gone on purpose. */
 export function erection(p: Person): Erection {
   return erectionWhy(p).state;
 }
@@ -66,12 +61,7 @@ export function erectionWhy(p: Person): { state: Erection; why: string; fix?: st
   const male = drugs.includes("male hormones");
   if (!has(p.body.balls) && !male && !pills && !implant) return { state: "soft", why: "with no balls she has no testosterone to get hard with", fix: "male hormones, erection pills, or a penile implant" };
   if (fem && !male && (p.body.balls ?? 0) <= 2 && !pills && !implant) return { state: "soft", why: "female hormones and small balls have left her soft", fix: "erection pills, or stop the female hormones" };
-  // The original's rule: a cock past what her body can pump blood into won't fill. Pills buy two
-  // sizes; an implant makes her hard at any size, on command.
   if (implant) return { state: "full", why: "her penile implant makes her hard on command" };
-  const max = maxErection(p) + (pills ? 2 : 0);
-  if (d > max + 3) return { state: "soft", why: "it's too big for her body to pump full of blood", fix: "a penile implant" + (pills ? "" : ", or erection pills for a little more") };
-  if (d > max) return { state: "partial", why: "it's bigger than her body can fill all the way", fix: pills ? "a penile implant" : "erection pills, or a penile implant" };
   return { state: "full", why: pills ? "the pills help" : "" };
 }
 
