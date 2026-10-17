@@ -22,6 +22,7 @@ import "./worldsim.test.ts";
 import "./moments.test.ts";
 import "./manner.test.ts";
 import "./freed.test.ts";
+import "./execute.test.ts";
 import "./power.test.ts";
 import "./self.test.ts";
 import "./feet.test.ts";

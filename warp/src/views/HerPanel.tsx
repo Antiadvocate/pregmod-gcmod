@@ -17,6 +17,7 @@ import { runTurn } from "../engine/turn";
 import { modelsAvailable } from "../config";
 import { MannerCard, StandingOrders } from "./StandingOrders";
 import { FREE_HOW, freeHer, freeLine, type FreeHow } from "../engine/freed";
+import { KILL_HOW, killHer, type KillHow } from "../engine/execute";
 import RoomCard from "./RoomCard";
 import { governorshipOf, lockUp } from "../engine/governor";
 import { speakToGovernor } from "../engine/talk";
@@ -174,6 +175,7 @@ export default function HerPanel({ id }: { id: string }) {
       ) : null}
 
       <LetHerGo id={id} />
+      <KillHer id={id} />
 
       <Card className="text-[11.5px] dim">
         {Math.round(r.fragility * 100)}% of her obedience is fear rather than bond. Courting needs it under 35%,
@@ -210,6 +212,36 @@ function LetHerGo({ id }: { id: string }) {
               </button>
             );
           })}
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+/** Kill her. Two steps, so a stray tap doesn't do it. */
+function KillHer({ id }: { id: string }) {
+  const { save, mutate } = useGame();
+  const [open, setOpen] = useState(false);
+  const [said, setSaid] = useState("");
+  const p = save.people[id];
+  if (!p) return null;
+  if (p.status === "dead") return said ? <Card className="text-[13px] bad">{said}</Card> : null;
+  if (p.status !== "owned" && p.status !== "indentured") return null;
+  return (
+    <Card>
+      <div className="flex items-center gap-2">
+        <div className="text-[11px] uppercase tracking-wider dim flex-1">Kill her</div>
+        <Button size="sm" kind={open ? "ghost" : "danger"} onClick={() => setOpen((v) => !v)}>{open ? "not now" : "kill her"}</Button>
+      </div>
+      {open ? (
+        <div className="mt-2 space-y-1.5">
+          <div className="text-[12px] dim">She's dead and off your roster. Everyone in the household feels it.</div>
+          {(Object.keys(KILL_HOW) as KillHow[]).map((how) => (
+            <button key={how} className="choice" onClick={() => { let r = { ok: false, line: "" }; mutate((s) => { r = killHer(s, id, how); }); setSaid(r.line); setOpen(false); }}>
+              <span className="block text-[14px] leading-snug">{KILL_HOW[how].label}</span>
+              <span className="block text-[11.5px] dim mt-0.5">{KILL_HOW[how].note}</span>
+            </button>
+          ))}
         </div>
       ) : null}
     </Card>
