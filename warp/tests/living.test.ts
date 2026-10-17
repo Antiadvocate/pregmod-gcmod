@@ -223,3 +223,27 @@ import { weekSnapshot } from "../src/engine/snapshot.ts";
   check("a deputy goes with her", g.deputy === d.id && d.governs === place.id && d.assignment === "be your agent");
 }
 function endWeekCost(s: ReturnType<typeof newGame>, _id: string): number { return tickGov(s).cash; }
+
+// She's still yours: you can drag her home in chains, and threats are written to land.
+import { lockUp, GOV_ORDERS as ORDERS } from "../src/engine/governor.ts";
+import { HOUSE_STYLE } from "../src/engine/prompts.ts";
+import { GOV_VOICE } from "../src/engine/talk.ts";
+{
+  const s = newGame({ seed: "chains", starting_slaves: 4 } as never);
+  const place = powers(s).find((p) => p.kind === "neighbour")!;
+  empireOf(s).powers[place.id].status = "vassal";
+  const her = cands(s)[0];
+  install(s, place.id, her.id);
+  const g = govOf(s, place.id)!;
+  const fear0 = her.bond.fear;
+  const line = ORDERS.imprison.run(s, g, her);
+  check("a governor can be dragged home and locked up", /locked/.test(line) && her.assignment === "be confined in the cellblock" && !her.governs && !govOf(s, place.id), line);
+  check("and she's afraid now", her.bond.fear > fear0 + 10);
+  check("and the city has no governor", !powerById(s, place.id)!.rec.governor);
+  const other = Object.values(s.people).find((p) => p.status === "owned" && p.id !== her.id)!;
+  lockUp(s, other, "locked in a cell");
+  endWeek(s);
+  check("a cell works with no cellblock built", other.assignment === "be confined in the cellblock" && s.reports.at(-1)!.ledger.length > 0);
+  check("every prompt says the owner's threats land", /AFRAID of it/.test(HOUSE_STYLE) && /never shrugs it off/.test(GOV_VOICE));
+  check("a governor is still a slave to the owner", /Governing a city doesn't change that/.test(GOV_VOICE));
+}

@@ -13,7 +13,7 @@
  * is the half that holds without one: who can govern what, the doctrine she brings, the week.
  */
 import type { Person, SaveState } from "./types";
-import { clamp, shove } from "./psyche";
+import { addState, clamp, shove } from "./psyche";
 import { applyTreatment, read } from "./obedience";
 import { remember } from "./memory";
 import { rng } from "./rng";
@@ -284,6 +284,26 @@ export function recallGovernor(s: SaveState, placeId: string, why = "recalled"):
   return `${p?.name ?? "She"} comes home from ${g.name}.`;
 }
 
+/** Lock her up: the cellblock if you have one, a storeroom with a lock on the outside if you don't. */
+export function lockUp(s: SaveState, p: Person, why: string): string {
+  const week = s.arcology.week;
+  const cells = Object.values(s.arcology.facilities).find((f) => f.kind === "cellblock" && f.level > 0 && f.workers.length < f.capacity);
+  if (p.governs) { const g = governorshipOf(s, p.governs); if (g?.deputy === p.id) { g.deputy = undefined; } p.governs = undefined; }
+  if (cells) assignToFacility(s, p, cells.id);
+  else { assignToFacility(s, p, undefined); setAssignment(s, p, "be confined in the cellblock"); }
+  applyTreatment(p, { kind: "cruelty", size: 7, why }, week);
+  p.bond.fear = clamp(p.bond.fear + 15, 0, 100);
+  shove(p.psyche, -2.5, { hard: true });
+  addState(p.psyche, "dread of the cell", week);
+  const mem = s.memory[p.id];
+  if (mem) remember(mem, { content: `the owner had me ${why}`, week, importance: 9, charge: "sharp", core: true });
+  startRumor(s, `${p.name} was ${why}`, { about: p.id, salience: 9, charge: -1 });
+  // Everyone in the house hears what happens to a woman who displeases the owner.
+  for (const o of Object.values(s.people)) if (o.id !== p.id && o.status === "owned") o.bond.fear = clamp(o.bond.fear + 3, 0, 100);
+  chronicle(s, { keys: [p.id], title: "locked up", text: `You had ${p.name} ${why}.`, hook: `${p.name} in the cell, and what she does to get out` });
+  return `${p.name} is locked in ${cells ? "the cellblock" : "a storeroom under the penthouse with a bolt on the outside"}.`;
+}
+
 /** How good she is at it: brains, what she's learned running things, and how she's holding up. */
 export function competence(s: SaveState, p: Person): number {
   const brains = { impaired: 0.3, slow: 0.6, average: 0.9, sharp: 1.15, brilliant: 1.35 }[p.persona.intelligence];
@@ -341,6 +361,7 @@ export const GOV_ORDERS: Record<string, GovOrder> = {
   crackdown: { note: "she clamps down on her city: more order, less prosperity", run: (_s, g) => { g.order = clamp(g.order + 15, 0, 100); g.prosperity = clamp(g.prosperity - 4, 0, 100); return `${g.name} is locked down. It's quiet.`; } },
   festival: { note: "she throws the city a festival: prosperity and goodwill, at a cost", run: (s, g) => { s.arcology.cash -= 6000; g.prosperity = clamp(g.prosperity + 5, 0, 100); g.order = clamp(g.order - 3, 0, 100); return `${g.name} has a festival in your name. ¤6,000.`; } },
   recall: { note: "she comes home and stops governing", run: (s, g) => recallGovernor(s, g.place) },
+  imprison: { note: "the owner has her stripped of the city, brought home under guard and locked in a cell", run: (s, g, p) => { recallGovernor(s, g.place, "dragged home and locked up"); return lockUp(s, p, `taken out of ${g.name} and locked up`); } },
   support_cash: { note: "YOU send her money for her city; value is the amount", run: (s, g, _p, v) => supportGovernor(s, g.place, "cash", Number(v) || 10000) },
   support_troops: { note: "YOU send soldiers to her city", run: (s, g) => supportGovernor(s, g.place, "troops") },
   support_labour: { note: "YOU send her workers (menials)", run: (s, g) => supportGovernor(s, g.place, "labour") },

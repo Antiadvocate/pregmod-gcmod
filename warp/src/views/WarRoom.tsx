@@ -13,7 +13,7 @@ import { attitudeWord, build, canBuild, canMove, dominion, empireOf, forces, mak
 import { activeWars, declareWar, setStrategy, STRATEGY, strike, suePeace, type Strategy, type War } from "../engine/war";
 import { rulerOf, talkLeft, talkOf } from "../engine/diplomacy";
 import { speakToGovernor, speakToPower } from "../engine/talk";
-import { canGovern, governedPlaces, governorCandidates, installGovernor, competence, styleOf, supportBlocked, supportGovernor, sendDeputy, NEED_WORDS, type Governorship } from "../engine/governor";
+import { canGovern, governedPlaces, governorCandidates, installGovernor, competence, styleOf, supportBlocked, supportGovernor, sendDeputy, NEED_WORDS, GOV_ORDERS, recallGovernor, type Governorship } from "../engine/governor";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import Talk from "./Talk";
 import { SlaveHead } from "./SlaveArt";
@@ -243,6 +243,10 @@ function Help({ g }: { g: Governorship }) {
         <Button size="sm" kind="ghost" disabled={!!why("troops")} title={why("troops") ?? "¤3,500 a week while they're there"} onClick={() => send("troops")}>Send soldiers{why("troops") ? ` · ${why("troops")}` : ` (${["none", "a company", "a battalion", "a garrison"][g.garrison ?? 0]} now)`}</Button>
         <Button size="sm" kind="ghost" disabled={!!why("labour")} title={why("labour") ?? ""} onClick={() => send("labour")}>Send workers</Button>
         <Button size="sm" kind="ghost" onClick={() => setPicking(!picking)}>{g.deputy && save.people[g.deputy] ? `Deputy: ${save.people[g.deputy].name}` : "Send her a deputy"}</Button>
+      </div>
+      <div className="flex flex-wrap gap-1.5 mt-2">
+        <Button size="sm" kind="ghost" onClick={() => { let t = ""; mutate((s) => { t = recallGovernor(s, g.place); }); setSaid(t); }}>Bring her home</Button>
+        <Button size="sm" kind="danger" onClick={() => { let t = ""; mutate((s) => { const p = s.people[g.person]; const live = governedPlaces(s).find((x) => x.g.place === g.place)?.g; if (p && live) t = GOV_ORDERS.imprison.run(s, live, p); }); setSaid(t); }}>Drag her home in chains</Button>
       </div>
       {picking ? (
         <div className="list mt-2">
