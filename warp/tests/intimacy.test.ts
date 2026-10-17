@@ -326,3 +326,10 @@ function planted(seed: string, opts: { fetish?: string; flaw?: string; quirk?: s
   check("and the seed is held for the same room and cast", scenePrompt(s, { act: "oral" }).seed === scene.seed);
   check("a two-hander bars the crowd in the negative", /crowd/.test(scene.negative), scene.negative);
 }
+
+{
+  // "you massage, kiss and suck her feet — she nothing it" went into a real scene.
+  const { s, p } = planted("landed-words");
+  const line = DYNAMIC_EFFECTS.act.run(s, p, "vaginal");
+  check("an act from an event says how it landed in words", !/she (nothing|willing|wanted|endured|hated) it/.test(line) && / — /.test(line), line);
+}

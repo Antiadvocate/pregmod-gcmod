@@ -21,19 +21,23 @@ import { DOCTRINE_BY_ID } from "../data/doctrines";
 
 const GENTLE = ["tenderness", "mercy", "gift", "gratitude", "freed_her", "married_her", "confided", "promise_made", "elevated"];
 const HARSH = ["cruelty", "punished", "humiliated_her", "threatened_sale", "promise_broken", "shared_her"];
-const YIELD = ["owner_submitted", "owner_enslaved", "feet_worship"];
+const YIELD = ["owner_submitted", "owner_enslaved"];
+/** Sexual submission and worship: the owner's taste. Counted apart from YIELD, because submissive
+ *  is not subservient and the narrator kept reading one as the other. */
+const BOTTOM = ["bottomed", "feet_worship"];
 
 const owned = (s: SaveState) => Object.values(s.people).filter((p) => p.status === "owned" || p.status === "indentured");
 
 /** The record, counted. */
-export function selfTally(s: SaveState): { gentle: number; harsh: number; yielded: number } {
-  let gentle = 0, harsh = 0, yielded = 0;
+export function selfTally(s: SaveState): { gentle: number; harsh: number; yielded: number; bottomed: number } {
+  let gentle = 0, harsh = 0, yielded = 0, bottomed = 0;
   for (const d of deedsOf(s)) for (const t of d.tags) {
     if (GENTLE.includes(t)) gentle++;
     if (HARSH.includes(t)) harsh++;
     if (YIELD.includes(t)) yielded++;
+    if (BOTTOM.includes(t)) bottomed++;
   }
-  return { gentle, harsh, yielded };
+  return { gentle, harsh, yielded, bottomed };
 }
 
 /** Your own recent words: what you typed and chose, newest last. */
@@ -54,7 +58,8 @@ export function selfProfile(s: SaveState): string[] {
   else if (t.gentle >= t.harsh * 1.5) lines.push(`How they treat people, by the record: mostly with care (${t.gentle} kind things on record against ${t.harsh} harsh). Write them warm, attentive and generous unless the scene has them choose otherwise.`);
   else if (t.harsh >= t.gentle * 1.5) lines.push(`How they treat people, by the record: mostly hard (${t.harsh} harsh things on record against ${t.gentle} kind).`);
   else lines.push(`How they treat people, by the record: it depends on the person (${t.gentle} kind things, ${t.harsh} harsh).`);
-  if (t.yielded) lines.push(`They submit by choice: they have knelt to, served or given themselves to their slaves ${t.yielded} time${t.yielded === 1 ? "" : "s"}. That is part of who they are, not a weakness the scene should correct.`);
+  if (t.bottomed) lines.push(`They're submissive in bed by taste: they have worshipped their slaves' feet, knelt to them or let them top ${t.bottomed} time${t.bottomed === 1 ? "" : "s"}. Submissive is not subservient. It's what they want sexually, they start it and stop it, and it gives the slave no authority anywhere else; don't correct it, and don't read it as rank.`);
+  if (t.yielded) lines.push(`They have deferred to a slave's authority by choice ${t.yielded} time${t.yielded === 1 ? "" : "s"}: obeyed her, asked her permission, let her decide. That is part of who they are, not a weakness the scene should correct.`);
   const lead = owned(s).concat(Object.values(s.people).filter((p) => p.status === "free" && p.romance)).filter((p) => (p.romance?.dominion ?? -100) >= 40 || s.player.owned_by === p.id);
   if (lead.length) lines.push(`Who they defer to: ${lead.map((p) => p.name).join(", ")}. With ${lead.length === 1 ? "her" : "them"} the owner is the submissive one, willingly.`);
   const partners = Object.values(s.people).filter((p) => ["courted", "betrothed", "wife"].includes(p.romance?.standing ?? "property"));

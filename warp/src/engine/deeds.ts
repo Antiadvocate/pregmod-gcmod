@@ -104,8 +104,8 @@ export const DEED_TAGS: Record<string, TagDef> = {
       options: [{ label: "Kneel and tell her you meant every word", effect: "dominion_up", value: 15 }, { label: "Ask her to keep it private", effect: "recognition", value: 4 }, { label: "Take the key back", effect: "promise_broken", value: 9 }, { label: "Let her decide what happens next", effect: "dominion_up", value: 8 }] },
   },
   owner_submitted: {
-    label: "you submitted to her",
-    when: "the player knelt to her, served her, obeyed her, let her dominate them, or asked her permission, without giving themself to her outright",
+    label: "you deferred to her",
+    when: "the player handed her AUTHORITY: obeyed a decision of hers outside sex, asked her permission for something that is the owner's to decide, let her decide something about the household, the city or other people, or backed down to her in an argument. Never sex or worship: kneeling to her feet, being fucked or used by her, begging in bed, or giving her free use of the owner's body is bottomed, not this",
     apply: (c) => {
       if (!c.p) return;
       shiftDominion(c.s, c.p, 12, c.d.summary);
@@ -116,6 +116,12 @@ export const DEED_TAGS: Record<string, TagDef> = {
     },
     echo: { after: [2, 4], situation: (s, d, p) => `${nm(p)} has been testing how far the last time went. Tonight she's sitting in your chair when you come in, with her feet up on your desk, and she doesn't move.`,
       options: [{ label: "Kneel at her feet", effect: "dominion_up", value: 10 }, { label: "Tell her to get out of your chair", effect: "dominion_down", value: 10 }, { label: "Laugh and sit on the floor", effect: "recognition", value: 3 }] },
+  },
+  bottomed: {
+    label: "you submitted to her in bed",
+    when: "the player was sexually submissive with her: knelt to worship her feet or body, let her top, fuck or use them, begged in bed, or gave her free use of their body. The owner's taste, chosen and stopped by the owner; it gives her no say over anything else",
+    // Submissive is not subservient: she's wanted, and that's all it is. No dominion moves.
+    apply: (c) => { treat(c, "recognition", 2, c.d.summary); },
   },
   freed_her: {
     label: "you freed her", when: "the player freed her or signed her papers",
@@ -257,7 +263,7 @@ export const CONSEQUENCE_SYSTEM = `You read a finished scene from Free Cities, a
  "threatened":["names of OTHER people in the scene (not her) the player threatened to sell, exile or punish; empty if none"],
  "follow_up":{"weeks":2,"situation":"2-4 sentences, present tense: something that happens that many weeks later BECAUSE of this scene, ending where the player has to decide","options":[{"label":"what the player does, 2-8 words","effect":"one EFFECT id","value":"optional"}]}}
 
-In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to and serve their slaves; never swap who served whom. Only tag what actually happened in the scene. The TAGS are about HER, the woman the scene is with; what the player did to anyone else in the room goes in sold or threatened, never in her tags. owner_enslaved means the player really gave themself to her; a player saying she does NOT own them is the opposite, and is never owner_enslaved. Tag the player's actions, not what they considered. public is true only if citizens, guests or other slaves saw it or will obviously hear. Write the summary, memory and follow-up in plain crude words (cock, pussy, ass, cum, fuck, piss…), never euphemisms or flowery phrasing. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.
+In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to and serve their slaves; never swap who served whom. Submissive is not subservient: an owner who kneels to her feet, lets her fuck or use him, or gives her his body is bottomed, and still owns her; owner_submitted is only for handing her authority outside sex. Only tag what actually happened in the scene. The TAGS are about HER, the woman the scene is with; what the player did to anyone else in the room goes in sold or threatened, never in her tags. owner_enslaved means the player really gave themself to her; a player saying she does NOT own them is the opposite, and is never owner_enslaved. Tag the player's actions, not what they considered. public is true only if citizens, guests or other slaves saw it or will obviously hear. Write the summary, memory and follow-up in plain crude words (cock, pussy, ass, cum, fuck, piss…), never euphemisms or flowery phrasing. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.
 
 Each turn of the game is a week. The follow-up happens "weeks" weeks after the scene (1 to 8), not straight after it: the scene is over, the people in it have gone back to their lives, and what happened has had that long to sink in. Write where things stand THEN: what it changed, what she has done about it since, what people have said. Set it somewhere and at a time that fits that later day; do not put it back in the scene's room, mid-act, or the same night. Only if the scene itself sets up something for the very next day (a promise for tomorrow morning, an appointment, a hangover) use "weeks":0 and write it as the next day.`;
 
@@ -277,7 +283,8 @@ interface Read {
 /** With no model: the player's own lines, matched against the tags. */
 const KEYWORDS: [RegExp, string][] = [
   [/\b(enslave myself|i(?:'ll| will)? be your slave|i'm yours|take my collar|collar me|i belong to you|own me|make me yours|i submit to you|you own me)\b/i, "owner_enslaved"],
-  [/\b(kneel|serve you|obey you|yes mistress|yes ma'am|as you wish|beg you|worship you)\b/i, "owner_submitted"],
+  [/\b(obey you|yes mistress|yes ma'am|as you say|you decide|whatever you decide|your call)\b/i, "owner_submitted"],
+  [/\b(kneel|beg you|worship you|fuck me|use me|cum in me)\b/i, "bottomed"],
   [/\b(free you|you're free|sign your papers|your freedom)\b/i, "promised_freedom"],
   [/\b(i promise|i swear|you have my word)\b/i, "promise_made"],
   [/\b(marry|wife|propose)\b/i, "married_her"],
@@ -390,6 +397,7 @@ export function othersInScene(s: SaveState, deed: Deed, r: { sold?: string[]; th
     delete x.facility;
     x.assignment = "rest";
     s.asks = (s.asks ?? []).filter((a) => a.person !== x.id);
+    s.events = s.events.filter((e) => e.person !== x.id);
     const { price } = sell(s, x);
     x.exit_note = `sold from the scene: ${deed.summary}`.slice(0, 240);
     startRumor(s, `the owner had ${x.name} taken to the dock and sold`, { about: x.id, salience: 8 });

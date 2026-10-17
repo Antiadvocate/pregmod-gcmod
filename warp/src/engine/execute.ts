@@ -34,6 +34,7 @@ export function killHer(s: SaveState, id: string, how: KillHow): { ok: boolean; 
   for (const f of Object.values(s.arcology.facilities)) f.workers = f.workers.filter((w) => w !== id);
   if (s.player.owned_by === id) delete s.player.owned_by;
   s.asks = (s.asks ?? []).filter((a) => a.person !== id);
+  s.events = s.events.filter((e) => e.person !== id);
 
   for (const h of Object.values(s.people).filter((x) => x.id !== id && (x.status === "owned" || x.status === "indentured"))) {
     shove(h.psyche, how === "public" ? -1.4 : -0.6, { hard: true });
