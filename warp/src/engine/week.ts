@@ -422,7 +422,9 @@ export function endWeek(s: SaveState): WeekReport {
     if (who) push(`${who.name} wants something.`, "neutral", 7, who.id);
   }
   const fresh = selectEvents(s, { writer });
-  s.events = [...s.events.filter((e) => week - e.week < 2), ...fresh];
+  // An event about someone who's gone (dead, sold) can't be about her any more.
+  const here = (e: { person?: string }) => !e.person || ["owned", "indentured", "free"].includes(s.people[e.person]?.status ?? "");
+  s.events = [...s.events.filter((e) => week - e.week < 2 && here(e)), ...fresh];
   for (const e of fresh) {
     push(e.seed, e.severity === "major" ? "warning" : "neutral", 10, e.person);
   }

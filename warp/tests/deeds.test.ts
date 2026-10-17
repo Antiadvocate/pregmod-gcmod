@@ -103,3 +103,18 @@ import { makeAssistant, askAssistant, briefWeek, facts } from "../src/engine/ass
   check("not on the woman the scene was with", her.bond.fear <= herFear + 4, { before: herFear, after: her.bond.fear });
   check("and the effects say so", out.some((l) => l.includes(ashley.name)) && out.some((l) => l.includes(chloe.name)), out);
 }
+
+{
+  // Week 76 of the same save: kneeling to her feet and letting her fuck him is the owner's taste.
+  // It used to read as "you submitted to her" and give her +12 say over him every scene.
+  const s = newGame({ seed: "deeds-bottom", starting_slaves: 3, plot: false } as never);
+  const [her] = Object.values(s.people).filter((p) => p.status === "owned" && p.age >= 18);
+  const before = romanceOf(her).dominion;
+  const id = openMoment(s, { person: her.id, title: "Kneel and worship her feet first, then decide.", source: "test", you: "Kneel and worship her feet first, then decide.", happened: `${her.name} goes still.` });
+  await playMoment(s, id, "Tell her feet: cum in me whenever you want, no asking.");
+  const d = await concludeMoment(s, momentsOf(s).find((x) => x.id === id)!);
+  check("worshipping her feet and being fucked is bottoming", !!d?.tags.includes("bottomed"), d?.tags);
+  check("not deferring to her", !d?.tags.includes("owner_submitted"), d?.tags);
+  check("and it gives her no say over you", romanceOf(her).dominion === before, { before, after: romanceOf(her).dominion });
+  check("the narrator is told submissive is not subservient", digest(s).includes("Submissive is not subservient"));
+}

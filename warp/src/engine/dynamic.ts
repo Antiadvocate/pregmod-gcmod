@@ -47,6 +47,9 @@ import { EXTRA_BY_ID } from "../data/rooms";
 import { lockUp } from "./governor";
 
 /** THE CLOSED TABLE. A generated option may name one of these and nothing else. */
+/** How an act landed, as words: the landing ids are not verbs ("she nothing it"). */
+const LANDED: Record<string, string> = { wanted: "she loved it", willing: "she was into it", endured: "she put up with it", hated: "she hated it", nothing: "it did nothing for her" };
+
 export const DYNAMIC_EFFECTS: Record<string, { note: string; run: (s: SaveState, p: Person, value?: string | number) => string }> = {
   kindness: { note: "you're kind to her", run: (s, p, v) => { applyTreatment(p, { kind: "kindness", size: Number(v) || 4, why: "how you handled it" }, s.arcology.week); shove(p.psyche, 0.8); return "she's surprised and grateful"; } },
   cruelty: { note: "you're cruel to her", run: (s, p, v) => { applyTreatment(p, { kind: "cruelty", size: Number(v) || 5, why: "how you handled it" }, s.arcology.week); shove(p.psyche, -1.5, { hard: true }); return "she takes it, and resents you for it"; } },
@@ -54,7 +57,7 @@ export const DYNAMIC_EFFECTS: Record<string, { note: string; run: (s: SaveState,
   recognition: { note: "you treat her like a person", run: (s, p, v) => { applyTreatment(p, { kind: "recognition", size: Number(v) || 5, why: "you treated her like a person" }, s.arcology.week); return "she appreciates being treated like a person"; } },
   promise_kept: { note: "you do the thing you said you would", run: (s, p, v) => { applyTreatment(p, { kind: "promise_kept", size: Number(v) || 6, why: "you kept your word" }, s.arcology.week); return "you kept your word, and she appreciates it"; } },
   promise_broken: { note: "you go back on it", run: (s, p, v) => { applyTreatment(p, { kind: "promise_broken", size: Number(v) || 6, why: "you went back on it" }, s.arcology.week); return "she's lost faith in your promises"; } },
-  act: { note: "it becomes a scene — name an act id", run: (s, p, v) => { const out = resolveAct(s, p, String(v)); return "error" in out ? "nothing came of it" : `${ACT_BY_ID[String(v)]?.what ?? "it happened"} — she ${out.landing} it`; } },
+  act: { note: "it becomes a scene — name an act id", run: (s, p, v) => { const out = resolveAct(s, p, String(v)); return "error" in out ? "nothing came of it" : `${ACT_BY_ID[String(v)]?.what ?? "it happened"} — ${LANDED[out.landing]}`; } },
   arouse: { note: "she is wound up by it", run: (_s, p, v) => { p.psyche.arousal = clamp(p.psyche.arousal + (Number(v) || 20), 0, 100); return "she's very turned on"; } },
   dominion_up: { note: "she gets her way", run: (s, p, v) => { shiftDominion(s, p, Number(v) || 6, "she got her way"); return "she got her way"; } },
   dominion_down: { note: "she is put back in her place", run: (s, p, v) => { shiftDominion(s, p, -(Number(v) || 6), "she was put back in her place"); return "she's been put back in her place"; } },

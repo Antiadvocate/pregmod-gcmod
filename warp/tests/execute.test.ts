@@ -26,3 +26,13 @@ import { inHousehold } from "../src/engine/romance.ts";
   for (let w = 0; w < 2; w++) endWeek(s);
   check("the week runs on afterwards", a.status === "dead" && b.status === "dead" && c.status === "owned");
 }
+
+{
+  // An event about her that was still on the table when she died ended up resolved as "you did
+  // nothing" the next week.
+  const s = newGame({ seed: "execute-events", starting_slaves: 2 } as never);
+  const [a] = Object.values(s.people).filter((p) => p.status === "owned");
+  s.events.push({ id: "echo-test", kind: "dynamic", person: a.id, seed: "She's waiting for you.", options: [], week: s.arcology.week, severity: "notable" } as never);
+  killHer(s, a.id, "private");
+  check("events about her go with her", !s.events.some((e) => e.person === a.id));
+}
