@@ -50,6 +50,7 @@ import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { read } from "./obedience";
 import { romanceOf } from "./romance";
 import { clamp } from "./psyche";
+import { settledBrief, weightBrief } from "./fates";
 
 const ready = (s: SaveState) => modelsAvailable() && !s.models.lean_mode;
 
@@ -63,6 +64,8 @@ function cityBrief(s: SaveState): string {
     cultureBrief(s) ? `HOW PEOPLE BEHAVE: ${cultureBrief(s).replace(/\n/g, " ")}` : "",
     lawsBrief(s) ? `LAWS IN FORCE: ${lawsBrief(s).replace(/\n/g, " ")}` : "",
     `THE WORLD: ${worldBrief(s).replace(/\n/g, " ")}`,
+    weightBrief(s),
+    settledBrief(s, 8),
   ].filter(Boolean).join("\n");
 }
 

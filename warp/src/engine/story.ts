@@ -40,6 +40,8 @@ export interface NPC {
   person?: string;
   /** What they do, in a few words, for the journal. */
   what: string;
+  /** Dealt with outside the story: an order you gave, carried out (engine/fates). */
+  outside?: import("./fates").Settled;
 }
 
 const FIRST_M = ["Aurelio", "Tomas", "Dmitri", "Kwame", "Henrik", "Rafael", "Idris", "Callum", "Yusuf", "Matthias", "Lionel", "Oren", "Silas", "Bastien"];
@@ -61,8 +63,12 @@ const ROLE_WHAT: Record<Role, string> = {
 /** Roles that are always a particular sex in the fiction, because the story needs it. */
 const ROLE_SEX: Partial<Record<Role, "he" | "she">> = { sold_one: "she", sister: "she", zealot: "he", insurgent: "she", refugee: "she", prophet: "she" };
 
-export function makeNpc(st: StoryState, role: Role): NPC {
-  const r = rng(`npc:${st.seed}:${role}`);
+/** Ties to you nobody else can take over. Settle one of these and the stories about them are over;
+ *  anyone else (the owner next door, the auctioneer, a general) has someone who steps into the job. */
+export const PERSONAL_ROLES: Role[] = ["creditor", "deposed", "old_owner", "rival_broker", "sold_one", "sibling", "flame", "sister"];
+
+export function makeNpc(st: StoryState, role: Role, salt = ""): NPC {
+  const r = rng(`npc:${st.seed}:${role}${salt}`);
   const pronoun = ROLE_SEX[role] ?? (r.chance(0.5) ? "he" : "she");
   const first = r.pick(pronoun === "he" ? FIRST_M : FIRST_F);
   const taken = new Set(Object.values(st.cast).map((n) => n.name.split(" ")[1]));
@@ -339,8 +345,24 @@ export function newStory(s: SaveState, origin: string, seed: string, supplicatio
   return st;
 }
 
+/** Whether a story can't happen any more because someone it needs was dealt with. */
+export function castSettled(st: StoryState, def: ArcDef): boolean {
+  return (def.cast ?? []).some((r) => PERSONAL_ROLES.includes(r) && st.cast[r]?.outside);
+}
+
+/** Whoever took the job of someone you had dealt with. */
+function successor(st: StoryState, role: Role, was: NPC): NPC {
+  const n = makeNpc(st, role, `:after:${was.name}`);
+  n.what = `${ROLE_WHAT[role]}, since ${was.name} was ${was.outside?.fate === "dead" ? "killed" : "dealt with"}`;
+  n.disposition = -15;
+  return n;
+}
+
 export function startArc(s: SaveState, st: StoryState, def: ArcDef): ArcRun {
-  for (const role of def.cast ?? []) st.cast[role] ??= makeNpc(st, role);
+  for (const role of def.cast ?? []) {
+    const had = st.cast[role];
+    st.cast[role] = had?.outside && had.outside.fate !== "bought" && !PERSONAL_ROLES.includes(role) ? successor(st, role, had) : had ?? makeNpc(st, role);
+  }
   const subject = def.subject?.(s, st);
   const run: ArcRun = { id: def.id, beat: def.start, due: s.arcology.week + (def.delay ?? 0), started: s.arcology.week, subject: subject?.id };
   st.arcs[def.id] = run;
@@ -395,13 +417,13 @@ export function tickStory(s: SaveState): { text: string; tone: "good" | "bad" | 
   const week = s.arcology.week;
   // The main plot: each chapter opens on its week, one a week at most, whatever else is running.
   if (st.plot) {
-    const chapter = allArcs().filter((a) => a.kind === "plot" && (a.at ?? 0) <= week && !st.arcs[a.id] && (!a.when || a.when(s, st)))
+    const chapter = allArcs().filter((a) => a.kind === "plot" && (a.at ?? 0) <= week && !st.arcs[a.id] && !castSettled(st, a) && (!a.when || a.when(s, st)))
       .sort((a, b) => (a.at ?? 0) - (b.at ?? 0))[0];
     if (chapter) startArc(s, st, chapter);
   }
   const running = Object.values(st.arcs).filter((a) => !a.done && arcDef(a.id)?.kind === "deck").length;
   if (week >= st.next_draw && running < 3) {
-    const def = st.deck.map((id) => arcDef(id)).find((d) => d && (!d.when || d.when(s, st)));
+    const def = st.deck.map((id) => arcDef(id)).find((d) => d && !castSettled(st, d) && (!d.when || d.when(s, st)));
     const r = rng(`draw:${st.seed}:${week}`);
     if (def) {
       startArc(s, st, def);

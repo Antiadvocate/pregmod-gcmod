@@ -41,6 +41,8 @@ export interface Face {
   first: number;
   last: number;
   seen: number;
+  /** Dealt with: killed, ruined, driven out, locked up or bought off (engine/fates). */
+  fate?: import("./fates").Settled;
 }
 
 export const keyOf = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
@@ -203,7 +205,8 @@ export function castBrief(s: SaveState, text: string): string {
   const named = facesIn(s, text, 6);
   const recent = knownFaces(s).filter((f) => f.seen > 0).sort((a, b) => b.last - a.last).slice(0, 6);
   const list = [...new Map([...named, ...recent].map((f) => [f.name, f])).values()].slice(0, 10);
-  const line = (f: Face) => `· ${f.name} — ${f.pronoun}, about ${f.age}${f.nation ? `, ${f.nation}` : ""}${f.skin ? `, ${f.skin} skin` : ""}${f.hair ? `, ${f.hair} hair${f.hair_style ? ` (${f.hair_style})` : ""}` : ""}${f.eyes ? `, ${f.eyes} eyes` : ""}${f.detail ? `; ${f.detail}` : ""}`;
+  const fate = (f: Face) => (f.fate ? ` [${f.fate.fate === "dead" ? "DEAD" : f.fate.fate === "bought" ? "BOUGHT OFF" : f.fate.fate === "exiled" ? "DRIVEN OUT" : f.fate.fate.toUpperCase()} since week ${f.fate.week}: ${f.fate.how}]` : "");
+  const line = (f: Face) => `· ${f.name}${fate(f)} — ${f.pronoun}, about ${f.age}${f.nation ? `, ${f.nation}` : ""}${f.skin ? `, ${f.skin} skin` : ""}${f.hair ? `, ${f.hair} hair${f.hair_style ? ` (${f.hair_style})` : ""}` : ""}${f.eyes ? `, ${f.eyes} eyes` : ""}${f.detail ? `; ${f.detail}` : ""}`;
   return [
     list.length ? `## PEOPLE THE PLAYER HAS MET (not theirs; if one appears, use this name and look)\n${list.map(line).join("\n")}` : "",
     `## CAST LINES\nAfter the options, add one line for each person in the scene who is not the player and not one of the player's slaves, and who speaks or acts: CAST: full name | she or he | age | nationality | skin | hair colour, style | eye colour | one visible detail. Give anyone new a full name. Leave out crowds nobody would name.`,
@@ -219,7 +222,8 @@ export function pruneFaces(s: SaveState): void {
   const cast = new Set([...Object.values(s.story?.cast ?? {}).map((n) => n && keyOf(n.name)), ...sagaFaces(s)]);
   for (const [k, f] of Object.entries(all)) {
     if (cast.has(k)) continue;
-    if ((f.seen <= 1 && week - f.last > 12) || week - f.last > 52) delete all[k];
+    // Someone you had dealt with is remembered for a year, so nobody brings them back by accident.
+    if ((f.seen <= 1 && !f.fate && week - f.last > 12) || week - Math.max(f.last, f.fate?.week ?? 0) > 52) delete all[k];
   }
   const rest = Object.entries(all).filter(([k]) => !cast.has(k)).sort((a, b) => a[1].last - b[1].last || a[1].seen - b[1].seen);
   for (const [k] of rest.slice(0, Math.max(0, Object.keys(all).length - 80))) delete all[k];

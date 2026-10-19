@@ -28,6 +28,7 @@ import "./self.test.ts";
 import "./feet.test.ts";
 import "./plot.test.ts";
 import "./deeds.test.ts";
+import "./fates.test.ts";
 import "./feetart.test.ts";
 import "./jobs.test.ts";
 import "./anatomy.test.ts";

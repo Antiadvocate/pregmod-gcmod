@@ -40,6 +40,7 @@ import { menialsOf } from "./menials";
 import { facesOf, keyOf, meet, nationFrom, type Face } from "./faces";
 import { deedsOf } from "./deeds";
 import { HOUSE_STYLE } from "./prompts";
+import { settledBrief, weightBrief } from "./fates";
 import { coarsen, REGISTER_TAIL } from "./register";
 import { cultureOf, NORMS, NORM_IDS, normLine, pushNorm, type Norm } from "./culture";
 import { resolveAct } from "./intimacy";
@@ -573,6 +574,8 @@ export function arcologyBrief(s: SaveState): string {
     s.world ? worldBrief(s) : "",
     neighbours.length ? `NEIGHBOURS: ${neighbours.join("; ")}` : "",
     household.length ? `THE PLAYER'S HOUSEHOLD: ${household.join("; ")}` : "",
+    weightBrief(s),
+    settledBrief(s, 10),
   ].filter(Boolean).join("\n");
 }
 

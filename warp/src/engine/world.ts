@@ -15,7 +15,7 @@ import { REGIONS, REGION_BY_ID } from "../data/districts";
 import { industryPollutionFactor } from "./works";
 import { resistance } from "./genome";
 import type { Ledger } from "./economy";
-import { allArcs, startArc, arcDef, promote } from "./story";
+import { allArcs, startArc, arcDef, promote, castSettled } from "./story";
 
 export type Season = "spring" | "summer" | "autumn" | "winter";
 
@@ -259,7 +259,7 @@ function startCrises(s: SaveState, w: WorldState): void {
     if (run && !run.done) continue;
     const last = w.crisis_started[def.id];
     if (last !== undefined && (!def.repeat || week - last < def.repeat)) continue;
-    if (!def.when || !def.when(s, st)) continue;
+    if (!def.when || !def.when(s, st) || castSettled(st, def)) continue;
     if (run) delete st.arcs[def.id];
     startArc(s, st, def);
     w.crisis_started[def.id] = week;

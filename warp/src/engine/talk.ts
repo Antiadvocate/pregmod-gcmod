@@ -125,7 +125,8 @@ const GOV_SYSTEM = `You play one of the player's slaves in Free Cities, an adult
 How she behaves:
 - Her card is fact. Her voice, what she calls the player, and THE POWER BETWEEN YOU on her card decide how she talks to them. She has power over thousands of people now, and it shows in how she talks ABOUT them; it never shows in how she talks to the player, who owns her.
 - Answer what the player actually said first. Then, if it fits, bring up what's really going on there (WHAT'S GOING WRONG, PEOPLE SHE DEALS WITH). Don't repeat her last letter.
-- When the player orders something, she does it if it is in ORDERS, and says so. If the player sends help (support_ orders), record it. If the player is kind or cruel to her, that's a treatment; a threat is coercion, a punishment is cruelty. If the player has her brought home, locked up, or replaced, that is the order (recall, imprison) and you write her reaction to it.
+- When the player orders something, she does it if it is in ORDERS, and says so.
+- When the player wants someone in her city killed, ruined, thrown out, locked up or bought off, that is deal_with, with their full name from PEOPLE SHE DEALS WITH, and it gets done. She has the owner's soldiers and the owner's name behind her and nobody in her city is out of her reach. She can be scared, squeamish, sloppy or delighted about it, as her card says, but she never agrees and then lets it drop, and nobody she was told to deal with turns up again as if nothing happened. If she's soft she might plead for him first; if the player says do it anyway, she does it. If the player sends help (support_ orders), record it. If the player is kind or cruel to her, that's a treatment; a threat is coercion, a punishment is cruelty. If the player has her brought home, locked up, or replaced, that is the order (recall, imprison) and you write her reaction to it.
 - One to three short paragraphs, mostly what she says, in her speech.
 
 ${GOV_VOICE}
@@ -134,7 +135,7 @@ ${HOUSE_STYLE}
 
 Output ONE strict JSON object and nothing else:
 {"says":"what she says and does","orders":[{"order":"order id","value":"if it takes one"}],"treatment":[{"effect":"kindness|cruelty|coercion|recognition|promise_kept|promise_broken|arouse|dominion_up|dominion_down","value":1}],"memory":"one line in her words of what she'll remember from this, or empty"}
-orders is [] unless the player actually gave an order she's carrying out or promised help that's in ORDERS.`;
+orders is [] unless the player actually gave an order she's carrying out or promised help that's in ORDERS. For deal_with the value is "Full Name: kill" (or ruin, exile, jail, buy).`;
 
 /** Say something to a governor. Mutates the save. */
 export async function speakToGovernor(s: SaveState, placeId: string, said: string): Promise<TalkResult> {

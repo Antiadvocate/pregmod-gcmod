@@ -16,6 +16,7 @@ import type { Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { castBrief, facesIn, keyOf, meet, parseCast } from "./faces";
+import { settledBrief, weightBrief } from "./fates";
 import { HOUSE_STYLE, personCard, BOOKKEEPER_SYSTEM, bookkeeperContext } from "./prompts";
 import { worldBrief } from "./world";
 import { applyDiff, salvage, type Diff } from "./turn";
@@ -193,6 +194,8 @@ export async function playMoment(
     walking ? "" : lawsLine(s),
     walking || city ? "" : sentinelsLine(s),
     castBrief(s, `${m.title}\n${transcript(m)}\n${reply ?? ""}`),
+    settledBrief(s, 8),
+    weightBrief(s),
     `## THE SCENE SO FAR (${m.title})\n${coarsen(transcript(m))}`,
     reply ? `## THE PLAYER'S REPLY\n${reply}` : `## WRITE THIS MOMENT OUT IN FULL, then offer the options.`,
     REGISTER_TAIL,

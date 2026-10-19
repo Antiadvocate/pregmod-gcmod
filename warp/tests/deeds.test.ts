@@ -6,7 +6,7 @@ import "../src/data/story/index.ts";
 import { newGame } from "../src/engine/state.ts";
 import { endWeek } from "../src/engine/week.ts";
 import { openMoment, playMoment, momentsOf } from "../src/engine/moments.ts";
-import { concludeMoment, deedsOf, applyDeed, affirms, othersInScene } from "../src/engine/deeds.ts";
+import { concludeMoment, deedsOf, applyDeed, affirms, othersInScene, acceptCollar, refuseCollar, collarOffered } from "../src/engine/deeds.ts";
 import { romanceOf } from "../src/engine/romance.ts";
 import { reversalOf } from "../src/engine/reversal.ts";
 import { digest, personCard } from "../src/engine/prompts.ts";
@@ -20,7 +20,10 @@ import { digest, personCard } from "../src/engine/prompts.ts";
   const m = momentsOf(s).find((x) => x.id === id)!;
   const d = await concludeMoment(s, m);
   check("ending a scene leaves a deed", !!d && deedsOf(s).length === 1);
-  check("giving yourself to her is read from your own words", !!d?.tags.includes("owner_enslaved"), d?.tags);
+  check("giving yourself to her is read from your own words", d?.collar === "offered", d?.collar);
+  check("but nothing happens until you say you meant it", s.player.owned_by === undefined && romanceOf(her).standing !== "keeper" && !d?.tags.includes("owner_enslaved"));
+  check("she's waiting with it on the Penthouse", collarOffered(s)?.id === d?.id);
+  acceptCollar(s, d!.id);
   check("she holds your collar now", romanceOf(her).standing === "keeper" && s.player.owned_by === her.id, romanceOf(her).standing);
   check("the arcology's deference moves", reversalOf(s).deference > 0);
   check("the story counts it", Number(s.story!.flags["deed_owner_enslaved"]) === 1);
@@ -38,6 +41,22 @@ import { digest, personCard } from "../src/engine/prompts.ts";
   check("and as a story", collar, Object.keys(s.story!.arcs));
   const again = await concludeMoment(s, m);
   check("a scene only counts once", again?.id === d?.id && deedsOf(s).length === 1);
+}
+
+{
+  // A sentence said badly reads like surrender. Saying so takes it back, and nothing changed.
+  const s = newGame({ seed: "deeds-misread", starting_slaves: 3, plot: false } as never);
+  const her = Object.values(s.people).find((p) => p.status === "owned" && p.age >= 18)!;
+  const id = openMoment(s, { person: her.id, title: "Talking", source: "test", happened: "She listens." });
+  await playMoment(s, id, "Collar me in silk, I said, and she laughed.");
+  const d = await concludeMoment(s, momentsOf(s).find((x) => x.id === id)!);
+  const dominion = romanceOf(her).dominion;
+  refuseCollar(s, d!.id);
+  check("a misreading can be refused", d?.collar === "refused" && collarOffered(s) === undefined);
+  check("and it leaves you as you were", s.player.owned_by === undefined && romanceOf(her).dominion === dominion && romanceOf(her).standing !== "keeper");
+  const d2 = await (async () => { const id2 = openMoment(s, { person: her.id, title: "Again", source: "test", happened: "She waits." }); await playMoment(s, id2, "Take my collar."); return concludeMoment(s, momentsOf(s).find((x) => x.id === id2)!); })();
+  for (let w = 0; w < 3; w++) endWeek(s);
+  check("an offer nobody answers is put away", d2?.collar === "refused" && s.player.owned_by === undefined);
 }
 
 {

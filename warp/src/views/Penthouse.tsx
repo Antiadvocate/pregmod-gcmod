@@ -6,9 +6,9 @@
  *  decisions of the week a screen and a half down. The end-of-week button floats over all of it
  *  and says how many things are still open. */
 import { momentsOf } from "../engine/moments";
-import { concludeMoment } from "../engine/deeds";
+import { collarOffered, concludeMoment } from "../engine/deeds";
 import AssistantCard from "./Assistant";
-import { Reaction as MomentReaction, OpenMoments } from "./MomentCard";
+import { CollarOffer, Reaction as MomentReaction, OpenMoments } from "./MomentCard";
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import type { Route } from "../App";
@@ -102,6 +102,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
         <Fig label="prosperity" value={Math.round(arc.prosperity)} bad={arc.prosperity < 40} />
         <Fig label="idle" value={`${people.filter((p) => p.assignment === "rest").length}/${people.length}`} />
       </button>
+
+      {collarOffered(save) ? <div className="mb-4"><CollarOffer id={collarOffered(save)!.id} /></div> : null}
 
       {lastReport?.problems.length ? (
         <div className="mb-4 space-y-1">
