@@ -6,6 +6,7 @@
  * here is stored on `player.body` in the same shape as a slave's, so the same art draws you and
  * the same words describe you.
  */
+import { marksLine } from "./marks";
 import { dickCM, dickWord, inches } from "./genitals";
 import type { Body, Person, Pronouns, SaveState } from "./types";
 import { generatePerson } from "./generate";
@@ -69,6 +70,8 @@ export function playerAsPerson(s: SaveState): Person {
   p.look = s.player.look;
   p.womb = { ...p.womb, fetuses: [], weeks: 0 };
   p.chastity = { vagina: false, anus: false, penis: false };
+  p.stains = s.player.stains;
+  p.beat = s.player.beat;
   return p;
 }
 
@@ -152,5 +155,5 @@ export function ownerLine(s: SaveState): string {
   const name = named ? `${named}, ` : "";
   const title = s.player.address || (pr === "she/her" ? "Mistress" : "Master");
   const one = `"You", the player, the owner${named ? `, ${named}` : ""} and "${title}" are ONE person, the person reading. Write that person only as "you", in the second person. Never write the owner as a separate character in the third person${named ? ` ("${named} walks in", "${named}'s orders")` : ""}, never put the owner in a cast list, and never ask what the owner${named ? ` or ${named}` : ""} should do: every choice offered is something YOU do. Other characters may say ${named ? `"${named}" or ` : ""}"${title}" aloud when they speak to or about you.`;
-  return `THE OWNER (the player, written as "you"): ${name}${genderWord(s)}. ${one} Pronouns ${pr}: anyone speaking about the owner says ${subj}/${obj}/${pos}. Slaves call the owner "${s.player.address || (pr === "she/her" ? "Mistress" : "Master")}". The owner's body: ${describeYou(s)}. The owner HAS ${has.join(", ")}; the owner DOES NOT HAVE ${hasnt.join(", ") || "anything missing"}. Never give the owner a body part they do not have or take away one they do; every scene, memory and line of dialogue keeps to this.${s.player.body.appearance_facts ? ` ${s.player.body.appearance_facts}` : ""}${b.dick && (b.dick <= 2 || b.dick >= 5) ? ` The owner's cock is ${dickWord(b.dick)}, and people who see it notice, the way people do: a look, a comment, a comparison, a laugh they try to swallow, or a very careful silence. It's never written as average.` : ""}`;
+  return `THE OWNER (the player, written as "you"): ${name}${genderWord(s)}. ${one} Pronouns ${pr}: anyone speaking about the owner says ${subj}/${obj}/${pos}. Slaves call the owner "${s.player.address || (pr === "she/her" ? "Mistress" : "Master")}". The owner's body: ${describeYou(s)}. The owner HAS ${has.join(", ")}; the owner DOES NOT HAVE ${hasnt.join(", ") || "anything missing"}. Never give the owner a body part they do not have or take away one they do; every scene, memory and line of dialogue keeps to this.${s.player.body.appearance_facts ? ` ${s.player.body.appearance_facts}` : ""}${s.player.stains?.length ? ` ON THE OWNER RIGHT NOW (still there until it's washed off; people see it): ${marksLine(s, s.player.stains)}.` : ""}${b.dick && (b.dick <= 2 || b.dick >= 5) ? ` The owner's cock is ${dickWord(b.dick)}, and people who see it notice, the way people do: a look, a comment, a comparison, a laugh they try to swallow, or a very careful silence. It's never written as average.` : ""}`;
 }

@@ -15,6 +15,9 @@ import { roomLevelName, roomComfort, jobOf, answerTask, YOUR_ITEM, YOUR_ITEMS, t
 import { herDecides } from "../engine/herwill";
 import { modelsAvailable } from "../config";
 import { Reaction } from "./MomentCard";
+import SlaveArt from "./SlaveArt";
+import { playerAsPerson } from "../engine/you";
+import { marksLine } from "../engine/marks";
 
 /* ── the drawing ────────────────────────────────────────────────────────────────────────────── */
 
@@ -131,6 +134,10 @@ export default function YourRoomView() {
   return (
     <div className="pb-24">
       {room ? <RoomCard room={room} her={her.name} /> : <p className="text-[13px] dim mb-4">{her.name} hasn't decided where you sleep yet. She will at the end of the week.</p>}
+      <div className="card p-3 mb-4 flex gap-3 items-end">
+        <SlaveArt person={playerAsPerson(save)} height={240} face={false} />
+        <div className="text-[12.5px] mid pb-2">{save.player.stains?.length ? <>On you right now: {marksLine(save, save.player.stains)}.</> : "Nothing on you right now."}</div>
+      </div>
       <YourWeek />
       <TalkToHer />
     </div>

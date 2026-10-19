@@ -31,6 +31,7 @@ import { theKeeper } from "./romance";
 import { record, tiedTo } from "./others";
 import { waysBrief } from "./ways";
 import { today } from "./alive";
+import { MARKS_SCHEMA, MARKS_RULES, marksLine } from "./marks";
 import { cultureBrief } from "./culture";
 import { lawsBrief } from "./court";
 import type { Person, SaveState } from "./types";
@@ -132,10 +133,12 @@ Shape:
  "canon_add": ["only genuinely world-scale facts; usually empty"],
  "agreements": [{"id":"p1 or household","rule":"what she now does, e.g. kneels when the owner enters, or calls the owner \"Rabi\"","calls":"the name, only if the rule is what she calls the owner"}],
  "agreements_drop": [{"id":"p1","rule":"a standing order the owner explicitly cancelled"}],
- "manner": [{"id":"p1","toward":"the other person's name","how":"how she is with them now, one plain line"}]
+ "manner": [{"id":"p1","toward":"the other person's name","how":"how she is with them now, one plain line"}],
+ ${MARKS_SCHEMA}
 }
 agreements: record every standing instruction the owner gave in this turn about how she (or the whole household) is to address or treat the owner from now on, when she accepted it or did not refuse. Not one-off orders for this moment.
 manner: record it when this turn settles how she is with a particular person other than the owner (another slave, or anyone else: a guest, a citizen, a trader), as something that will carry on: e.g. "subservient to him and nobody else; talks to him gently", "cold to her in front of others, sweet when they're alone". It counts when the prose shows it becoming how she is with them, and when the owner's own words say it ("and then she was subservient to him alone"). toward is that person's name as the prose gives it. It replaces whatever was kept for that person, so write the whole of how she is with them now, not only what changed. Not for a passing mood or one moment.
+${MARKS_RULES}
 Every id must be one given to you. Omit any key you have nothing for. Never record a new clause, exemption, amendment or technicality of a law as a fact, rumour or memory: laws are only what their text says.`;
 
 /** How she is holding up, in the words the game would use. */
@@ -191,6 +194,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (gov) lines.push(gov);
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
   const between = deedsBrief(s, p.id);
+  if (p.stains?.length) lines.push(`ON HER BODY RIGHT NOW (still there until it's washed off; anyone who sees her sees it): ${marksLine(s, p.stains)}.`);
   const carrying = today(s, p);
   if (carrying) lines.push(`TODAY SHE'S CARRYING (it colours her whole day, whatever happens in the scene): ${carrying}.`);
   // Two cocks in the same bed get compared, by both of them.

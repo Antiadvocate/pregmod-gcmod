@@ -430,3 +430,31 @@ button.list-row:active { background: var(--ink-1); }
 }
 .seg.on { background: var(--ink-3); color: var(--text-hi); box-shadow: 0 1px 2px rgba(0,0,0,.4); }
 .seg-badge { margin-left: 6px; font-size: 11px; color: var(--accent); }
+
+/* ── beats: what a body just did, played once on the figure (engine/marks) ───────────────── */
+.beat > svg { transform-origin: 50% 100%; }
+.beat-shudder > svg { animation: b-shudder 0.11s linear 14; }
+@keyframes b-shudder { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-3px) rotate(-1deg); } 75% { transform: translateX(3px) rotate(1deg); } }
+.beat-jelly > svg { animation: b-jelly 2.4s ease-in-out; }
+@keyframes b-jelly { 0%, 100% { transform: scale(1, 1); } 15% { transform: scale(1.12, 0.86); } 30% { transform: scale(0.9, 1.1); } 45% { transform: scale(1.08, 0.7); } 65% { transform: scale(1.15, 0.6); } 85% { transform: scale(0.96, 1.05); } }
+.beat-float > svg { animation: b-float 2.6s ease-in-out; }
+@keyframes b-float { 0%, 100% { transform: translateY(0) rotate(0); } 40% { transform: translateY(-16%) rotate(-3deg); } 70% { transform: translateY(-12%) rotate(2deg); } }
+.beat-loom > svg { animation: b-loom 2.6s cubic-bezier(.2,.8,.2,1); }
+@keyframes b-loom { 0%, 100% { transform: scale(1); } 30%, 75% { transform: scale(1.45) translateY(6%); } }
+.beat-shrink > svg { animation: b-shrink 2.6s ease-in-out; }
+@keyframes b-shrink { 0%, 100% { transform: scale(1); } 30%, 75% { transform: scale(0.45); } }
+.beat-throb > svg { animation: b-throb 0.6s ease-in-out 4; }
+@keyframes b-throb { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.05, 0.97); } }
+.beat-faint > svg { animation: b-faint 2.6s ease-in-out; }
+@keyframes b-faint { 0%, 100% { transform: rotate(0); } 45%, 65% { transform: rotate(78deg) translateY(4%); } 80% { transform: rotate(-6deg); } }
+.beat-stretch > svg { animation: b-stretch 1.6s cubic-bezier(.3,1.6,.5,1); }
+@keyframes b-stretch { 0%, 100% { transform: scale(1, 1); } 20%, 55% { transform: scale(0.9, 1.4); } }
+.beat-puddle > svg { animation: b-puddle 2.8s ease-in-out; }
+@keyframes b-puddle { 0%, 100% { transform: translateY(0) scale(1, 1); } 35%, 70% { transform: translateY(42%) scale(1.25, 0.55); } }
+.beat-glitch > svg { animation: b-glitch 0.09s steps(2) 24; }
+@keyframes b-glitch { 0% { transform: translate(4px, -1px) skewX(4deg); filter: drop-shadow(-4px 0 #f03) drop-shadow(4px 0 #0ff); } 50% { transform: translate(-5px, 2px) skewX(-6deg); filter: drop-shadow(3px 0 #f03) drop-shadow(-3px 0 #0ff) hue-rotate(90deg); } 100% { transform: none; filter: none; } }
+.beat-freeze > svg { animation: b-freeze 2.4s ease-out; }
+@keyframes b-freeze { 0%, 100% { transform: rotate(0); filter: none; } 10%, 80% { transform: rotate(5deg); filter: grayscale(1) brightness(1.15); } }
+.beat-spiral > svg { animation: b-shudder 0.2s linear 6; }
+.beat-steam > svg, .beat-hearts > svg { animation: b-throb 0.7s ease-in-out 2; }
+@media (prefers-reduced-motion: reduce) { .beat > svg { animation: none !important; } }

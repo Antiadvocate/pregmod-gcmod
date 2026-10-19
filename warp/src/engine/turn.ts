@@ -11,6 +11,7 @@
  * from state — who is there, what their bodies are doing, what the action was — and the rest of the
  * pipeline runs identically. You lose the paragraph. You do not lose the game.
  */
+import { applyMarks, marksForAct } from "./marks";
 import { walkIn, walkInLine, misreads, misreadLine } from "./alive";
 import { coarsen, REGISTER_TAIL } from "./register";
 import { inventsLaw } from "./lawguard";
@@ -53,6 +54,9 @@ export interface Diff {
   agreements_drop?: { id: string; rule: string }[];
   /** How she is with a particular person, settled by this turn. Replaces what was kept for them. */
   manner?: { id: string; toward: string; how: string }[];
+  marks?: { on?: string; what?: string; where?: string; text?: string }[];
+  washed?: string[];
+  beat?: { on?: string; what?: string }[];
 }
 
 export interface TurnResult {
@@ -192,6 +196,7 @@ export async function runActTurn(
   snapshot(s);
   const outcome = resolveAct(s, p, actId, { public: opts?.public });
   if ("error" in outcome) return { outcome, prose: "", notes: [] };
+  marksForAct(s, p, ACT_BY_ID[actId], !!outcome.finished);
   // Written before the model is asked, so there is always a scene on the page even while the
   // narrator is thinking, and a scene left behind if it never answers.
   const written = writeAct(s, p, outcome, { lead: opts?.lead });
@@ -324,6 +329,8 @@ export function applyDiff(s: SaveState, d: Diff, prose: string, said?: string): 
     facts_learned: d.facts_learned?.filter((f) => !inventsLaw(s, f.fact)),
   };
   const wasPresent = new Set(s.scene.present);
+  // What this turn left on people's bodies, and what one of them just did.
+  applyMarks(s, d);
 
   // LOCATION
   if (d.location && d.location !== s.scene.location) {

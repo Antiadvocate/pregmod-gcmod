@@ -16,6 +16,7 @@
  * afterwards to work out what must have happened, which is how the old end-of-week text and the
  * old budget screen ended up describing two different weeks.
  */
+import { tickMarks } from "./marks";
 import "./grandevents";
 import { tickPowers } from "./power";
 import { tickWars } from "./war";
@@ -333,6 +334,7 @@ export function endWeek(s: SaveState): WeekReport {
   syncStoryCast(s);
   for (const l of tickSagas(s, modelsAvailable())) push(l, "warning", 11);
   pruneFaces(s);
+  tickMarks(s);
   ageMoments(s);
   for (const e of tickDeeds(s)) push(e.text, "warning", 8, e.person);
   // The city's habits move with what it saw you do this week, and the court writes them down.

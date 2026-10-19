@@ -473,6 +473,9 @@ export interface Person {
   /** How she and the player do things, settled over many scenes: rituals, the way they talk, what
    *  always happens. Kept, so a scene doesn't reset to a stranger's version of them (engine/ways). */
   ways?: { text: string; week: number }[];
+  /** What's on her body right now, and the last thing it did (engine/marks). */
+  stains?: import("./marks").Mark[];
+  beat?: { kind: import("./marks").BeatKind; n: number };
   /** What she woke up with this week (engine/alive). */
   today?: { week: number; text: string };
   /** Gene treatments under way. See engine/fleshcraft. */
@@ -985,6 +988,9 @@ export interface Player {
    *  the registry, holds you. See engine/romance.ts — this is the far end of the ladder, and it is
    *  a playable state rather than a game over. */
   owned_by?: string;
+  /** What's on your body right now, and the last thing it did (engine/marks). */
+  stains?: import("./marks").Mark[];
+  beat?: { kind: import("./marks").BeatKind; n: number };
   /** Set when you kneel: whether you asked to keep a hand in running things (engine/share). */
   ask_hand?: boolean;
   /** What you have left in the tank, 0–100. Spent on the interaction loop, back by the week: a
