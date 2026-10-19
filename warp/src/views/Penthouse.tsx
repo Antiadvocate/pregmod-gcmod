@@ -37,7 +37,7 @@ import { band, wear } from "../engine/psyche";
 import { modelsAvailable } from "../config";
 
 export default function Penthouse({ go }: { go: (r: Route) => void }) {
-  const [outcomes, setOutcomes] = useState<{ id: string; setup?: string; chose: string; text: string; person?: string; others?: string[]; moment?: string; writing?: boolean; facts?: string }[]>([]);
+  const [outcomes, setOutcomes] = useState<{ id: string; setup?: string; chose: string; text: string; person?: string; others?: string[]; moment?: string; writing?: boolean; facts?: string; auto?: boolean }[]>([]);
   /** Done: the card goes, and a scene played out under it ends where it is. */
   const finish = async (o: { id: string; moment?: string }) => {
     const m = o.moment ? momentsOf(save).find((x) => x.id === o.moment) : undefined;
@@ -216,7 +216,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             {o.facts ? <p className="text-[12px] dim">{o.facts.split(/\n\n+/)[0]}</p> : null}
           </div>
           <div className="flex flex-wrap items-center gap-x-2">
-            {o.person || modelsAvailable() ? <MomentReaction seed={{ person: o.person, others: o.others, title: o.chose, source: "event", setup: o.setup, you: o.chose, happened: o.text }} onOpen={(mid) => setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, moment: mid } : x)))} /> : null}
+            {o.person || modelsAvailable() ? <MomentReaction auto={!!o.auto} seed={{ person: o.person, others: o.others, title: o.chose, source: "event", setup: o.setup, you: o.chose, happened: o.text }} onOpen={(mid) => setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, moment: mid } : x)))} /> : null}
             <Button size="sm" kind="primary" className="mt-3" onClick={() => void finish(o)}>Done</Button>
           </div>
         </Card>
@@ -245,6 +245,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
                 text = [via.line, resolveAny(s, e, via.id)].filter(Boolean).join("\n\n");
               });
               const out = { id: e.id, setup: e.seed, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined };
+              // Going to her when she wants you is the scene itself: it opens and is played, not summed up.
+              if (e.kind === "reign_want" && o.id === "obey") { setOutcomes((xs) => [...xs, { ...out, auto: true }]); return; }
               setOutcomes((xs) => [...xs, { ...out, writing: modelsAvailable() && !save.models.lean_mode }]);
               // The choice played out, with what the engine decided as the facts.
               if (modelsAvailable() && !save.models.lean_mode) void narrateOutcome(save, { ...out, happened: text, title: e.written?.title }).then((t) => {

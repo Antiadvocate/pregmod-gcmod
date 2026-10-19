@@ -97,3 +97,19 @@ function owned(seed: string, style: string) {
   check("a reading replaces the list, ten at most", (her.ways ?? []).length === 10 && /way number 0/.test(her.ways![0].text));
   check("she tells you, she doesn't ask", /doesn't ask their opinion or their permission/.test(ownedBrief(s)));
 }
+
+// She has a body, and she owns you.
+{
+  const { wantsOf } = await import("../src/engine/herwants.ts");
+  const { s, her } = owned("kept-wants", "stern");
+  her.body.dick = 4;
+  her.ways = [{ text: "he talks to her soles, never her face", week: 1 }];
+  const ws = wantsOf(s, her).map((w) => w.text).join(" | ");
+  check("what she wants comes from her body and your history together", /cock/.test(ws) && /soles|feet/.test(ws), ws);
+  let wanted = false;
+  for (let i = 0; i < 6 && !wanted; i++) { s.events = s.events.filter((e) => !e.kind.startsWith("reign_")); s.arcology.week++; tickReign(s); wanted = s.events.some((e) => e.kind === "reign_want"); }
+  check("most weeks she wants you", wanted);
+  check("and it's on your list", (s.reign!.tasks ?? []).some((t) => t.from === "her"));
+  const t = s.reign!.tasks!.find((x) => x.from === "her")!;
+  check("going to her is going to her", answerTask(s, t.id, true) === "You go to her.");
+}

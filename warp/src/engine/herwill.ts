@@ -24,7 +24,8 @@ import { freeHer } from "./freed";
 import { applyTreatment, read } from "./obedience";
 import { remember } from "./memory";
 import { chronicle } from "./chronicle";
-import { lawScore, reignOf, decide, reterm, type Reign } from "./reign";
+import { lawScore, reignOf, decide, reterm, wantNow, type Reign } from "./reign";
+import { wantsOf } from "./herwants";
 import { selfBrief } from "./self";
 import { setWays } from "./ways";
 import { pushNorm } from "./culture";
@@ -46,6 +47,7 @@ How she decides:
 - She keeps most of what the player built: she only signs laws she actually wants, and she doesn't undo the player's for the sake of it.
 - What the player asked or advised: she weighs it by how much she trusts them, whether it suits her, and her mood. She can say yes, say no, do part of it, or do the opposite to make a point. A request to be given something back, to see someone, to be let off a duty, is hers to grant or refuse.
 - She acts on real people by name, from THE HOUSEHOLD and PEOPLE OUTSIDE. Never invent anyone.
+- She has a body and appetites, and she owns the player. Most weeks one of her actions is want_you: what she wants to do to or with the player, in bed or anywhere she likes, out of her body, her tastes, HOW YOU TWO DO THINGS and what the player says they are. Write it the way she'd want it, explicitly, in the game's crude words.
 - Zero to three actions. Doing nothing is a choice too. Each "why" is one line in her own voice, what she'd actually say about it.
 
 ${HOUSE_STYLE}
@@ -65,6 +67,7 @@ ACTIONS:
 · give_you: give the player something; id from YOUR THINGS (one they don't have) or a room part (bed, space, bath, view, climate) to make better
 · take_you: take something from the player; id from YOUR THINGS (one they have) or a room part to make worse
 · your_job: give the player a new job; id from JOBS FOR YOU
+· want_you: what she wants from the player this week, sexually or otherwise physically; id is one sentence starting with her name, e.g. "Martina wants your mouth on her cock under the table at tomorrow's meeting". Add "public" to why if other people will be there
 · deal_with: have someone outside the household killed, ruined, thrown out, locked up or bought off; name from PEOPLE OUTSIDE, id is kill|ruin|exile|jail|buy`;
 
 interface Act { do?: string; name?: string; id?: string; why?: string }
@@ -96,6 +99,7 @@ function context(s: SaveState, h: Person, r: Reign, request?: string): string {
     `## THE PLAYER, HER SLAVE\nJob: ${r.job ? JOB[r.job]?.name : "none yet"}. Has: ${(room?.items ?? []).join(", ") || "nothing"}. Room: bed ${room?.levels.bed}, space ${room?.levels.space}, bath ${room?.levels.bath}, view ${room?.levels.view}, climate ${room?.levels.climate} (higher is better).`,
     `## YOUR THINGS (item ids)\n${YOUR_ITEMS.map((x) => `${x.id} (${x.name}${x.comfort < 0 ? ", done to them" : ""})`).join(", ")}`,
     `## JOBS FOR YOU\n${JOBS.map((j) => `${j.id} (${j.name})`).join(", ")}`,
+    `## THE KIND OF THING SHE MIGHT WANT FROM THE PLAYER (from her body and tastes; she can want anything, these are a start)\n${wantsOf(s, h).slice(0, 6).map((w) => `· ${w.text}`).join("\n")}`,
     outside.length ? `## PEOPLE OUTSIDE\n${outside.map((f) => `· ${f.name}${f.what ? `, ${f.what}` : f.role ? `, ${f.role}` : ""}`).join("\n")}` : "",
     settledBrief(s, 6),
     request ? `## THE PLAYER COMES TO HER NOW AND SAYS\n${request}` : asked.length ? `## WHAT THE PLAYER ASKED OR ADVISED THIS WEEK\n${asked.map((a) => `· ${a}`).join("\n")}` : "## The player hasn't asked her anything this week.",
@@ -160,6 +164,13 @@ export function carryOut(s: SaveState, h: Person, r: Reign, acts: Act[]): string
       }
       case "give_you": { const line = give(s, a.id); if (line) say(line, a.why); break; }
       case "take_you": { const line = take(s, a.id); if (line) say(line, a.why); break; }
+      case "want_you": {
+        const text = coarsen(String(a.id ?? "")).replace(/\s+/g, " ").trim().slice(0, 300);
+        if (text.length < 15) break;
+        const named = text.startsWith(h.name.split(" ")[0]) ? text : `${h.name.split(" ")[0]} wants ${text.replace(/^(she )?wants /i, "")}`;
+        if (wantNow(s, r, named, /public|in front of|everyone|the household|the meeting/i.test(`${a.why ?? ""} ${text}`))) say(`${h.name} wants you.`, a.why);
+        break;
+      }
       case "your_job": {
         const j = a.id ? JOB[a.id] : undefined;
         if (!j || r.job === j.id) break;

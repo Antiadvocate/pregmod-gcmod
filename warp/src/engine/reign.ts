@@ -33,6 +33,17 @@ import { hasWomb, tryConception } from "./pregnancy";
 import { rng } from "./rng";
 import { settleHand, tickHand } from "./share";
 import { tickKept, roomBrief, jobOf } from "./kept";
+import { pickWant, wantsOf } from "./herwants";
+
+/** She wants you, now: the "she wants you" event, with what she wants written on it. */
+export function wantNow(s: SaveState, r: Reign, text: string, pub?: boolean): boolean {
+  const h = s.people[r.keeper];
+  if (!h || s.events.some((e) => e.kind === "reign_want")) return false;
+  r.want = { week: s.arcology.week, text, public: pub };
+  (r.wanted ??= []).push(text);
+  if (r.wanted.length > 6) r.wanted.shift();
+  return !!fireEvent(s, "reign_want", { person: h });
+}
 import { modelsAvailable } from "../config";
 
 /** With a model, she decides her own week (engine/herwill); without one, the dice below do. */
@@ -78,6 +89,9 @@ export interface Reign {
   room?: import("./kept").YourRoom;
   job?: string;
   tasks?: import("./kept").Task[];
+  /** What she wants from you this time (engine/herwants), and the last few she's had. */
+  want?: { week: number; text: string; public?: boolean };
+  wanted?: string[];
   /** How she keeps you, read from everything between you by the model (engine/herwill). Wins over
    *  the style's stock note in every scene. */
   portrait?: string;
@@ -271,6 +285,8 @@ const FEET_ORDER = { text: "She sits on the edge of the fountain in the plaza an
 function orderFor(s: SaveState, h: Person, r: Reign) {
   const pool = [...ORDERS[r.style]];
   if (fet(h, "feet") >= 40 && r.style !== "reluctant") pool.push(FEET_ORDER);
+  // Half her orders are about her, not the house: what she wants done to her, or to you.
+  if (r.style !== "reluctant") for (const w of wantsOf(s, h).slice(0, 4)) pool.push({ text: w.text.replace(/^\S+ wants /, "She wants ").replace(/^\S+ (bends|sits|puts|makes|ties)/, "She $1"), public: w.public });
   return rng(`reign-order:${s.arcology.week}:${h.id}`).pick(pool);
 }
 
@@ -331,6 +347,14 @@ const EVENTS: EventDef[] = [
       resolve: (s, _e, p) => { const r = s.reign!; note(s, "You asked her to let you off an order."); if (r.style === "doting" || r.style === "reluctant") { fav(s, 2); return `You ask. ${p!.name} lets you off at once, and then worries that she asked for too much.`; } if (r.style === "cruel") { fav(s, -4); return `You ask. ${p!.name} says no, and that asking has doubled it.`; } fav(s, -2); return `You ask. ${p!.name} thinks about it and lets you off this once. She makes sure you know it's once.`; } },
     { id: "defy", label: "Refuse",
       resolve: (s, _e, p) => { const r = s.reign!; fav(s, -12); r.defied++; if (p) p.bond.resentment = clamp(p.bond.resentment + 4, 0, 100); note(s, "You refused an order."); return `You refuse. ${DEFIED[r.style](p!)}`; } },
+  ]),
+  reignEvent("reign_want", (s) => `${s.reign!.want?.text ?? "She wants you in her bed tonight."}${s.reign!.want?.public ? "\n\nIt will be in front of other people." : ""}`, [
+    { id: "obey", label: "Go to her",
+      resolve: (s, _e, p) => { const r = s.reign!; fav(s, 6); r.obeyed++; if (p) { p.psyche.arousal = clamp(p.psyche.arousal + 25, 0, 100); applyTreatment(p, { kind: "recognition", size: 2, why: "the owner came when she wanted him" }, s.arcology.week); } note(s, `She had you: ${(r.want?.text ?? "").replace(/^\S+ /, "she ")}`); if (r.want?.public && p) pushNorm(s, "reversal", 3, `${p.name} used the owner where people could see`); return `You go to her.`; } },
+    { id: "beg", label: "Beg her for something else",
+      resolve: (s, _e, p) => { const r = s.reign!; note(s, "You begged her for something else."); if (r.style === "doting" || r.style === "reluctant" || r.style === "playful") { fav(s, 1); return `You beg. ${p!.name} listens, and asks what you want instead, and then decides whether you get it.`; } fav(s, -3); return `You beg. ${p!.name} lets you finish, and then has you anyway.`; } },
+    { id: "defy", label: "Refuse her",
+      resolve: (s, _e, p) => { const r = s.reign!; fav(s, -12); r.defied++; if (p) p.bond.resentment = clamp(p.bond.resentment + 4, 0, 100); note(s, "You refused her in bed."); return `You refuse. ${DEFIED[r.style](p!)}`; } },
   ]),
   reignEvent("reign_name", (s, c) => { const r = s.reign!; const nm = newName(r.style); return `${c.person!.name} has decided you need a new name. "${nm}," she says, and tries it out a few times while you stand there. "Yes. That's you."`; }, [
     { id: "accept", label: "Answer to it",
@@ -581,7 +605,12 @@ export function tickReign(s: SaveState): ReportLine[] {
     r.deputy = d.id;
     out.push(line(`${h.name} is putting ${d.name} in charge of you when she's out.`, "warning", 8, h.id));
   } else if (beat("reign_future", r.style === "reluctant" ? 6 : 26)) out.push(line(`${h.name} has decided what you are to her.`, "warning", 10, h.id));
-  else if (since >= 2 && week - (r.last_order ?? -9) >= 2 && !s.events.some((e) => e.kind.startsWith("reign_")) && rnd.chance(0.7)) {
+  else if (since >= 1 && !s.events.some((e) => e.kind.startsWith("reign_")) && (r.want?.week ?? -9) < week && rnd.chance(r.style === "reluctant" ? 0.35 : 0.75)) {
+    // She has a body and she owns you: most weeks she wants you for it.
+    const w = pickWant(s, h);
+    wantNow(s, r, w.text, w.public);
+    out.push(line(`${h.name} wants you.`, "warning", 8, h.id));
+  } else if (since >= 2 && week - (r.last_order ?? -9) >= 2 && !s.events.some((e) => e.kind.startsWith("reign_")) && rnd.chance(0.7)) {
     r.last_order = week;
     fireEvent(s, "reign_order", { person: h });
     out.push(line(`${h.name} has an order for you.`, "warning", 7, h.id));

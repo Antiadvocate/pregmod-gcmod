@@ -160,13 +160,17 @@ function RoomCard({ room, her }: { room: Room; her: string }) {
 /** This week's list, from the job she gave you and her rules. */
 export function YourWeek() {
   const { save, mutate } = useGame();
-  const [said, setSaid] = useState<{ text: string; what: string } | null>(null);
+  const [said, setSaid] = useState<{ text: string; what: string; auto?: boolean } | null>(null);
   const r = save.reign;
   const her = save.player.owned_by ? save.people[save.player.owned_by] : undefined;
   if (!r || r.ended || !her) return null;
   const job = jobOf(save);
   const tasks = r.tasks ?? [];
-  const act = (id: string, done: boolean, text: string) => { let line = ""; mutate((s: SaveState) => { line = answerTask(s, id, done); }); if (line) setSaid({ text: line, what: done ? `You ${text}.` : `You refuse to ${text}.` }); };
+  const act = (id: string, done: boolean, text: string, hers: boolean) => {
+    let line = "";
+    mutate((s: SaveState) => { line = answerTask(s, id, done); });
+    if (line) setSaid({ text: hers ? `${text}\n\n${line}` : line, what: hers ? (done ? "You go to her." : "You refuse her.") : done ? `You ${text}.` : `You refuse to ${text}.`, auto: hers && done });
+  };
   return (
     <div className="card p-3 mb-4">
       <div className="text-[10.5px] uppercase tracking-wider dim mb-1">Your week</div>
@@ -178,8 +182,8 @@ export function YourWeek() {
               <span className={cx("flex-1 min-w-[180px] text-[13px]", t.state !== "open" && "dim")}>{t.text}</span>
               {t.state === "open" ? (
                 <>
-                  <Button size="sm" kind="primary" onClick={() => act(t.id, true, t.text)}>Do it</Button>
-                  <Button size="sm" kind="ghost" onClick={() => act(t.id, false, t.text)}>Refuse</Button>
+                  <Button size="sm" kind="primary" onClick={() => act(t.id, true, t.text, t.from === "her")}>{t.from === "her" ? "Go to her" : "Do it"}</Button>
+                  <Button size="sm" kind="ghost" onClick={() => act(t.id, false, t.text, t.from === "her")}>Refuse</Button>
                 </>
               ) : <span className={cx("chip", t.state === "done" ? "good" : "bad")}>{t.state}</span>}
             </li>
@@ -189,7 +193,7 @@ export function YourWeek() {
       {said ? (
         <div className="mt-2">
           <p className="text-[13px] acc">{said.text}</p>
-          <Reaction seed={{ person: her.id, title: "What she wanted done", source: "kept", you: said.what, happened: said.text }} />
+          <Reaction key={said.text} auto={said.auto} seed={{ person: her.id, title: said.auto ? "What she wanted" : "What she wanted done", source: "kept", you: said.what, happened: said.text }} />
         </div>
       ) : null}
     </div>

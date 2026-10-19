@@ -13,6 +13,7 @@ import { AXES, type RoomAxis } from "../data/rooms";
 import { clamp } from "./psyche";
 import { rng } from "./rng";
 import { remember } from "./memory";
+import { pickWant } from "./herwants";
 
 /* ── your room ──────────────────────────────────────────────────────────────────────────────── */
 
@@ -181,7 +182,7 @@ const JOB_BY_STYLE: Record<ReignStyle, string[]> = {
   stern: ["table", "books", "floors"], cruel: ["floors", "display", "brothel"], vengeful: ["floors", "brothel", "table"],
 };
 
-export interface Task { id: string; text: string; state: "open" | "done" | "refused" | "neglected"; from: "job" | "duty" }
+export interface Task { id: string; text: string; state: "open" | "done" | "refused" | "neglected"; from: "job" | "duty" | "her" }
 
 /** The job she gives you, by who she is. Kept until she changes it. */
 export function jobOf(s: SaveState): Job | undefined {
@@ -197,7 +198,10 @@ export function weekTasks(s: SaveState, r: Reign): Task[] {
   const rnd = rng(`tasks:${s.arcology.week}:${r.keeper}`);
   const from = job ? rnd.shuffle([...job.tasks]).slice(0, 2).map((text) => ({ text, from: "job" as const })) : [];
   const duty = r.duties.length ? [{ text: rnd.pick(r.duties), from: "duty" as const }] : [];
-  return [...from, ...duty].map((t, i) => ({ id: `t${s.arcology.week}-${i}`, text: t.text, state: "open", from: t.from }));
+  // And what she wants from you this week, which isn't a chore.
+  const h = s.people[r.keeper];
+  const her = h ? [{ text: pickWant(s, h, ":list").text, from: "her" as const }] : [];
+  return [...her, ...from, ...duty].map((t, i) => ({ id: `t${s.arcology.week}-${i}`, text: t.text, state: "open", from: t.from }));
 }
 
 const DONE: Record<ReignStyle, (n: string) => string> = {
@@ -227,6 +231,7 @@ export function answerTask(s: SaveState, taskId: string, done: boolean): string 
   if (done) r.obeyed++; else r.defied++;
   const job = r.job ? JOB[r.job] : undefined;
   if (done && t.from === "job" && job) { if (job.cash) s.arcology.cash += Math.round(job.cash / 2); if (job.rep) s.arcology.rep = Math.max(0, s.arcology.rep + Math.round(job.rep / 2)); }
+  if (t.from === "her") { if (done) h.psyche.arousal = clamp(h.psyche.arousal + 20, 0, 100); return done ? `You go to her.` : `You refuse her. ${REFUSED[r.style](h.name)}`; }
   return `${done ? `You ${t.text}.` : `You refuse to ${t.text}.`} ${(done ? DONE : REFUSED)[r.style](h.name)}`;
 }
 
