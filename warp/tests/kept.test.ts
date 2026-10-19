@@ -113,3 +113,17 @@ function owned(seed: string, style: string) {
   const t = s.reign!.tasks!.find((x) => x.from === "her")!;
   check("going to her is going to her", answerTask(s, t.id, true) === "You go to her.");
 }
+
+// What's true of you stays true, and your body gets noticed.
+{
+  const { ownerLine } = await import("../src/engine/you.ts");
+  const { selfProfile } = await import("../src/engine/self.ts");
+  const { personCard, HOUSE_STYLE } = await import("../src/engine/prompts.ts");
+  const { s, her } = owned("kept-body", "stern");
+  s.player.body.dick = 1; her.body.dick = 6;
+  check("a tiny cock is called tiny, and noticed", /tiny cock/.test(ownerLine(s)) && /people who see it notice/.test(ownerLine(s)));
+  check("and set against hers", /HERS AGAINST YOURS: her cock is enormous[\s\S]*yours is tiny/.test(personCard(s, her)));
+  (s.house_rules ??= []).push({ rule: "I only speak to women's feet not their faces, do not make me look up", week: 1, by: "you" });
+  check("your own rules are hard lines for everyone", selfProfile(s).some((l) => /hard lines[\s\S]*do not make me look up/.test(l)));
+  check("and no stock 'look at me' beat overrides them", /WHAT'S TRUE OF THE PLAYER STAYS TRUE[\s\S]*look at me/.test(HOUSE_STYLE));
+}

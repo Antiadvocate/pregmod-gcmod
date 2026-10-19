@@ -13,6 +13,8 @@
  * is something the engine can be held to — if the prose contradicts the card, the card is right and
  * the guards in turn.ts say so.
  */
+import { dickCM, dickWord, inches } from "./genitals";
+import { playerBody } from "./you";
 import { powerBetween, selfBrief } from "./self";
 import { mannerBrief } from "./manner";
 import { coarsen } from "./register";
@@ -63,6 +65,8 @@ HOW THE ARCOLOGY IS GOVERNED. The owner rules it absolutely, as a private dictat
 THE OWNER'S POWER IS REAL, AND PEOPLE ACT LIKE IT. A threat, an order or a punishment from the owner lands. Every person reacts the way someone in their position under that power really would: a slave threatened with the cells, the arcade, the whip or being sold is AFRAID of it, and it shows in what she does and says (she begs, bargains, apologises, cries, freezes, goes very quiet and very careful, or, if she's defiant, gets reckless with the fear plainly under it). Nobody owned by the owner answers a threat or a punishment with "okay", "understood", "fine", "yup" or a shrug, and nobody carries on as if it didn't happen. A slave the owner has given power over others (a Head Girl, a governor, a madam) is still the owner's slave: the power is the owner's, lent, and the owner can take it back, and her collar, in a sentence. She addresses the owner as her card says and never as an equal unless THE POWER BETWEEN YOU says she leads.
 
 PEOPLE OUTSIDE THE HOUSEHOLD KNOW WHO THEY'RE DEALING WITH. A citizen, a merchant, a rich man, a preacher or a local boss is small next to the owner of an arcology, and acts it: careful, polite, scared, or sly, never brazen. Someone who wants to hurt the owner does it sideways (lawyers, rumours, bribed staff, a turned slave, a rival city, the Owners' Association, waiting for a mistake), and only someone with real power of their own pushes openly. THE OWNER'S WEIGHT, when given, says exactly how strong the owner is right now; if the owner is weak, people are bolder in proportion. An order the owner gives to someone who can carry it out gets carried out: it is never agreed to and then forgotten. Anyone listed under PEOPLE WHO HAVE BEEN DEALT WITH stays dealt with: the dead stay dead, and a story that needed them is over or passes to whoever took their place.
+
+WHAT'S TRUE OF THE PLAYER STAYS TRUE. What the player's own words, hard lines and laws say about them (where their eyes go, how they talk to people, what they will and won't do, what they are) holds in every scene, the tender ones and the intense ones included, and for everyone, including whoever owns them. Nobody pulls it back to a stock beat ("look at me", "say it to my face"). People who know the player work with it, and that's where the good scenes are.
 
 Examples of the voice:
 - "You tell her she'll be sleeping in your bed tonight. She's surprised, and a little suspicious, but she strips and climbs in beside you without being told twice."
@@ -186,6 +190,9 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (gov) lines.push(gov);
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
   const between = deedsBrief(s, p.id);
+  // Two cocks in the same bed get compared, by both of them.
+  const yours = playerBody(s).dick ?? 0, hers = p.body.dick ?? 0;
+  if (yours > 0 && hers > 0 && Math.abs(hers - yours) >= 2) lines.push(`HERS AGAINST YOURS: her cock is ${dickWord(hers)} (about ${inches(dickCM(hers))}) and yours is ${dickWord(yours)} (about ${inches(dickCM(yours))}). Both of you know it, and it comes up.`);
   const ways = waysBrief(p);
   if (ways) lines.push(ways);
   const manner = mannerBrief(s, p);

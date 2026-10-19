@@ -51,6 +51,9 @@ function ownWords(s: SaveState, n = 6): string[] {
 /** Everything the narrator needs to write you as you. */
 export function selfProfile(s: SaveState): string[] {
   const lines: string[] = [];
+  // The player's own rules about themself, not orders to one slave: true for everyone, always.
+  const hard = (s.house_rules ?? []).filter((a) => a.by === "you").map((a) => a.rule.trim()).filter((r) => r.length > 6);
+  if (hard.length) lines.push(`The player's hard lines, in their own words (true in every scene, for everyone, whoever owns whom; never broken for a dramatic beat): ${hard.map((r) => `"${r}"`).join("; ")}`);
   const own = s.player.self?.trim();
   if (own) lines.push(s.player.owned_by
     ? `In the player's own words, which win over anything below: who they are, and what being owned is for them. She knows all of this about them, and it shapes how she keeps them: ${own}`
