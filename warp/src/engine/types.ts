@@ -473,6 +473,8 @@ export interface Person {
   /** How she and the player do things, settled over many scenes: rituals, the way they talk, what
    *  always happens. Kept, so a scene doesn't reset to a stranger's version of them (engine/ways). */
   ways?: { text: string; week: number }[];
+  /** What she woke up with this week (engine/alive). */
+  today?: { week: number; text: string };
   /** Gene treatments under way. See engine/fleshcraft. */
   growing?: import("./fleshcraft").Growing[];
   /** When she's been an idol. See engine/idols. */

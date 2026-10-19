@@ -30,6 +30,7 @@ import { reignCard, householdUnderHer, reignBrief } from "./reign";
 import { theKeeper } from "./romance";
 import { record, tiedTo } from "./others";
 import { waysBrief } from "./ways";
+import { today } from "./alive";
 import { cultureBrief } from "./culture";
 import { lawsBrief } from "./court";
 import type { Person, SaveState } from "./types";
@@ -190,6 +191,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (gov) lines.push(gov);
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
   const between = deedsBrief(s, p.id);
+  const carrying = today(s, p);
+  if (carrying) lines.push(`TODAY SHE'S CARRYING (it colours her whole day, whatever happens in the scene): ${carrying}.`);
   // Two cocks in the same bed get compared, by both of them.
   const yours = playerBody(s).dick ?? 0, hers = p.body.dick ?? 0;
   if (yours > 0 && hers > 0 && Math.abs(hers - yours) >= 2) lines.push(`HERS AGAINST YOURS: her cock is ${dickWord(hers)} (about ${inches(dickCM(hers))}) and yours is ${dickWord(yours)} (about ${inches(dickCM(yours))}). Both of you know it, and it comes up.`);

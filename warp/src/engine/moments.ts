@@ -18,6 +18,7 @@ import { modelsAvailable } from "../config";
 import { castBrief, facesIn, keyOf, meet, parseCast } from "./faces";
 import { settledBrief, weightBrief } from "./fates";
 import { ownedBrief } from "./share";
+import { walkIn, walkInLine, misreads, misreadLine } from "./alive";
 import { HOUSE_STYLE, personCard, BOOKKEEPER_SYSTEM, bookkeeperContext } from "./prompts";
 import { worldBrief } from "./world";
 import { applyDiff, salvage, type Diff } from "./turn";
@@ -53,6 +54,10 @@ export interface Moment {
   /** How many lines at the top came from the game rather than the model: the situation, what you
    *  chose, what came of it. They are already on screen when it's played in place under an event. */
   seeded?: number;
+  /** Somebody already walked in on this one (engine/alive): once a scene is enough. */
+  walked?: boolean;
+  /** The log length when she last misheard you, so it's never twice running. */
+  misread_at?: number;
 }
 
 export const MOMENT_SYSTEM = `You continue a scene in Free Cities, an adult text game about owning an arcology where slavery is legal. The player owns the slave in the scene.
@@ -181,6 +186,16 @@ export async function playMoment(
     return { ok: true, prose };
   }
 
+  // The house goes on around the scene: now and then someone walks in, and now and then she hears
+  // you wrong. Decided here, from what's going on, and handed to the writer as one line each.
+  const yourLines = m.log.filter((l) => l.role === "you").length;
+  const beats: string[] = [];
+  if (reply && !walking && !m.walked && yourLines >= 2) {
+    const inn = walkIn(s, [m.person, ...(m.others ?? [])].filter((x): x is string => !!x), `${m.id}:${m.log.length}`);
+    if (inn) { m.walked = true; (m.others ??= []).push(inn.person.id); beats.push(walkInLine(inn)); }
+  }
+  if (reply && p && misreads(s, p, reply, `${m.id}:${m.log.length}`, m.misread_at !== undefined && m.log.length - m.misread_at <= 2)) { m.misread_at = m.log.length; beats.push(misreadLine(p)); }
+
   const card = p ? personCard(s, p, reply ?? m.title) : "";
   const city = !p && !walking;
   const others = (m.others ?? []).map((id) => s.people[id]).filter(Boolean) as Person[];
@@ -200,6 +215,7 @@ export async function playMoment(
     ownedBrief(s),
     `## THE SCENE SO FAR (${m.title})\n${coarsen(transcript(m))}`,
     reply ? `## THE PLAYER'S REPLY\n${reply}` : `## WRITE THIS MOMENT OUT IN FULL, then offer the options.`,
+    beats.length ? `## THIS TIME\n${beats.join("\n")}` : "",
     REGISTER_TAIL,
   ].filter(Boolean).join("\n\n");
 
