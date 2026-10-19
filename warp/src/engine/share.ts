@@ -222,6 +222,6 @@ export function ownedBrief(s: SaveState): string {
   const h = keeperOf(s);
   if (hand === "owner" || !h) return "";
   return hand === "shared"
-    ? `THE PLAYER IS ${h.name.toUpperCase()}'S SLAVE, AND STILL HAS A HAND IN RUNNING THINGS: things come to the player as they always did, but everyone knows ${h.name} can overrule them, and some people go to her instead.`
-    : `THE PLAYER IS ${h.name.toUpperCase()}'S SLAVE AND RUNS NOTHING: ${h.name} owns the arcology and decides. Things reach the player because people hope the player can reach her (they ask the player to put in a word), or because ${h.name} asks the player what they think, or because the player hears about it after. Write it that way: the player's choices are what they tell her, ask her, or do with what little they have.`;
+    ? `THE PLAYER IS ${h.name.toUpperCase()}'S SLAVE, AND STILL HAS A HAND IN RUNNING THINGS: things come to the player as they always did, but everyone knows ${h.name} can overrule them, and some people go to her instead. Between the two of them she decides; she tells the player, she doesn't ask them.`
+    : `THE PLAYER IS ${h.name.toUpperCase()}'S SLAVE AND RUNS NOTHING: ${h.name} owns the arcology and decides. Things reach the player because people hope the player can reach her (they ask the player to put in a word), or because ${h.name} asks the player what they think, or because the player hears about it after. Write it that way: the player's choices are what they tell her, ask her, or do with what little they have. When ${h.name} has decided something, she tells the player; she doesn't ask their opinion or their permission for what's hers to decide, and she doesn't need them to agree. The player's choice is how they take it.`;
 }

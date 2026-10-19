@@ -203,7 +203,7 @@ const PROBLEMS: Record<string, ProblemDef> = {
     chance: (_s, g) => (live(g).some((f) => f.leaning < -0.3) ? 0.06 : 0),
     text: (g, p, f) => `${f ? `${f.name}, ${f.role},` : "Someone in the city"} is holding meetings about ${p.name}: who she was before you collared her, and whether ${g.name} has to put up with her.` },
   her: { need: "you", hits: "her",
-    chance: (s, g, p) => (p.psyche.relaxation < -2 ? 0.3 : 0) + (s.arcology.week - (g.last_heard ?? g.since) > 5 ? 0.25 : 0) + (p.bond.hope < 25 ? 0.1 : 0),
+    chance: (s, g, p) => s.player.owned_by === p.id || (s.player.owned_by && s.reign?.hand !== "shared") ? 0 : (p.psyche.relaxation < -2 ? 0.3 : 0) + (s.arcology.week - (g.last_heard ?? g.since) > 5 ? 0.25 : 0) + (p.bond.hope < 25 ? 0.1 : 0),
     text: (g, p) => `${p.name} isn't coping. Her staff in ${g.name} say she's stopped sleeping, snaps at everyone, and spends the evenings alone asking whether you've called.` },
 };
 

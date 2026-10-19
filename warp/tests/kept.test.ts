@@ -83,3 +83,17 @@ function owned(seed: string, style: string) {
   s.reign!.portrait = "She keeps you on the floor and uses you when she's bored.";
   check("the reading of her wins in every scene", /HOW SHE KEEPS YOU.*on the floor/.test(personCard(s, her)));
 }
+
+// How you two do things is kept, and every scene with her carries it.
+{
+  const { addWays, setWays } = await import("../src/engine/ways.ts");
+  const { personCard } = await import("../src/engine/prompts.ts");
+  const { s, her } = owned("kept-ways", "stern");
+  addWays(s, her, ["he talks to her soles, never her face, and she answers through them"]);
+  addWays(s, her, ["He talks to her soles, never her face, and she answers through them."]);
+  check("a way you two do things is kept once", (her.ways ?? []).length === 1);
+  check("and her card says to keep it", /HOW YOU TWO DO THINGS[\s\S]*talks to her soles/.test(personCard(s, her)));
+  setWays(s, her, Array.from({ length: 14 }, (_, i) => `way number ${i} between them`));
+  check("a reading replaces the list, ten at most", (her.ways ?? []).length === 10 && /way number 0/.test(her.ways![0].text));
+  check("she tells you, she doesn't ask", /doesn't ask their opinion or their permission/.test(ownedBrief(s)));
+}

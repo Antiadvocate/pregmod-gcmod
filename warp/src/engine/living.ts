@@ -51,7 +51,7 @@ import { read } from "./obedience";
 import { romanceOf } from "./romance";
 import { clamp } from "./psyche";
 import { settledBrief, weightBrief } from "./fates";
-import { ownedBrief } from "./share";
+import { ownedBrief, handOf } from "./share";
 import { herDecides, readHer } from "./herwill";
 
 const ready = (s: SaveState) => modelsAvailable() && !s.models.lean_mode;
@@ -263,6 +263,9 @@ export async function writeLetters(s: SaveState): Promise<number> {
   for (const g of activeGovernors(s)) {
     const p = s.people[g.person];
     if (!p) continue;
+    // Once someone holds your collar, the governors report to her, not you, unless she lets you
+    // keep a hand in; and the one who holds it is in the room with you, not writing from an island.
+    if (p.id === s.player.owned_by || handOf(s) === "locked") continue;
     // She writes when something happened, or when she hasn't for a long time. Never to say all is well.
     const last = g.letters.at(-1)?.week ?? g.since - 1;
     const fresh = (g.news ?? []).filter((n) => n.week > last).length;
@@ -329,7 +332,8 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
   if (s.player.owned_by && s.reign && !s.reign.ended) {
     step(s.people[s.player.owned_by]?.name ?? "her");
     // Who she is with you is read from everything between you, first, and every couple of months.
-    if (s.reign.read_week === undefined || s.arcology.week - s.reign.read_week >= 8) await readHer(s);
+    const keeper = s.people[s.player.owned_by];
+    if (s.reign.read_week === undefined || s.arcology.week - s.reign.read_week >= 8 || !keeper?.ways?.length) await readHer(s);
     await herDecides(s);
   }
   const fresh = s.events.filter((e) => s.arcology.week - e.week <= 1 && !e.written && (e.kind !== "dynamic" || e.id.startsWith("echo-")) && e.kind !== "gov");

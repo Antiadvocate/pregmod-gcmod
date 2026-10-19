@@ -27,6 +27,7 @@ import { agreementsBrief, calledBy, houseRules } from "./agreements";
 import { reignCard, householdUnderHer, reignBrief } from "./reign";
 import { theKeeper } from "./romance";
 import { record, tiedTo } from "./others";
+import { waysBrief } from "./ways";
 import { cultureBrief } from "./culture";
 import { lawsBrief } from "./court";
 import type { Person, SaveState } from "./types";
@@ -185,6 +186,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (gov) lines.push(gov);
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
   const between = deedsBrief(s, p.id);
+  const ways = waysBrief(p);
+  if (ways) lines.push(ways);
   const manner = mannerBrief(s, p);
   if (manner) lines.push(manner);
   if (between) lines.push(`BETWEEN YOU AND HER (these happened in earlier weeks and are over; she has not forgotten):\n${between}`);

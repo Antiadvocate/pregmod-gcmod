@@ -26,6 +26,7 @@ import { remember } from "./memory";
 import { chronicle } from "./chronicle";
 import { lawScore, reignOf, decide, reterm, type Reign } from "./reign";
 import { selfBrief } from "./self";
+import { setWays } from "./ways";
 import { pushNorm } from "./culture";
 import { give, take, JOBS, JOB, YOUR_ITEMS, yourRoom, jobOf, weekTasks } from "./kept";
 import { orderDealt, asFate, settledBrief, weightBrief } from "./fates";
@@ -249,7 +250,7 @@ STYLE is one of: doting (gentle, protective, indulgent), stern (strict, expects 
 ${PLAIN_RULES}
 
 Output ONE strict JSON object and nothing else:
-{"style":"one STYLE","portrait":"4 to 6 plain sentences, second person, present tense, about how she keeps you: what she's like with you in private and in front of people, what she makes you do, what she gives you and what she holds back, what she won't put up with, and where her feelings for you show and where they don't. Specific to her and to what has happened between you."}`;
+{"style":"one STYLE","ways":["4 to 10 lines: the particular ways the two of them do things, taken from the evidence and kept exactly as they are between these two (rituals, how he talks to her and she to him, what she calls him, what he has to do, what always happens, what never does), so later scenes don't forget them"],"portrait":"4 to 6 plain sentences, second person, present tense, about how she keeps you: what she's like with you in private and in front of people, what she makes you do, what she gives you and what she holds back, what she won't put up with, and where her feelings for you show and where they don't. Specific to her and to what has happened between you."}`;
 
 const STYLES = ["doting", "stern", "cruel", "playful", "vengeful", "reluctant"] as const;
 
@@ -263,7 +264,11 @@ export async function readHer(s: SaveState, note?: string): Promise<boolean> {
   const h = s.player.owned_by ? s.people[s.player.owned_by] : undefined;
   if (!r || !h || !ready(s)) return false;
   const mem = s.memory[h.id];
-  const aboutYou = (mem?.episodic ?? []).filter((e) => /owner|you\b/i.test(e.content)).slice(-14).map((e) => `· week ${e.week}: ${e.content}`);
+  // All of it that's about you, the moments that defined you two first: a rule made in week 76 is
+  // still the rule.
+  const aboutYou = (mem?.episodic ?? []).filter((e) => /owner|you\b|\bhe\b|\bhim\b/i.test(e.content))
+    .sort((a, b) => Number(!!b.core) - Number(!!a.core) || b.importance - a.importance).slice(0, 30)
+    .sort((a, b) => a.week - b.week).map((e) => `· week ${e.week}: ${e.content}`);
   const scenes = (s.moments ?? []).filter((m) => m.person === h.id).slice(-3).map((m) => `${m.title} (week ${m.week}):\n${m.log.slice(-8).map((l) => (l.role === "you" ? `PLAYER: ${l.text}` : l.text)).join("\n").slice(-1600)}`);
   const deeds = (s.deeds ?? []).filter((d) => d.person === h.id).slice(-14).map((d) => `· week ${d.week}: ${d.summary}${d.tags.length ? ` [${d.tags.join(", ")}]` : ""}`);
   const res = await call({
@@ -280,16 +285,17 @@ export async function readHer(s: SaveState, note?: string): Promise<boolean> {
     model: s.models.narrator_model,
     fallback: s.models.fallback_model,
     json: true,
-    maxTokens: 700,
+    maxTokens: 1300,
     temperature: 0.6,
   });
-  const out = res.ok ? parseJson<{ style?: string; portrait?: string }>(res.text) : null;
+  const out = res.ok ? parseJson<{ style?: string; portrait?: string; ways?: string[] }>(res.text) : null;
   if (!out?.portrait || String(out.portrait).length < 40) return false;
   const style = (STYLES as readonly string[]).includes(String(out.style)) ? (out.style as Reign["style"]) : r.style;
   const changed = style !== r.style;
   r.style = style;
   r.portrait = coarsen(String(out.portrait)).replace(/\s+/g, " ").trim().slice(0, 1200);
   r.read_week = s.arcology.week;
+  if (Array.isArray(out.ways) && out.ways.length) setWays(s, h, out.ways.map((w) => coarsen(String(w))));
   // Early on, everything she first set up for you follows from who she turns out to be. Later, a
   // reading you asked for rewrites her rules; your room and job she changes in her own time.
   const early = s.arcology.week - r.since <= 3;

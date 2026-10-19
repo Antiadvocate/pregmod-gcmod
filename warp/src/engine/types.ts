@@ -470,6 +470,9 @@ export interface Person {
   agreements?: import("./agreements").Agreement[];
   /** How she is with particular people, other slaves or anyone outside, kept between scenes. See engine/manner. */
   manner?: import("./manner").Manner[];
+  /** How she and the player do things, settled over many scenes: rituals, the way they talk, what
+   *  always happens. Kept, so a scene doesn't reset to a stranger's version of them (engine/ways). */
+  ways?: { text: string; week: number }[];
   /** Gene treatments under way. See engine/fleshcraft. */
   growing?: import("./fleshcraft").Growing[];
   /** When she's been an idol. See engine/idols. */
