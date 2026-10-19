@@ -30,6 +30,7 @@ import "./plot.test.ts";
 import "./deeds.test.ts";
 import "./fates.test.ts";
 import "./share.test.ts";
+import "./kept.test.ts";
 import "./feetart.test.ts";
 import "./jobs.test.ts";
 import "./anatomy.test.ts";

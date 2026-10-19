@@ -9,7 +9,8 @@ import { momentsOf } from "../engine/moments";
 import { collarOffered, concludeMoment } from "../engine/deeds";
 import AssistantCard from "./Assistant";
 import { CollarOffer, Reaction as MomentReaction, OpenMoments } from "./MomentCard";
-import { askForHand, askWait, giveHandUp, handOf } from "../engine/share";
+import { askForHand, askWait, giveHandUp, handOf, throughHer } from "../engine/share";
+import { YourWeek, TalkToHer } from "./YourRoom";
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import type { Route } from "../App";
@@ -116,7 +117,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
       ) : null}
 
       {keeper ? (
-        <HandCard />
+        <><HandCard /><YourWeek /><TalkToHer /></>
       ) : null}
 
       <AssistantCard />
@@ -236,7 +237,11 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             ) : null}
             <Options options={choicesOf(e)} onPick={(o) => {
               let text = "";
-              mutate((s) => { text = resolveAny(s, e, o.id); });
+              // Once she holds your collar, what you pick goes through her.
+              mutate((s) => {
+                const via = e.kind.startsWith("reign_") ? { id: o.id, line: "" } : throughHer(s, "people", o, choicesOf(e));
+                text = [via.line, resolveAny(s, e, via.id)].filter(Boolean).join("\n\n");
+              });
               const out = { id: e.id, setup: e.seed, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined };
               setOutcomes((xs) => [...xs, { ...out, writing: modelsAvailable() && !save.models.lean_mode }]);
               // The choice played out, with what the engine decided as the facts.

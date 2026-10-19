@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Footprints } from "lucide-react";
 import { useGame } from "../lib/game";
 import { useHand } from "../lib/hand";
+import { allowed, NOT_ALLOWED } from "../engine/kept";
 import { Button, Card, Meter, Section, Stat, cx } from "../lib/ui";
 import { cultureOf, drivers, normLine, NORMS, NORM_IDS, type Norm } from "../engine/culture";
 import { customLawCost, customLawRep, writeLaw } from "../engine/court";
@@ -320,7 +321,9 @@ function Shape() {
 
 function Walk() {
   const { save } = useGame();
-  const mutate = useHand("laws");
+  const { mutate } = useGame();
+  const her = save.player.owned_by ? save.people[save.player.owned_by] : undefined;
+  const [barred, setBarred] = useState("");
   const [escort, setEscort] = useState("");
   const [on, setOn] = useState<string | null>(null);
   const house = Object.values(save.people).filter((p) => p.status === "owned" && p.age >= 5 && p.health.recovery_weeks === 0);
@@ -336,12 +339,13 @@ function Walk() {
       </div>
       <div className="grid gap-2 sm:grid-cols-3 mb-3">
         {places(save).map((pl) => (
-          <button key={pl.id} className="actbtn text-left" onClick={() => { let id = ""; mutate((s) => { id = startWalk(s, pl.id, escort || undefined); }); setOn(id); }}>
+          <button key={pl.id} className="actbtn text-left" onClick={() => { if (!allowed(save, "city")) { setBarred(NOT_ALLOWED.city(her?.name ?? "She")); return; } let id = ""; mutate((s) => { id = startWalk(s, pl.id, escort || undefined); }); setOn(id); }}>
             <span className="flex items-center gap-1.5 text-[13px]"><Footprints size={13} /> {pl.name}</span>
             <span className="block text-[11px] dim">{pl.blurb}</span>
           </button>
         ))}
       </div>
+      {barred ? <p className="text-[12.5px] acc mb-2">{barred}</p> : null}
       {on ? <MomentCard id={on} onClose={() => setOn(null)} /> : null}
       {open.length ? (
         <div className="mt-3 space-y-1.5">

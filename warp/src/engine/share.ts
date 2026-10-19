@@ -176,3 +176,52 @@ export function tickHand(s: SaveState, h: Person, r: Reign): string | null {
   }
   return null;
 }
+
+/* ── what reaches you, once she runs things ─────────────────────────────────────────────────── */
+
+/** Which of these she'd pick herself, by who she is. */
+export function herPick(s: SaveState, options: { id: string; label: string }[]): { id: string; label: string } | undefined {
+  const r = s.reign, h = keeperOf(s);
+  if (!r || !h || !options.length) return options[0];
+  const warm = r.style === "doting" || r.style === "reluctant" || h.persona.conscience > 0.65;
+  const cold = r.style === "cruel" || r.style === "vengeful" || h.persona.conscience < 0.35;
+  const score = (l: string) => (HARSH.test(l) ? (cold ? 2 : warm ? -2 : 0) : 0) + (SOFT.test(l) ? (warm ? 2 : cold ? -2 : 0) : 0) + (/\b(refuse|ignore|nothing|wait|leave it)\b/i.test(l) && r.style === "stern" ? 1 : 0);
+  return [...options].sort((a, b) => score(b.label) - score(a.label))[0];
+}
+
+/**
+ * A decision that comes to you, once she holds your collar. With a hand in, she may overrule
+ * what you picked. Locked out, what you pick is only advice: she takes it if she trusts you and
+ * it suits her, and otherwise does what she'd have done. Returns the choice that actually
+ * happens, and a line saying how it went, or none when it simply went your way.
+ */
+export function throughHer(s: SaveState, domain: Domain, chosen: { id: string; label: string }, options: { id: string; label: string }[]): { id: string; line: string } {
+  const hand = handOf(s);
+  const h = keeperOf(s), r = s.reign;
+  if (hand === "owner" || !h || !r) return { id: chosen.id, line: "" };
+  if (hand === "shared") {
+    const v = herSay(s, domain, chosen.label);
+    if (v.ok) return { id: chosen.id, line: "" };
+    const hers = herPick(s, options.filter((o) => o.id !== chosen.id)) ?? chosen;
+    return { id: hers.id, line: `${v.line} What she did instead: ${hers.label.replace(/^./, (c) => c.toLowerCase())}.` };
+  }
+  const t = read(h, s.memory[h.id]).trust;
+  const listens = { reluctant: 0.9, doting: 0.6, playful: 0.4, stern: 0.35, cruel: 0.15, vengeful: 0.1 }[r.style] + (t - 40) / 200 + r.favour / 300;
+  const yes = rng(`advice:${s.arcology.week}:${h.id}:${chosen.label.toLowerCase()}`)() < listens;
+  const hers = yes ? chosen : herPick(s, options) ?? chosen;
+  const line = hers.id === chosen.id
+    ? `You told ${h.name} what you'd do. She did it.`
+    : `You told ${h.name} what you'd do. She listened, and then did it her way: ${hers.label.replace(/^./, (c) => c.toLowerCase())}.`;
+  r.favour = clamp(r.favour + (hers.id === chosen.id ? 1 : 0), -100, 100);
+  return { id: hers.id, line };
+}
+
+/** For the people writing what reaches you: who decides, and how things get to you now. */
+export function ownedBrief(s: SaveState): string {
+  const hand = handOf(s);
+  const h = keeperOf(s);
+  if (hand === "owner" || !h) return "";
+  return hand === "shared"
+    ? `THE PLAYER IS ${h.name.toUpperCase()}'S SLAVE, AND STILL HAS A HAND IN RUNNING THINGS: things come to the player as they always did, but everyone knows ${h.name} can overrule them, and some people go to her instead.`
+    : `THE PLAYER IS ${h.name.toUpperCase()}'S SLAVE AND RUNS NOTHING: ${h.name} owns the arcology and decides. Things reach the player because people hope the player can reach her (they ask the player to put in a word), or because ${h.name} asks the player what they think, or because the player hears about it after. Write it that way: the player's choices are what they tell her, ask her, or do with what little they have.`;
+}

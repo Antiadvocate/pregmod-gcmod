@@ -4,6 +4,7 @@
  * The scene, then the choices, then what came of the one you took — all in the same card, so the
  * answer is where you tapped. A choice that needs one of your people opens a picker in place.
  */
+import { throughHer } from "../engine/share";
 import { useMemo, useState } from "react";
 import { BookOpen, Lock } from "lucide-react";
 import { useGame } from "../lib/game";
@@ -47,7 +48,12 @@ export default function StoryCard() {
   const choose = (o: OptionView, who?: string) => {
     let a: Answer | null = null;
     const setup = p.beat.text(p.c);
-    mutate((s) => { a = answer(s, o.id, who); });
+    // Once she holds your collar, what you pick goes through her.
+    mutate((s) => {
+      const via = throughHer(s, "people", o, opts.filter((x) => !x.locked && (!x.pick || x.id === o.id)));
+      a = answer(s, via.id, via.id === o.id ? who : undefined);
+      if (a && via.line) (a as Answer).text = `${via.line}\n\n${(a as Answer).text}`;
+    });
     setPicking(null);
     if (a) setDone({ ...(a as Answer), setup });
   };

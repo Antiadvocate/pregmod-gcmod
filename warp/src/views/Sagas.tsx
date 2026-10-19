@@ -6,6 +6,7 @@
  * Under it, the threads: the ways it could still end, what you've established, and each person's
  * turns, in order, so you can watch someone become who they are by the end.
  */
+import { throughHer } from "../engine/share";
 import { useMemo, useRef, useState } from "react";
 import { BookOpen, ChevronDown, ChevronRight, Loader2, Lock, PenLine, RotateCcw, Shuffle, Square } from "lucide-react";
 import { useGame } from "../lib/game";
@@ -102,8 +103,14 @@ function SagaCard({ id }: { id: string }) {
   const take = (i: number) => {
     const ch = x.chapter!;
     let r: ReturnType<typeof choose> = null;
-    mutate((s) => { r = choose(s, x.id, i); });
-    if (r) setAfter({ ...(r as NonNullable<ReturnType<typeof choose>>), chose: ch.options[i].label, title: ch.title, setup: ch.text });
+    let line = "", took = i;
+    mutate((s) => {
+      const pool = ch.options.map((o, j) => ({ id: String(j), label: o.label })).filter((o) => !locked(s, x, ch.options[Number(o.id)]));
+      const via = throughHer(s, "people", { id: String(i), label: ch.options[i].label }, pool);
+      took = Number(via.id); line = via.line;
+      r = choose(s, x.id, took);
+    });
+    if (r) { const got = r as NonNullable<ReturnType<typeof choose>>; setAfter({ ...got, outcome: line ? `${line}\n\n${got.outcome}` : got.outcome, chose: ch.options[took].label, title: ch.title, setup: ch.text }); }
   };
   const answer = () => run(async (w) => {
     const ch = x.chapter!;

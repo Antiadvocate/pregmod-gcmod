@@ -32,7 +32,7 @@ if (typeof document !== "undefined") {
 const FREE = /^(close|back|done|cancel|more|less|show|hide|open|view|details|×|x|ok|next|prev|previous|see|read|expand|collapse|all|none|filter|sort|forget|edit|paint|portrait|be with|go to|talk|ask)\b/i;
 
 const listeners = new Set<(t: string) => void>();
-function toast(text: string) { for (const l of listeners) l(text); }
+export function toast(text: string) { for (const l of listeners) l(text); }
 
 export function useHand(domain: Domain): (fn: (s: SaveState) => void) => void {
   const { mutate } = useGame();
@@ -63,7 +63,7 @@ export function HandToast() {
 }
 
 /** A screen you run things from. Locked out, you see it all and can't touch it. */
-export function Held({ domain, children }: { domain: Domain; children: ReactNode }) {
+export function Held({ domain, children, soft }: { domain: Domain; children: ReactNode; soft?: boolean }) {
   const { save } = useGame();
   const hand = handOf(save);
   if (hand === "owner") return <>{children}</>;
@@ -75,7 +75,7 @@ export function Held({ domain, children }: { domain: Domain; children: ReactNode
           ? <>{her?.name ?? "She"} runs {DOMAIN_WORDS[domain]} now. You can see what she's doing with it; you can't change any of it.</>
           : <>You still run {DOMAIN_WORDS[domain]}, with {her?.name ?? "her"} watching. She can stop anything you do here.</>}
       </div>
-      {hand === "locked"
+      {hand === "locked" && !soft
         ? <div aria-disabled style={{ pointerEvents: "none", opacity: 0.72, userSelect: "none" }}>{children}</div>
         : children}
     </>

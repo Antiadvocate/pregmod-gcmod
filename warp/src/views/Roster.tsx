@@ -15,7 +15,8 @@ import { describeGenitals, describeFeet, mobility, dickCM, ballsWord, vaginaWord
 import { useMemo, useState, useRef } from "react";
 import { Search, X } from "lucide-react";
 import { useGame } from "../lib/game";
-import { useHand } from "../lib/hand";
+import { useHand, toast } from "../lib/hand";
+import { allowed, NOT_ALLOWED } from "../engine/kept";
 import { Button, Card, Chip, Empty, Field, Meter, Money, Section, Sheet, cx } from "../lib/ui";
 import type { Assignment, Person } from "../engine/types";
 import { explain, read } from "../engine/obedience";
@@ -55,6 +56,11 @@ export default function Roster() {
   const [sort, setSort] = useState<Sort>("trouble");
   const [openId, setOpenId] = useState<string | null>(null);
   const [withId, setWithId] = useState<string | null>(null);
+  // Once she owns you, seeing the others is something she lets you do, or doesn't.
+  const withHer = (id: string) => {
+    if (id !== save.player.owned_by && !allowed(save, "others")) { toast(NOT_ALLOWED.others(save.people[save.player.owned_by!]?.name ?? "She")); return; }
+    setWithId(id);
+  };
   const [dressId, setDressId] = useState<string | null>(null);
   const [showFreed, setShowFreed] = useState(() => { try { return localStorage.getItem("warp:show-freed") === "1"; } catch { return false; } });
   const toggleFreed = () => setShowFreed((v) => { try { localStorage.setItem("warp:show-freed", v ? "0" : "1"); } catch { /* private window */ } return !v; });
@@ -101,7 +107,7 @@ export default function Roster() {
 
       {people.length ? (
         <div className="grid gap-2.5 sm:grid-cols-2">
-          {people.map((p) => <RosterCard key={p.id} p={p} onOpen={() => setOpenId(p.id)} onWith={() => setWithId(p.id)} />)}
+          {people.map((p) => <RosterCard key={p.id} p={p} onOpen={() => setOpenId(p.id)} onWith={() => withHer(p.id)} />)}
         </div>
       ) : <Empty>Nobody yet. Buy someone at the Market.</Empty>}
 
@@ -132,7 +138,7 @@ export default function Roster() {
         { id: "menials", label: "Menials", badge: save.menials?.owned ? save.menials.owned.toLocaleString() : undefined, render: () => <MenialsPanel /> },
       ]} />
       <Sheet open={!!openId} onClose={() => setOpenId(null)} title={openId ? save.people[openId]?.name ?? "" : ""} wide>
-        {openId && save.people[openId] ? <PersonPanel id={openId} onClose={() => setOpenId(null)} onWith={() => setWithId(openId)} onDress={() => setDressId(openId)} /> : null}
+        {openId && save.people[openId] ? <PersonPanel id={openId} onClose={() => setOpenId(null)} onWith={() => withHer(openId)} onDress={() => setDressId(openId)} /> : null}
       </Sheet>
       {withId && save.people[withId] ? <Interact id={withId} onClose={() => setWithId(null)} /> : null}
       {dressId && save.people[dressId] ? <Dressing id={dressId} onClose={() => setDressId(null)} /> : null}

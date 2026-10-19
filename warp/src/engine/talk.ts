@@ -7,6 +7,7 @@
  * conversation is kept, and every deal goes into the chronicle, so the next time you speak they
  * remember the last time.
  */
+import { allowed as mayI, NOT_ALLOWED } from "./kept";
 import type { SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
@@ -58,6 +59,7 @@ warmth is how this exchange changed your opinion of the player, from -5 to 5. ag
 export async function speakToPower(s: SaveState, id: string, said: string): Promise<TalkResult> {
   const p = powerById(s, id);
   if (!p) return { ok: false, says: "", deals: [], error: "no such power" };
+  if (!mayI(s, "calls")) return { ok: false, says: "", deals: [], error: NOT_ALLOWED.calls(s.people[s.player.owned_by!]?.name ?? "She") };
   if (!modelsAvailable()) return { ok: false, says: "", deals: [], error: "Talking needs a model. Set one in Settings." };
   const talk = talkOf(s, id);
   const week = s.arcology.week;
@@ -142,6 +144,7 @@ export async function speakToGovernor(s: SaveState, placeId: string, said: strin
   const g = governorshipOf(s, placeId);
   const p = g ? s.people[g.person] : undefined;
   if (!g || !p) return { ok: false, says: "", deals: [], error: "nobody is governing there" };
+  if (!mayI(s, "calls")) return { ok: false, says: "", deals: [], error: NOT_ALLOWED.calls(s.people[s.player.owned_by!]?.name ?? "She") };
   if (!modelsAvailable()) return { ok: false, says: "", deals: [], error: "Talking needs a model. Set one in Settings." };
   const week = s.arcology.week;
   if (!g.used || g.used.week !== week) g.used = { week, n: 0 };
