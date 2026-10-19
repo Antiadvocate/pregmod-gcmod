@@ -24,9 +24,10 @@ import { freeHer } from "./freed";
 import { applyTreatment, read } from "./obedience";
 import { remember } from "./memory";
 import { chronicle } from "./chronicle";
-import { lawScore, reignOf, decide, type Reign } from "./reign";
+import { lawScore, reignOf, decide, reterm, type Reign } from "./reign";
+import { selfBrief } from "./self";
 import { pushNorm } from "./culture";
-import { give, take, JOBS, JOB, YOUR_ITEMS } from "./kept";
+import { give, take, JOBS, JOB, YOUR_ITEMS, yourRoom, jobOf, weekTasks } from "./kept";
 import { orderDealt, asFate, settledBrief, weightBrief } from "./fates";
 import { knownFaces } from "./faces";
 import { clamp } from "./psyche";
@@ -231,4 +232,71 @@ function offlineAnswer(s: SaveState, h: Person, r: Reign): string {
   last.answer = yes ? "yes" : "no";
   last.took = yes;
   return yes ? `${h.name} hears you out, and says she'll do it.` : `${h.name} hears you out, and says no.`;
+}
+
+/* ── who she is with you ────────────────────────────────────────────────────────────────────── */
+
+const READ_SYSTEM = `You read one woman in Free Cities, an adult game about owning an arcology where slavery is legal. She used to be the player's slave and now she holds the player's collar: the player is her slave. Decide how she actually keeps the player, from the evidence, and write it down so every later scene gets it right.
+
+Read the evidence, all of it, and weigh it in this order:
+1. What the player says about themself, and anything they've said about how they want to be treated or what they are. She knows the player; she isn't blind to who they are.
+2. How it has actually gone between them: the scenes, what she did to the player and what the player did to her, who topped whom, what she said, what the player told her, what she remembers.
+3. Who she is: her personality, her conscience, her tastes, what she's into.
+Loving someone and being soft with them are different things. A woman can adore the player and still keep them hard, strictly, cruelly or as a toy, if that's who she is or how it has gone between them. Only call her gentle if the evidence says gentle. Never default to a sweet, protective girlfriend. If she's been dominant with the player, she stays dominant. If she's resented them, it shows.
+
+STYLE is one of: doting (gentle, protective, indulgent), stern (strict, expects obedience, fair), cruel (enjoys hurting and using the player), playful (owning the player is a game, teasing, toying, showing them off), vengeful (paying the player back for what they did to her), reluctant (never wanted it, keeps handing decisions back).
+
+${PLAIN_RULES}
+
+Output ONE strict JSON object and nothing else:
+{"style":"one STYLE","portrait":"4 to 6 plain sentences, second person, present tense, about how she keeps you: what she's like with you in private and in front of people, what she makes you do, what she gives you and what she holds back, what she won't put up with, and where her feelings for you show and where they don't. Specific to her and to what has happened between you."}`;
+
+const STYLES = ["doting", "stern", "cruel", "playful", "vengeful", "reluctant"] as const;
+
+/**
+ * Read her: how she keeps you, from what you say about yourself, everything that has passed
+ * between you, and who she is. Done in her first week, every couple of months after, and whenever
+ * you say it isn't her. In her first weeks her terms and your room follow from it.
+ */
+export async function readHer(s: SaveState, note?: string): Promise<boolean> {
+  const r = reignOf(s);
+  const h = s.player.owned_by ? s.people[s.player.owned_by] : undefined;
+  if (!r || !h || !ready(s)) return false;
+  const mem = s.memory[h.id];
+  const aboutYou = (mem?.episodic ?? []).filter((e) => /owner|you\b/i.test(e.content)).slice(-14).map((e) => `· week ${e.week}: ${e.content}`);
+  const scenes = (s.moments ?? []).filter((m) => m.person === h.id).slice(-3).map((m) => `${m.title} (week ${m.week}):\n${m.log.slice(-8).map((l) => (l.role === "you" ? `PLAYER: ${l.text}` : l.text)).join("\n").slice(-1600)}`);
+  const deeds = (s.deeds ?? []).filter((d) => d.person === h.id).slice(-14).map((d) => `· week ${d.week}: ${d.summary}${d.tags.length ? ` [${d.tags.join(", ")}]` : ""}`);
+  const res = await call({
+    system: READ_SYSTEM,
+    user: [
+      selfBrief(s),
+      `## HER\n${personCard(s, h)}`,
+      r.portrait ? `## THE GAME'S LAST READING OF HER (may be wrong)\n${r.portrait}` : "",
+      deeds.length ? `## WHAT HAS PASSED BETWEEN YOU, SCENE BY SCENE\n${deeds.join("\n")}` : "",
+      aboutYou.length ? `## WHAT SHE REMEMBERS ABOUT THE PLAYER\n${aboutYou.join("\n")}` : "",
+      scenes.length ? `## THE LAST SCENES WITH HER\n${scenes.join("\n\n")}` : "",
+      note?.trim() ? `## THE PLAYER SAYS THE LAST READING WAS WRONG, AND WHY (take this seriously)\n${note.trim()}` : "",
+    ].filter(Boolean).join("\n\n"),
+    model: s.models.narrator_model,
+    fallback: s.models.fallback_model,
+    json: true,
+    maxTokens: 700,
+    temperature: 0.6,
+  });
+  const out = res.ok ? parseJson<{ style?: string; portrait?: string }>(res.text) : null;
+  if (!out?.portrait || String(out.portrait).length < 40) return false;
+  const style = (STYLES as readonly string[]).includes(String(out.style)) ? (out.style as Reign["style"]) : r.style;
+  const changed = style !== r.style;
+  r.style = style;
+  r.portrait = coarsen(String(out.portrait)).replace(/\s+/g, " ").trim().slice(0, 1200);
+  r.read_week = s.arcology.week;
+  // Early on, everything she first set up for you follows from who she turns out to be. Later, a
+  // reading you asked for rewrites her rules; your room and job she changes in her own time.
+  const early = s.arcology.week - r.since <= 3;
+  if (changed && (early || note?.trim())) {
+    reterm(s, h, r);
+    if (early) { delete r.room; delete r.job; yourRoom(s); jobOf(s); r.tasks = weekTasks(s, r); }
+    s.notifications.push({ id: `read-${s.arcology.week}-${s.notifications.length}`, week: s.arcology.week, text: `${h.name} has new rules for you: you call her "${r.her_title}", you wear ${r.dress}, and you sleep ${r.sleep}.`, kind: "warning", person: h.id, seen: false });
+  }
+  return true;
 }

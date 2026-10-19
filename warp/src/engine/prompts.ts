@@ -161,7 +161,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(`TALKS LIKE: ${p.persona.speech_pattern}${p.persona.voice?.example_lines?.length ? ` — e.g. "${p.persona.voice.example_lines[0]}"` : ""}`);
   if (p.persona.voice?.never_says?.length) lines.push(`NEVER SAYS: ${p.persona.voice.never_says.join("; ")}`);
   // Words, not scores: a number on the card turns up in her mouth as one.
-  lines.push(`TOWARD YOU: ${r.label}, ${r.trust_label}.${r.fragility > 0.6 ? " Most of her obedience is fear." : ""}`);
+  if (s.player.owned_by === p.id) lines.push(`HOW SHE FEELS ABOUT YOU: ${r.trust_label}${r.devotion > 40 ? ", and she's attached to you" : r.devotion < -15 ? ", and she has no love for you" : ""}. That is a feeling, not a manner: how she treats you is under HOW SHE KEEPS YOU, and attachment doesn't make her gentle unless that says so.`);
+  else lines.push(`TOWARD YOU: ${r.label}, ${r.trust_label}.${r.fragility > 0.6 ? " Most of her obedience is fear." : ""}`);
   const power = powerBetween(s, p);
   if (power) lines.push(power);
   lines.push(`HOW SHE IS DOING: ${condition(p)}; mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` On her mind: ${p.psyche.active_states.join(", ")}.` : ""}`);

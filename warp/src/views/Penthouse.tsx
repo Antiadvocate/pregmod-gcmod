@@ -11,6 +11,8 @@ import AssistantCard from "./Assistant";
 import { CollarOffer, Reaction as MomentReaction, OpenMoments } from "./MomentCard";
 import { askForHand, askWait, giveHandUp, handOf, throughHer } from "../engine/share";
 import { YourWeek, TalkToHer } from "./YourRoom";
+import { readHer } from "../engine/herwill";
+import { STYLE_NOTE } from "../engine/reign";
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import type { Route } from "../App";
@@ -413,6 +415,7 @@ function HandCard() {
       <p className="text-[13px]">{hand === "shared"
         ? <>{keeper.name} owns you, and lets you keep running things. She can stop anything you do.</>
         : <>{keeper.name} runs {save.arcology.name} now. You can see everything she does with it; you can't change any of it.</>}</p>
+      <HowSheKeepsYou />
       {recent.length ? <ul className="mt-2 space-y-0.5 text-[12px] mid">{recent.map((x, i) => <li key={i}>· week {x.week}: {x.line}</li>)}</ul> : null}
       <div className="flex flex-wrap gap-2 mt-2">
         {hand === "locked"
@@ -420,6 +423,41 @@ function HandCard() {
           : <Button size="sm" kind="ghost" onClick={() => { let l = ""; mutate((s) => { l = giveHandUp(s); }); setSaid(l); }}>Give her all of it</Button>}
       </div>
       {said ? <p className="text-[12.5px] mt-2 acc">{said}</p> : null}
+    </div>
+  );
+}
+
+/** How the game reads her with you, and a way to say it's wrong. Every scene with her gets this. */
+function HowSheKeepsYou() {
+  const { save, mutate } = useGame();
+  const [fixing, setFixing] = useState(false);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const r = save.reign;
+  if (!r || r.ended) return null;
+  const go = async () => {
+    setBusy(true); setErr("");
+    const ok = await readHer(save, note);
+    mutate(() => {});
+    setBusy(false);
+    if (ok) { setFixing(false); setNote(""); } else setErr("That didn't work; try again.");
+  };
+  return (
+    <div className="mt-2">
+      <p className="text-[12.5px] font-prose mid">{r.portrait ?? STYLE_NOTE[r.style]}</p>
+      {modelsAvailable() ? (!fixing
+        ? <button className="text-[11.5px] dim underline mt-1" onClick={() => setFixing(true)}>that isn't her</button>
+        : (
+          <div className="mt-2">
+            <textarea className="w-full" rows={3} placeholder="What's wrong with it: how she's actually treated you, what you've told her, what you are to her." value={note} onChange={(e) => setNote(e.target.value)} />
+            <div className="flex gap-2 mt-1">
+              <Button size="sm" kind="primary" disabled={busy} onClick={() => void go()}>{busy ? "Reading her again…" : "Read her again"}</Button>
+              <Button size="sm" kind="ghost" onClick={() => setFixing(false)}>never mind</Button>
+            </div>
+            {err ? <p className="text-[12px] bad mt-1">{err}</p> : null}
+          </div>
+        )) : null}
     </div>
   );
 }

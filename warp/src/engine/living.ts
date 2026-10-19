@@ -52,7 +52,7 @@ import { romanceOf } from "./romance";
 import { clamp } from "./psyche";
 import { settledBrief, weightBrief } from "./fates";
 import { ownedBrief } from "./share";
-import { herDecides } from "./herwill";
+import { herDecides, readHer } from "./herwill";
 
 const ready = (s: SaveState) => modelsAvailable() && !s.models.lean_mode;
 
@@ -312,7 +312,12 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
   const snap = weekSnapshot(s, report);
   if (report) { step("the week"); await writeWeekProse(s, report); }
   // Once she holds your collar, she decides her own week before anything is written about it.
-  if (s.player.owned_by && s.reign && !s.reign.ended) { step(s.people[s.player.owned_by]?.name ?? "her"); await herDecides(s); }
+  if (s.player.owned_by && s.reign && !s.reign.ended) {
+    step(s.people[s.player.owned_by]?.name ?? "her");
+    // Who she is with you is read from everything between you, first, and every couple of months.
+    if (s.reign.read_week === undefined || s.arcology.week - s.reign.read_week >= 8) await readHer(s);
+    await herDecides(s);
+  }
   const fresh = s.events.filter((e) => s.arcology.week - e.week <= 1 && !e.written && e.kind !== "dynamic" && e.kind !== "gov");
   for (const e of fresh) { step(e.person ? `${s.people[e.person]?.name ?? "her"}` : "what happened"); await writeEvent(s, e, snap); }
   for (const w of pickWants(s)) {

@@ -78,6 +78,11 @@ export interface Reign {
   room?: import("./kept").YourRoom;
   job?: string;
   tasks?: import("./kept").Task[];
+  /** How she keeps you, read from everything between you by the model (engine/herwill). Wins over
+   *  the style's stock note in every scene. */
+  portrait?: string;
+  /** When she was last read. */
+  read_week?: number;
   /** What you've asked or advised her this week, and what she said back (engine/herwill). */
   advice?: { week: number; text: string; answer?: string; took?: boolean }[];
 }
@@ -113,15 +118,32 @@ export const STYLE_NOTE: Record<ReignStyle, string> = {
 const fet = (p: Person, n: string) => p.persona.fetishes.find((f) => f.name === n)?.strength ?? 0;
 const pname = (s: SaveState) => (s.player.name && s.player.name !== "you" ? s.player.name : "pet");
 
+/**
+ * Without a model, her style from the numbers. Loving you doesn't make her soft: a woman with a
+ * dominant or sadistic streak keeps you the way that streak wants whatever she feels, and what has
+ * already passed between you (her topping you, you deferring to her) counts. Doting is what's left
+ * for a kind woman with no taste for it. With a model, engine/herwill reads her properly instead.
+ */
 export function styleOf(s: SaveState, her: Person): ReignStyle {
   const tilt = memoryTilt(s.memory[her.id]);
   const hurt = (s.deeds ?? []).filter((d) => d.person === her.id && d.tags.some((t) => ["cruelty", "humiliated_her", "punished", "threatened_sale", "promise_broken"].includes(t))).length;
+  // How it has gone between you: her on top, you deferring to her.
+  const topped = (s.deeds ?? []).filter((d) => d.person === her.id && d.tags.some((t) => ["bottomed", "owner_submitted", "feet_worship"].includes(t))).length;
+  const dom = fet(her, "dom") + fet(her, "sadist") + fet(her, "humiliation") / 2 + topped * 8;
   if (her.bond.resentment > 45 || tilt < -0.1 || hurt >= 2) return "vengeful";
-  if (fet(her, "submissive") >= 50 && fet(her, "dom") < 30 && fet(her, "sadist") < 30) return "reluctant";
-  if ((her.persona.conscience < 0.35 && fet(her, "sadist") + fet(her, "dom") + fet(her, "humiliation") >= 40) || her.persona.conscience < 0.2) return "cruel";
-  if (her.persona.conscience > 0.6 && her.bond.bond > 50) return "doting";
+  if (fet(her, "submissive") >= 50 && dom < 30) return "reluctant";
+  if ((her.persona.conscience < 0.35 && dom >= 40) || her.persona.conscience < 0.2) return "cruel";
+  if (dom >= 55) return her.persona.conscience < 0.5 && fet(her, "sadist") >= 40 ? "cruel" : (her.persona.gregariousness ?? 0.5) > 0.65 || fet(her, "humiliation") >= 40 ? "playful" : "stern";
+  if (her.persona.conscience > 0.6 && her.bond.bond > 50 && dom < 25) return "doting";
   if ((her.persona.gregariousness ?? 0.5) > 0.65 || fet(her, "humiliation") >= 40) return "playful";
   return "stern";
+}
+
+/** Her terms again, after she's been read properly in her first weeks: what you call each other,
+ *  what you wear, where you sleep, your duties. */
+export function reterm(s: SaveState, her: Person, r: Reign): void {
+  Object.assign(r, terms(s, her, r.style));
+  writeRules(s, her, r);
 }
 
 function terms(s: SaveState, her: Person, style: ReignStyle): Pick<Reign, "her_title" | "your_name" | "dress" | "sleep" | "duties"> {
@@ -673,7 +695,7 @@ export function reignCard(s: SaveState, h: Person): string {
   const r = reignOf(s);
   if (!r || r.keeper !== h.id) return "";
   return [
-    `SHE OWNS YOU. She holds your collar and runs ${s.arcology.name}; write her that way, every scene. ${STYLE_NOTE[r.style]}`,
+    `SHE OWNS YOU. She holds your collar and runs ${s.arcology.name}; write her that way, every scene. ${r.portrait ? `HOW SHE KEEPS YOU (read from everything between you; this wins over anything else on her card, including how she feels about you): ${r.portrait}` : STYLE_NOTE[r.style]}`,
     `HER RULES FOR YOU (she enforces them): you call her "${r.her_title}"; she calls you "${r.your_name}"; you wear ${r.dress}; you sleep ${r.sleep}; you ${r.duties.join("; you ")}.`,
     r.cuck && r.cuck.stage > 0 ? `SHE HAS A LOVER: ${r.cuck.name} (${r.cuck.who}), and you are her cuckold${r.cuck.public ? ", and the city knows it" : ""}. ${r.cuck.watches ? "She makes you watch, and serve them. " : ""}${r.cuck.stage >= 3 ? `${r.cuck.name} sleeps in her bed; you don't. ` : ""}${r.cuck.child ? `She's carrying ${r.cuck.name}'s child${r.cuck.child === "yours" ? ", which you will raise as yours" : ""}. ` : ""}` : "",
     roomBrief(s),

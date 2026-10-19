@@ -64,3 +64,22 @@ function owned(seed: string, style: string) {
   check("what she decides, happens", lawsOf(s).some((x) => x.id === law.id) && s.reign!.job === "brothel" && did.length >= 2, did);
   check("and you hear about it", s.notifications.some((n) => n.id.startsWith("her-")));
 }
+
+// Loving her owner doesn't make a dominant woman soft.
+{
+  const { styleOf } = await import("../src/engine/reign.ts");
+  const { selfProfile } = await import("../src/engine/self.ts");
+  const { personCard } = await import("../src/engine/prompts.ts");
+  const { s, her } = owned("kept-dom", "stern");
+  her.persona.conscience = 0.8; her.bond.bond = 90; her.bond.resentment = 0;
+  her.persona.fetishes = [{ name: "dom", strength: 70, known: true }];
+  check("a kind woman with a dominant streak isn't read as doting", styleOf(s, her) !== "doting", styleOf(s, her));
+  her.persona.fetishes = [];
+  for (let i = 0; i < 8; i++) (s.deeds ??= []).push({ id: `d${i}`, week: 1, person: her.id, summary: "She made you kneel.", tags: ["bottomed"], public: false, witnesses: [], effects: [], source: "test" });
+  check("nor is one who has been topping you all along", styleOf(s, her) !== "doting", styleOf(s, her));
+  s.player.self = "I'm a pain slut. I want to be used and kept hard.";
+  check("your own words are read as what being owned is for you", selfProfile(s).some((l) => /what being owned is for them/.test(l) && /pain slut/.test(l)));
+  check("her feelings for you aren't written as softness", /That is a feeling, not a manner/.test(personCard(s, her)));
+  s.reign!.portrait = "She keeps you on the floor and uses you when she's bored.";
+  check("the reading of her wins in every scene", /HOW SHE KEEPS YOU.*on the floor/.test(personCard(s, her)));
+}
