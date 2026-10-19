@@ -22,6 +22,7 @@ import { generatePerson } from "./generate";
 import { NATIONS } from "../data/people";
 import { sagaFaces } from "./saga";
 import { isOwnerName } from "./you";
+import { known, record } from "./others";
 
 export interface Face {
   name: string;
@@ -43,7 +44,20 @@ export interface Face {
   seen: number;
   /** Dealt with: killed, ruined, driven out, locked up or bought off (engine/fates). */
   fate?: import("./fates").Settled;
+  /** What they do and who they are, in a few words: "runs the fish market on the lower docks". */
+  what?: string;
+  /** What they remember: what happened when they turned up, in their terms. Newest last. */
+  notes?: { week: number; text: string }[];
+  likes?: string;
+  dislikes?: string;
+  /** Who they are to people: "married to Ana", "owes the player ¤20,000". A person id when it's one of yours. */
+  ties?: { what: string; person?: string }[];
+  /** Toward the player, −100 … 100. */
+  toward?: number;
+  /** Kept on file whatever happens. Set when you pin them, or when they matter to one of yours. */
+  kept?: boolean;
 }
+
 
 export const keyOf = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
 export const facesOf = (s: SaveState): Record<string, Face> => (s.faces ??= {});
@@ -200,13 +214,14 @@ export function parseCast(text: string): { prose: string; cast: (Partial<Face> &
   return { prose: kept.join("\n").trim(), cast };
 }
 
+
 /** For the model: who has been met, so a returning face is described the same, and the line to add. */
 export function castBrief(s: SaveState, text: string): string {
   const named = facesIn(s, text, 6);
   const recent = knownFaces(s).filter((f) => f.seen > 0).sort((a, b) => b.last - a.last).slice(0, 6);
   const list = [...new Map([...named, ...recent].map((f) => [f.name, f])).values()].slice(0, 10);
   const fate = (f: Face) => (f.fate ? ` [${f.fate.fate === "dead" ? "DEAD" : f.fate.fate === "bought" ? "BOUGHT OFF" : f.fate.fate === "exiled" ? "DRIVEN OUT" : f.fate.fate.toUpperCase()} since week ${f.fate.week}: ${f.fate.how}]` : "");
-  const line = (f: Face) => `· ${f.name}${fate(f)} — ${f.pronoun}, about ${f.age}${f.nation ? `, ${f.nation}` : ""}${f.skin ? `, ${f.skin} skin` : ""}${f.hair ? `, ${f.hair} hair${f.hair_style ? ` (${f.hair_style})` : ""}` : ""}${f.eyes ? `, ${f.eyes} eyes` : ""}${f.detail ? `; ${f.detail}` : ""}`;
+  const line = (f: Face) => `· ${f.name}${fate(f)} — ${f.pronoun}, about ${f.age}${f.nation ? `, ${f.nation}` : ""}${f.skin ? `, ${f.skin} skin` : ""}${f.hair ? `, ${f.hair} hair${f.hair_style ? ` (${f.hair_style})` : ""}` : ""}${f.eyes ? `, ${f.eyes} eyes` : ""}${f.detail ? `; ${f.detail}` : ""}${record(s, f)}`;
   return [
     list.length ? `## PEOPLE THE PLAYER HAS MET (not theirs; if one appears, use this name and look)\n${list.map(line).join("\n")}` : "",
     `## CAST LINES\nAfter the options, add one line for each person in the scene who is not the player and not one of the player's slaves, and who speaks or acts: CAST: full name | she or he | age | nationality | skin | hair colour, style | eye colour | one visible detail. Give anyone new a full name. Leave out crowds nobody would name.`,
@@ -221,10 +236,10 @@ export function pruneFaces(s: SaveState): void {
   const week = s.arcology.week;
   const cast = new Set([...Object.values(s.story?.cast ?? {}).map((n) => n && keyOf(n.name)), ...sagaFaces(s)]);
   for (const [k, f] of Object.entries(all)) {
-    if (cast.has(k)) continue;
+    if (cast.has(k) || f.kept) continue;
     // Someone you had dealt with is remembered for a year, so nobody brings them back by accident.
-    if ((f.seen <= 1 && !f.fate && week - f.last > 12) || week - Math.max(f.last, f.fate?.week ?? 0) > 52) delete all[k];
+    if ((f.seen <= 1 && !known(f) && week - f.last > 12) || week - Math.max(f.last, f.fate?.week ?? 0) > 52) delete all[k];
   }
-  const rest = Object.entries(all).filter(([k]) => !cast.has(k)).sort((a, b) => a[1].last - b[1].last || a[1].seen - b[1].seen);
+  const rest = Object.entries(all).filter(([k, f]) => !cast.has(k) && !f.kept).sort((a, b) => a[1].last - b[1].last || a[1].seen - b[1].seen);
   for (const [k] of rest.slice(0, Math.max(0, Object.keys(all).length - 80))) delete all[k];
 }

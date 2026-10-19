@@ -31,6 +31,7 @@ import { LAWS, LAW_BY_ID, type LawDef } from "../data/laws";
 import { pushNorm, cultureOf, type Norm } from "./culture";
 import { hasWomb, tryConception } from "./pregnancy";
 import { rng } from "./rng";
+import { settleHand, tickHand } from "./share";
 
 export type ReignStyle = "doting" | "stern" | "cruel" | "playful" | "vengeful" | "reluctant";
 
@@ -61,6 +62,13 @@ export interface Reign {
   ended?: string;
   /** She has a lover, and you are her cuckold. See the lover section below. */
   cuck?: Cuck;
+  /** Your say in running things: a hand in it, which she can overrule, or none (engine/share). */
+  hand?: "shared" | "locked";
+  locked_since?: number;
+  /** The last week you asked for a hand in it. */
+  asked?: number;
+  /** What she stopped you doing. */
+  overruled?: { week: number; what: string; line: string }[];
 }
 
 export interface Cuck {
@@ -512,11 +520,15 @@ export function tickReign(s: SaveState): ReportLine[] {
   if (!r || r.keeper !== h.id) {
     r = startReign(s, h);
     out.push(line(`${h.name} has written down her terms for you.`, "warning", 10, h.id));
+    const said = settleHand(s, h, r);
+    if (said) { note(s, said); out.push(line(said, r.hand === "shared" ? "good" : "warning", 9, h.id)); }
     return out;
   }
   offDuty(s, h);
   const week = s.arcology.week;
   const since = week - r.since;
+  if (!r.hand) { const said = settleHand(s, h, r); if (said) { note(s, said); out.push(line(said, r.hand === "shared" ? "good" : "warning", 9, h.id)); } }
+  else { const said = tickHand(s, h, r); if (said) { note(s, said); out.push(line(said, r.hand === "shared" ? "good" : "warning", 9, h.id)); } }
   const rnd = rng(`reign:${week}:${h.id}`);
   const house = Object.values(s.people).filter((p) => p.status === "owned" && p.id !== h.id && p.age >= 18);
   r.favour = clamp(r.favour * 0.97 + (r.style === "doting" ? 0.5 : 0), -100, 100);
@@ -648,6 +660,7 @@ export function reignCard(s: SaveState, h: Person): string {
     `SHE OWNS YOU. She holds your collar and runs ${s.arcology.name}; write her that way, every scene. ${STYLE_NOTE[r.style]}`,
     `HER RULES FOR YOU (she enforces them): you call her "${r.her_title}"; she calls you "${r.your_name}"; you wear ${r.dress}; you sleep ${r.sleep}; you ${r.duties.join("; you ")}.`,
     r.cuck && r.cuck.stage > 0 ? `SHE HAS A LOVER: ${r.cuck.name} (${r.cuck.who}), and you are her cuckold${r.cuck.public ? ", and the city knows it" : ""}. ${r.cuck.watches ? "She makes you watch, and serve them. " : ""}${r.cuck.stage >= 3 ? `${r.cuck.name} sleeps in her bed; you don't. ` : ""}${r.cuck.child ? `She's carrying ${r.cuck.name}'s child${r.cuck.child === "yours" ? ", which you will raise as yours" : ""}. ` : ""}` : "",
+    r.hand === "shared" ? `YOU STILL HAVE A HAND IN RUNNING THINGS, because she lets you: you give orders and make decisions as before, and she overrules you when she doesn't like them.${(r.overruled ?? []).length ? ` Lately she stopped: ${(r.overruled ?? []).slice(-3).map((x) => `"${x.what}"`).join(", ")}.` : ""}` : `YOU HAVE NO SAY IN RUNNING ${s.arcology.name.toUpperCase()}: she decides everything. You can ask her, advise her, or beg; whether she listens is up to her.`,
     `She is ${favourWord(r.favour)} (you've obeyed ${r.obeyed} times and defied her ${r.defied}). ${r.shown === "public" ? "She likes to show you off in public." : r.shown === "private" ? "She keeps you to herself, in the penthouse." : "Sometimes she takes you out with her."}${r.married ? " She married you, and you are still hers." : ""}${r.permanent && !r.married ? " She made it permanent." : ""}`,
   ].filter(Boolean).join("\n");
 }

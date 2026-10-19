@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Button, Card, Section, Stat, cx } from "../lib/ui";
 import {
   assigned, buyMenials, cityDemand, households, idle, JOB_IDS, JOBS, menialPrice, menialsOf, perHousehold, sellMenials, servingCitizens, setJob, slavePopulation, TREATMENT, wantPerHousehold,
@@ -11,7 +12,8 @@ import {
 } from "../engine/menials";
 
 export default function MenialsPanel() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("money");
   const [n, setN] = useState(() => Math.max(1, Math.min(100, Math.floor(Math.max(0, save.arcology.cash) / Math.max(1, menialPrice(save))))));
   const [said, setSaid] = useState("");
   const m = menialsOf(save);

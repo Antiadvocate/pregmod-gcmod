@@ -4,6 +4,7 @@
  */
 import { useCallback, useMemo, useState } from "react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Button, Card, Meter, Section, cx } from "../lib/ui";
 import { modelsAvailable } from "../config";
 import { worldOf, seasonOf } from "../engine/world";
@@ -30,7 +31,8 @@ function Legend() {
 }
 
 function Involve({ regionId }: { regionId: string }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("war");
   const [said, setSaid] = useState("");
   return (
     <div>
@@ -46,7 +48,8 @@ function Involve({ regionId }: { regionId: string }) {
 }
 
 function Selected({ p }: { p: Place }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("war");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const why = canVisit(save, p);
@@ -82,7 +85,8 @@ function Selected({ p }: { p: Place }) {
 }
 
 function VisitCard() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("war");
   const v = globeOf(save).visit;
   if (!v || v.week < save.arcology.week - 1) return null;
   const p = places(save).find((x) => x.id === v.place);
@@ -132,7 +136,8 @@ function OldWorld() {
 }
 
 function ResearchGrid() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("war");
   const [said, setSaid] = useState("");
   const t = globeOf(save).tech;
   const KINDS: [string, string][] = [["energy", "Energy"], ["climate", "The climate"], ["world", "The world"], ["arcology", "The arcology"]];

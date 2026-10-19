@@ -6,6 +6,7 @@
 import { useMemo, useState } from "react";
 import { Rocket, Swords, Handshake, Crown } from "lucide-react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Button, Card, Meter, Section, cx } from "../lib/ui";
 import SubTabs from "./SubTabs";
 import { BRANCHES, PROGRAMS, PROGRAM_BY_ID, type Branch } from "../data/arsenal";
@@ -56,7 +57,8 @@ export default function WarRoom() {
 /* ── the arsenal ─────────────────────────────────────────────────────────────────────────────── */
 
 function Arsenal() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("war");
   const [said, setSaid] = useState("");
   const f = forces(save);
   const e = empireOf(save);
@@ -143,7 +145,8 @@ function Powers() {
 }
 
 function Dealings({ p }: { p: PowerView }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("war");
   const [said, setSaid] = useState("");
   const [sure, setSure] = useState(false);
   if (p.rec.status === "conquered") return <div className="mt-2"><div className="text-[12.5px] mid">It's yours. It pays you {money(p.rec.pays ?? 0)} a week.</div><Install p={p} /></div>;
@@ -191,7 +194,8 @@ function Dealings({ p }: { p: PowerView }) {
 
 /** Put one of your women in charge of a place you hold. */
 function Install({ p }: { p: PowerView }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("war");
   const [pick, setPick] = useState(false);
   const [said, setSaid] = useState("");
   const why = canGovern(save, p.id);
@@ -221,7 +225,8 @@ function Install({ p }: { p: PowerView }) {
 
 /** What's going wrong in her city, and what you can send. */
 function Help({ g }: { g: Governorship }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("war");
   const [said, setSaid] = useState("");
   const [picking, setPicking] = useState(false);
   const send = (kind: "cash" | "troops" | "labour") => { let t = ""; mutate((s) => { t = supportGovernor(s, g.place, kind, 10000); }); setSaid(t); };
@@ -263,7 +268,8 @@ function Help({ g }: { g: Governorship }) {
 }
 
 function Governors() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("war");
   const [open, setOpen] = useState<string | null>(null);
   const list = governedPlaces(save);
   if (!list.length) return <Card className="text-[13px] mid">None of your women run a city yet. Win a war (and keep the city), make a power your vassal, or buy 55% of a neighbour, then put her in charge from the Powers tab. She runs it as herself, and stays yours.</Card>;
@@ -340,7 +346,8 @@ function Wars() {
 }
 
 function WarCard({ w }: { w: War }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("war");
   const [said, setSaid] = useState("");
   const p = powers(save).find((x) => x.id === w.target);
   return (

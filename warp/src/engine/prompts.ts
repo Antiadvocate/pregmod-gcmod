@@ -26,6 +26,7 @@ import { deedsBrief } from "./deeds";
 import { agreementsBrief, calledBy, houseRules } from "./agreements";
 import { reignCard, householdUnderHer, reignBrief } from "./reign";
 import { theKeeper } from "./romance";
+import { record, tiedTo } from "./others";
 import { cultureBrief } from "./culture";
 import { lawsBrief } from "./court";
 import type { Person, SaveState } from "./types";
@@ -178,6 +179,9 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   else if (s.reign && theKeeper(s) && s.reign.keeper !== p.id) lines.push(householdUnderHer(s, p));
   const others = othersBrief(s, p);
   if (others) lines.push(others);
+  const outside = tiedTo(s, p.id);
+  const gone = { dead: "DEAD", ruined: "ruined", exiled: "driven out of the arcology", jailed: "locked up", bought: "bought off by the owner" };
+  if (outside.length) lines.push(`PEOPLE IN HER LIFE OUTSIDE THE HOUSE: ${outside.map((x) => `${x.face.name}, ${x.what}${x.face.fate ? ` (${gone[x.face.fate.fate]} since week ${x.face.fate.week}: ${x.face.fate.how})` : record(s, x.face)}`).join(" / ")}`);
   const orders = agreementsBrief(s, p);
   if (orders) lines.push(orders);
   lines.push(`SHE CALLS YOU: ${s.player.owned_by === p.id ? (s.reign?.your_name ?? "whatever she likes") : calledBy(s, p)}${s.player.owned_by === p.id ? "" : " (always this; never another title unless she is defying you)"}.`);

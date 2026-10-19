@@ -1,5 +1,6 @@
 /** THE ARCOLOGY — the building, its money, and the three neighbours who have opinions about you. */
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import Corporation from "./Corporation";
 import PublicWorks from "./PublicWorks";
 import SubTabs from "./SubTabs";
@@ -13,7 +14,8 @@ import { dismissMercenaries, hireMercenaries, unrest } from "../engine/security"
 import { practise, skill } from "../engine/player";
 
 export default function ArcologyView() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("money");
   const arc = save.arcology;
   // Your own engineering is a real discount on every price on this screen, and it goes up by
   // spending money on buildings — which is the only way anybody has ever learned construction.

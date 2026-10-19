@@ -74,7 +74,8 @@ export function settle(s: SaveState, name: string, fate: Fate, how: string, opts
 
   // The faces on file.
   for (const f of Object.values(s.faces ?? {})) {
-    if (!sameName(f.name, who, f.short) || f.fate) continue;
+    // Bought off is the one fate that can be followed by another.
+    if (!sameName(f.name, who, f.short) || (f.fate && f.fate.fate !== "bought")) continue;
     f.fate = note;
     full = f.name;
     keys.push(`face:${keyOf(f.name)}`);
@@ -83,7 +84,7 @@ export function settle(s: SaveState, name: string, fate: Fate, how: string, opts
   // The story's cast.
   const st = s.story;
   for (const npc of Object.values(st?.cast ?? {})) {
-    if (!npc || npc.outside || !sameName(npc.name, who, npc.short)) continue;
+    if (!npc || (npc.outside && npc.outside.fate !== "bought") || !sameName(npc.name, who, npc.short)) continue;
     if (npc.status === "dead" || npc.status === "owned") continue;
     npc.outside = note;
     npc.status = fate === "dead" ? "dead" : fate === "bought" ? "ally" : "gone";
@@ -187,4 +188,24 @@ export function weightBrief(s: SaveState): string {
   return `THE OWNER'S WEIGHT: ${rich}, ${arms}, ${home}, and ${name}${d.share >= 0.1 ? `; ${d.title.toLowerCase()}, with ${Math.round(d.share * 100)}% of the known world answering to them` : ""}. ${weak
     ? "Right now the owner is weaker than they should be, and people who would normally be careful are getting bolder: still not reckless, but less afraid than they were."
     : "Nobody inside the arcology, and nobody outside it with less than a city or an army behind them, confronts the owner to their face or threatens them openly: the owner could have them killed by morning, and they know it. People who want something ask, flatter, bargain or beg. People who oppose the owner work around them: through lawyers, rumours, bribed staff, a slave they've turned, a rival city, the Owners' Association, or by waiting. Only someone with real power of their own pushes openly, and when they do, the scene says what that power is."}`;
+}
+
+/** What buying someone off costs. */
+export const BUY_OFF = 5000;
+
+/** You give the order yourself, from their record: your security sees to it. */
+export function orderDealt(s: SaveState, name: string, fate: Fate): string[] {
+  if (fate === "bought") {
+    if (s.arcology.cash < BUY_OFF) return [];
+    s.arcology.cash -= BUY_OFF;
+  }
+  const first = name.split(" ")[0];
+  const how = {
+    dead: s.arcology.security >= 50 ? `Your security took ${first} at night, and nobody found the body` : `Your security shot ${first} in the street, and everyone knows who gave the order`,
+    ruined: `Your people froze ${first}'s accounts and called in every debt at once`,
+    exiled: `Your guards put ${first} on a boat out of the arcology with one bag`,
+    jailed: `Your security took ${first} from home and put them in a cell under the arcology`,
+    bought: `You paid ${first} ¤${BUY_OFF.toLocaleString()}, and they do what you tell them now`,
+  }[fate];
+  return settle(s, name, fate, how);
 }

@@ -980,6 +980,8 @@ export interface Player {
    *  the registry, holds you. See engine/romance.ts — this is the far end of the ladder, and it is
    *  a playable state rather than a game over. */
   owned_by?: string;
+  /** Set when you kneel: whether you asked to keep a hand in running things (engine/share). */
+  ask_hand?: boolean;
   /** What you have left in the tank, 0–100. Spent on the interaction loop, back by the week: a
    *  body that has been at it all week is not a body that wants a fifth thing. */
   need?: number;

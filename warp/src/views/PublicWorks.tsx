@@ -5,6 +5,7 @@
  */
 import { useEffect, useState } from "react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Button, Card, Section, cx } from "../lib/ui";
 import { worldOf } from "../engine/world";
 import { cityYield } from "../engine/city";
@@ -41,7 +42,8 @@ const GROUP_OF: Record<string, string> = {
 };
 
 export default function PublicWorks() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("money");
   const [group, setGroup] = useState(() => { try { return localStorage.getItem("warp:works-group") ?? "all"; } catch { return "all"; } });
   useEffect(() => { try { localStorage.setItem("warp:works-group", group); } catch { /* fine */ } }, [group]);
   const [said, setSaid] = useState("");

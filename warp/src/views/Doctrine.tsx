@@ -4,12 +4,14 @@
  *  under each doctrine is the mean of how well the people you own embody it. You demonstrate a
  *  culture; you do not legislate one. */
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Button, Card, Chip, Meter, Money, Section } from "../lib/ui";
 import { DOCTRINES, conflictsWith, AXIS_LABEL, type Axis } from "../data/doctrines";
 import { abandonDoctrine, adoptDoctrine, scoreFor, axesOf } from "../engine/society";
 
 export default function Doctrine() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("laws");
   const arc = save.arcology;
   const owned = Object.values(save.people).filter((p) => p.status === "owned" || p.status === "indentured");
   const adopted = Object.keys(arc.doctrines);

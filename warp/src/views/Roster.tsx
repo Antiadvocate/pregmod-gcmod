@@ -15,6 +15,7 @@ import { describeGenitals, describeFeet, mobility, dickCM, ballsWord, vaginaWord
 import { useMemo, useState, useRef } from "react";
 import { Search, X } from "lucide-react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Button, Card, Chip, Empty, Field, Meter, Money, Section, Sheet, cx } from "../lib/ui";
 import type { Assignment, Person } from "../engine/types";
 import { explain, read } from "../engine/obedience";
@@ -48,7 +49,8 @@ import { buildOf } from "../engine/build";
 type Sort = "name" | "devotion" | "trust" | "health" | "income" | "trouble";
 
 export default function Roster() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("people");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<Sort>("trouble");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -224,7 +226,8 @@ function RosterCard({ p, onOpen, onWith }: { p: Person; onOpen: () => void; onWi
 }
 
 function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: () => void; onWith: () => void; onDress: () => void }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("people");
   const [tab, setTab] = useState<"her" | "read" | "body" | "theatre" | "work" | "history">("read");
   const [together, setTogether] = useState<string | null>(null);
   const [painting, setPainting] = useState(false);

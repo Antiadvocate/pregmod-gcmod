@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Button, Card, Chip, Empty, Field, Section, Sheet } from "../lib/ui";
 import { EFFECT_BY_ID, FIELD_BY_ID, RULE_EFFECTS, RULE_FIELDS, describe, preview } from "../engine/rules";
 import type { RuleCondition, RuleEffect, StandingOrder } from "../engine/types";
@@ -14,7 +15,8 @@ import { ASSIGNMENTS } from "../data/assignments";
 const OPS: RuleCondition["op"][] = ["lt", "lte", "gt", "gte", "eq", "neq"];
 
 export default function Orders() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("people");
   const [editing, setEditing] = useState<StandingOrder | null>(null);
 
   return (

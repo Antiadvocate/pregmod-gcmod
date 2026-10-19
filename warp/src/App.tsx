@@ -9,7 +9,7 @@
 import WarRoom from "./views/WarRoom";
 import { useEffect, useState } from "react";
 import {
-  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, Globe2, BookOpen, Scale, GitCompareArrows, Earth, Dna, Newspaper, Swords } from "lucide-react";
+  Building2, Users, Contact, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, Globe2, BookOpen, Scale, GitCompareArrows, Earth, Dna, Newspaper, Swords } from "lucide-react";
 import type { SaveState } from "./engine/types";
 import { GameProvider, useGame } from "./lib/game";
 import { listSaves, getSave } from "./store";
@@ -35,14 +35,17 @@ import Compare from "./views/Compare";
 import World from "./views/World";
 import Genome from "./views/Genome";
 import Feed, { FeedTicker } from "./views/Feed";
+import Others from "./views/Others";
+import { Held, HandToast } from "./lib/hand";
 import { unread as feedUnread } from "./engine/feed";
 
-export type Route = "penthouse" | "feed" | "people" | "story" | "scene" | "city" | "society" | "compare" | "world" | "war" | "genome" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
+export type Route = "penthouse" | "feed" | "people" | "others" | "story" | "scene" | "city" | "society" | "compare" | "world" | "war" | "genome" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
 
 const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "penthouse", label: "Penthouse", icon: Building2 },
   { id: "feed", label: "Feed", icon: Newspaper },
   { id: "people", label: "People", icon: Users },
+  { id: "others", label: "Others", icon: Contact },
   { id: "story", label: "Story", icon: BookOpen },
   { id: "scene", label: "Scene", icon: Play },
   { id: "city", label: "City", icon: Globe2 },
@@ -99,7 +102,7 @@ export default function App() {
 type Group = { id: string; label: string; icon: typeof Building2; routes: Route[] };
 const GROUPS: Group[] = [
   { id: "home", label: "Home", icon: Building2, routes: ["penthouse", "feed", "report"] },
-  { id: "people", label: "People", icon: Users, routes: ["people", "orders", "you", "genome"] },
+  { id: "people", label: "People", icon: Users, routes: ["people", "others", "orders", "you", "genome"] },
   { id: "story", label: "Story", icon: BookOpen, routes: ["story", "scene"] },
   { id: "city", label: "City", icon: Globe2, routes: ["city", "arcology", "society", "doctrine", "world", "war", "compare"] },
   { id: "market", label: "Market", icon: ShoppingBag, routes: ["market"] },
@@ -194,18 +197,19 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
             {route === "penthouse" && <Penthouse go={setRoute} />}
             {route === "feed" && <Feed />}
             {route === "people" && <Roster />}
+            {route === "others" && <Others />}
             {route === "story" && <Journal />}
             {route === "scene" && <Scene />}
             {route === "city" && <City />}
-            {route === "society" && <Society />}
+            {route === "society" && <Held domain="laws"><Society /></Held>}
             {route === "compare" && <Compare />}
-            {route === "world" && <World />}
-            {route === "war" && <WarRoom />}
-            {route === "genome" && <Genome />}
-            {route === "arcology" && <ArcologyView />}
-            {route === "doctrine" && <Doctrine />}
-            {route === "market" && <Market />}
-            {route === "orders" && <Orders />}
+            {route === "world" && <Held domain="war"><World /></Held>}
+            {route === "war" && <Held domain="war"><WarRoom /></Held>}
+            {route === "genome" && <Held domain="money"><Genome /></Held>}
+            {route === "arcology" && <Held domain="money"><ArcologyView /></Held>}
+            {route === "doctrine" && <Held domain="laws"><Doctrine /></Held>}
+            {route === "market" && <Held domain="money"><Market /></Held>}
+            {route === "orders" && <Held domain="people"><Orders /></Held>}
             {route === "report" && <Report />}
             {route === "you" && <You />}
             {route === "cheats" && <Cheats />}
@@ -228,6 +232,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
 
       <Ending onNewRun={onSwitch} />
       <FeedTicker />
+      <HandToast />
     </div>
   );
 }

@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { Heart, Loader2 } from "lucide-react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Button, Card, Chip, Meter, Money, Section, cx } from "../lib/ui";
 import { LADDER, RUNGS, RUNG_BY_ID, RITES, ascend, nextRung, renounce, romanceOf, rungIndex, herReach } from "../engine/romance";
 import { read } from "../engine/obedience";
@@ -24,7 +25,8 @@ import { speakToGovernor } from "../engine/talk";
 import Talk from "./Talk";
 
 export default function HerPanel({ id }: { id: string }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("people");
   const [busy, setBusy] = useState(false);
   const [rite, setRite] = useState<string | null>(null);
   const [quiet, setQuiet] = useState(false);
@@ -186,7 +188,8 @@ export default function HerPanel({ id }: { id: string }) {
 
 /** Free her, and she goes on living in your city. Or, once she has, where she is now. */
 function LetHerGo({ id }: { id: string }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("people");
   const [open, setOpen] = useState(false);
   const [said, setSaid] = useState("");
   const p = save.people[id];
@@ -219,7 +222,8 @@ function LetHerGo({ id }: { id: string }) {
 
 /** Kill her. Two steps, so a stray tap doesn't do it. */
 function KillHer({ id }: { id: string }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("people");
   const [open, setOpen] = useState(false);
   const [said, setSaid] = useState("");
   const p = save.people[id];

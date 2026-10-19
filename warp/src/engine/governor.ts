@@ -29,6 +29,7 @@ import { LAW_BY_ID } from "../data/laws";
 import { NATIONS } from "../data/people";
 import { forces } from "./power";
 import { asFate, sameName, settle, FATE_WORDS } from "./fates";
+import { file } from "./others";
 
 export interface Governorship {
   place: string;
@@ -489,6 +490,7 @@ export function tickGovernors(s: SaveState): { cash: number; lines: GovLine[] } 
     }
     g.problems ??= []; g.news ??= []; g.faces ??= facesFor(s, g.place); g.style ??= styleOf(p).map((x) => x.id);
     const r = rng(`gov:${g.place}:${week}`);
+    for (const f of live(g)) file(s, f.name, `${f.role} in ${g.name}`);
 
     // Somebody always takes the job of a man who was dealt with, a few weeks on, and they know why it was free.
     for (const f of g.faces) {

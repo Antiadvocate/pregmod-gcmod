@@ -8,6 +8,7 @@ import { stripLawInventions } from "../engine/lawguard";
 import { useState } from "react";
 import { Footprints } from "lucide-react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Button, Card, Meter, Section, Stat, cx } from "../lib/ui";
 import { cultureOf, drivers, normLine, NORMS, NORM_IDS, type Norm } from "../engine/culture";
 import { customLawCost, customLawRep, writeLaw } from "../engine/court";
@@ -83,7 +84,8 @@ function NormCard({ n }: { n: Norm }) {
 }
 
 function Court() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("laws");
   const [said, setSaid] = useState<string[]>([]);
   const laws = lawsOf(save);
   const court = courtOf(save);
@@ -151,7 +153,8 @@ function Court() {
 }
 
 function OwnLaw() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("laws");
   const [name, setName] = useState("");
   const [text, setText] = useState("");
   const [push, setPush] = useState<CustomLaw["push"]>([]);
@@ -245,7 +248,8 @@ function Propaganda({ say }: { say: (fn: (s: ReturnType<typeof useGame>["save"])
 }
 
 function Shape() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("laws");
   const [said, setSaid] = useState("");
   const [lawId, setLawId] = useState("");
   const running = campaignsOf(save);
@@ -315,7 +319,8 @@ function Shape() {
 }
 
 function Walk() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("laws");
   const [escort, setEscort] = useState("");
   const [on, setOn] = useState<string | null>(null);
   const house = Object.values(save.people).filter((p) => p.status === "owned" && p.age >= 5 && p.health.recovery_weeks === 0);

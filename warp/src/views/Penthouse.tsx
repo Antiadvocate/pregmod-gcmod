@@ -9,6 +9,7 @@ import { momentsOf } from "../engine/moments";
 import { collarOffered, concludeMoment } from "../engine/deeds";
 import AssistantCard from "./Assistant";
 import { CollarOffer, Reaction as MomentReaction, OpenMoments } from "./MomentCard";
+import { askForHand, askWait, giveHandUp, handOf } from "../engine/share";
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import type { Route } from "../App";
@@ -115,7 +116,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
       ) : null}
 
       {keeper ? (
-        <div className="row-note mb-4">{keeper.name} runs {arc.name} now. What you get is a say, when she asks for one.</div>
+        <HandCard />
       ) : null}
 
       <AssistantCard />
@@ -388,6 +389,32 @@ function Setup({ text }: { text: string }) {
   return (
     <div className="space-y-2 mb-3">
       {text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[14px] leading-relaxed dim">{para}</p>)}
+    </div>
+  );
+}
+
+/** Where you stand with her: a hand in running things, or none, and what she's stopped. */
+function HandCard() {
+  const { save, mutate } = useGame();
+  const [said, setSaid] = useState("");
+  const keeper = theKeeper(save);
+  const hand = handOf(save);
+  if (!keeper || hand === "owner") return null;
+  const r = save.reign!;
+  const wait = askWait(save);
+  const recent = (r.overruled ?? []).slice(-3).reverse();
+  return (
+    <div className="card p-3 mb-4">
+      <p className="text-[13px]">{hand === "shared"
+        ? <>{keeper.name} owns you, and lets you keep running things. She can stop anything you do.</>
+        : <>{keeper.name} runs {save.arcology.name} now. You can see everything she does with it; you can't change any of it.</>}</p>
+      {recent.length ? <ul className="mt-2 space-y-0.5 text-[12px] mid">{recent.map((x, i) => <li key={i}>· week {x.week}: {x.line}</li>)}</ul> : null}
+      <div className="flex flex-wrap gap-2 mt-2">
+        {hand === "locked"
+          ? <Button size="sm" disabled={wait > 0} onClick={() => { let l = ""; mutate((s) => { l = askForHand(s); }); setSaid(l); }}>{wait > 0 ? `Ask her again in ${wait} week${wait === 1 ? "" : "s"}` : "Ask for a say in running things"}</Button>
+          : <Button size="sm" kind="ghost" onClick={() => { let l = ""; mutate((s) => { l = giveHandUp(s); }); setSaid(l); }}>Give her all of it</Button>}
+      </div>
+      {said ? <p className="text-[12.5px] mt-2 acc">{said}</p> : null}
     </div>
   );
 }

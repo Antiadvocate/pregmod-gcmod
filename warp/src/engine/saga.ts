@@ -38,6 +38,7 @@ import { cultureBrief } from "./culture";
 import { genomeOf, genomeBrief } from "./genome";
 import { menialsOf } from "./menials";
 import { facesOf, keyOf, meet, nationFrom, type Face } from "./faces";
+import { note } from "./others";
 import { deedsOf } from "./deeds";
 import { HOUSE_STYLE } from "./prompts";
 import { settledBrief, weightBrief } from "./fates";
@@ -534,6 +535,9 @@ export function apply(s: SaveState, x: Saga, ch: Chapter, o: SagaOption): { outc
     if (d.desire) c.desire = d.desire;
     if (d.limit) c.limit = d.limit;
     if (d.secret_revealed && c.secret) { c.known = true; out.push(`you learn ${c.name.split(" ")[0]}'s secret`); }
+    // Someone who isn't yours keeps what happened on their own record, outside the saga too.
+    const f = c.face ? facesOf(s)[c.face] : undefined;
+    if (f) { if (d.turn) note(s, f, `${x.title}: ${d.turn}`); if (d.desire) f.likes = d.desire.slice(0, 120); f.toward = c.toward; f.kept = true; }
   }
   for (const f of o.facts ?? []) if (!x.facts.includes(f)) x.facts.push(f);
   if (x.facts.length > 30) x.facts = x.facts.slice(-30);

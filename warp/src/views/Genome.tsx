@@ -4,6 +4,7 @@
  */
 import { useMemo, useState } from "react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Button, Card, Meter, Section, cx } from "../lib/ui";
 import { modelsAvailable } from "../config";
 import { TRAIT_TAGS, REVISE_RATE, REVERSE_RATE, applyRevision, changesOf, rename, reverse, reverseCost, revisionCost, apply, citizenShare, design, genomeOf, PER_CITIZEN, PER_MENIAL, PER_SLAVE, quote, resistance, RESISTS, rewrite, slaveShare, topUp, type GeneSpec, type Target } from "../engine/genome";
@@ -25,7 +26,8 @@ function Changes({ spec }: { spec: GeneSpec }) {
 }
 
 function Draft() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("money");
   const [said, setSaid] = useState("");
   const d = genomeOf(save).draft;
   const slaves = Object.values(save.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 18);
@@ -79,7 +81,8 @@ function Draft() {
 }
 
 function Writer() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("money");
   const [name, setName] = useState("");
   const [text, setText] = useState("");
   const [target, setTarget] = useState<Target>("citizens");
@@ -113,7 +116,8 @@ function Writer() {
 
 /** Change a running program: revise its words (redesigned, then re-run on everyone it's for), rename it, or reverse it. */
 function EditProgram({ id, onSaid }: { id: string; onSaid: (t: string) => void }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("money");
   const e = genomeOf(save).edits.find((x) => x.id === id)!;
   const [mode, setMode] = useState<"" | "revise" | "rename" | "reverse">("");
   const [name, setName] = useState(e.name);
@@ -165,7 +169,8 @@ function EditProgram({ id, onSaid }: { id: string; onSaid: (t: string) => void }
 }
 
 function Programs() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("money");
   const [said, setSaid] = useState("");
   const edits = genomeOf(save).edits;
   if (!edits.length) return <Card><p className="text-[12.5px] dim">No programs have run yet.</p></Card>;

@@ -216,9 +216,10 @@ export function CollarOffer({ id }: { id: string }) {
   return (
     <div className="card p-3 mt-3 fade-in">
       <p className="font-prose text-[14px] leading-relaxed">{first} took that as you giving yourself to her. She has a collar in her hands and she's waiting to see if you kneel.</p>
-      <p className="text-[12px] dim mt-1">If you kneel, she owns you and the arcology answers to her.</p>
-      <div className="flex gap-2 mt-2">
-        <Button size="sm" kind="primary" onClick={() => mutate((s) => { acceptCollar(s, id); })}>Kneel and let her lock it</Button>
+      <p className="text-[12px] dim mt-1">If you kneel, she owns you and the arcology answers to her. Ask to keep a hand in and you can still run things, if she agrees, but she can overrule you.</p>
+      <div className="flex flex-wrap gap-2 mt-2">
+        <Button size="sm" kind="primary" onClick={() => mutate((s) => { acceptCollar(s, id); })}>Kneel and give her everything</Button>
+        <Button size="sm" onClick={() => mutate((s) => { acceptCollar(s, id, true); })}>Kneel, and ask to keep a hand in</Button>
         <Button size="sm" kind="ghost" onClick={() => mutate((s) => { refuseCollar(s, id); })}>That's not what I meant</Button>
       </div>
     </div>

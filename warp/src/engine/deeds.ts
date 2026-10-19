@@ -28,8 +28,10 @@ import { personCard } from "./prompts";
 import type { Moment } from "./moments";
 import { hasWomb } from "./pregnancy";
 import { sell } from "./market";
-import { asFate, settle, settledBrief, weightBrief } from "./fates";
+import { asFate, sameName, settle, settledBrief, weightBrief } from "./fates";
 import { isOwnerName } from "./you";
+import { meet } from "./faces";
+import { note, tie } from "./others";
 
 export interface Deed {
   id: string;
@@ -266,6 +268,7 @@ export const CONSEQUENCE_SYSTEM = `You read a finished scene from Free Cities, a
  "lasting_fact":"one sentence that is now true of the world because of this, or empty",
  "sold":["names of the player's slaves the player actually had sold or taken away to be sold in this scene: an order carried out, not a threat; empty if none"],
  "threatened":["names of OTHER people in the scene (not her) the player threatened to sell, exile or punish; empty if none"],
+ "outsiders":[{"name":"full name of someone in the scene who is neither the player nor one of the player's slaves, and who mattered in it","what":"what they do, a few words","remembers":"one sentence from their side of what happened, with the player as 'the owner'","toward":"warmer|colder|same, toward the owner after this","likes":"something the scene showed they like, or empty","dislikes":"something the scene showed they can't stand, or empty","tie":{"with":"name of one of the player's slaves, or 'the owner'","what":"what they are to them now if that formed or changed in the scene (her husband, her regular, owes the owner ¤20,000), or empty"}}],
  "dealt_with":[{"name":"full name of someone who is NOT the player's slave","fate":"dead|ruined|exiled|jailed|bought","how":"one plain sentence: who did it and how"}],
  "follow_up":{"weeks":2,"situation":"2-4 sentences, present tense: something that happens that many weeks later BECAUSE of this scene, ending where the player has to decide","options":[{"label":"what the player does, 2-8 words","effect":"one EFFECT id","value":"optional"}]}}
 
@@ -284,6 +287,7 @@ interface Read {
   summary?: string; tags?: string[]; public?: boolean; witnesses?: string[]; her_memory?: string; lasting_fact?: string;
   sold?: string[]; threatened?: string[];
   dealt_with?: { name?: string; fate?: string; how?: string }[];
+  outsiders?: { name?: string; what?: string; remembers?: string; toward?: string; likes?: string; dislikes?: string; tie?: { with?: string; what?: string } }[];
   follow_up?: { weeks?: number; situation?: string; options?: { label?: string; effect?: string; value?: string | number }[] };
 }
 
@@ -381,6 +385,7 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
   applyDeed(s, deed, r.her_memory);
   deed.effects.push(...othersInScene(s, deed, r));
   deed.effects.push(...dealtWith(s, deed, r));
+  deed.effects.push(...outsiders(s, deed, r));
   if (offered) deed.effects.push(`${p!.name} is holding out a collar for you`);
   m.concluded = deed.id;
   if (deed.follow && deed.follow.due <= s.arcology.week) fireFollow(s, deed);
@@ -440,13 +445,39 @@ function dealtWith(s: SaveState, deed: Deed, r: Read): string[] {
   return out;
 }
 
+/** People who aren't yours, kept on file with what they took away from it. */
+function outsiders(s: SaveState, deed: Deed, r: Read): string[] {
+  const out: string[] = [];
+  for (const x of (r.outsiders ?? []).slice(0, 4)) {
+    const name = String(x?.name ?? "").trim();
+    if (!name || byName(s, name) || isOwnerName(s, name)) continue;
+    const f = Object.values(s.faces ?? {}).find((y) => sameName(y.name, name, y.short)) ?? meet(s, { name });
+    if (!f || f.fate?.fate === "dead") continue;
+    if (x.what && !f.what) f.what = String(x.what).slice(0, 80);
+    if (x.remembers) note(s, f, String(x.remembers));
+    if (x.likes) f.likes = String(x.likes).slice(0, 120);
+    if (x.dislikes) f.dislikes = String(x.dislikes).slice(0, 120);
+    const dir = String(x.toward ?? "").toLowerCase();
+    if (dir.startsWith("warm")) f.toward = Math.min(100, (f.toward ?? 0) + 15);
+    else if (dir.startsWith("cold")) f.toward = Math.max(-100, (f.toward ?? 0) - 15);
+    const t = x.tie;
+    if (t?.what && t.with) {
+      const yours = byName(s, String(t.with));
+      if (yours) { tie(f, String(t.what), yours.id); out.push(`${f.name} is ${String(t.what).replace(/^(her|his) /, `${yours.name.split(" ")[0]}'s `)} now`); }
+      else if (/owner|you|player/i.test(String(t.with)) || isOwnerName(s, String(t.with))) { tie(f, String(t.what)); f.kept = true; }
+    }
+  }
+  return out;
+}
+
 /** You meant it: she locks the collar. Everything giving yourself away does, done now. */
-export function acceptCollar(s: SaveState, deedId: string): string[] {
+export function acceptCollar(s: SaveState, deedId: string, keepHand = false): string[] {
   const d = deedsOf(s).find((x) => x.id === deedId);
   const p = d?.person ? s.people[d.person] : undefined;
   if (!d || !p || d.collar !== "offered") return [];
   const out: string[] = [];
   d.collar = "taken";
+  s.player.ask_hand = keepHand;
   d.tags = ["owner_enslaved", ...d.tags.filter((t) => t !== "owner_enslaved")];
   DEED_TAGS.owner_enslaved.apply({ s, d, p, out });
   const mem = s.memory[p.id];

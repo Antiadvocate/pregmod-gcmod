@@ -10,6 +10,7 @@ import { feetOf } from "../engine/genitals";
 import { useMemo, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { cx } from "../lib/ui";
 import type { Look, Person, SaveState } from "../engine/types";
 import { WARDROBE, WARDROBE_KINDS, garment, type Garment } from "../data/wardrobe";
@@ -56,7 +57,8 @@ function reaction(p: Person, g: Garment): string {
 type Tab = "clothes" | "extras" | "salon";
 
 export default function Dressing({ id, onClose }: { id: string; onClose: () => void }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("people");
   const p = save.people[id];
   const [tab, setTab] = useState<Tab>("clothes");
   const [kind, setKind] = useState<NonNullable<Garment["kind"]>>(() => garment(p?.clothes)?.kind ?? "lingerie");
