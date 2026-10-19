@@ -441,3 +441,4 @@ import { practise, skill } from "../src/engine/player.ts";
     s.arcology.cash > 0, { cash: Math.round(s.arcology.cash), working });
   check("and the household is still on the rota rather than parked in the spa", working >= 3, working);
 }
+check("but a person being a person isn't filler", !findFiller("She doesn't look at you. Her fingers curl in the sheet and she shifts her weight, twice."));

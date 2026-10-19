@@ -482,8 +482,10 @@ export function showsDeparture(prose: string, name: string): boolean {
 
 /* ── DETECTORS ─────────────────────────────────────────────────────────────────────────────── */
 
-/** Gestures a model reaches for when it has nothing to say about what is actually happening. */
-const FILLER = /\b(breath (catches|caught|hitches|hitched)|throat (moves|moved|works|worked)|(fingers?|hands?) (tap|taps|tapped|twitch|twitches|twitched|curl|curls|curled|flex|flexes|flexed)|shifts? (her|his|their) weight|shoulders? (settle|settled|drop|dropped|loosen|loosened)|jaw (tightens|tightened|sets|set|works|worked)|something (tightened|shifted|flickered|passed|moved|hardened|softened)|the rhythm falters|exhales? through (her|his|their) nose|doesn't look at you|does not look at you)\b/i;
+/** The handful of stock gestures a model reaches for when it has nothing to say. Only these: a
+ *  woman who won't look at you, fidgets or drops her shoulders is a person, and an earlier, wider
+ *  list taught the narrator to strip every human thing out of a scene. */
+const FILLER = /\b(breath (catches|caught|hitches|hitched)|throat (moves|moved|works|worked)|jaw (tightens|tightened|works|worked)|something (tightened|shifted|flickered|passed|hardened|softened) (in|across|behind)|the rhythm falters|exhales? through (her|his|their) nose)\b/i;
 
 /** A sentence of filler body language standing in for the action. Quoted back next turn. */
 export function findFiller(prose: string): string | undefined {

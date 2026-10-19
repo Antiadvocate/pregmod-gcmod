@@ -44,7 +44,7 @@ import { grantAsk, refuseAsk, voiceAsk } from "./asks";
 import { generateWant, pickWants } from "./wants";
 import { weekSnapshot } from "./snapshot";
 import { GOV_VOICE } from "./talk";
-import { writeWeekProse } from "./forge";
+import { writeWeekProse, enrichPerson } from "./forge";
 import { runOf } from "./run";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { read } from "./obedience";
@@ -99,7 +99,7 @@ const WRITE_SYSTEM = `You write one event for Free Cities, an adult text game ab
 
 Rules:
 - Keep every fact: names, numbers, amounts, who did what. Add detail; do not change what happened.
-- Second person, present tense. One or two short paragraphs. End at the point where the player has to decide. Use the people's own voices.
+- Second person, present tense, one to three paragraphs. Write it as a moment that's happening to the player, with the people in it talking in their own voices, not as a summary of a situation. If THE FACTS read like a report ("she has been cold with you"), turn that into the scene it describes: where she is, what she actually says, how. End at the point where the player has to decide.
 - Relabel every choice in the player's voice so it fits the scene you wrote (2 to 9 words). Each label must still be the same action with the same result as the original.
 - You may add up to two extra choices from EXTRA EFFECTS when they genuinely fit the scene; most of the time add none.
 
@@ -110,7 +110,9 @@ Output ONE strict JSON object and nothing else:
 
 /** Rewrite one pending event. Mutates it in place; returns whether it was written. */
 export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Promise<boolean> {
-  if (!ready(s) || e.written || e.kind === "dynamic") return false;
+  // What you did coming back weeks later is written like anything else that happens to you; the
+  // reader that set it up only sketched it.
+  if (!ready(s) || e.written || (e.kind === "dynamic" && !e.id.startsWith("echo-"))) return false;
   const def = EVENT_BY_ID[e.kind];
   const opts = def?.options ?? e.options;
   const ctx = eventContext(s, e);
@@ -307,10 +309,22 @@ function resolveGovEvent(s: SaveState, e: PendingEvent, optionId: string): strin
 /** Everything that needs writing after a week ends. One call at a time; each failure is skipped.
  *  Fewer things, each of them earned: the world events the week threw up, the one or two women
  *  with real reasons to want something, letters only from cities where something happened. */
+/** Who has no voice yet, the one who holds your collar first, then the ones you've been with lately. */
+function voiceless(s: SaveState): Person[] {
+  const seen = new Map<string, number>();
+  for (const m of s.moments ?? []) for (const id of [m.person, ...(m.others ?? [])]) if (id) seen.set(id, Math.max(seen.get(id) ?? 0, m.updated));
+  return Object.values(s.people)
+    .filter((p) => p.age >= 18 && !p.persona.voice?.example_lines?.length && (p.status === "owned" || p.status === "indentured" || s.player.owned_by === p.id || !!p.romance && p.status === "free"))
+    .sort((a, b) => Number(s.player.owned_by === b.id) - Number(s.player.owned_by === a.id) || (seen.get(b.id) ?? -1) - (seen.get(a.id) ?? -1) || b.economics.weeks_owned - a.economics.weeks_owned);
+}
+
 export async function liveWeek(s: SaveState, report: WeekReport | null, step: (what: string) => void = () => {}): Promise<void> {
   if (!ready(s)) return;
   const snap = weekSnapshot(s, report);
   if (report) { step("the week"); await writeWeekProse(s, report); }
+  // Nobody in a scene should sound like everybody else. Two a week get a voice of their own, the
+  // ones you see most first.
+  for (const p of voiceless(s).slice(0, 2)) { step(`${p.name}'s voice`); await enrichPerson(s, p, p.economics.weeks_owned > 2); }
   // Once she holds your collar, she decides her own week before anything is written about it.
   if (s.player.owned_by && s.reign && !s.reign.ended) {
     step(s.people[s.player.owned_by]?.name ?? "her");
@@ -318,7 +332,7 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
     if (s.reign.read_week === undefined || s.arcology.week - s.reign.read_week >= 8) await readHer(s);
     await herDecides(s);
   }
-  const fresh = s.events.filter((e) => s.arcology.week - e.week <= 1 && !e.written && e.kind !== "dynamic" && e.kind !== "gov");
+  const fresh = s.events.filter((e) => s.arcology.week - e.week <= 1 && !e.written && (e.kind !== "dynamic" || e.id.startsWith("echo-")) && e.kind !== "gov");
   for (const e of fresh) { step(e.person ? `${s.people[e.person]?.name ?? "her"}` : "what happened"); await writeEvent(s, e, snap); }
   for (const w of pickWants(s)) {
     step(w.p.name);
