@@ -765,6 +765,9 @@ export interface ModelSettings {
   context_memories_k: number;
   history_window: number;
   lean_mode: boolean;
+  /** Have the model write out what happens after you answer an event. Off: the game's own line and
+   *  what changed, and you can still ask for it played out. Default on. */
+  write_outcomes?: boolean;
   token_budget: number;
   /** 0–10: how much the world throws at you unprompted. 0 = it only ever answers what you do. */
   tension: number;

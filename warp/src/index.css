@@ -458,3 +458,8 @@ button.list-row:active { background: var(--ink-1); }
 .beat-spiral > svg { animation: b-shudder 0.2s linear 6; }
 .beat-steam > svg, .beat-hearts > svg { animation: b-throb 0.7s ease-in-out 2; }
 @media (prefers-reduced-motion: reduce) { .beat > svg { animation: none !important; } }
+
+/* Someone walking into view on the Home screen. */
+.walk-in { animation: walk-in 0.9s cubic-bezier(.2,.7,.2,1); }
+@keyframes walk-in { 0% { transform: translateX(140%); opacity: 0; } 60% { opacity: 1; } 70% { transform: translateX(-4%) translateY(-2px); } 85% { transform: translateX(1%) translateY(0); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .walk-in { animation: none; } }

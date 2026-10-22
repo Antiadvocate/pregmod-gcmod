@@ -12,6 +12,8 @@ import { CollarOffer, Reaction as MomentReaction, OpenMoments } from "./MomentCa
 import { askForHand, askWait, giveHandUp, handOf, throughHer } from "../engine/share";
 import { YourWeek, TalkToHer } from "./YourRoom";
 import { readHer } from "../engine/herwill";
+import { takeStats, chipsBetween, type Chip } from "../lib/delta";
+import PassingBy from "./PassingBy";
 import { STYLE_NOTE } from "../engine/reign";
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronRight, Loader2, Sparkles } from "lucide-react";
@@ -37,7 +39,9 @@ import { band, wear } from "../engine/psyche";
 import { modelsAvailable } from "../config";
 
 export default function Penthouse({ go }: { go: (r: Route) => void }) {
-  const [outcomes, setOutcomes] = useState<{ id: string; setup?: string; chose: string; text: string; person?: string; others?: string[]; moment?: string; writing?: boolean; facts?: string; auto?: boolean }[]>([]);
+  const [outcomes, setOutcomes] = useState<{ id: string; setup?: string; chose: string; text: string; person?: string; others?: string[]; moment?: string; writing?: boolean; facts?: string; auto?: boolean; chips?: Chip[] }[]>([]);
+  // Whether each event's answer gets written out by the model; off just applies it.
+  const [writeOff, setWriteOff] = useState<Record<string, boolean>>({});
   /** Done: the card goes, and a scene played out under it ends where it is. */
   const finish = async (o: { id: string; moment?: string }) => {
     const m = o.moment ? momentsOf(save).find((x) => x.id === o.moment) : undefined;
@@ -108,6 +112,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
       </button>
 
       {collarOffered(save) ? <div className="mb-4"><CollarOffer id={collarOffered(save)!.id} /></div> : null}
+
+      <PassingBy />
 
       {lastReport?.problems.length ? (
         <div className="mb-4 space-y-1">
@@ -214,6 +220,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             {o.writing ? <div className="flex items-center gap-2 dim text-[12px]"><Loader2 size={13} className="animate-spin" /> writing what happens</div> : null}
             {o.text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[15px] leading-relaxed">{para}</p>)}
             {o.facts ? <p className="text-[12px] dim">{o.facts.split(/\n\n+/)[0]}</p> : null}
+            {o.chips?.length ? <div className="flex flex-wrap gap-1">{o.chips.map((c, i) => <span key={i} className={`chip ${c.good ? "good" : "bad"}`}>{c.text}</span>)}</div> : null}
           </div>
           <div className="flex flex-wrap items-center gap-x-2">
             {o.person || modelsAvailable() ? <MomentReaction auto={!!o.auto} seed={{ person: o.person, others: o.others, title: o.chose, source: "event", setup: o.setup, you: o.chose, happened: o.text }} onOpen={(mid) => setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, moment: mid } : x)))} /> : null}
@@ -237,19 +244,29 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             {save.empire?.about[e.kind] && modelsAvailable() ? (
               <button className="text-[12px] acc underline mb-2" onClick={() => go("war")}>or talk to them yourself, in the War Room</button>
             ) : null}
+            {modelsAvailable() && !save.models.lean_mode && save.models.write_outcomes !== false ? (
+              <label className="flex items-center gap-1.5 text-[11.5px] dim mb-2 cursor-pointer">
+                <input type="checkbox" checked={!writeOff[e.id]} onChange={(ev) => setWriteOff((w) => ({ ...w, [e.id]: !ev.target.checked }))} />
+                write out what happens
+              </label>
+            ) : null}
             <Options options={choicesOf(e)} onPick={(o) => {
               let text = "";
+              let chips: Chip[] = [];
+              const write = modelsAvailable() && !save.models.lean_mode && save.models.write_outcomes !== false && !writeOff[e.id];
               // Once she holds your collar, what you pick goes through her.
               mutate((s) => {
+                const before = takeStats(s, [e.person, e.other]);
                 const via = e.kind.startsWith("reign_") ? { id: o.id, line: "" } : throughHer(s, "people", o, choicesOf(e));
                 text = [via.line, resolveAny(s, e, via.id)].filter(Boolean).join("\n\n");
+                chips = chipsBetween(before, takeStats(s, [e.person, e.other]));
               });
-              const out = { id: e.id, setup: e.seed, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined };
+              const out = { id: e.id, setup: e.seed, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined, chips };
               // Going to her when she wants you is the scene itself: it opens and is played, not summed up.
-              if (e.kind === "reign_want" && o.id === "obey") { setOutcomes((xs) => [...xs, { ...out, auto: true }]); return; }
-              setOutcomes((xs) => [...xs, { ...out, writing: modelsAvailable() && !save.models.lean_mode }]);
+              if (e.kind === "reign_want" && o.id === "obey") { setOutcomes((xs) => [...xs, { ...out, auto: write }]); return; }
+              setOutcomes((xs) => [...xs, { ...out, writing: write }]);
               // The choice played out, with what the engine decided as the facts.
-              if (modelsAvailable() && !save.models.lean_mode) void narrateOutcome(save, { ...out, happened: text, title: e.written?.title }).then((t) => {
+              if (write) void narrateOutcome(save, { ...out, happened: text, title: e.written?.title }).then((t) => {
                 setOutcomes((xs) => xs.map((x) => (x.id === e.id ? { ...x, text: t ? `${t}` : x.text, facts: t ? text : undefined, writing: false } : x)));
               });
             }} />
@@ -393,11 +410,16 @@ function Options<O extends { id: string; label: string; note?: string }>({ optio
   );
 }
 
-/** The situation you answered, kept above what came of it so the card still says what it was about. */
+/** The situation you answered, kept above what came of it so the card still says what it was about.
+ *  Folded to its first lines: you've read it already. */
 function Setup({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const short = text.length > 220 && !open;
   return (
-    <div className="space-y-2 mb-3">
-      {text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[14px] leading-relaxed dim">{para}</p>)}
+    <div className="mb-3">
+      {short
+        ? <p className="font-prose text-[14px] leading-relaxed dim">{text.slice(0, 200).replace(/\s+\S*$/, "")}… <button className="underline text-[12px]" onClick={() => setOpen(true)}>more</button></p>
+        : <div className="space-y-2">{text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[14px] leading-relaxed dim">{para}</p>)}</div>}
     </div>
   );
 }
