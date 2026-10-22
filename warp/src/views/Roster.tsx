@@ -31,6 +31,7 @@ import { sell } from "../engine/market";
 import { enrichPerson } from "../engine/forge";
 import { getEdge } from "../engine/social";
 import Interact from "./Interact";
+import Cuckold, { cuckoldButton } from "./Cuckold";
 import Dressing from "./Dressing";
 import Surgery from "./Surgery";
 import FeetArt from "./FeetArt";
@@ -62,6 +63,7 @@ export default function Roster() {
     setWithId(id);
   };
   const [dressId, setDressId] = useState<string | null>(null);
+  const [cuckId, setCuckId] = useState<string | null>(null);
   const [showFreed, setShowFreed] = useState(() => { try { return localStorage.getItem("warp:show-freed") === "1"; } catch { return false; } });
   const toggleFreed = () => setShowFreed((v) => { try { localStorage.setItem("warp:show-freed", v ? "0" : "1"); } catch { /* private window */ } return !v; });
   // Women who were yours and are free now, other than a partner (who is in the household list).
@@ -138,10 +140,11 @@ export default function Roster() {
         { id: "menials", label: "Menials", badge: save.menials?.owned ? save.menials.owned.toLocaleString() : undefined, render: () => <MenialsPanel /> },
       ]} />
       <Sheet open={!!openId} onClose={() => setOpenId(null)} title={openId ? save.people[openId]?.name ?? "" : ""} wide>
-        {openId && save.people[openId] ? <PersonPanel id={openId} onClose={() => setOpenId(null)} onWith={() => withHer(openId)} onDress={() => setDressId(openId)} /> : null}
+        {openId && save.people[openId] ? <PersonPanel id={openId} onClose={() => setOpenId(null)} onWith={() => withHer(openId)} onDress={() => setDressId(openId)} onOther={() => setCuckId(openId)} /> : null}
       </Sheet>
       {withId && save.people[withId] ? <Interact id={withId} onClose={() => setWithId(null)} /> : null}
       {dressId && save.people[dressId] ? <Dressing id={dressId} onClose={() => setDressId(null)} /> : null}
+      {cuckId && save.people[cuckId] ? <Cuckold id={cuckId} onClose={() => setCuckId(null)} /> : null}
     </>
   );
 }
@@ -231,7 +234,7 @@ function RosterCard({ p, onOpen, onWith }: { p: Person; onOpen: () => void; onWi
   );
 }
 
-function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: () => void; onWith: () => void; onDress: () => void }) {
+function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; onClose: () => void; onWith: () => void; onDress: () => void; onOther: () => void }) {
   const { save } = useGame();
   const mutate = useHand("people");
   const [tab, setTab] = useState<"her" | "read" | "body" | "theatre" | "work" | "history">("read");
@@ -335,6 +338,7 @@ function PersonPanel({ id, onClose, onWith, onDress }: { id: string; onClose: ()
         {p.age >= 5 && (inHousehold(save, p) || isPartner(save, p)) ? <Button kind="primary" className="flex-1" onClick={onWith}>{isKeeper(save, p) ? "Go to her" : "Be with her"}</Button> : null}
         {mine ? null : <Button className="flex-1" onClick={onDress}>Dress her</Button>}
       </div>
+      {!mine && cuckoldButton(save, id) ? <Button kind="ghost" className="w-full -mt-2 mb-4" onClick={onOther}>{cuckoldButton(save, id)}</Button> : null}
       {mine ? <div className="text-[12px] dim -mt-2 mb-4">{isKeeper(save, p) ? "She owns you." : isPartner(save, p) ? "She's free, and your equal." : "She's free now."} You can {isKeeper(save, p) ? "go to" : "be with"} her, ask her things and see how she is; what she wears, where she works and what's done to her body are hers to decide.</div> : null}
 
       <div className="flex flex-wrap gap-1 mb-4">

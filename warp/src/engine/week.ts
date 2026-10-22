@@ -43,6 +43,7 @@ import { decayMemory, reflect, remember } from "./memory";
 import { coRegulate, diffuseRumors, tickProximity, startRumor, gossip } from "./social";
 import { tickSociety } from "./society";
 import { tickPodolatry } from "./podolatry";
+import { tickCuckold } from "./cuckold";
 import { runOrders } from "./rules";
 import { selectEvents } from "./events";
 import { rollMarkets, recruitResult } from "./market";
@@ -324,6 +325,7 @@ export function endWeek(s: SaveState): WeekReport {
   const feet = tickPodolatry(s);
   if (feet.cash || feet.rep) led.entry("doctrine", "Podolatry: the washing and the tithe", feet.cash, feet.rep);
   for (const l of feet.lines) push(l, "neutral", 4);
+  for (const l of tickCuckold(s)) push(l.text, "neutral", 6, l.person);
 
   // THE WORLD: weather, climate, the economy, the regions. Before the money is settled, because the
   // weather changes what the farms grew and what the power cost.

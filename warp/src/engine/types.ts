@@ -911,6 +911,8 @@ export interface SaveState {
   story?: import("./story").StoryState;
   /** The Supplicationism plot chain — see engine/reversal.ts. */
   reversal?: import("./reversal").ReversalState;
+  /** One of your women, given to another man while you watch. See engine/cuckold.ts. */
+  cuckold?: import("./cuckold").CuckState;
   notifications: Notification[];
   /** Market state — who is for sale this week, and at what. Regenerated weekly. */
   market: MarketState;
