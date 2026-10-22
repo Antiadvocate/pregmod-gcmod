@@ -22,7 +22,7 @@
  *
  * Without a model, each of these returns nothing and the game's own text stands.
  */
-import { pickOption } from "./ownwords";
+import { pickOption, type Order } from "./ownwords";
 import { regionOf, regionNews, knownWord, bring } from "./region";
 import { powers } from "./power";
 import { noteStock, stockLine } from "./turn";
@@ -200,16 +200,16 @@ export function resolveAny(s: SaveState, e: PendingEvent, optionId: string): str
 
 
 /** You answered an event in your own words: which of its choices that amounts to. */
-export function readOwnAnswer(s: SaveState, e: PendingEvent, typed: string, signal?: AbortSignal): Promise<{ id?: string; error?: string }> {
+export function readOwnAnswer(s: SaveState, e: PendingEvent, typed: string, signal?: AbortSignal): Promise<{ id?: string; orders?: Order[]; error?: string }> {
   return readOwnChoice(s, e.seed, choicesOf(e), typed, signal);
 }
 
 /** Any situation with choices (an event, a story chapter): which choice your own words amount to.
  *  Always one of them (engine/ownwords); only stopping it gives none. */
-export async function readOwnChoice(s: SaveState, situation: string, opts: { id: string; label: string; note?: string }[], typed: string, signal?: AbortSignal): Promise<{ id?: string; error?: string }> {
+export async function readOwnChoice(s: SaveState, situation: string, opts: { id: string; label: string; note?: string }[], typed: string, signal?: AbortSignal): Promise<{ id?: string; orders?: Order[]; error?: string }> {
   if (!opts.length) return { error: "there's nothing to answer here" };
   const r = await pickOption(s, situation, opts, typed, signal);
-  return r.stopped ? { error: "stopped" } : { id: r.option.id };
+  return r.stopped ? { error: "stopped" } : { id: r.option.id, orders: r.orders };
 }
 
 const OUTCOME_SYSTEM = `You write what happens next in Free Cities, an adult text game about owning an arcology where slavery is legal. The player was shown a situation and made a choice. If the choice is in the player's own words, play out exactly what they said and did, in those words. The game has decided what came of it (WHAT CAME OF IT). Write it playing out: the scene, what people say and do, how they take it. Keep every fact and every number; do not add consequences the game didn't decide. One to three short paragraphs, second person, present tense. Stop where it could carry on if the player wants to play it out further.

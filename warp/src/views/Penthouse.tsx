@@ -5,6 +5,7 @@
  *  Setup forms, the world and FCTV live on their own screens now; on a phone they buried the two
  *  decisions of the week a screen and a half down. The end-of-week button floats over all of it
  *  and says how many things are still open. */
+import { applyOrders, type Order } from "../engine/ownwords";
 import { momentsOf } from "../engine/moments";
 import { collarOffered, concludeMoment } from "../engine/deeds";
 import AssistantCard from "./Assistant";
@@ -105,7 +106,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
   };
 
   /** Answer an event: one of its choices, or your own words read as one of them. */
-  const pick = (e: (typeof save.events)[number], o: { id: string; label: string; note?: string }) => {
+  const pick = (e: (typeof save.events)[number], o: { id: string; label: string; note?: string }, orders: Order[] = []) => {
     let text = "";
     let chips: Chip[] = [];
     // Only what happens to your own people gets written out; business stays the game's line and what changed.
@@ -114,7 +115,9 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
     mutate((s) => {
       const before = takeStats(s, [e.person, e.other]);
       const via = e.kind.startsWith("reign_") ? { id: o.id, line: "" } : throughHer(s, "people", o, choicesOf(e));
-      text = [via.line, resolveAny(s, e, via.id)].filter(Boolean).join("\n\n");
+      // What you ordered done in your own words is done first, and is part of what happened.
+      const done = applyOrders(s, orders);
+      text = [via.line, resolveAny(s, e, via.id), ...done].filter(Boolean).join("\n\n");
       chips = chipsBetween(before, takeStats(s, [e.person, e.other]));
     });
     const out = { id: e.id, setup: e.seed, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined, chips };
@@ -285,7 +288,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
               if (!r.id) return r.error ?? "couldn't do that";
               const live = save.events.find((x) => x.id === e.id);
               if (!live) return "";
-              pick(live, { id: r.id, label: typed });
+              pick(live, { id: r.id, label: typed }, r.orders ?? []);
               return "";
             }} /> : null}
           </Card>

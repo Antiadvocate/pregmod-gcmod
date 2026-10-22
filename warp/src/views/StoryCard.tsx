@@ -4,6 +4,7 @@
  * The scene, then the choices, then what came of the one you took — all in the same card, so the
  * answer is where you tapped. A choice that needs one of your people opens a picker in place.
  */
+import { applyOrders, type Order } from "../engine/ownwords";
 import { throughHer } from "../engine/share";
 import { useMemo, useState } from "react";
 import { BookOpen, Lock } from "lucide-react";
@@ -50,7 +51,7 @@ export default function StoryCard() {
 
   const title = typeof p.beat.title === "function" ? p.beat.title(p.c) : p.beat.title;
   const opts = optionsFor(save);
-  const choose = (o: OptionView, who?: string, said?: string) => {
+  const choose = (o: OptionView, who?: string, said?: string, orders: Order[] = []) => {
     let a: Answer | null = null;
     const setup = p.beat.text(p.c);
     // Once she holds your collar, what you pick goes through her.
@@ -58,6 +59,9 @@ export default function StoryCard() {
       const via = throughHer(s, "people", o, opts.filter((x) => !x.locked && (!x.pick || x.id === o.id)));
       a = answer(s, via.id, via.id === o.id ? who : undefined);
       if (a && via.line) (a as Answer).text = `${via.line}\n\n${(a as Answer).text}`;
+      // What you ordered done in your own words is done, and is part of what happened.
+      const done = a ? applyOrders(s, orders) : [];
+      if (a && done.length) (a as Answer).text = `${(a as Answer).text}\n\n${done.join("\n\n")}`;
     });
     setPicking(null);
     // In your own words, what you chose is what you said.
@@ -92,7 +96,7 @@ export default function StoryCard() {
           if (!o) return r.error ?? "couldn't do that";
           setOwn(typed);
           // A choice that needs one of your people still asks who.
-          if (o.pick) setPicking(o); else choose(o, undefined, typed);
+          if (o.pick) setPicking(o); else choose(o, undefined, typed, r.orders ?? []);
           return "";
         }} />
       ) : null}
