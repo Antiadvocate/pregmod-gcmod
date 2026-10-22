@@ -44,9 +44,20 @@ export interface Bull {
   age: number;
   /** The old game's 0–10 scale, like everyone's. Always more than yours. */
   dick: number;
+  /** How he looks, moves and talks, as the model first wrote him, so he's the same man every chapter. */
+  manner?: string;
 }
 
-export interface CuckLog { week: number; beat: string; title: string; chose: string; text: string }
+export interface CuckLog {
+  week: number; beat: string; title: string; chose: string; text: string;
+  /** The chapter as you read it, before you chose. */
+  setup?: string;
+  /** Written by the model rather than the game's own words. */
+  written?: boolean;
+}
+
+/** The chapter waiting, as the model wrote it for this woman and this owner. */
+export interface CuckWritten { beat: string; scene: string; labels: Record<string, string>; model: string }
 
 export interface CuckState {
   her: string;
@@ -70,6 +81,7 @@ export interface CuckState {
   seeing: boolean;
   started: number;
   log: CuckLog[];
+  written?: CuckWritten;
   ended?: { week: number; ending: Ending; text: string };
 }
 

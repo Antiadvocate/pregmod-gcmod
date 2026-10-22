@@ -669,10 +669,14 @@ export function answerBeat(s: SaveState, optionId: string): Answered | null {
   if (!x || !b || x.c.due > s.arcology.week) return null;
   const o = b.options(x).find((q) => q.id === optionId);
   if (!o || o.locked?.(x)) return null;
+  const w = x.c.written?.beat === b.id ? x.c.written : undefined;
+  const chose = w?.labels[o.id] ?? o.label;
+  const setup = w?.scene ?? b.text(x);
   const r = o.run(x);
   if (r.shift) apply(s, r.shift, `${b.title}: ${o.label}`);
   const week = s.arcology.week;
-  x.c.log.push({ week, beat: b.id, title: b.title, chose: o.label, text: r.text });
+  x.c.log.push({ week, beat: b.id, title: b.title, chose, text: r.text, setup });
+  delete x.c.written;
   if (r.end) {
     x.c.ended = { week, ending: r.end, text: r.text };
   } else if (r.next) {
@@ -680,7 +684,7 @@ export function answerBeat(s: SaveState, optionId: string): Answered | null {
     x.c.beat = r.next;
     x.c.due = week + (nb?.gap ?? 1);
   }
-  return { title: b.title, chose: o.label, text: r.text, ended: r.end };
+  return { title: b.title, chose, text: r.text, ended: r.end };
 }
 
 export const ENDING_NAME: Record<Ending, string> = {

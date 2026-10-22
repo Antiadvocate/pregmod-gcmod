@@ -5,8 +5,9 @@
  * under her, the chapter in the middle and what you do about it at the bottom, where a thumb is.
  * The chapters before this one fold up underneath, so you can read back how she got here.
  */
-import { useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, HeartCrack } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, HeartCrack, Loader2, RotateCcw, Square } from "lucide-react";
+import { canWrite, writeChapter, writeOutcome } from "../engine/cuckwriter";
 import { useGame } from "../lib/game";
 import { cx } from "../lib/ui";
 import { active, begin, eligible, ready } from "../engine/cuckold";
@@ -33,6 +34,10 @@ function Prose({ text }: { text: string }) {
       ))}
     </div>
   );
+}
+
+function Writing() {
+  return <div className="flex items-center gap-2 dim text-[12.5px] py-2"><Loader2 size={13} className="animate-spin" /> writing it…</div>;
 }
 
 function Bar({ label, value, tone }: { label: string; value: number; tone: string }) {
@@ -75,19 +80,51 @@ export default function Cuckold({ id, onClose }: { id: string; onClose: () => vo
   const c = save.cuckold && save.cuckold.her === id ? save.cuckold : undefined;
   const [last, setLast] = useState<Answered | null>(null);
   const [back, setBack] = useState(false);
+  const [writing, setWriting] = useState<"chapter" | "outcome" | null>(null);
+  const [err, setErr] = useState("");
+  // The game's own words for this chapter, because you asked for them or the model wouldn't.
+  const [plain, setPlain] = useState<string | null>(null);
+  const stopper = useRef<AbortController | null>(null);
   // Built fresh every render: the save is mutated in place, so a memo would keep last chapter's man.
   const x = c ? contextOf(save) : null;
-  if (!p) return null;
   const week = save.arcology.week;
   const beat = c && !c.ended ? beatNow(save) : undefined;
   const canRead = !!beat && c!.due <= week;
+  const model = canWrite(save);
+  const written = !!beat && c?.written?.beat === beat.id ? c.written : undefined;
+  const wantWrite = model && canRead && !!beat && !written && plain !== beat.id && !last && !writing && !err;
+
+  async function write() {
+    const ctl = new AbortController();
+    stopper.current = ctl;
+    setWriting("chapter"); setErr("");
+    const r = await writeChapter(save, ctl.signal);
+    stopper.current = null;
+    setWriting(null);
+    if (ctl.signal.aborted) { if (beat) setPlain(beat.id); return; }
+    if (!r.ok) setErr(r.error ?? "the model couldn't write this chapter");
+    mutate(() => {});
+  }
+  useEffect(() => { if (wantWrite) void write(); }, [wantWrite]);
+
+  if (!p) return null;
   const why = eligible(save, p);
 
-  const choose = (opt: string) => {
+  const choose = async (opt: string) => {
     let got: Answered | null = null;
     mutate((s) => { got = answerBeat(s, opt); });
-    setLast(got);
+    setLast(got); setErr(""); setPlain(null);
+    if (!got || !model) return;
+    const ctl = new AbortController();
+    stopper.current = ctl;
+    setWriting("outcome");
+    const text = await writeOutcome(save, ctl.signal);
+    stopper.current = null;
+    setWriting(null);
+    mutate(() => {});
+    if (text) setLast({ ...(got as Answered), text });
   };
+  const rewrite = () => { mutate((s) => { if (s.cuckold) delete s.cuckold.written; }); setErr(""); setPlain(null); };
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: "var(--ink-0)" }}>
@@ -131,6 +168,7 @@ export default function Cuckold({ id, onClose }: { id: string; onClose: () => vo
                 {c.log.map((l, i) => (
                   <div key={i} className="card-2 p-3">
                     <div className="text-[11px] uppercase tracking-wider dim">week {l.week} · {l.title}</div>
+                    {l.setup ? <Prose text={l.setup} /> : null}
                     <div className="player-line !my-2">{l.chose}</div>
                     <Prose text={l.text} />
                   </div>
@@ -144,7 +182,7 @@ export default function Cuckold({ id, onClose }: { id: string; onClose: () => vo
           <div className="space-y-3">
             <div className="text-[11px] uppercase tracking-wider dim">{last.title}</div>
             <div className="player-line !my-1">{last.chose}</div>
-            <Prose text={last.text} />
+            {writing === "outcome" ? <Writing /> : <Prose text={last.text} />}
           </div>
         ) : null}
 
@@ -163,8 +201,17 @@ export default function Cuckold({ id, onClose }: { id: string; onClose: () => vo
 
         {c && !c.ended && beat && canRead && x && !last ? (
           <div className="space-y-3">
-            <div className="text-[11px] uppercase tracking-wider dim">week {week} · {beat.title}</div>
-            <Prose text={beat.text(x)} />
+            <div className="text-[11px] uppercase tracking-wider dim flex items-center gap-2">
+              <span className="flex-1">week {week} · {beat.title}</span>
+              {model && !writing ? <button className="dim flex items-center gap-1 normal-case tracking-normal" onClick={rewrite} title="Have the model write this chapter again"><RotateCcw size={11} /> rewrite</button> : null}
+            </div>
+            {writing === "chapter" ? <Writing /> : <Prose text={written?.scene ?? beat.text(x)} />}
+            {err && !writing ? (
+              <div className="text-[12px]">
+                <span className="bad">{err}. This is the game's own version.</span>{" "}
+                <button className="acc underline" onClick={() => setErr("")}>try the model again</button>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -179,14 +226,16 @@ export default function Cuckold({ id, onClose }: { id: string; onClose: () => vo
       <div className="shrink-0 hairline-top px-3 py-3 space-y-1.5" style={{ background: "var(--ink-1)", paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
         {!c ? (
           <button className="btn btn-primary w-full" disabled={!!why} onClick={() => mutate((s) => { const her = s.people[id]; if (her) begin(s, her); })}>Ask her</button>
+        ) : writing ? (
+          <button className="btn w-full" onClick={() => stopper.current?.abort()}><Square size={12} /> {writing === "chapter" ? "stop, and read the game's own version" : "stop, and keep the game's own version"}</button>
         ) : last && !c.ended && canRead ? (
           <button className="btn btn-primary w-full" onClick={() => setLast(null)}>Go on</button>
         ) : c && !c.ended && beat && canRead && x ? (
           beat.options(x).map((o) => {
             const lock = o.locked?.(x) ?? null;
             return (
-              <button key={o.id} className={cx("choice !py-2 w-full text-left", lock && "locked")} disabled={!!lock} onClick={() => choose(o.id)}>
-                <span className="block text-[13.5px] leading-snug">{o.label}</span>
+              <button key={o.id} className={cx("choice !py-2 w-full text-left", lock && "locked")} disabled={!!lock} onClick={() => void choose(o.id)}>
+                <span className="block text-[13.5px] leading-snug">{written?.labels[o.id] ?? o.label}</span>
                 {lock ? <span className="block text-[11px] bad mt-0.5">{lock}</span> : o.hint ? <span className="block text-[11px] dim mt-0.5">{o.hint}</span> : null}
               </button>
             );

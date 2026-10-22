@@ -81,6 +81,14 @@ him, and how far you've gone. It ends with you calling it off, taking her back (
 come), keeping her shared, selling her to him, or giving her to him in all but the papers. What
 he does stays on her body, she remembers it, and his child is his.
 
+With a model set, every chapter and every outcome is written by it, not looked up. The game's own
+chapter becomes the outline (what happens, in what order); the model writes it fresh from her
+card (her voice, body, past, tastes and memories), from who you are (your body and your own
+description of yourself), from why she agreed and how far it's gone, from the man as he was
+first written, and from every chapter before, so it's a different story for every woman and every
+run. The choices are relabelled to fit and still do what they did. Tap **rewrite** for another
+take; if the model fails or you stop it, the game's own words stand.
+
 ## With a model, the week is written, not looked up
 
 The engine still decides what happens each week and what every choice does. With a model set in
