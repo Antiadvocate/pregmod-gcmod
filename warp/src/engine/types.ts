@@ -834,6 +834,8 @@ export interface PendingEvent {
   extra?: { id: string; label: string; note?: string }[];
   /** What a generated event leaves open for a later one to pick up. See engine/chronicle. */
   hook?: string;
+  /** Why it's happening now, when the world brought it (engine/region). */
+  cause?: string;
   /** A concrete request the engine found for her, which "grant"/"refuse" choices act on. See engine/wants. */
   ask?: import("./asks").Ask;
 }
@@ -937,6 +939,8 @@ export interface SaveState {
   menials?: import("./menials").Menials;
   /** Faces of people who aren't yours but keep turning up. See engine/faces.ts. */
   faces?: Record<string, import("./faces").Face>;
+  /** The other powers' own lives: their ties, their news, and what might bring them to you. */
+  region?: import("./region").RegionMind;
   /** How much the other powers bother you: envoys, offers, summits. Default "some". */
   world_pace?: "none" | "some" | "full";
   /** Long stories grown from this arcology. See engine/saga.ts. */

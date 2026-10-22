@@ -10,6 +10,7 @@ import { useHand } from "../lib/hand";
 import { Button, Card, Meter, Section, cx } from "../lib/ui";
 import SubTabs from "./SubTabs";
 import { BRANCHES, PROGRAMS, PROGRAM_BY_ID, type Branch } from "../data/arsenal";
+import { knownWord } from "../engine/region";
 import { attitudeWord, build, canBuild, canMove, dominion, empireOf, forces, makeMove, moveCost, MOVES, powers, units, type Move, type PowerView } from "../engine/power";
 import { activeWars, declareWar, setStrategy, STRATEGY, strike, suePeace, type Strategy, type War } from "../engine/war";
 import { rulerOf, talkLeft, talkOf } from "../engine/diplomacy";
@@ -129,7 +130,7 @@ function Powers() {
                 : p.rec.status !== "free" ? <span className={cx("chip", p.rec.status === "allied" ? "good" : "")}>{p.rec.status === "allied" ? "ally" : p.rec.status === "vassal" ? "your vassal" : "yours"}</span>
                 : p.rec.pact ? <span className="chip">pact</span> : null}
             </div>
-            <div className="text-[11.5px] dim">{KIND[p.kind]} · {p.km.toLocaleString()} km · strength {p.strength}{p.rec.pays ? ` · pays you ${money(p.rec.pays)}/wk` : ""}</div>
+            <div className="text-[11.5px] dim">{KIND[p.kind]} · {p.km.toLocaleString()} km · strength {p.strength} · {knownWord(p.rec.known)}{p.rec.need ? ` · needs ${p.rec.need.what}` : ""}{p.rec.pays ? ` · pays you ${money(p.rec.pays)}/wk` : ""}</div>
             <div className="flex items-center gap-2 mt-1.5">
               <div className="flex-1 h-1.5 rounded-full relative" style={{ background: "var(--line)" }}>
                 <div className="absolute top-0 h-1.5 rounded-full" style={{ left: "50%", width: `${Math.abs(p.attitude) / 2}%`, transform: p.attitude < 0 ? "translateX(-100%)" : undefined, background: tone(p.attitude) }} />

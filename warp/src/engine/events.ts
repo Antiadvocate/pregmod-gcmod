@@ -133,10 +133,11 @@ export const EVENTS: EventDef[] = [
   },
   {
     id: "neighbour_scheme", severity: "major", endogenous: false,
-    candidates: (s) => s.arcology.neighbours.filter((n) => n.attitude < 0).map(() => ({})),
+    // A squeeze needs a feud: a neighbour that's turned against you, not one that's merely cool.
+    candidates: (s) => s.arcology.neighbours.filter((n) => n.attitude < -30).slice(0, 1).map(() => ({})),
     weight: (s) => 5 + s.arcology.neighbours.filter((n) => n.attitude < -30).length * 3,
     seed: (s) => {
-      const n = s.arcology.neighbours.filter((x) => x.attitude < 0).sort((a, b) => a.attitude - b.attitude)[0];
+      const n = s.arcology.neighbours.filter((x) => x.attitude < -30).sort((a, b) => a.attitude - b.attitude)[0];
       return `${n?.name ?? "The arcology to the east"} has started buying your suppliers. Three of them have stopped returning your steward's calls, and a fourth has doubled his prices.\n\nIt's a deliberate squeeze. If it keeps going, your shops will start running short and your citizens will notice.`;
     },
     options: [
@@ -487,7 +488,10 @@ export function selectEvents(s: SaveState, opts: { writer?: boolean } = {}): Pen
       // reasons; the stock events about one woman stay out.
       if (opts.writer && c.person) continue;
       const key = c.person ? `${def.id}:${c.person.id}` : def.id;
-      if (s.arcology.week - (recent[key] ?? -99) < 6) continue;
+      // Something about the wider world happens to you once in a long while, not every six weeks
+      // because your bank balance still qualifies.
+      const gap = def.endogenous || c.person ? 6 : 26;
+      if (s.arcology.week - (recent[key] ?? -99) < gap) continue;
       const w = def.weight(s, c);
       if (w > 0) pool.push({ def, c, w });
     }

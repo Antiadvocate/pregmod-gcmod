@@ -520,6 +520,9 @@ const STOCK: RegExp[] = [
   /\bI'?m done guessing\b/i, /\bso you know (where|what)\b/i, /\bnot saying (that|this|it) to\b/i, /\bfrom my side\b/i,
   /\bmeans it, (he|she) does\b/i, /\brain (still )?(dark|dripping|beading|running) (on|off|from)\b/i, /\bwhat do you tell (him|her|them)\b/i,
   /\bwhat'?s it (going to|gonna) be\b/i, /\bI need you to (understand|know)\b/i, /\bwhere (I|we) stand\b/i,
+  /\b(coat|boots|hair|shoulders|sleeves?) (still )?(streaming|wet|dripping|grey|dusty|soaked)\b/i, /\b(dust|rain|soot|mud) still\b/i,
+  /\b(rain|wind|storm) (hammers|lashes|throws|batters|beats)\b/i, /\bwith a jaw like\b/i, /\bwithout blinking\b/i,
+  /\byour call,? (boss|sir|master)?\b/i, /\bI'?m not here to be\b/i, /\bI'?m here because\b/i, /\btaps (it|one|the \w+) with a (finger|fingernail)\b/i,
 ];
 
 export function findStock(prose: string): string | undefined {
