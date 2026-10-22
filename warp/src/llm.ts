@@ -74,6 +74,8 @@ export interface CallOptions {
   onReset?: () => void;
   /** Called before waiting out a rate limit, with how long and why. */
   onWait?: (ms: number, status: number) => void;
+  /** Someone is sitting watching for this one: it goes ahead of background writing in the line. */
+  urgent?: boolean;
 }
 
 /** Anyone can listen for rate-limit waits (the shell shows a notice), without every caller
@@ -92,21 +94,54 @@ export function isRefusal(text: string): boolean {
 
 /** One call at a time, a moment apart. The game used to fire the week summary, the assistant's
  *  brief and the scene's bookkeeper at the same instant; bursts like that are what a provider
- *  rate-limits first. Queued calls still honour Stop. */
-let queue: Promise<unknown> = Promise.resolve();
+ *  rate-limits first.
+ *
+ *  Stop works while a call is still waiting its turn: it leaves the line at once rather than when
+ *  everything ahead of it has finished, which with a week's letters and events queued ahead could
+ *  be never. And a call somebody is sitting watching (`urgent`) goes ahead of the background
+ *  writing, though never ahead of another urgent one. */
+interface Job { go: () => void; urgent: boolean }
+const waiting: Job[] = [];
+let busy = false;
 let lastStart = 0;
-function queued<T>(fn: () => Promise<T>, signal?: AbortSignal): Promise<T> {
-  const run = async () => {
-    if (signal?.aborted) throw Object.assign(new Error("aborted"), { name: "AbortError" });
-    const gap = 400 - (Date.now() - lastStart);
-    if (gap > 0) await sleep(gap, signal);
-    lastStart = Date.now();
-    return fn();
-  };
-  const p = queue.then(run, run);
-  queue = p.catch(() => undefined);
-  return p;
+const aborted = () => Object.assign(new Error("aborted"), { name: "AbortError" });
+function pump(): void {
+  if (busy) return;
+  const job = waiting.shift();
+  if (!job) return;
+  busy = true;
+  job.go();
 }
+function queued<T>(fn: () => Promise<T>, signal?: AbortSignal, urgent = false): Promise<T> {
+  return new Promise<T>((ok, fail) => {
+    const job: Job = {
+      urgent,
+      go: async () => {
+        try {
+          if (signal?.aborted) throw aborted();
+          const gap = 400 - (Date.now() - lastStart);
+          if (gap > 0) await sleep(gap, signal);
+          lastStart = Date.now();
+          ok(await fn());
+        } catch (e) { fail(e); } finally { busy = false; pump(); }
+      },
+    };
+    if (signal?.aborted) { fail(aborted()); return; }
+    signal?.addEventListener("abort", () => {
+      const i = waiting.indexOf(job);
+      if (i >= 0) { waiting.splice(i, 1); fail(aborted()); }
+    }, { once: true });
+    const at = urgent ? waiting.findIndex((j) => !j.urgent) : -1;
+    waiting.splice(at < 0 ? waiting.length : at, 0, job);
+    pump();
+  });
+}
+
+/** How long one request may take before it's cut off: long enough for a slow model writing a long
+ *  chapter, short enough that one dead connection can't hold up every call behind it for good.
+ *  A streamed reply may go quiet for a minute and a half between pieces before it's dropped. */
+const REQUEST_LIMIT_MS = 240_000;
+const STREAM_IDLE_MS = 90_000;
 
 /**
  * WHO THE OWNER IS, on every call. The game sets it from the save (engine/you.ts ownerLine) and it
@@ -128,7 +163,7 @@ export async function call(raw: CallOptions): Promise<LLMResult> {
   let lastErr = "";
   for (const model of chain) {
     try {
-      const res = await queued(() => once({ ...opts, model }), opts.signal);
+      const res = await queued(() => once({ ...opts, model }), opts.signal, opts.urgent);
       // A refusal is not a scene. Try the fallback model; if that refuses too, the caller gets a
       // failure and uses the game's own written version instead of printing the refusal.
       if (!opts.json && isRefusal(res.text)) {
@@ -141,7 +176,7 @@ export async function call(raw: CallOptions): Promise<LLMResult> {
       return { ...res, text: plain(res.text) };
     } catch (e) {
       // Stopped by the player: don't try the fallback, just stop.
-      if (opts.signal?.aborted) return { ok: false, text: "", usage: { prompt_tokens: 0, completion_tokens: 0 }, model, error: "stopped" };
+      if (opts.signal?.aborted || (e as Error)?.name === "AbortError" && !(e as { timedOut?: boolean }).timedOut) return { ok: false, text: "", usage: { prompt_tokens: 0, completion_tokens: 0 }, model, error: "stopped" };
       lastErr = String((e as Error)?.message ?? e);
       logErr(model, e);
     }
@@ -166,7 +201,26 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
-async function once(opts: CallOptions): Promise<LLMResult> {
+async function once(raw: CallOptions): Promise<LLMResult> {
+  // The player's Stop, and the time limit, both end the request.
+  const ctl = new AbortController();
+  let timedOut = false;
+  const cut = () => { timedOut = true; ctl.abort(); };
+  let timer = setTimeout(cut, REQUEST_LIMIT_MS);
+  const onStop = () => ctl.abort();
+  if (raw.signal?.aborted) ctl.abort(); else raw.signal?.addEventListener("abort", onStop, { once: true });
+  try {
+    return await onceWith({ ...raw, signal: ctl.signal }, () => { clearTimeout(timer); timer = setTimeout(cut, STREAM_IDLE_MS); });
+  } catch (e) {
+    if (timedOut) throw Object.assign(new Error(`${raw.model} took too long to answer and was cut off`), { name: "AbortError", timedOut: true });
+    throw e;
+  } finally {
+    clearTimeout(timer);
+    raw.signal?.removeEventListener("abort", onStop);
+  }
+}
+
+async function onceWith(opts: CallOptions, alive: () => void): Promise<LLMResult> {
   const t = resolveTarget(opts.model);
   const body: Record<string, unknown> = {
     model: t.model,
@@ -236,6 +290,7 @@ async function once(opts: CallOptions): Promise<LLMResult> {
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
+    alive();
     buf += dec.decode(value, { stream: true });
     const lines = buf.split("\n");
     buf = lines.pop() ?? "";
