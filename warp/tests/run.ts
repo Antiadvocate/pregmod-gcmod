@@ -29,6 +29,7 @@ import "./feet.test.ts";
 import "./features.test.ts";
 import "./cuckold.test.ts";
 import "./cuckwriter.test.ts";
+import "./growth.test.ts";
 import "./plot.test.ts";
 import "./deeds.test.ts";
 import "./fates.test.ts";

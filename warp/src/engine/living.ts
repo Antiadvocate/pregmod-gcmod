@@ -22,6 +22,7 @@
  *
  * Without a model, each of these returns nothing and the game's own text stands.
  */
+import { dueToGrow, growPersona } from "./growth";
 import { pickOption, type Order } from "./ownwords";
 import { regionOf, regionNews, knownWord, bring } from "./region";
 import { powers } from "./power";
@@ -414,6 +415,9 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
   // Nobody in a scene should sound like everybody else. Two a week get a voice of their own, the
   // ones you see most first.
   for (const p of voiceless(s).slice(0, 2)) { step(`${p.name}'s voice`); await enrichPerson(s, p, p.economics.weeks_owned > 2); }
+  // And nobody stays who she was the week she arrived: one woman a week who has lived through
+  // something big since she was last read is written again as who she's become (engine/growth).
+  for (const p of dueToGrow(s).slice(0, 1)) { step(`who ${p.name} has become`); await growPersona(s, p); }
   // Once she holds your collar, she decides her own week before anything is written about it.
   if (s.player.owned_by && s.reign && !s.reign.ended) {
     step(s.people[s.player.owned_by]?.name ?? "her");

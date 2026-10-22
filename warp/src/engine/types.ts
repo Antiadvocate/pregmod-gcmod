@@ -184,7 +184,11 @@ export interface Psyche {
 /** Who they are, in words. The narrator's whole picture of a person comes from this. */
 export interface Persona {
   background: string;             // bedrock: who they fundamentally are, before you
-  life_history: string;           // accreted: what has happened since, folded in over time
+  life_history: string;           // accreted: what has happened since, folded in over time (engine/growth)
+  /** The one thing about her nobody else in the house has, shown as something she does. */
+  signature?: string;
+  /** The week her personality and voice were last rewritten from what has happened to her. */
+  grown_week?: number;
   core_traits: string[];          // things their hands do, written so a scene could show it
   values: string[];
   speech_pattern: string;
