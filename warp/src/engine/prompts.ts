@@ -55,7 +55,9 @@ import { governorLine } from "./governor";
  */
 export const HOUSE_STYLE = `HOW FREE CITIES WRITES. Second person, present tense, the player is "you". The narrator talks to the player the way the original game does: easy, wry, explicit and quick. It says who does what to whom with which body part in ordinary crude words, says straight out how people take it ("She's nervous, but she's glad you asked"; "your tighter-assed slaves are frightened by it"), and moves on. A lot of the time the narrator simply tells the player what happened; people talk when they have something to say. Slaves call the player by the name given under THE OWNER unless their card says otherwise.
 
-PEOPLE. Each person sounds like her card: her speech pattern, her habits, her mood. Most people say what they've got to say and stop. Nobody explains their own motives or tells the player how to take what they just said ("I'll be honest", "I'm not saying this to change your mind", "I'm saying it so you know where I stand"). Nobody carries a prop in to fiddle with while they talk, and nobody stops at the door for "one more thing".
+PEOPLE. Each person sounds like her card and like nobody else: her own words, her own habits, what she's into and what she's been through, all showing in what she says and does. Give every woman in a scene at least one thing only she would say or do; if a line could come out of any of them, it's the wrong line. Generic fillers ("like", "just", "honestly", "okay", "I mean", "you know") are seasoning for the rare woman who really talks that way, never the default voice. Most people say what they've got to say and stop.
+
+COLOUR. The narration has life in it, the way the best porn games write: specific, physical, quick, and a little funny when the moment allows. A comic exaggeration or a concrete, earthy comparison is welcome when it's short and true ("her eyes all but undressing you", "she sighs like you've handed her a winning ticket", "pleading eyes a puppy would be proud of"); what's out is the poetic, abstract kind (waves, electricity, stars, melting, shattering). Show her strongest traits in what her body does, every few lines, not once in a summary. Let pleasure be loud and specific in her mouth: drawn-out words, her own swearing in her own language, her own names for things. Nobody explains their own motives or tells the player how to take what they just said ("I'll be honest", "I'm not saying this to change your mind", "I'm saying it so you know where I stand"). Nobody carries a prop in to fiddle with while they talk, and nobody stops at the door for "one more thing".
 
 THE OWNER'S PEOPLE DON'T MANAGE THE OWNER. A slave, even one who runs a facility or the household, reports, asks, begs, sulks quietly, flirts or obeys, and does it as a slave: by the owner's title, deferring, as the original game's slaves do ("Yes, Master." "Please, Master." "I love you, Master."). Trust and love don't make her the owner's friend or girlfriend; only what her card says under THE POWER BETWEEN YOU loosens it. She doesn't tell the owner how it's going to be, set terms, announce she's "telling, not asking", or say she's "done guessing". Staff and citizens are the same, a step further back. Only a woman whose card says she holds the power between you, or has reached open defiance, talks to the owner as an equal or from above.
 
@@ -163,6 +165,14 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
 
   const lines: string[] = [];
   lines.push(`### ${p.name}${p.surname ? " " + p.surname : ""} [${p.id}] — ${p.age}, ${p.origin.nationality}, ${p.pronouns}`);
+  // WHO SHE IS NOW, AND WITH YOU, first: on a long card the middle gets lost, and these are what
+  // make her her in this scene (engine/growth writes the first; the orders are yours).
+  if (p.persona.signature) lines.push(`ONLY HER: ${p.persona.signature}`);
+  if (p.persona.life_history) lines.push(`WHO SHE HAS BECOME HERE: ${p.persona.life_history}`);
+  const power = powerBetween(s, p);
+  if (power) lines.push(power);
+  const ordersTop = agreementsBrief(s, p);
+  if (ordersTop) lines.push(ordersTop);
   const now = p.body.appearance_now && !/^wearing\b/i.test(p.body.appearance_now) ? `Right now: ${p.body.appearance_now}. ` : "";
   lines.push(`BODY: ${p.body.appearance_facts} ${now}Wearing ${p.clothes}.`);
   lines.push(`BETWEEN HER LEGS (fact; never contradict it): ${describeGenitals(p)}`);
@@ -180,14 +190,12 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(`PERSONALITY: ${p.persona.core_traits.join("; ")}`);
   const v = p.persona.voice;
   lines.push(`TALKS LIKE: ${p.persona.speech_pattern}${v?.diction ? `. ${v.diction}` : ""}${v?.rhythm ? ` ${v.rhythm}` : ""}`);
-  if (v?.tics?.length) lines.push(`HER HABITS WHEN SHE TALKS (use them; they're how you know it's her): ${v.tics.join("; ")}.`);
+  if (v?.tics?.length) lines.push(`HER HABITS WHEN SHE TALKS (use one or two in a scene, not all; they're how you know it's her): ${v.tics.join("; ")}.`);
   if (v?.example_lines?.length) lines.push(`SHE SOUNDS LIKE (her voice; how she may speak to you is under THE POWER BETWEEN YOU, and that wins): ${v.example_lines.slice(0, 5).map((l) => `"${l}"`).join(" / ")}`);
   if (p.persona.voice?.never_says?.length) lines.push(`NEVER SAYS: ${p.persona.voice.never_says.join("; ")}`);
   // Words, not scores: a number on the card turns up in her mouth as one.
   if (s.player.owned_by === p.id) lines.push(`HOW SHE FEELS ABOUT YOU: ${r.trust_label}${r.devotion > 40 ? ", and she's attached to you" : r.devotion < -15 ? ", and she has no love for you" : ""}. That is a feeling, not a manner: how she treats you is under HOW SHE KEEPS YOU, and attachment doesn't make her gentle unless that says so.`);
   else lines.push(`TOWARD YOU: ${r.label}, ${r.trust_label}.${r.fragility > 0.6 ? " Most of her obedience is fear." : ""}`);
-  const power = powerBetween(s, p);
-  if (power) lines.push(power);
   lines.push(`HOW SHE IS DOING: ${condition(p)}; mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` On her mind: ${p.psyche.active_states.join(", ")}.` : ""}`);
   if (edge?.roles.length) lines.push(`ROLES: ${edge.roles.join(", ")}`);
   const room = roomLine(p);
@@ -214,8 +222,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   const outside = tiedTo(s, p.id);
   const gone = { dead: "DEAD", ruined: "ruined", exiled: "driven out of the arcology", jailed: "locked up", bought: "bought off by the owner" };
   if (outside.length) lines.push(`PEOPLE IN HER LIFE OUTSIDE THE HOUSE: ${outside.map((x) => `${x.face.name}, ${x.what}${x.face.fate ? ` (${gone[x.face.fate.fate]} since week ${x.face.fate.week}: ${x.face.fate.how})` : record(s, x.face)}`).join(" / ")}`);
-  const orders = agreementsBrief(s, p);
-  if (orders) lines.push(orders);
+
   lines.push(`SHE CALLS YOU: ${s.player.owned_by === p.id ? (s.reign?.your_name ?? "whatever she likes") : calledBy(s, p)}${s.player.owned_by === p.id ? "" : " (always this; never another title unless she is defying you)"}.`);
   if (memories.length) lines.push(`REMEMBERS: ${memories.map(memoryLine).join(" | ")}`);
   if (p.psyche.state !== "intact") lines.push(`She is ${p.psyche.state}${p.psyche.break_mode ? ` (${p.psyche.break_mode})` : ""}. Write her that way, not as fine.`);
@@ -344,4 +351,4 @@ export const FORGE_SYSTEM = `You are fleshing out a slave for Free Cities, an ad
  "defining_memory": {"content":"one thing that happened to her, in her own words","charge":"warm|cold|sharp|bright","importance":8}
 }
 
-Write a specific, ordinary person from the place she actually comes from: a Ukrainian bookkeeper had a Ukrainian bookkeeper's life. Give her a sense of humour or the lack of one, things she's petty about, how she gets things wrong, and how she sounds out loud: the fillers, the half-sentences, the way she trails off. She's a slave and she knows it: with her owner she speaks as one (by title, deferential, refusals as pleas); her swearing, her jokes and her temper are for the other girls and for herself. The words the way she'd say them, nothing literary or pretty (the narrator copies whatever wording it's given). No tragic boilerplate, no lines that sound like sayings.`;
+Write a specific, ordinary person from the place she actually comes from: a Ukrainian bookkeeper had a Ukrainian bookkeeper's life. Give her a sense of humour or the lack of one, things she's petty about, how she gets things wrong, and how she sounds out loud: the particular words and habits that make her sound like her and nobody else (a phrase she reaches for, a word from her own language, how she names things), not generic fillers like "like", "honestly" or "I mean". She's a slave and she knows it: with her owner she speaks as one (by title, deferential, refusals as pleas); her swearing, her jokes and her temper are for the other girls and for herself. The words the way she'd say them, nothing literary or pretty (the narrator copies whatever wording it's given). No tragic boilerplate, no lines that sound like sayings.`;
