@@ -1,7 +1,7 @@
 /**
- * THE OTHER MAN, WRITTEN — with a model, the chapter and the outcome come from it, built from her,
- * the owner and the story so far; the engine still decides what happens; a failure keeps the
- * game's own words.
+ * THE OTHER MAN, WRITTEN — every chapter, choice and outcome comes from the model, built from her,
+ * the owner and the story so far; the owner can answer in their own words; the engine's facts
+ * hold whatever the model writes.
  */
 import { check } from "./harness.ts";
 
@@ -13,14 +13,13 @@ if (!hadLoc) g.location = { origin: "http://test" };
 const { setApiKey } = await import("../src/config.ts");
 const { setOwnerContext } = await import("../src/llm.ts");
 const { newGame } = await import("../src/engine/state.ts");
-const { begin } = await import("../src/engine/cuckold.ts");
-const { answerBeat, beatNow } = await import("../src/data/cuckold.ts");
-const { writeChapter, writeOutcome } = await import("../src/engine/cuckwriter.ts");
+const { begin, answer } = await import("../src/engine/cuckold.ts");
+const { writeChapter, writeOutcome, answerOwn } = await import("../src/engine/cuckwriter.ts");
 const { ownerLine } = await import("../src/engine/you.ts");
 setApiKey("sk-test");
 
 const sent: { system: string; user: string }[] = [];
-let reply = (_user: string): string => "";
+let reply = (_system: string, _user: string): string => "";
 let fail = false;
 g.fetch = async (_url: string, init: { body: string }) => {
   const body = JSON.parse(init.body);
@@ -29,53 +28,71 @@ g.fetch = async (_url: string, init: { body: string }) => {
   const user = msgs.find((m) => m.role === "user")?.content ?? "";
   sent.push({ system, user });
   if (fail) return new Response("nope", { status: 500 });
-  return new Response(JSON.stringify({ choices: [{ message: { content: reply(user) } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }), { status: 200 });
+  return new Response(JSON.stringify({ choices: [{ message: { content: reply(system, user) } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }), { status: 200 });
 };
 
 const s = newGame({ seed: "cuck-write", starting_slaves: 4 } as never);
 s.models.narrator_model = "test/model";
-s.player.self = "a soft-handed accountant who never wanted the building";
+s.player.self = "a soft-handed accountant who never wanted the building and says 'darling' too much";
 setOwnerContext(`${ownerLine(s)}\n\nTHE OWNER, IN THEIR OWN WORDS: ${s.player.self}`);
 const her = Object.values(s.people).find((p) => p.age >= 18 && p.health.recovery_weeks <= 0)!;
 begin(s, her);
 
-const SCENE = `Late, in the penthouse, ${her.name} stands by the glass and listens to you explain it. `.repeat(6);
-reply = () => JSON.stringify({ scene: SCENE, choices: [{ id: "brute", label: "Him. The guard who stares at her" }, { id: "bogus", label: "x" }], him: "Slow to speak, quick to grin, smells of gun oil." });
+const SCENE = `Late, in the penthouse, ${her.name} listens to you and twists the hem of her shift. `.repeat(6);
+const men = [{ name: "Kade Whitlock", age: 34, who: "runs a shift on your security detail", manner: "slow to speak, quick to grin, smells of gun oil" }, { name: "Julian Marr", age: 47, who: "a broker", manner: "soft-voiced" }];
+reply = () => JSON.stringify({ title: "Asking Her", scene: SCENE, choices: [
+  { label: "Kade, darling. The one who stares at you.", move: "pick", man: men[0] },
+  { label: "Julian. He's patient, darling.", move: "pick", man: men[1] },
+  { label: "Sell her now", move: "sell" },
+  { label: "Forget it, darling. Forget I said anything.", move: "never" },
+] });
 const r1 = await writeChapter(s);
-check("the model writes the chapter", r1.ok && s.cuckold!.written?.scene === SCENE.trim(), r1);
+const c = s.cuckold!;
+check("the model writes the first chapter", r1.ok && c.chapter?.scene === SCENE.trim(), r1);
 check("it's written from her card", sent.at(-1)!.user.includes(her.name) && /## HER/.test(sent.at(-1)!.user));
-check("and from the owner's own description of themself", sent.at(-1)!.system.includes("soft-handed accountant"));
-check("the outline is the game's own chapter, to be rewritten", /THE OUTLINE[\s\S]*There are three names/.test(sent.at(-1)!.user));
-check("the choices are relabelled, and only real ones", s.cuckold!.written!.labels.brute === "Him. The guard who stares at her" && !("bogus" in s.cuckold!.written!.labels));
-const calls = sent.length;
-await writeChapter(s);
-check("a written chapter isn't written twice", sent.length === calls);
+check("and from the owner's own character", sent.at(-1)!.system.includes("says 'darling' too much"));
+check("the choices are the owner speaking, in their voice", /THE CHOICES ARE THE OWNER SPEAKING/.test(sent.at(-1)!.system));
+check("nothing in the prompt is a written chapter to copy", !/OUTLINE/.test(sent.at(-1)!.user));
+check("a move that isn't allowed is dropped", c.chapter!.choices.length === 3 && !c.chapter!.choices.some((x) => x.move === "sell"));
+check("the men are the model's", c.chapter!.choices.filter((x) => x.man).map((x) => x.man!.name).join() === "Kade Whitlock,Julian Marr");
 
-const OUT = `He answers in under a minute. ${her.name} watches you send it and says nothing at all. `.repeat(3);
+// Your own words: the model reads them as a move, and the engine does it.
+reply = (system) => /You read what the owner typed/.test(system) ? JSON.stringify({ move: "pick", man: { name: "Kade Whitlock" } }) : "";
+const own = await answerOwn(s, "The guard. Kade. Tell him to come up tonight, darling.");
+check("you can answer in your own words", own.ok && c.bull?.name === "Kade Whitlock" && c.log[0].own === true, own);
+check("it keeps who he is from the chapter", !!c.bull?.manner.includes("gun oil"));
+check("your words are what you said", c.log[0].chose.startsWith("The guard. Kade."));
+
+const OUT = `He comes up at nine. ${her.name} watches the lift doors open and forgets to breathe. `.repeat(3);
 reply = () => OUT;
-const a = answerBeat(s, "brute")!;
-check("what you chose is the label you were shown", a.chose === "Him. The guard who stares at her");
-check("the chapter you read is kept with the choice", s.cuckold!.log[0].setup === SCENE.trim());
-check("the written chapter is cleared for the next one", !s.cuckold!.written);
-check("the engine still decided: he's chosen", s.cuckold!.bull?.kind === "brute");
-const t = await writeOutcome(s);
-check("the outcome is written by the model", t === OUT.trim() && s.cuckold!.log[0].text === OUT.trim() && s.cuckold!.log[0].written === true);
-check("the outcome is written from the game's version as the facts", /WHAT HAPPENS \(the game's version/.test(sent.at(-1)!.user));
+const o1 = await writeOutcome(s);
+check("the outcome is the model's", o1.ok && c.log[0].text === OUT.trim());
+check("your own words are played out as you said them", /in their own words/.test(sent.at(-1)!.user) && /play out exactly what they said/.test(sent.at(-1)!.system));
 
-// The next chapter knows the man and the story so far.
-s.arcology.week = s.cuckold!.due;
-s.cuckold!.bull!.manner = "Slow to speak, quick to grin, smells of gun oil.";
-reply = () => JSON.stringify({ scene: SCENE, choices: [] });
+// The next chapter: the same man, the story so far, your voice so far.
+s.arcology.week = c.due;
+reply = () => JSON.stringify({ title: "Dinner", scene: SCENE, choices: [{ label: "Let him, darling. I want to see.", move: "watch" }, { label: "Sit on his lap, sweetheart.", move: "push" }, { label: "No more. Go home, Kade.", move: "stop" }] });
 await writeChapter(s);
 const u = sent.at(-1)!.user;
-check("the next chapter is written from the story so far", /THE STORY SO FAR[\s\S]*Him\. The guard who stares at her/.test(u));
-check("and from the same man", u.includes("gun oil") && u.includes(s.cuckold!.bull!.name));
+check("written from the story so far", /THE STORY SO FAR[\s\S]*forgets to breathe/.test(u));
+check("and the same man", u.includes("gun oil") && u.includes("Kade Whitlock"));
+check("and everything the owner has said, to match their voice", /WHAT THE OWNER HAS SAID[\s\S]*typed it themselves[\s\S]*Tell him to come up tonight/.test(u));
 
-// A model that fails leaves the game's own words.
-delete s.cuckold!.written;
+// A chapter that leaves out a way out is asked for again.
+const n = sent.length;
+const e = answer(s, c.chapter!.choices[0])!;
+e.text = "x";
+s.arcology.week = c.due;
+let tries = 0;
+reply = () => { tries++; return JSON.stringify({ title: "Home Late", scene: SCENE, choices: [{ label: "Tell me everything.", move: "watch" }, { label: "Again.", move: "push" }] }); };
+await writeChapter(s);
+check("missing a must-have move, the model is asked again, once", tries === 2 && sent.length === n + 2 && /You left out these moves/.test(sent.at(-1)!.user));
+
+// The engine's facts go to the model as facts; a failure writes nothing.
+delete c.chapter;
 fail = true;
 const r2 = await writeChapter(s);
-check("a failed call writes nothing", !r2.ok && !s.cuckold!.written && !!beatNow(s));
+check("a failed call writes nothing", !r2.ok && !c.chapter);
 fail = false;
 
 g.fetch = oldFetch;

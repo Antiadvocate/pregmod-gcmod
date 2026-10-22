@@ -67,27 +67,22 @@ repeat once answered, and change once she has the standing to tell you instead o
 ## The other man
 
 On any grown woman you own, **Give her to another man** (on her page) starts a netorare story
-that runs beside the arcology rather than through it: you, her, and one man you pick (a broker
-who's tried to buy her, a guard who's wanted her for months, or a dock hand half your age). Ten
-chapters a week or two apart: asking her, a dinner where his hand goes under the table, a kiss at
-the door, the first night with you in the chair, the night she comes home late in his shirt, the
-call, his name in your bed, your own bed, his seed, and his offer. Between chapters she goes to
-him on her own nights, and the week report tells you how many.
+that runs beside the arcology rather than through it: you, her, and one man you pick. It needs a
+model, because the model writes every word of it: the chapters, the men you choose between, the
+choices and what comes of them, out of her card (her voice, body, past, tastes, memories), who you
+are (your body and your own description of yourself), why she agreed, how far it's gone, the man
+as he was first written, and every chapter before. The choices are things you would say, in your
+voice, and under them there's always a box to say or do something yourself instead.
 
-Every chapter lets you push her further, sit and watch, or try to pull her back. Why she agreed
-(for you, for herself, or to hurt you) is set by how she already feels about you and colours
-everything she says. Three bars track it: how much of her is still yours, how far she's gone to
-him, and how far you've gone. It ends with you calling it off, taking her back (if she'll still
-come), keeping her shared, selling her to him, or giving her to him in all but the papers. What
-he does stays on her body, she remembers it, and his child is his.
-
-With a model set, every chapter and every outcome is written by it, not looked up. The game's own
-chapter becomes the outline (what happens, in what order); the model writes it fresh from her
-card (her voice, body, past, tastes and memories), from who you are (your body and your own
-description of yourself), from why she agreed and how far it's gone, from the man as he was
-first written, and from every chapter before, so it's a different story for every woman and every
-run. The choices are relabelled to fit and still do what they did. Tap **rewrite** for another
-take; if the model fails or you stop it, the game's own words stand.
+The engine keeps what has to be true. The story runs in phases (picking him, before he's had her,
+the affair, his offer), and every choice, written or typed, comes down to one move from a fixed
+list (push her, watch, hold her back, end it, his first night with her, clean her up, the cage,
+breeding, and the endings), which is what actually happens to her body, her feelings about you
+and three bars: how much of her is still yours, how far she's gone to him, and how far you've
+gone. Why she agreed (for you, for herself, or to hurt you) comes from how she already feels about
+you. Between chapters she goes to him on her own nights, and the week report counts them. Endings:
+call it off, take her back (if she'll still come), share her, sell her to him, or give her to him
+in all but the papers.
 
 ## With a model, the week is written, not looked up
 
