@@ -144,7 +144,9 @@ export async function runTurn(
 
   // ── detectors: what the narrator did wrong, quoted back at it next turn ────────────────────
   s.corrections = {};
+  const stock = findStock(prose);
   const filler = findFiller(prose);
+  if (stock) { s.corrections.stock = stock; s.integrity.fires.push({ week: s.arcology.week, kind: "stock", detail: stock }); }
   if (filler) { s.corrections.filler = filler; s.integrity.fires.push({ week: s.arcology.week, kind: "filler", detail: filler }); }
   const maxim = findMaxim(prose);
   if (maxim) { s.corrections.maxim = maxim; s.integrity.fires.push({ week: s.arcology.week, kind: "maxim", detail: maxim }); }
@@ -509,6 +511,35 @@ function aliveBeats(s: SaveState, action: string, mode: ActionMode): string {
  *  woman who won't look at you, fidgets or drops her shoulders is a person, and an earlier, wider
  *  list taught the narrator to strip every human thing out of a scene. */
 const FILLER = /\b(breath (catches|caught|hitches|hitched)|throat (moves|moved|works|worked)|jaw (tightens|tightened|works|worked)|something (tightened|shifted|flickered|passed|hardened|softened) (in|across|behind)|the rhythm falters|exhales? through (her|his|their) nose)\b/i;
+
+/** The assistant's stock lines and stage business, turning up in people's mouths. Quoted back to
+ *  whichever writer goes next, so it isn't written twice. */
+const STOCK: RegExp[] = [
+  /\bI'?ll be (honest|straight|frank) with you\b/i, /\bto be (honest|frank)\b/i, /\bI'?m not asking\b[^.?!]*\bI'?m telling\b/i,
+  /\bone more thing\b/i, /\blike a shield\b/i, /\bdoesn'?t wait to be asked\b/i, /\b(hand|fingers) on the (door|handle)\b/i,
+  /\bI'?m done guessing\b/i, /\bso you know (where|what)\b/i, /\bnot saying (that|this|it) to\b/i, /\bfrom my side\b/i,
+  /\bmeans it, (he|she) does\b/i, /\brain (still )?(dark|dripping|beading|running) (on|off|from)\b/i, /\bwhat do you tell (him|her|them)\b/i,
+  /\bwhat'?s it (going to|gonna) be\b/i, /\bI need you to (understand|know)\b/i, /\bwhere (I|we) stand\b/i,
+];
+
+export function findStock(prose: string): string | undefined {
+  // The one that spans two sentences: "I'm not asking you to. I'm telling you."
+  const across = /I'?m not asking[^"]{0,80}?I'?m telling( you)?\.?/i.exec(prose);
+  if (across) return across[0].slice(0, 180);
+  for (const sentence of prose.split(/(?<=[.!?"])\s+/)) if (STOCK.some((re) => re.test(sentence))) return sentence.trim().slice(0, 180);
+  return undefined;
+}
+
+/** Remember the last stock line any writer produced, or forget it once one writes clean. */
+export function noteStock(s: SaveState, prose: string): void {
+  const hit = findStock(prose);
+  if (hit) s.corrections.stock = hit; else delete s.corrections.stock;
+}
+
+/** For any writer's prompt: what the last one did that it shouldn't have. */
+export function stockLine(s: SaveState): string {
+  return s.corrections.stock ? `## DON'T WRITE THIS AGAIN\nLast time the writer put this in: "${s.corrections.stock}". It's a stock line; nobody in this game talks like that. Give people something of their own to say, or nothing.` : "";
+}
 
 /** A sentence of filler body language standing in for the action. Quoted back next turn. */
 export function findFiller(prose: string): string | undefined {
