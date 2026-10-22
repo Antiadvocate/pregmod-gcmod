@@ -22,6 +22,7 @@
  *
  * Without a model, each of these returns nothing and the game's own text stands.
  */
+import { pickOption } from "./ownwords";
 import { regionOf, regionNews, knownWord, bring } from "./region";
 import { powers } from "./power";
 import { noteStock, stockLine } from "./turn";
@@ -198,35 +199,17 @@ export function resolveAny(s: SaveState, e: PendingEvent, optionId: string): str
 }
 
 
-const READ_SYSTEM = `You read what the owner typed in answer to an event in Free Cities, an adult game about owning an arcology, and decide which ONE of the event's choices it comes closest to doing. Every choice is something the game can actually carry out; pick the nearest one even if the owner said more or said it differently. Output JSON only: {"id":"the choice id"}`;
-
 /** You answered an event in your own words: which of its choices that amounts to. */
 export function readOwnAnswer(s: SaveState, e: PendingEvent, typed: string, signal?: AbortSignal): Promise<{ id?: string; error?: string }> {
   return readOwnChoice(s, e.seed, choicesOf(e), typed, signal);
 }
 
-/** Any situation with choices (an event, a story chapter): which choice your own words amount to. */
+/** Any situation with choices (an event, a story chapter): which choice your own words amount to.
+ *  Always one of them (engine/ownwords); only stopping it gives none. */
 export async function readOwnChoice(s: SaveState, situation: string, opts: { id: string; label: string; note?: string }[], typed: string, signal?: AbortSignal): Promise<{ id?: string; error?: string }> {
-  const e = { seed: situation };
-  if (!modelsAvailable()) return { error: "needs a model set up in Settings" };
-  const res = await call({
-    system: READ_SYSTEM,
-    user: [
-      `## THE EVENT\n${e.seed.slice(-3000)}`,
-      `## ITS CHOICES (id: what it does)\n${opts.map((o) => `· ${o.id}: ${o.label}${o.note ? ` (${o.note})` : ""}`).join("\n")}`,
-      `## WHAT THE OWNER TYPED\n${typed.slice(0, 800)}`,
-    ].join("\n\n"),
-    model: s.models.narrator_model,
-    fallback: s.models.fallback_model,
-    json: true,
-    maxTokens: 120,
-    temperature: 0.1,
-    urgent: true,
-    signal,
-  });
-  if (!res.ok) return { error: res.error ?? "the model didn't answer" };
-  const id = String(parseJson<{ id?: string }>(res.text)?.id ?? "");
-  return opts.some((o) => o.id === id) ? { id } : { error: "couldn't tell which way that goes; try saying it another way" };
+  if (!opts.length) return { error: "there's nothing to answer here" };
+  const r = await pickOption(s, situation, opts, typed, signal);
+  return r.stopped ? { error: "stopped" } : { id: r.option.id };
 }
 
 const OUTCOME_SYSTEM = `You write what happens next in Free Cities, an adult text game about owning an arcology where slavery is legal. The player was shown a situation and made a choice. If the choice is in the player's own words, play out exactly what they said and did, in those words. The game has decided what came of it (WHAT CAME OF IT). Write it playing out: the scene, what people say and do, how they take it. Keep every fact and every number; do not add consequences the game didn't decide. One to three short paragraphs, second person, present tense. Stop where it could carry on if the player wants to play it out further.
