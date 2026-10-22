@@ -33,6 +33,7 @@ import "./share.test.ts";
 import "./kept.test.ts";
 import "./alive.test.ts";
 import "./marks.test.ts";
+import "./envoys.test.ts";
 import "./feetart.test.ts";
 import "./jobs.test.ts";
 import "./anatomy.test.ts";

@@ -35,6 +35,8 @@ export interface PowerRec {
   grudge: number;
   pact?: boolean;
   since?: number;
+  /** They won't ask you for money again before this week: you threw them out, or paid. */
+  no_fee_until?: number;
   /** Last week you sent them anything, and last week they did anything to you. */
   last_you?: number;
   last_them?: number;
@@ -60,6 +62,8 @@ export interface Empire {
   wars: import("./war").War[];
   /** Which power an event that's waiting on you is about, by event kind. */
   about: Record<string, string>;
+  /** The last week anyone sent an envoy with their hand out, so it's an occasion and not a queue. */
+  last_fee?: number;
   /** Security still lost to the last war, weeks it has left. */
   scar?: { weeks: number; per: number };
   log: { week: number; text: string }[];
@@ -369,13 +373,29 @@ export function tickPowers(s: SaveState): { lines: string[]; cash: number } {
     if (a <= -60 && week > 20 && theirs > mine * 0.9 && r.chance(0.35)) { rec.last_them = week; lines.push(startWarLine(s, p.id, "them")); continue; }
     if (a <= -60) kind = r.pick(["assassins", "terror", "sabotage"]);
     else if (a <= -25) kind = r.pick(["sanctions", "smear", "sabotage", "raiders"]);
-    else if (a < 25) kind = r.chance(0.5) ? "envoy_demand" : "";
+    else if (a < 25) {
+      // What a power that hasn't made up its mind about you does depends on how it measures up. One
+      // a fraction of your size courts you; an equal bargains; only a bigger one holds its hand out,
+      // and it only does that now and then, and not again soon to someone who threw it out.
+      const ratio = theirs / Math.max(1, mine);
+      const mayAsk = (rec.no_fee_until ?? -1) <= week && week - (e.last_fee ?? -99) >= 8;
+      if (ratio < 0.6) kind = r.pick(["protection_ask", "trade_offer", "courting"]);
+      else if (ratio < 1.3) kind = r.pick(["trade_offer", "summit", mayAsk && r.chance(0.3) ? "envoy_demand" : "trade_offer"]);
+      else kind = mayAsk ? "envoy_demand" : "summit";
+    }
     else if (a < 60) kind = rec.pact ? "summit" : "trade_offer";
     else kind = rec.status === "allied" ? "ally_gift" : "alliance_offer";
     if (!kind) continue;
     rec.last_them = week;
     if (kind === "sanctions") { const n = Math.round(4_000 + theirs * 60); cash -= n; lines.push(`${p.name} has put sanctions on your trade. It's costing you ¤${n.toLocaleString()} this week.`); note(s, `${p.name} sanctioned you.`); continue; }
     if (kind === "smear") { s.arcology.rep = Math.max(0, s.arcology.rep - 250); lines.push(`${p.name}'s state media has been running stories about you all week. Some of them are true.`); continue; }
+    if (kind === "courting") {
+      const n = Math.round(3_000 + theirs * 90);
+      cash += n; shift(s, p.id, 4);
+      lines.push(`${p.name} sent ¤${n.toLocaleString()} and a letter full of compliments. They'd like you to think well of them.`);
+      continue;
+    }
+    if (kind === "envoy_demand") e.last_fee = week;
     if (kind === "raiders") { const h = (s.battles ??= []); if (!s.events.some((x) => x.kind === "attack")) { h.push({ attacker: "mercs", size: +(3 + theirs / 40).toFixed(1), week }); fireEvent(s, "attack"); lines.push(`${p.name} has paid a mercenary company to hit you.`); } continue; }
     e.about[kind] = p.id;
     if (fireEvent(s, kind)) note(s, `${p.name}: ${kind.replace(/_/g, " ")}.`);
@@ -434,9 +454,26 @@ export const POWER_EVENTS: EventDef[] = [
     id: "envoy_demand", severity: "notable", endogenous: false, candidates: () => [], weight: () => 0,
     seed: (s) => { const p = aboutOf(s, "envoy_demand"); return `An envoy from ${p.name} is in your office: a careful, tired diplomat who has done this before. ${p.name} wants a "fee" for the use of shipping lanes it says are its own, ¤${Math.round(15_000 + p.strength * 150).toLocaleString()}, and it wants your answer before she leaves.`; },
     options: [
-      { id: "pay", label: "Pay it", resolve: (s) => { const p = aboutOf(s, "envoy_demand"); s.arcology.cash -= Math.round(15_000 + p.strength * 150); shift(s, p.id, 12); return `You pay. The envoy thanks you, and ${p.name} treats you a little better for a while. Others will have heard you pay.`; } },
+      { id: "pay", label: "Pay it", resolve: (s) => { const p = aboutOf(s, "envoy_demand"); s.arcology.cash -= Math.round(15_000 + p.strength * 150); shift(s, p.id, 12); p.rec.no_fee_until = s.arcology.week + 20; return `You pay. The envoy thanks you, and ${p.name} treats you a little better for a while. Others will have heard you pay.`; } },
       { id: "counter", label: "Talk her down", note: "Diplomacy", resolve: (s) => { const p = aboutOf(s, "envoy_demand"); const good = (s.player.skills.diplomacy ?? 0) > 40; if (good) { shift(s, p.id, 10); return `By dinner she's agreed it was a misunderstanding, and by midnight you've agreed to a joint patrol of the lanes instead. She leaves impressed.`; } shift(s, p.id, -8); return `You try to talk her round and it goes badly. She leaves early, and ${p.name} remembers the tone.`; } },
-      { id: "refuse", label: "Throw her out", resolve: (s) => { const p = aboutOf(s, "envoy_demand"); shift(s, p.id, -15); s.arcology.rep += 100; return `You have her escorted to the lifts. ${p.name} recalls its ambassador from the Free Cities' council in protest. Your citizens like the story.`; } },
+      { id: "refuse", label: "Throw her out", resolve: (s) => {
+        const p = aboutOf(s, "envoy_demand");
+        const stronger = forces(s).total >= p.strength * 1.2;
+        s.arcology.rep += 100;
+        // Thrown out by someone bigger, they drop it for good; by someone smaller, they remember.
+        if (stronger) { shift(s, p.id, -5); p.rec.no_fee_until = s.arcology.week + 104; return `You have her escorted to the lifts. ${p.name} drops the matter, and doesn't raise it again. Your citizens like the story.`; }
+        shift(s, p.id, -15); p.rec.grudge = clamp(p.rec.grudge + 10, 0, 100); p.rec.no_fee_until = s.arcology.week + 30;
+        return `You have her escorted to the lifts. ${p.name} recalls its ambassador from the Free Cities' council in protest, and they're the kind to remember it. Your citizens like the story.`;
+      } },
+    ],
+  },
+  {
+    id: "protection_ask", severity: "notable", endogenous: false, candidates: () => [], weight: () => 0,
+    seed: (s) => { const p = aboutOf(s, "protection_ask"); return `${p.name}'s envoy asks to see you, and doesn't sit until you tell her to. Her city is small and its neighbours aren't, and she's here to ask for your protection: your name over theirs, your ships in their harbour once in a while. They'll pay ¤${Math.round(p.strength * 90).toLocaleString()} a week for it, and answer to you.`; },
+    options: [
+      { id: "take", label: "Take them under your wing, and their money", resolve: (s) => { const p = aboutOf(s, "protection_ask"); p.rec.status = "vassal"; p.rec.since = s.arcology.week; p.rec.pays = Math.round(p.strength * 90); shift(s, p.id, 20); s.arcology.rep += 150; return `${p.name} is yours now, in all but the flag. The first payment arrives before the envoy is home.`; } },
+      { id: "name", label: "Lend them your name, for nothing", resolve: (s) => { const p = aboutOf(s, "protection_ask"); p.rec.pact = true; shift(s, p.id, 30); return `You tell her to keep the money. ${p.name} will remember this for a generation, and its neighbours already know.`; } },
+      { id: "no", label: "Send her home with nothing", resolve: (s) => { const p = aboutOf(s, "protection_ask"); shift(s, p.id, -8); return `She thanks you for your time and goes home to tell them no. Somebody else will take them under their wing instead.`; } },
     ],
   },
   {
