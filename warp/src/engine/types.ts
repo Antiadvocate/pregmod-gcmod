@@ -937,6 +937,8 @@ export interface SaveState {
   menials?: import("./menials").Menials;
   /** Faces of people who aren't yours but keep turning up. See engine/faces.ts. */
   faces?: Record<string, import("./faces").Face>;
+  /** How much the other powers bother you: envoys, offers, summits. Default "some". */
+  world_pace?: "none" | "some" | "full";
   /** Long stories grown from this arcology. See engine/saga.ts. */
   sagas?: import("./saga").SagaState;
   /** The city's message boards, written in the background (engine/feed.ts). */

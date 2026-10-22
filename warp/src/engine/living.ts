@@ -99,7 +99,9 @@ const WRITE_SYSTEM = `You write one event for Free Cities, an adult text game ab
 
 Rules:
 - Keep every fact: names, numbers, amounts, who did what. Add detail; do not change what happened.
-- Second person, present tense, one to three paragraphs. Write it as a moment that's happening to the player, with the people in it talking in their own voices, not as a summary of a situation. If THE FACTS read like a report ("she has been cold with you"), turn that into the scene it describes: where she is, what she actually says, how. End at the point where the player has to decide.
+- Second person, present tense, as long as LENGTH says and no longer. Write it as something happening to the player, not a summary of a situation; if THE FACTS read like a report ("she has been cold with you"), turn it into what she actually says or does.
+- A stranger gets one detail, not a description of their hair, coat and posture. Nobody gives a speech about themself.
+- Don't end with someone asking the player what they'll do ("So. What do you tell him?"). End on the situation; the choices are the question.
 - Relabel every choice in the player's voice so it fits the scene you wrote (2 to 9 words). Each label must still be the same action with the same result as the original.
 - You may add up to two extra choices from EXTRA EFFECTS when they genuinely fit the scene; most of the time add none.
 
@@ -122,6 +124,8 @@ export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Prom
       snap,
       ctx.text,
       `## THE FACTS (the game's own version; rewrite it)\n${e.seed}`,
+      // Business and the outside world get a few lines; the people in your house get room.
+      `## LENGTH\n${e.person ? "One or two short paragraphs." : "Two to four sentences. It's a decision, not a story."}`,
       `## THE CHOICES (id: what the player does → what it does)\n${opts.map((o) => `· ${o.id}: ${o.label}${o.note ? ` → ${o.note}` : ""}`).join("\n")}`,
       `## EXTRA EFFECTS (only for extra choices)\n${effectList()}${e.person ? `\nACT IDS: ${Object.keys(ACT_BY_ID).join(", ")}\nROOM ITEM IDS: ${Object.keys(EXTRA_BY_ID).join(", ")}` : ""}`,
       PLAIN_RULES,

@@ -366,7 +366,10 @@ export function tickPowers(s: SaveState): { lines: string[]; cash: number } {
     if (p.atWar) continue;
     // What they do about you. At most once every five weeks each, and not every time they could.
     if (rec.last_them !== undefined && week - rec.last_them < 5) continue;
-    if (!r.chance(0.18)) continue;
+    // How much the rest of the world bothers you is yours to set; enemies at war don't ask.
+    const pace = s.world_pace ?? "some";
+    if (pace === "none" && p.attitude > -60) continue;
+    if (!r.chance(pace === "full" ? 0.18 : 0.08)) continue;
     const a = p.attitude;
     const theirs = p.strength, mine = f.total;
     let kind = "";
@@ -452,7 +455,7 @@ export const POWER_EVENTS: EventDef[] = [
   },
   {
     id: "envoy_demand", severity: "notable", endogenous: false, candidates: () => [], weight: () => 0,
-    seed: (s) => { const p = aboutOf(s, "envoy_demand"); return `An envoy from ${p.name} is in your office: a careful, tired diplomat who has done this before. ${p.name} wants a "fee" for the use of shipping lanes it says are its own, ¤${Math.round(15_000 + p.strength * 150).toLocaleString()}, and it wants your answer before she leaves.`; },
+    seed: (s) => { const p = aboutOf(s, "envoy_demand"); return `${p.name} has sent an envoy: it wants ¤${Math.round(15_000 + p.strength * 150).toLocaleString()} for shipping lanes it says are its own, and an answer today.`; },
     options: [
       { id: "pay", label: "Pay it", resolve: (s) => { const p = aboutOf(s, "envoy_demand"); s.arcology.cash -= Math.round(15_000 + p.strength * 150); shift(s, p.id, 12); p.rec.no_fee_until = s.arcology.week + 20; return `You pay. The envoy thanks you, and ${p.name} treats you a little better for a while. Others will have heard you pay.`; } },
       { id: "counter", label: "Talk her down", note: "Diplomacy", resolve: (s) => { const p = aboutOf(s, "envoy_demand"); const good = (s.player.skills.diplomacy ?? 0) > 40; if (good) { shift(s, p.id, 10); return `By dinner she's agreed it was a misunderstanding, and by midnight you've agreed to a joint patrol of the lanes instead. She leaves impressed.`; } shift(s, p.id, -8); return `You try to talk her round and it goes badly. She leaves early, and ${p.name} remembers the tone.`; } },
