@@ -15,11 +15,16 @@ import { SlaveHead } from "./SlaveArt";
 import { Reaction } from "./MomentCard";
 import Portrait from "./Portrait";
 import { facesIn, personOf } from "../engine/faces";
+import { readOwnChoice } from "../engine/living";
+import { modelsAvailable } from "../config";
+import { AnswerOwn } from "./AnswerOwn";
 
 export default function StoryCard() {
   const { save, mutate } = useGame();
   const [done, setDone] = useState<(Answer & { setup?: string }) | null>(null);
   const [picking, setPicking] = useState<OptionView | null>(null);
+  // What you typed, while a choice that needs one of your people waits for you to pick her.
+  const [own, setOwn] = useState<string | null>(null);
   const p = pendingBeat(save);
 
   if (done) {
@@ -45,7 +50,7 @@ export default function StoryCard() {
 
   const title = typeof p.beat.title === "function" ? p.beat.title(p.c) : p.beat.title;
   const opts = optionsFor(save);
-  const choose = (o: OptionView, who?: string) => {
+  const choose = (o: OptionView, who?: string, said?: string) => {
     let a: Answer | null = null;
     const setup = p.beat.text(p.c);
     // Once she holds your collar, what you pick goes through her.
@@ -55,7 +60,9 @@ export default function StoryCard() {
       if (a && via.line) (a as Answer).text = `${via.line}\n\n${(a as Answer).text}`;
     });
     setPicking(null);
-    if (a) setDone({ ...(a as Answer), setup });
+    // In your own words, what you chose is what you said.
+    if (a) setDone({ ...(a as Answer), setup, chose: said ?? own ?? (a as Answer).chose });
+    setOwn(null);
   };
 
   return (
@@ -77,6 +84,18 @@ export default function StoryCard() {
           </div>
         ))}
       </div>
+      {modelsAvailable() ? (
+        <AnswerOwn onSay={async (typed, signal) => {
+          const open = opts.filter((x) => !x.locked);
+          const r = await readOwnChoice(save, p.beat.text(p.c), open, typed, signal);
+          const o = open.find((x) => x.id === r.id);
+          if (!o) return r.error ?? "couldn't do that";
+          setOwn(typed);
+          // A choice that needs one of your people still asks who.
+          if (o.pick) setPicking(o); else choose(o, undefined, typed);
+          return "";
+        }} />
+      ) : null}
     </Card>
   );
 }

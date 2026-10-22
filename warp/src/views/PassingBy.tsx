@@ -16,12 +16,16 @@ import { allowed, NOT_ALLOWED } from "../engine/kept";
 import { applyTreatment } from "../engine/obedience";
 import { takeStats, chipsBetween, type Chip } from "../lib/delta";
 import SlaveArt from "./SlaveArt";
-import { Reaction } from "./MomentCard";
+import MomentCard, { Reaction } from "./MomentCard";
+import { AnswerOwn } from "./AnswerOwn";
+import { openMoment } from "../engine/moments";
+import { modelsAvailable } from "../config";
 
 export default function PassingBy() {
   const { save, mutate } = useGame();
   const [turn, setTurn] = useState(0);
   const [done, setDone] = useState<{ text: string; chips: Chip[]; act: string } | null>(null);
+  const [mid, setMid] = useState<string | null>(null);
   const x = passingBy(save, turn);
   if (!x) return null;
   const p = x.person;
@@ -53,7 +57,15 @@ export default function PassingBy() {
     });
     setDone(out);
   };
-  const next = () => { setDone(null); setTurn((n) => n + 1); };
+  const next = () => { setDone(null); setMid(null); setTurn((n) => n + 1); };
+  // Your own words instead of a tap: the scene is played out from what you said.
+  const sayOwn = async (typed: string) => {
+    let id = "";
+    mutate((s) => { id = openMoment(s, { person: p.id, title: `${p.name.split(" ")[0]}, in the hall`, source: "passing", setup: [x.doing, x.says].filter(Boolean).join(" "), you: typed, happened: "" }); });
+    setMid(id);
+    setDone({ text: typed, chips: [], act: "own" });
+    return "";
+  };
 
   return (
     <div className="card p-3 mb-4 overflow-hidden">
@@ -70,7 +82,7 @@ export default function PassingBy() {
             </>
           ) : (
             <>
-              <p className="text-[13.5px] font-prose leading-snug">{done.text}</p>
+              <p className={done.act === "own" ? "player-line !my-0 text-[13.5px]" : "text-[13.5px] font-prose leading-snug"}>{done.text}</p>
               {done.chips.length ? <div className="flex flex-wrap gap-1 mt-1.5">{done.chips.map((c, i) => <span key={i} className={`chip ${c.good ? "good" : "bad"}`}>{c.text}</span>)}</div> : null}
             </>
           )}
@@ -82,6 +94,12 @@ export default function PassingBy() {
           {mayTouch ? x.acts.map((a) => <button key={a.id} className="chip" onClick={() => act(a.id)}>{a.name}</button>) : <span className="text-[11.5px] dim">{NOT_ALLOWED.others(save.people[keeper!]?.name ?? "She")}</span>}
           {mayTouch && p.id !== keeper ? <button className="chip" onClick={praise}>tell her she's doing well</button> : null}
           <button className="chip" onClick={next}>let her go</button>
+          {mayTouch && modelsAvailable() ? <div className="basis-full"><AnswerOwn placeholder="or say or do something yourself" onSay={sayOwn} /></div> : null}
+        </div>
+      ) : mid ? (
+        <div>
+          <MomentCard id={mid} bare />
+          <Button size="sm" kind="ghost" className="mt-2" onClick={next}>next</Button>
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-2">

@@ -60,6 +60,16 @@ const LEAD: Record<Register, string[]> = {
     "{name} flinches when you come in and watches you nervously as you cross the room.",
     "{name} has pulled her knees up on the edge of the bed. She puts her feet down when she sees you.",
   ],
+  resentful: [
+    "{name} gets up when you come in, slowly, and stands with her eyes on the floor.",
+    "{name} is kneeling where she should be. She doesn't look up until she has to.",
+    "{name} says your title when you come in, and nothing else.",
+  ],
+  devoted: [
+    "{name} gets up when you come in and smiles before she can help it.",
+    "{name} has been waiting for you. She kneels by the bed and looks up.",
+    "{name} comes to you as soon as the door opens and waits to be told what you'd like.",
+  ],
   sullen: [
     "{name} doesn't get up. She glances at you and goes back to ignoring you.",
     "{name} is sitting cross-legged on the floor and makes you wait before she stands.",

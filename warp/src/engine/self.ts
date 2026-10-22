@@ -13,6 +13,9 @@
  * doesn't tell him to fuck off like a character in a drama; she shows it the way slaves do, unless
  * she has actually reached open defiance.
  */
+import { latitudeOf, LATITUDE_LABEL, type Latitude } from "./voice";
+import { applyTreatment } from "./obedience";
+import { remember } from "./memory";
 import type { Person, SaveState } from "./types";
 import { deedsOf } from "./deeds";
 import { read } from "./obedience";
@@ -96,6 +99,13 @@ export function openlyDefiant(s: SaveState, p: Person): boolean {
   return r.devotion < -45 && r.fragility < 0.45 && p.bond.resentment > 55 && p.psyche.state === "intact";
 }
 
+/** HOW A SLAVE SPEAKS TO HER OWNER. From the original game, where every slave who speaks to the
+ *  player says "Master" and a refusal is a plea ("That thing hurts, Master. Please don't make me
+ *  wear it."), and from how the enslaved actually had to speak: by title, with leave, asking as
+ *  petition, and keeping what they felt under the forms (what historians call the public and the
+ *  hidden transcript). Love and trust change what she feels, not her place. */
+export const SLAVE_SPEECH = `HOW SHE SPEAKS TO YOU: as a slave to her owner, always, however much she trusts or loves you, until you give her leave otherwise. She calls you by your title (never your name) and uses it often. She speaks when spoken to, or asks first ("May I say something, Master?"). She doesn't contradict you, correct you, argue, joke at your expense, tease you, bargain, set terms, give ultimatums, or say no. When she can't bear something it comes out as a plea ("Please, Master, not that." "It hurts, Master. Please don't make me."), and what she wants comes out as a petition ("If it pleases you..." "Would you let me...?"). Closeness makes her more devoted, not more familiar: she tells you she loves you, thanks you, wants to please you, asks to stay; she never talks to you like a girlfriend, a friend or a coworker. Nothing like "hey", "honestly", "look,", "take it or leave it", "I'm not going to do that", "we need to talk", "fine, whatever", "seriously?", rolling her eyes or sighing at you. Trust means she tells you the truth and isn't afraid of you; it doesn't make her forget what she is. Resentment shows the way it always has in the owned: under the deference, never instead of it. A flat "Yes, Master", slowness, silence, doing exactly what she was told and nothing more, her eyes on the floor, what she says to the other girls afterwards.`;
+
 /** For her card: who holds the power between the two of you, and how that sounds. */
 export function powerBetween(s: SaveState, p: Person): string {
   const rom = romanceOf(p);
@@ -107,7 +117,26 @@ export function powerBetween(s: SaveState, p: Person): string {
       : `THE POWER BETWEEN YOU: she's free now, and she speaks to you as a free woman who used to be your property, in a city you own.`;
   }
   if (d >= 40) return `THE POWER BETWEEN YOU: she holds it. Between the two of you she leads and you defer, by your own choice; she can tell you what to do, tease you, refuse you, and expects to be obeyed. In front of others she knows you're still the owner of the arcology.`;
-  if (d >= 0) return `THE POWER BETWEEN YOU: she has a real say with you and uses it: she asks, pushes, sulks, bargains. You're still her owner and the owner of the city, and she never forgets it.`;
-  if (openlyDefiant(s, p)) return `THE POWER BETWEEN YOU: you own her, and she's reached open defiance: she may talk back, refuse or curse you, knowing exactly what it can cost her in a city you own. Write the defiance as a slave's, with the fear under it.`;
-  return `THE POWER BETWEEN YOU: you own her, and you own the city: its laws, its guards, its army. She knows exactly what you can do to her. If you kneel to her or worship her for your own pleasure, that's yours to start and stop; it gives her no say over you, and she doesn't bargain with it. She doesn't tell you to fuck off, mock you, order you about or walk away from you. Whatever she feels shows the way it shows in a slave: in her face, her silences, her slowness, what she leaves unsaid, what she says to the others afterwards.${rom.standing !== "property" ? ` She's your ${rom.standing === "favourite" ? "favourite" : "kept woman"}, and that gives her a little more room with you than the rest.` : ""}`;
+  const lat = latitudeOf(p);
+  const own = `THE POWER BETWEEN YOU: you own her, and you own the city: its laws, its guards, its army. She knows exactly what you can do to her. If you kneel to her or worship her for your own pleasure, that's yours to start and stop; it gives her no say over you, and she doesn't bargain with it.`;
+  if (lat === "free") return `${own} But you've given her leave to talk to you freely, as she likes, as an equal in words${rom.standing === "wife" ? " (she's your wife)" : ""}: she may call you by name, argue, tease, refuse to your face and say what she thinks. She's still yours on paper, and if you speak as her owner she remembers it.`;
+  if (lat === "latitude") return `${own} You've given her some latitude${rom.standing === "courted" ? " (you're courting her)" : rom.standing === "betrothed" ? " (she's promised to you)" : ""}: she may speak her mind, disagree respectfully, tease you a little, ask for things freely and say no to small things with a reason. She still calls you by your title, still knows she's yours, and drops back into her place at once if you speak as her owner.${d >= 0 ? " She has a real say with you and uses it." : ""}`;
+  if (openlyDefiant(s, p)) return `${own} She's reached open defiance: she may talk back, refuse or curse you, knowing exactly what it can cost her in a city you own. Write the defiance as a slave's: a crisis, with the fear plainly under it, not banter.`;
+  return `${own} ${SLAVE_SPEECH}${rom.standing !== "property" ? ` She's your ${rom.standing === "favourite" ? "favourite" : "kept woman"}: she's closer to you than the rest, and still speaks as a slave.` : ""}`;
+}
+
+/** You tell her how she may speak to you. Leave given is something she's glad of; taken back, she
+ *  remembers being put in her place. `undefined` goes back to what her standing gives her. */
+export function setLatitude(s: SaveState, p: Person, lat: Latitude | undefined): void {
+  const rank = { slave: 0, latitude: 1, free: 2 };
+  const before = rank[latitudeOf(p)];
+  if (lat) p.latitude = lat; else delete p.latitude;
+  const after = rank[latitudeOf(p)];
+  if (after === before) return;
+  const week = s.arcology.week;
+  const first = p.name.split(" ")[0];
+  if (after > before) applyTreatment(p, { kind: "recognition", size: 2 + after, why: "the owner gave her leave to speak more freely" }, week);
+  else applyTreatment(p, { kind: "coercion", size: 1 + before - after, why: "the owner told her to remember her place" }, week);
+  const mem = s.memory[p.id];
+  if (mem) remember(mem, { content: after > before ? `The owner gave ${first} leave to speak to them ${LATITUDE_LABEL[latitudeOf(p)]}` : `The owner told ${first} to speak to them as a slave again`, week, importance: 6, charge: after > before ? "warm" : "cold" });
 }

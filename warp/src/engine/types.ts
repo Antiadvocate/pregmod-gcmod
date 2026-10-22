@@ -440,6 +440,9 @@ export interface Person {
   exit_note?: string;
   /** Freed and living in your city: where, doing what, and how she feels about you. See engine/freed. */
   free_life?: import("./freed").FreeLife;
+  /** How she may speak to you, if you've said. Unset: as a slave, unless her standing says
+   *  otherwise. See voice.ts latitudeOf. */
+  latitude?: "slave" | "latitude" | "free";
   clothes: string;
   collar: string;
   shoes: string;
