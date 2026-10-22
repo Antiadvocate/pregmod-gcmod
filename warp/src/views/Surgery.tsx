@@ -5,6 +5,7 @@
  *  ever happen to her, and hiding that behind the button would make the choice meaningless. */
 import { useState } from "react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Reaction } from "./MomentCard";
 import { FLESH, FLESH_BY_ID, canGrow, fleshFelt, geneLab, startGrowing } from "../engine/fleshcraft";
 import { Button, Card, Empty, Section } from "../lib/ui";
@@ -19,7 +20,8 @@ const GROUPS: { id: Procedure["group"]; label: string; note: string }[] = [
 ];
 
 export default function Surgery({ id }: { id: string }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("people");
   const [said, setSaid] = useState<{ line: string; reaction: string; ok?: boolean; proc?: string; key?: number } | null>(null);
   const p = save.people[id];
   if (!p) return null;
@@ -94,7 +96,8 @@ export default function Surgery({ id }: { id: string }) {
 
 /** Grown changes: start a treatment, watch the ones under way. */
 function Fleshcraft({ id }: { id: string }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("people");
   const [line, setLine] = useState("");
   const p = save.people[id];
   if (!p) return null;

@@ -90,6 +90,15 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
               <Chip on={!!save.models.lean_mode} onClick={() => mutate((s) => { s.models.lean_mode = true; })}>On</Chip>
               <Chip on={!save.models.lean_mode} onClick={() => mutate((s) => { s.models.lean_mode = false; })}>Off</Chip>
             </div>
+            <div className="text-[12px] dim mt-3 mb-1">How much the other powers bother you with envoys, offers and summits. Enemies will still come for you whatever this says.</div>
+            <div className="flex gap-1.5">
+              {(["none", "some", "full"] as const).map((k) => <Chip key={k} on={(save.world_pace ?? "some") === k} onClick={() => mutate((s) => { s.world_pace = k; })}>{{ none: "Leave me alone", some: "Now and then", full: "Constantly" }[k]}</Chip>)}
+            </div>
+            <div className="text-[12px] dim mt-3 mb-1">After you answer an event, have the model write out what happens. Off: you get the game's line and what changed, and each event still has "play it out" if you want it.</div>
+            <div className="flex gap-1.5">
+              <Chip on={save.models.write_outcomes !== false} onClick={() => mutate((s) => { s.models.write_outcomes = true; })}>Write it out</Chip>
+              <Chip on={save.models.write_outcomes === false} onClick={() => mutate((s) => { s.models.write_outcomes = false; })}>Just apply it</Chip>
+            </div>
           </Field>
           <Field label="Thinking" hint="Reasoning models (and many flash models) think before they write, which can take a long time. Off asks them not to; if a model refuses the switch, the call is sent again without it.">
             <div className="flex gap-1.5">

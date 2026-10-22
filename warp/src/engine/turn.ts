@@ -11,6 +11,8 @@
  * from state — who is there, what their bodies are doing, what the action was — and the rest of the
  * pipeline runs identically. You lose the paragraph. You do not lose the game.
  */
+import { applyMarks, marksForAct } from "./marks";
+import { walkIn, walkInLine, misreads, misreadLine } from "./alive";
 import { coarsen, REGISTER_TAIL } from "./register";
 import { inventsLaw } from "./lawguard";
 import { captureInstructions, keep, houseRules, agreementsOf } from "./agreements";
@@ -52,6 +54,9 @@ export interface Diff {
   agreements_drop?: { id: string; rule: string }[];
   /** How she is with a particular person, settled by this turn. Replaces what was kept for them. */
   manner?: { id: string; toward: string; how: string }[];
+  marks?: { on?: string; what?: string; where?: string; text?: string }[];
+  washed?: string[];
+  beat?: { on?: string; what?: string }[];
 }
 
 export interface TurnResult {
@@ -90,9 +95,11 @@ export async function runTurn(
   let bookkeeping: TurnEntry["bookkeeping"] = "offline";
 
   if (modelsAvailable()) {
+    // Before the digest, so someone who walks in is in the room the narrator is shown.
+    const beats = aliveBeats(s, action, mode);
     const res = await call({
       system: NARRATOR_SYSTEM,
-      user: `${digest(s, action)}\n\n## THIS TURN\n${MODE_FRAME[mode](action)}\n\n${REGISTER_TAIL}`,
+      user: `${digest(s, action)}\n\n## THIS TURN\n${MODE_FRAME[mode](action)}${beats}\n\n${REGISTER_TAIL}`,
       model: s.models.narrator_model,
       fallback: s.models.fallback_model,
       onDelta: opts?.onDelta,
@@ -189,6 +196,7 @@ export async function runActTurn(
   snapshot(s);
   const outcome = resolveAct(s, p, actId, { public: opts?.public });
   if ("error" in outcome) return { outcome, prose: "", notes: [] };
+  marksForAct(s, p, ACT_BY_ID[actId], !!outcome.finished);
   // Written before the model is asked, so there is always a scene on the page even while the
   // narrator is thinking, and a scene left behind if it never answers.
   const written = writeAct(s, p, outcome, { lead: opts?.lead });
@@ -321,6 +329,8 @@ export function applyDiff(s: SaveState, d: Diff, prose: string, said?: string): 
     facts_learned: d.facts_learned?.filter((f) => !inventsLaw(s, f.fact)),
   };
   const wasPresent = new Set(s.scene.present);
+  // What this turn left on people's bodies, and what one of them just did.
+  applyMarks(s, d);
 
   // LOCATION
   if (d.location && d.location !== s.scene.location) {
@@ -480,10 +490,25 @@ export function showsDeparture(prose: string, name: string): boolean {
   return false;
 }
 
+/** Someone walks in, or she hears you wrong: decided from the house, not asked of the model. */
+function aliveBeats(s: SaveState, action: string, mode: ActionMode): string {
+  const out: string[] = [];
+  const here = present(s);
+  if (s.turn % 3 === 0) {
+    const inn = walkIn(s, here.map((p) => p.id), `turn:${s.id}:${s.turn}`, 0.25);
+    if (inn) { s.scene.present.push(inn.person.id); out.push(walkInLine(inn)); }
+  }
+  const her = here.find((p) => p.status !== "free" || s.player.owned_by === p.id);
+  if (her && (mode === "say" || mode === "do") && misreads(s, her, action, `turn:${s.id}:${s.turn}`)) out.push(misreadLine(her));
+  return out.length ? `\n\n## THIS TIME\n${out.join("\n")}` : "";
+}
+
 /* ── DETECTORS ─────────────────────────────────────────────────────────────────────────────── */
 
-/** Gestures a model reaches for when it has nothing to say about what is actually happening. */
-const FILLER = /\b(breath (catches|caught|hitches|hitched)|throat (moves|moved|works|worked)|(fingers?|hands?) (tap|taps|tapped|twitch|twitches|twitched|curl|curls|curled|flex|flexes|flexed)|shifts? (her|his|their) weight|shoulders? (settle|settled|drop|dropped|loosen|loosened)|jaw (tightens|tightened|sets|set|works|worked)|something (tightened|shifted|flickered|passed|moved|hardened|softened)|the rhythm falters|exhales? through (her|his|their) nose|doesn't look at you|does not look at you)\b/i;
+/** The handful of stock gestures a model reaches for when it has nothing to say. Only these: a
+ *  woman who won't look at you, fidgets or drops her shoulders is a person, and an earlier, wider
+ *  list taught the narrator to strip every human thing out of a scene. */
+const FILLER = /\b(breath (catches|caught|hitches|hitched)|throat (moves|moved|works|worked)|jaw (tightens|tightened|works|worked)|something (tightened|shifted|flickered|passed|hardened|softened) (in|across|behind)|the rhythm falters|exhales? through (her|his|their) nose)\b/i;
 
 /** A sentence of filler body language standing in for the action. Quoted back next turn. */
 export function findFiller(prose: string): string | undefined {

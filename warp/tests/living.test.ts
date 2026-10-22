@@ -22,6 +22,8 @@ import { grantAsk, generateAsk } from "../src/engine/asks.ts";
   check("a dash between words becomes a comma", plain("She waits — then kneels.") === "She waits, then kneels.", plain("She waits — then kneels."));
   check("a dash into a new sentence becomes a full stop", plain("She waits—She kneels.") === "She waits. She kneels.", plain("She waits—She kneels."));
   check("markdown emphasis is dropped", plain("She is **very** wet and *shaking*.") === "She is very wet and shaking.", plain("She is **very** wet and *shaking*."));
+  check("but dialogue keeps its dashes: people break off", plain('She waits — then: "I didn\'t— wait, that\'s not what I meant."') === 'She waits, then: "I didn\'t— wait, that\'s not what I meant."', plain('She waits — then: "I didn\'t— wait, that\'s not what I meant."'));
+  check("in JSON too", JSON.parse(plain('{"says":"She stops — \\"I— no.\\""}')).says === 'She stops, "I— no."', plain('{"says":"She stops — \\"I— no.\\""}'));
   check("JSON survives it", JSON.parse(plain('{"says":"no — never"}')).says === "no, never");
 }
 

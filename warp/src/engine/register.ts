@@ -55,5 +55,5 @@ export function coarsen(text: string): string {
 
 /** Put last in every request that writes a scene. */
 export const REGISTER_TAIL = `## HOW TO WRITE IT (this overrides the wording of everything above)
-Everything above is records: cards, memories, laws, earlier scenes. Their wording is not your style; don't copy it, even where it's soft or pretty. Write the way this game writes: short blunt sentences, crude words (cock, dick, pussy, cunt, clit, ass, asshole, tits, cum, spit, piss, fuck, slut), dirty talk in people's own voices, no euphemism, no poetry, no metaphors for sex or feelings. Like this:
-"She gets down and sucks your cock, sloppy, spit running down her chin. 'Fuck, you taste good,' she mumbles. You grab her hair and fuck her throat till she gags, then cum on her tits."`;
+Everything above is records: cards, memories, laws, earlier scenes. Their wording is not your style; don't copy it, even where it's soft or pretty. Write the way this game writes: crude words (cock, dick, pussy, cunt, clit, ass, asshole, tits, cum, spit, piss, fuck, slut), no euphemism, no poetry, no metaphors for sex or feelings, and people who sound like people: dirty talk in their own voices, half-finished sentences, nerves, jokes, getting it wrong. Like this:
+"She gets down and sucks your cock, sloppy, spit running down her chin. 'Fuck, you taste good,' she mumbles, then goes red. 'I mean. You know what I mean.' You grab her hair and fuck her throat till she gags, and she's laughing and coughing when you cum on her tits."`;

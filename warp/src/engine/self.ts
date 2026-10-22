@@ -51,11 +51,16 @@ function ownWords(s: SaveState, n = 6): string[] {
 /** Everything the narrator needs to write you as you. */
 export function selfProfile(s: SaveState): string[] {
   const lines: string[] = [];
+  // The player's own rules about themself, not orders to one slave: true for everyone, always.
+  const hard = (s.house_rules ?? []).filter((a) => a.by === "you").map((a) => a.rule.trim()).filter((r) => r.length > 6);
+  if (hard.length) lines.push(`The player's hard lines, in their own words (true in every scene, for everyone, whoever owns whom; never broken for a dramatic beat): ${hard.map((r) => `"${r}"`).join("; ")}`);
   const own = s.player.self?.trim();
-  if (own) lines.push(`In the owner's own words, which win over anything below (they describe the owner's character and tastes, not a transfer of power; see TASTES ARE NOT RANK): ${own}`);
+  if (own) lines.push(s.player.owned_by
+    ? `In the player's own words, which win over anything below: who they are, and what being owned is for them. She knows all of this about them, and it shapes how she keeps them: ${own}`
+    : `In the owner's own words, which win over anything below (they describe the owner's character and tastes, not a transfer of power; see TASTES ARE NOT RANK): ${own}`);
   const t = selfTally(s);
   if (t.gentle + t.harsh === 0) lines.push(`Nothing on record yet about how they treat people: take it from their own words and what they choose in the scene, and don't supply a stock personality.`);
-  else if (t.gentle >= t.harsh * 1.5) lines.push(`How they treat people, by the record: mostly with care (${t.gentle} kind things on record against ${t.harsh} harsh). Write them warm, attentive and generous unless the scene has them choose otherwise.`);
+  else if (t.gentle >= t.harsh * 1.5) lines.push(`How they treat people, by the record: mostly with care (${t.gentle} kind things on record against ${t.harsh} harsh). Write them warm, attentive and generous unless the scene has them choose otherwise.${s.player.owned_by ? " That's how the player treats others; it says nothing about how she treats the player." : ""}`);
   else if (t.harsh >= t.gentle * 1.5) lines.push(`How they treat people, by the record: mostly hard (${t.harsh} harsh things on record against ${t.gentle} kind).`);
   else lines.push(`How they treat people, by the record: it depends on the person (${t.gentle} kind things, ${t.harsh} harsh).`);
   if (t.bottomed) lines.push(`They're submissive in bed by taste: they have worshipped their slaves' feet, knelt to them or let them top ${t.bottomed} time${t.bottomed === 1 ? "" : "s"}. Submissive is not subservient. It's what they want sexually, they start it and stop it, and it gives the slave no authority anywhere else; don't correct it, and don't read it as rank.`);

@@ -31,6 +31,23 @@ import { LAWS, LAW_BY_ID, type LawDef } from "../data/laws";
 import { pushNorm, cultureOf, type Norm } from "./culture";
 import { hasWomb, tryConception } from "./pregnancy";
 import { rng } from "./rng";
+import { settleHand, tickHand } from "./share";
+import { tickKept, roomBrief, jobOf } from "./kept";
+import { pickWant, wantsOf } from "./herwants";
+
+/** She wants you, now: the "she wants you" event, with what she wants written on it. */
+export function wantNow(s: SaveState, r: Reign, text: string, pub?: boolean): boolean {
+  const h = s.people[r.keeper];
+  if (!h || s.events.some((e) => e.kind === "reign_want")) return false;
+  r.want = { week: s.arcology.week, text, public: pub };
+  (r.wanted ??= []).push(text);
+  if (r.wanted.length > 6) r.wanted.shift();
+  return !!fireEvent(s, "reign_want", { person: h });
+}
+import { modelsAvailable } from "../config";
+
+/** With a model, she decides her own week (engine/herwill); without one, the dice below do. */
+export const herModelWeek = (s: SaveState) => modelsAvailable() && !s.models.lean_mode;
 
 export type ReignStyle = "doting" | "stern" | "cruel" | "playful" | "vengeful" | "reluctant";
 
@@ -61,6 +78,27 @@ export interface Reign {
   ended?: string;
   /** She has a lover, and you are her cuckold. See the lover section below. */
   cuck?: Cuck;
+  /** Your say in running things: a hand in it, which she can overrule, or none (engine/share). */
+  hand?: "shared" | "locked";
+  locked_since?: number;
+  /** The last week you asked for a hand in it. */
+  asked?: number;
+  /** What she stopped you doing. */
+  overruled?: { week: number; what: string; line: string }[];
+  /** Your room, your job and this week's list (engine/kept). */
+  room?: import("./kept").YourRoom;
+  job?: string;
+  tasks?: import("./kept").Task[];
+  /** What she wants from you this time (engine/herwants), and the last few she's had. */
+  want?: { week: number; text: string; public?: boolean };
+  wanted?: string[];
+  /** How she keeps you, read from everything between you by the model (engine/herwill). Wins over
+   *  the style's stock note in every scene. */
+  portrait?: string;
+  /** When she was last read. */
+  read_week?: number;
+  /** What you've asked or advised her this week, and what she said back (engine/herwill). */
+  advice?: { week: number; text: string; answer?: string; took?: boolean }[];
 }
 
 export interface Cuck {
@@ -94,15 +132,32 @@ export const STYLE_NOTE: Record<ReignStyle, string> = {
 const fet = (p: Person, n: string) => p.persona.fetishes.find((f) => f.name === n)?.strength ?? 0;
 const pname = (s: SaveState) => (s.player.name && s.player.name !== "you" ? s.player.name : "pet");
 
+/**
+ * Without a model, her style from the numbers. Loving you doesn't make her soft: a woman with a
+ * dominant or sadistic streak keeps you the way that streak wants whatever she feels, and what has
+ * already passed between you (her topping you, you deferring to her) counts. Doting is what's left
+ * for a kind woman with no taste for it. With a model, engine/herwill reads her properly instead.
+ */
 export function styleOf(s: SaveState, her: Person): ReignStyle {
   const tilt = memoryTilt(s.memory[her.id]);
   const hurt = (s.deeds ?? []).filter((d) => d.person === her.id && d.tags.some((t) => ["cruelty", "humiliated_her", "punished", "threatened_sale", "promise_broken"].includes(t))).length;
+  // How it has gone between you: her on top, you deferring to her.
+  const topped = (s.deeds ?? []).filter((d) => d.person === her.id && d.tags.some((t) => ["bottomed", "owner_submitted", "feet_worship"].includes(t))).length;
+  const dom = fet(her, "dom") + fet(her, "sadist") + fet(her, "humiliation") / 2 + topped * 8;
   if (her.bond.resentment > 45 || tilt < -0.1 || hurt >= 2) return "vengeful";
-  if (fet(her, "submissive") >= 50 && fet(her, "dom") < 30 && fet(her, "sadist") < 30) return "reluctant";
-  if ((her.persona.conscience < 0.35 && fet(her, "sadist") + fet(her, "dom") + fet(her, "humiliation") >= 40) || her.persona.conscience < 0.2) return "cruel";
-  if (her.persona.conscience > 0.6 && her.bond.bond > 50) return "doting";
+  if (fet(her, "submissive") >= 50 && dom < 30) return "reluctant";
+  if ((her.persona.conscience < 0.35 && dom >= 40) || her.persona.conscience < 0.2) return "cruel";
+  if (dom >= 55) return her.persona.conscience < 0.5 && fet(her, "sadist") >= 40 ? "cruel" : (her.persona.gregariousness ?? 0.5) > 0.65 || fet(her, "humiliation") >= 40 ? "playful" : "stern";
+  if (her.persona.conscience > 0.6 && her.bond.bond > 50 && dom < 25) return "doting";
   if ((her.persona.gregariousness ?? 0.5) > 0.65 || fet(her, "humiliation") >= 40) return "playful";
   return "stern";
+}
+
+/** Her terms again, after she's been read properly in her first weeks: what you call each other,
+ *  what you wear, where you sleep, your duties. */
+export function reterm(s: SaveState, her: Person, r: Reign): void {
+  Object.assign(r, terms(s, her, r.style));
+  writeRules(s, her, r);
 }
 
 function terms(s: SaveState, her: Person, style: ReignStyle): Pick<Reign, "her_title" | "your_name" | "dress" | "sleep" | "duties"> {
@@ -230,6 +285,8 @@ const FEET_ORDER = { text: "She sits on the edge of the fountain in the plaza an
 function orderFor(s: SaveState, h: Person, r: Reign) {
   const pool = [...ORDERS[r.style]];
   if (fet(h, "feet") >= 40 && r.style !== "reluctant") pool.push(FEET_ORDER);
+  // Half her orders are about her, not the house: what she wants done to her, or to you.
+  if (r.style !== "reluctant") for (const w of wantsOf(s, h).slice(0, 4)) pool.push({ text: w.text.replace(/^\S+ wants /, "She wants ").replace(/^\S+ (bends|sits|puts|makes|ties)/, "She $1"), public: w.public });
   return rng(`reign-order:${s.arcology.week}:${h.id}`).pick(pool);
 }
 
@@ -290,6 +347,14 @@ const EVENTS: EventDef[] = [
       resolve: (s, _e, p) => { const r = s.reign!; note(s, "You asked her to let you off an order."); if (r.style === "doting" || r.style === "reluctant") { fav(s, 2); return `You ask. ${p!.name} lets you off at once, and then worries that she asked for too much.`; } if (r.style === "cruel") { fav(s, -4); return `You ask. ${p!.name} says no, and that asking has doubled it.`; } fav(s, -2); return `You ask. ${p!.name} thinks about it and lets you off this once. She makes sure you know it's once.`; } },
     { id: "defy", label: "Refuse",
       resolve: (s, _e, p) => { const r = s.reign!; fav(s, -12); r.defied++; if (p) p.bond.resentment = clamp(p.bond.resentment + 4, 0, 100); note(s, "You refused an order."); return `You refuse. ${DEFIED[r.style](p!)}`; } },
+  ]),
+  reignEvent("reign_want", (s) => `${s.reign!.want?.text ?? "She wants you in her bed tonight."}${s.reign!.want?.public ? "\n\nIt will be in front of other people." : ""}`, [
+    { id: "obey", label: "Go to her",
+      resolve: (s, _e, p) => { const r = s.reign!; fav(s, 6); r.obeyed++; if (p) { p.psyche.arousal = clamp(p.psyche.arousal + 25, 0, 100); applyTreatment(p, { kind: "recognition", size: 2, why: "the owner came when she wanted him" }, s.arcology.week); } note(s, `She had you: ${(r.want?.text ?? "").replace(/^\S+ /, "she ")}`); if (r.want?.public && p) pushNorm(s, "reversal", 3, `${p.name} used the owner where people could see`); return `You go to her.`; } },
+    { id: "beg", label: "Beg her for something else",
+      resolve: (s, _e, p) => { const r = s.reign!; note(s, "You begged her for something else."); if (r.style === "doting" || r.style === "reluctant" || r.style === "playful") { fav(s, 1); return `You beg. ${p!.name} listens, and asks what you want instead, and then decides whether you get it.`; } fav(s, -3); return `You beg. ${p!.name} lets you finish, and then has you anyway.`; } },
+    { id: "defy", label: "Refuse her",
+      resolve: (s, _e, p) => { const r = s.reign!; fav(s, -12); r.defied++; if (p) p.bond.resentment = clamp(p.bond.resentment + 4, 0, 100); note(s, "You refused her in bed."); return `You refuse. ${DEFIED[r.style](p!)}`; } },
   ]),
   reignEvent("reign_name", (s, c) => { const r = s.reign!; const nm = newName(r.style); return `${c.person!.name} has decided you need a new name. "${nm}," she says, and tries it out a few times while you stand there. "Yes. That's you."`; }, [
     { id: "accept", label: "Answer to it",
@@ -512,11 +577,17 @@ export function tickReign(s: SaveState): ReportLine[] {
   if (!r || r.keeper !== h.id) {
     r = startReign(s, h);
     out.push(line(`${h.name} has written down her terms for you.`, "warning", 10, h.id));
+    const said = settleHand(s, h, r);
+    if (said) { note(s, said); out.push(line(said, r.hand === "shared" ? "good" : "warning", 9, h.id)); }
+    // Where you sleep, what you do, and this week's list start with her terms.
+    out.push(...tickKept(s, h, r, false));
     return out;
   }
   offDuty(s, h);
   const week = s.arcology.week;
   const since = week - r.since;
+  if (!r.hand) { const said = settleHand(s, h, r); if (said) { note(s, said); out.push(line(said, r.hand === "shared" ? "good" : "warning", 9, h.id)); } }
+  else { const said = tickHand(s, h, r); if (said) { note(s, said); out.push(line(said, r.hand === "shared" ? "good" : "warning", 9, h.id)); } }
   const rnd = rng(`reign:${week}:${h.id}`);
   const house = Object.values(s.people).filter((p) => p.status === "owned" && p.id !== h.id && p.age >= 18);
   r.favour = clamp(r.favour * 0.97 + (r.style === "doting" ? 0.5 : 0), -100, 100);
@@ -534,7 +605,12 @@ export function tickReign(s: SaveState): ReportLine[] {
     r.deputy = d.id;
     out.push(line(`${h.name} is putting ${d.name} in charge of you when she's out.`, "warning", 8, h.id));
   } else if (beat("reign_future", r.style === "reluctant" ? 6 : 26)) out.push(line(`${h.name} has decided what you are to her.`, "warning", 10, h.id));
-  else if (since >= 2 && week - (r.last_order ?? -9) >= 2 && !s.events.some((e) => e.kind.startsWith("reign_")) && rnd.chance(0.7)) {
+  else if (since >= 1 && !s.events.some((e) => e.kind.startsWith("reign_")) && (r.want?.week ?? -9) < week && rnd.chance(r.style === "reluctant" ? 0.35 : 0.75)) {
+    // She has a body and she owns you: most weeks she wants you for it.
+    const w = pickWant(s, h);
+    wantNow(s, r, w.text, w.public);
+    out.push(line(`${h.name} wants you.`, "warning", 8, h.id));
+  } else if (since >= 2 && week - (r.last_order ?? -9) >= 2 && !s.events.some((e) => e.kind.startsWith("reign_")) && rnd.chance(0.7)) {
     r.last_order = week;
     fireEvent(s, "reign_order", { person: h });
     out.push(line(`${h.name} has an order for you.`, "warning", 7, h.id));
@@ -553,8 +629,11 @@ export function tickReign(s: SaveState): ReportLine[] {
     out.push(line(`${h.name} took you ${where}, ${how}. People looked.`, "neutral", 4, h.id));
   } else pushNorm(s, "reversal", 0.3, `${h.name} holds the owner's collar`);
 
+  // Your room, your job, and this week's list.
+  out.push(...tickKept(s, h, r, !herModelWeek(s)));
+
   // What she does with the household.
-  if (house.length && rnd.chance(0.35)) {
+  if (!herModelWeek(s) && house.length && rnd.chance(0.35)) {
     const warm = (p: Person) => s.edges.find((e) => e.from === h.id && e.to === p.id)?.warmth ?? 0;
     const text = decide(s, h, r, house, warm, rnd);
     if (text) { note(s, text); out.push(line(text, "neutral", 7, h.id)); }
@@ -575,7 +654,7 @@ export function tickReign(s: SaveState): ReportLine[] {
   }
 
   // And the laws she wants, which she signs herself.
-  if (r.style !== "reluctant" && since >= 4 && week - (r.last_law ?? -99) >= 6) {
+  if (!herModelWeek(s) && r.style !== "reluctant" && since >= 4 && week - (r.last_law ?? -99) >= 6) {
     const best = LAWS.filter((l) => !lawsOf(s).some((x) => x.id === l.id)).map((l) => ({ l, sc: lawScore(h, r!.style, l) })).sort((a, b) => b.sc - a.sc)[0];
     if (best && best.sc > 15) {
       r.last_law = week;
@@ -592,7 +671,7 @@ export function tickReign(s: SaveState): ReportLine[] {
   return out;
 }
 
-function decide(s: SaveState, h: Person, r: Reign, house: Person[], warm: (p: Person) => number, rnd: ReturnType<typeof rng>): string {
+export function decide(s: SaveState, h: Person, r: Reign, house: Person[], warm: (p: Person) => number, rnd: ReturnType<typeof rng>): string {
   const week = s.arcology.week;
   switch (r.style) {
     case "doting": {
@@ -645,9 +724,12 @@ export function reignCard(s: SaveState, h: Person): string {
   const r = reignOf(s);
   if (!r || r.keeper !== h.id) return "";
   return [
-    `SHE OWNS YOU. She holds your collar and runs ${s.arcology.name}; write her that way, every scene. ${STYLE_NOTE[r.style]}`,
+    `SHE OWNS YOU. She holds your collar and runs ${s.arcology.name}; write her that way, every scene. ${r.portrait ? `HOW SHE KEEPS YOU (read from everything between you; this wins over anything else on her card, including how she feels about you): ${r.portrait}` : STYLE_NOTE[r.style]}`,
     `HER RULES FOR YOU (she enforces them): you call her "${r.her_title}"; she calls you "${r.your_name}"; you wear ${r.dress}; you sleep ${r.sleep}; you ${r.duties.join("; you ")}.`,
     r.cuck && r.cuck.stage > 0 ? `SHE HAS A LOVER: ${r.cuck.name} (${r.cuck.who}), and you are her cuckold${r.cuck.public ? ", and the city knows it" : ""}. ${r.cuck.watches ? "She makes you watch, and serve them. " : ""}${r.cuck.stage >= 3 ? `${r.cuck.name} sleeps in her bed; you don't. ` : ""}${r.cuck.child ? `She's carrying ${r.cuck.name}'s child${r.cuck.child === "yours" ? ", which you will raise as yours" : ""}. ` : ""}` : "",
+    roomBrief(s),
+    jobOf(s) ? `YOUR JOB, SHE GAVE IT YOU: ${jobOf(s)!.name}.${(r.tasks ?? []).length ? ` This week she wants you to: ${(r.tasks ?? []).map((x) => `${x.text}${x.state === "open" ? "" : ` (${x.state})`}`).join("; ")}.` : ""}` : "",
+    r.hand === "shared" ? `YOU STILL HAVE A HAND IN RUNNING THINGS, because she lets you: you give orders and make decisions as before, and she overrules you when she doesn't like them.${(r.overruled ?? []).length ? ` Lately she stopped: ${(r.overruled ?? []).slice(-3).map((x) => `"${x.what}"`).join(", ")}.` : ""}` : `YOU HAVE NO SAY IN RUNNING ${s.arcology.name.toUpperCase()}: she decides everything. You can ask her, advise her, or beg; whether she listens is up to her.`,
     `She is ${favourWord(r.favour)} (you've obeyed ${r.obeyed} times and defied her ${r.defied}). ${r.shown === "public" ? "She likes to show you off in public." : r.shown === "private" ? "She keeps you to herself, in the penthouse." : "Sometimes she takes you out with her."}${r.married ? " She married you, and you are still hers." : ""}${r.permanent && !r.married ? " She made it permanent." : ""}`,
   ].filter(Boolean).join("\n");
 }

@@ -28,6 +28,11 @@ import { personCard } from "./prompts";
 import type { Moment } from "./moments";
 import { hasWomb } from "./pregnancy";
 import { sell } from "./market";
+import { asFate, sameName, settle, settledBrief, weightBrief } from "./fates";
+import { isOwnerName } from "./you";
+import { meet } from "./faces";
+import { note, tie } from "./others";
+import { addWays } from "./ways";
 
 export interface Deed {
   id: string;
@@ -47,6 +52,9 @@ export interface Deed {
   source: string;
   /** For a walk: which place it happened in. What happened there stays there. */
   where?: string;
+  /** She took something you said as you giving yourself to her. Nothing happens until you say
+   *  whether you meant it: "offered" waits on you, "taken" is done, "refused" it was a misreading. */
+  collar?: "offered" | "taken" | "refused";
 }
 
 type Ctx = { s: SaveState; d: Deed; p?: Person; out: string[] };
@@ -261,9 +269,12 @@ export const CONSEQUENCE_SYSTEM = `You read a finished scene from Free Cities, a
  "lasting_fact":"one sentence that is now true of the world because of this, or empty",
  "sold":["names of the player's slaves the player actually had sold or taken away to be sold in this scene: an order carried out, not a threat; empty if none"],
  "threatened":["names of OTHER people in the scene (not her) the player threatened to sell, exile or punish; empty if none"],
- "follow_up":{"weeks":2,"situation":"2-4 sentences, present tense: something that happens that many weeks later BECAUSE of this scene, ending where the player has to decide","options":[{"label":"what the player does, 2-8 words","effect":"one EFFECT id","value":"optional"}]}}
+ "ways":["0 to 2 lines: a way the player and SHE do things together that this scene set up, confirmed or repeated (a ritual, how they talk to each other, what she calls him, what always happens), written so a later scene can keep it, e.g. 'he talks to her soles, never her face, and she answers through them'. Empty if the scene didn't settle anything"],
+ "outsiders":[{"name":"full name of someone in the scene who is neither the player nor one of the player's slaves, and who mattered in it","what":"what they do, a few words","remembers":"one sentence from their side of what happened, with the player as 'the owner'","toward":"warmer|colder|same, toward the owner after this","likes":"something the scene showed they like, or empty","dislikes":"something the scene showed they can't stand, or empty","tie":{"with":"name of one of the player's slaves, or 'the owner'","what":"what they are to them now if that formed or changed in the scene (her husband, her regular, owes the owner ¤20,000), or empty"}}],
+ "dealt_with":[{"name":"full name of someone who is NOT the player's slave","fate":"dead|ruined|exiled|jailed|bought","how":"one plain sentence: who did it and how"}],
+ "follow_up":{"weeks":2,"situation":"3-6 sentences, present tense: a moment that many weeks later that happens BECAUSE of this scene. Not a summary of how people feel: somebody named, in the room with the player, doing and saying something in their own voice. End where the player has to decide","options":[{"label":"what the player does, 2-8 words","effect":"one EFFECT id","value":"optional"}]}}
 
-In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to and serve their slaves; never swap who served whom. Submissive is not subservient: an owner who kneels to her feet, lets her fuck or use him, or gives her his body is bottomed, and still owns her; owner_submitted is only for handing her authority outside sex. Only tag what actually happened in the scene. The TAGS are about HER, the woman the scene is with; what the player did to anyone else in the room goes in sold or threatened, never in her tags. owner_enslaved means the player really gave themself to her; a player saying she does NOT own them is the opposite, and is never owner_enslaved. Tag the player's actions, not what they considered. public is true only if citizens, guests or other slaves saw it or will obviously hear. Write the summary, memory and follow-up in plain crude words (cock, pussy, ass, cum, fuck, piss…), never euphemisms or flowery phrasing. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.
+In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to and serve their slaves; never swap who served whom. Submissive is not subservient: an owner who kneels to her feet, lets her fuck or use him, or gives her his body is bottomed, and still owns her; owner_submitted is only for handing her authority outside sex. Only tag what actually happened in the scene. The TAGS are about HER, the woman the scene is with; what the player did to anyone else in the room goes in sold or threatened, never in her tags. owner_enslaved means the player really gave themself to her; a player saying she does NOT own them is the opposite, and is never owner_enslaved. Tag the player's actions, not what they considered. dealt_with is for people outside the household the player had killed, ruined, thrown out, locked up or paid off: done in the scene, or ordered and agreed to by someone in it who can do it (a guard, a governor, the security chief, a slave sent to do it). The owner's orders get carried out, so an order agreed to counts as done. A threat, a wish or a "maybe" is not dealt_with. Empty if none. public is true only if citizens, guests or other slaves saw it or will obviously hear. Write the summary, memory and follow-up in plain crude words (cock, pussy, ass, cum, fuck, piss…), never euphemisms or flowery phrasing. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.
 
 Each turn of the game is a week. The follow-up happens "weeks" weeks after the scene (1 to 8), not straight after it: the scene is over, the people in it have gone back to their lives, and what happened has had that long to sink in. Write where things stand THEN: what it changed, what she has done about it since, what people have said. Set it somewhere and at a time that fits that later day; do not put it back in the scene's room, mid-act, or the same night. Only if the scene itself sets up something for the very next day (a promise for tomorrow morning, an appointment, a hangover) use "weeks":0 and write it as the next day.`;
 
@@ -277,6 +288,9 @@ function transcript(m: Moment): string {
 interface Read {
   summary?: string; tags?: string[]; public?: boolean; witnesses?: string[]; her_memory?: string; lasting_fact?: string;
   sold?: string[]; threatened?: string[];
+  dealt_with?: { name?: string; fate?: string; how?: string }[];
+  ways?: string[];
+  outsiders?: { name?: string; what?: string; remembers?: string; toward?: string; likes?: string; dislikes?: string; tie?: { with?: string; what?: string } }[];
   follow_up?: { weeks?: number; situation?: string; options?: { label?: string; effect?: string; value?: string | number }[] };
 }
 
@@ -340,19 +354,19 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
     const tags = Object.entries(DEED_TAGS).map(([id, t]) => `${id} — ${t.when}`).join("\n");
     const res = await call({
       system: CONSEQUENCE_SYSTEM,
-      user: `${p ? `## HER\n${personCard(s, p, m.title)}\n\n` : ""}## THE SCENE (${m.title})\n${transcript(m)}\n\n## TAGS\n${tags}\n\n## EFFECT IDS (for follow_up options)\n${effects}`,
+      user: `${p ? `## HER\n${personCard(s, p, m.title)}\n\n` : ""}${[weightBrief(s), settledBrief(s, 6)].filter(Boolean).join("\n\n")}\n\n## THE SCENE (${m.title})\n${transcript(m)}\n\n## TAGS\n${tags}\n\n## EFFECT IDS (for follow_up options)\n${effects}`,
       model: s.models.bookkeeper_model || s.models.narrator_model, fallback: s.models.fallback_model, json: true, maxTokens: 900, signal: opts?.signal,
     });
     if (res.ok) r = parseJson<Read>(res.text);
   }
   const offline = offlineRead(m);
   if (!r || !r.summary) r = offline;
-  // Keep the model honest: only known tags. Giving yourself away is the one tag that can't be
-  // undone, so it also needs the player not to have said the opposite in so many words.
-  const mine = m.log.filter((l) => l.role === "you").map((l) => l.text).join(" \n ");
-  const surrender = KEYWORDS[0][0];
-  const denied = surrender.test(mine) && !affirms(mine, surrender);
-  const tags = [...new Set((r.tags ?? []).filter((t) => DEED_TAGS[t] && !(t === "owner_enslaved" && denied)))].slice(0, 5);
+  // Keep the model honest: only known tags. Giving yourself away changes the whole game, and a
+  // sentence said badly can read like it, so it is never applied from a reading: it waits on the
+  // card until you say whether you meant it.
+  const read_ = [...new Set((r.tags ?? []).filter((t) => DEED_TAGS[t]))].slice(0, 5);
+  const offered = read_.includes("owner_enslaved") && !!p && s.player.owned_by !== p.id;
+  const tags = read_.filter((t) => t !== "owner_enslaved");
 
   const deed: Deed = {
     id: `deed-${s.arcology.week}-${deedsOf(s).length}`,
@@ -370,8 +384,13 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
   const wait = Number(fu?.weeks);
   if (fu?.situation && options.length >= 2) deed.follow = { due: s.arcology.week + clamp(Number.isFinite(wait) ? Math.round(wait) : 2, 0, 8), situation: String(fu.situation).slice(0, 900), options };
 
+  if (offered) deed.collar = "offered";
   applyDeed(s, deed, r.her_memory);
   deed.effects.push(...othersInScene(s, deed, r));
+  deed.effects.push(...dealtWith(s, deed, r));
+  deed.effects.push(...outsiders(s, deed, r));
+  if (p && Array.isArray(r.ways)) for (const w of addWays(s, p, r.ways.map(String))) deed.effects.push(`between you now: ${w}`);
+  if (offered) deed.effects.push(`${p!.name} is holding out a collar for you`);
   m.concluded = deed.id;
   if (deed.follow && deed.follow.due <= s.arcology.week) fireFollow(s, deed);
   return deed;
@@ -415,6 +434,83 @@ export function othersInScene(s: SaveState, deed: Deed, r: { sold?: string[]; th
     out.push(`${x.name} is afraid of you`);
   }
   return out;
+}
+
+/** People outside the household the scene had dealt with. Never one of yours, never her. */
+function dealtWith(s: SaveState, deed: Deed, r: Read): string[] {
+  const out: string[] = [];
+  for (const x of (r.dealt_with ?? []).slice(0, 3)) {
+    const name = String(x?.name ?? "").trim();
+    const fate = asFate(x?.fate);
+    if (!name || !fate || byName(s, name) || isOwnerName(s, name)) continue;
+    if (deed.person && s.people[deed.person]?.name.toLowerCase().includes(name.toLowerCase())) continue;
+    out.push(...settle(s, name, fate, String(x?.how ?? deed.summary).slice(0, 200)));
+  }
+  return out;
+}
+
+/** People who aren't yours, kept on file with what they took away from it. */
+function outsiders(s: SaveState, deed: Deed, r: Read): string[] {
+  const out: string[] = [];
+  for (const x of (r.outsiders ?? []).slice(0, 4)) {
+    const name = String(x?.name ?? "").trim();
+    if (!name || byName(s, name) || isOwnerName(s, name)) continue;
+    const f = Object.values(s.faces ?? {}).find((y) => sameName(y.name, name, y.short)) ?? meet(s, { name });
+    if (!f || f.fate?.fate === "dead") continue;
+    if (x.what && !f.what) f.what = String(x.what).slice(0, 80);
+    if (x.remembers) note(s, f, String(x.remembers));
+    if (x.likes) f.likes = String(x.likes).slice(0, 120);
+    if (x.dislikes) f.dislikes = String(x.dislikes).slice(0, 120);
+    const dir = String(x.toward ?? "").toLowerCase();
+    if (dir.startsWith("warm")) f.toward = Math.min(100, (f.toward ?? 0) + 15);
+    else if (dir.startsWith("cold")) f.toward = Math.max(-100, (f.toward ?? 0) - 15);
+    const t = x.tie;
+    if (t?.what && t.with) {
+      const yours = byName(s, String(t.with));
+      if (yours) { tie(f, String(t.what), yours.id); out.push(`${f.name} is ${String(t.what).replace(/^(her|his) /, `${yours.name.split(" ")[0]}'s `)} now`); }
+      else if (/owner|you|player/i.test(String(t.with)) || isOwnerName(s, String(t.with))) { tie(f, String(t.what)); f.kept = true; }
+    }
+  }
+  return out;
+}
+
+/** You meant it: she locks the collar. Everything giving yourself away does, done now. */
+export function acceptCollar(s: SaveState, deedId: string, keepHand = false): string[] {
+  const d = deedsOf(s).find((x) => x.id === deedId);
+  const p = d?.person ? s.people[d.person] : undefined;
+  if (!d || !p || d.collar !== "offered") return [];
+  const out: string[] = [];
+  d.collar = "taken";
+  s.player.ask_hand = keepHand;
+  d.tags = ["owner_enslaved", ...d.tags.filter((t) => t !== "owner_enslaved")];
+  DEED_TAGS.owner_enslaved.apply({ s, d, p, out });
+  const mem = s.memory[p.id];
+  if (mem) remember(mem, { content: "the owner knelt and let me lock the collar on them", week: s.arcology.week, importance: 10, charge: "bright", core: true });
+  const house = Object.values(s.people).filter((x) => (x.status === "owned" || x.status === "indentured") && x.id !== p.id && x.age >= 5);
+  for (const h of d.public ? house : house.filter((x) => d.witnesses.some((w) => w.toLowerCase().includes(x.name.toLowerCase())))) {
+    applyTreatment(h, { kind: "recognition", size: 2, why: `the owner gave themself to ${p.name}` }, s.arcology.week);
+    moveEdge(s.edges, h.id, p.id, { warmth: -2, power: 3 });
+  }
+  const st = s.story;
+  if (st) { st.flags.deed_owner_enslaved = Number(st.flags.deed_owner_enslaved ?? 0) + 1; st.flags.deed_owner_enslaved_who = p.id; }
+  const e = DEED_TAGS.owner_enslaved.echo!;
+  if (!d.follow || d.follow.fired) d.follow = { due: s.arcology.week + e.after[0], situation: e.situation(s, d, p), options: e.options };
+  refresh(p, s.memory[p.id]);
+  d.effects = d.effects.filter((x) => !/holding out a collar/.test(x)).concat(out);
+  return out;
+}
+
+/** That isn't what you meant. She heard it wrong, and it's let go: nothing changes. */
+export function refuseCollar(s: SaveState, deedId: string): void {
+  const d = deedsOf(s).find((x) => x.id === deedId);
+  if (!d || d.collar !== "offered") return;
+  d.collar = "refused";
+  d.effects = d.effects.filter((x) => !/holding out a collar/.test(x));
+}
+
+/** The collar she's holding out for you, if there is one. */
+export function collarOffered(s: SaveState): Deed | undefined {
+  return [...deedsOf(s)].reverse().find((d) => d.collar === "offered" && !!d.person && s.people[d.person]?.status !== "dead");
 }
 
 /** What a deed does, now. */
@@ -492,6 +588,8 @@ export function applyDeed(s: SaveState, deed: Deed, herMemory?: string): void {
 /** Weekly: what you did comes back. */
 export function tickDeeds(s: SaveState): { text: string; person?: string }[] {
   const out: { text: string; person?: string }[] = [];
+  // A collar nobody answered for a fortnight is put away again.
+  for (const d of deedsOf(s)) if (d.collar === "offered" && s.arcology.week - d.week >= 2) refuseCollar(s, d.id);
   for (const d of deedsOf(s)) {
     const f = d.follow;
     if (!f || f.fired || f.due > s.arcology.week) continue;

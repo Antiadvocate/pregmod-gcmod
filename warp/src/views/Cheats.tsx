@@ -1,4 +1,5 @@
 /** CHEATS — every number in the game, directly. Nobody to be fair to in a single-player arcology. */
+import { BEATS, beat, mark, wash } from "../engine/marks";
 import { useState } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Chip, Field, Money, Section, Stat } from "../lib/ui";
@@ -16,6 +17,8 @@ import { read } from "../engine/obedience";
 import { reversalOf, nextEvent as chainEvent } from "../engine/reversal";
 import { CHAIN } from "../data/reversal";
 import PersonEditor from "./PersonEditor";
+
+const MARK_PRESETS: [string, string, string?][] = [["cum", "face"], ["cum", "chest"], ["cum", "collar"], ["cum", "feet"], ["spit", "mouth"], ["mascara", "face"], ["soleprint", "face"], ["welts", "thighs"], ["welts", "ass"], ["bruise", "belly"], ["lipstick", "neck"], ["handprint", "neck"], ["bite", "chest"], ["words", "belly", "PROPERTY"], ["words", "forehead", "FEET ONLY"], ["sweat", "chest"], ["piss", "crotch"]];
 
 export default function Cheats() {
   const { save, mutate } = useGame();
@@ -220,6 +223,20 @@ export default function Cheats() {
                   onChange={(e) => mutate((s) => { s.people[target.id].body.weight = Number(e.target.value); })} />
               </Field>
             </div>
+            <Field label="On her body">
+              <div className="flex flex-wrap gap-1.5">
+                {MARK_PRESETS.map(([kind, spot, text]) => (
+                  <Chip key={`${kind}${spot}`} onClick={() => mutate((s) => { mark(s, target.id, kind, spot, text); say(`${target.name}: ${kind} on ${spot}`); })}>{kind === "words" ? `"${text}"` : kind} · {spot}</Chip>
+                ))}
+                <Chip onClick={() => mutate((s) => { mark(s, "owner", "cum", "face"); mark(s, "owner", "soleprint", "face"); say("on you: cum and a sole print, face"); })}>on you: cum + sole print</Chip>
+                <Chip onClick={() => mutate((s) => { wash(s, target.id); wash(s, "owner"); say("washed"); })}>wash</Chip>
+              </div>
+            </Field>
+            <Field label="Make her body do something">
+              <div className="flex flex-wrap gap-1.5">
+                {Object.keys(BEATS).map((b) => <Chip key={b} onClick={() => mutate((s) => { beat(s, target.id, b); say(`${target.name}: ${b}`); })}>{b}</Chip>)}
+              </div>
+            </Field>
             <Field label={`Where she stands — ${RUNG_BY_ID[romanceOf(target).standing].name}, she decides ${Math.round(romanceOf(target).dominion)}`}>
               <div className="flex flex-wrap gap-1.5">
                 {LADDER.map((st) => (

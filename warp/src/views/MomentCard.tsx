@@ -12,7 +12,7 @@ import { useGame } from "../lib/game";
 import { Button, cx } from "../lib/ui";
 import { closeAllMoments, momentsOf, openMoment, playMoment } from "../engine/moments";
 import { rollback, snapshot } from "../engine/state";
-import { concludeMoment, deedsOf, DEED_TAGS } from "../engine/deeds";
+import { acceptCollar, concludeMoment, deedsOf, refuseCollar, DEED_TAGS } from "../engine/deeds";
 import { modelsAvailable } from "../config";
 import Portrait, { castOf } from "./Portrait";
 
@@ -200,7 +200,28 @@ export function DeedCard({ id, onClose }: { id?: string; onClose?: () => void })
       {d.tags.length ? <div className="flex flex-wrap gap-1.5 mt-2">{d.tags.map((t) => <span key={t} className="chip">{DEED_TAGS[t]?.label ?? t}</span>)}</div> : null}
       {d.effects.length ? <ul className="mt-2 space-y-0.5 text-[12.5px] mid">{d.effects.map((e, i) => <li key={i}>· {e}</li>)}</ul> : null}
       {d.fact ? <div className="text-[12px] acc mt-2">{d.fact}</div> : null}
+      {d.collar === "offered" ? <CollarOffer id={d.id} /> : null}
       {onClose ? <Button size="sm" kind="ghost" className="mt-2" onClick={onClose}>done</Button> : null}
+    </div>
+  );
+}
+
+/** She heard you give yourself to her. Nothing has happened yet: kneel, or tell her she heard wrong. */
+export function CollarOffer({ id }: { id: string }) {
+  const { save, mutate } = useGame();
+  const d = deedsOf(save).find((x) => x.id === id);
+  const p = d?.person ? save.people[d.person] : undefined;
+  if (!d || !p || d.collar !== "offered") return null;
+  const first = p.name.split(" ")[0];
+  return (
+    <div className="card p-3 mt-3 fade-in">
+      <p className="font-prose text-[14px] leading-relaxed">{first} took that as you giving yourself to her. She has a collar in her hands and she's waiting to see if you kneel.</p>
+      <p className="text-[12px] dim mt-1">If you kneel, she owns you and the arcology answers to her. Ask to keep a hand in and you can still run things, if she agrees, but she can overrule you.</p>
+      <div className="flex flex-wrap gap-2 mt-2">
+        <Button size="sm" kind="primary" onClick={() => mutate((s) => { acceptCollar(s, id); })}>Kneel and give her everything</Button>
+        <Button size="sm" onClick={() => mutate((s) => { acceptCollar(s, id, true); })}>Kneel, and ask to keep a hand in</Button>
+        <Button size="sm" kind="ghost" onClick={() => mutate((s) => { refuseCollar(s, id); })}>That's not what I meant</Button>
+      </div>
     </div>
   );
 }

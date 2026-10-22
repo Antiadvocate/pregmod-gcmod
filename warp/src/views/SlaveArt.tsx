@@ -26,6 +26,10 @@ import { frameAt, jointFor, restingPose, transformFor, STILL, type Joint, type P
 import { subscribeClock, stillWanted } from "../lib/clock";
 import { expressionOf, ExpressionLayer, type Moment } from "../lib/expression";
 import { blend, blinkAt, cloneFace, mouthPaths, talkAt, MOUTH_BOX, type Box, type FaceParams } from "../lib/face";
+import { MarksLayer, BeatOverlay } from "../lib/marksart";
+import type { BeatKind } from "../engine/marks";
+
+
 
 /** file stem → inner SVG markup, or null when the file is not in the pack. */
 const cache = new Map<string, string | null>();
@@ -94,6 +98,20 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
   const [markup, setMarkup] = useState<{ layer: Layer; inner: string }[]>([]);
   const own = useRef<SVGSVGElement>(null);
   const svg = svgRef ?? own;
+  // What's on her body, so the moving part picks up the new groups when it changes.
+  const stainsKey = (person.stains ?? []).map((m) => `${m.kind}${m.spot}${m.at ?? 0}`).join("|");
+  // The last thing her body did, played once if it's recent.
+  // Every figure of her on screen does it, once each, if it happened in the last few seconds.
+  const [beat, setBeat] = useState<BeatKind | null>(null);
+  const done = useRef(0);
+  useEffect(() => {
+    const b = person.beat;
+    if (!b || done.current === b.n || Date.now() - b.n > 8000 || !animate) return;
+    done.current = b.n;
+    setBeat(b.kind);
+    const t = window.setTimeout(() => setBeat(null), 2800);
+    return () => window.clearTimeout(t);
+  }, [person.beat?.n, animate]);
 
   useEffect(() => {
     let live = true;
@@ -136,7 +154,7 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
 
     if (!animate || stillWanted()) { paint(STILL); return; }
     return subscribeClock((ms) => paint(frameAt(person, held, ms)));
-  }, [markup, person, held, animate, !!expr]);
+  }, [markup, person, held, animate, !!expr, stainsKey, beat]);
 
   // The face. Same clock, same rule: attributes, not state. It eases from wherever it is to the mood
   // asked for, blinks on its own schedule, and moves its mouth while she is speaking.
@@ -206,7 +224,7 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
   const tints = useMemo(() => [...new Set(markup.map((m) => m.layer.tint).filter((t): t is number => !!t))], [markup]);
 
   return (
-    <div className={className} style={{ height, display: "flex", alignItems: "flex-end", justifyContent: "center", overflow: "hidden" }}>
+    <div className={[className, beat ? `beat beat-${beat}` : ""].filter(Boolean).join(" ")} style={{ height, display: "flex", alignItems: "flex-end", justifyContent: "center", overflow: "hidden" }}>
       <svg ref={svg} viewBox={cropFor(crop, held, person)} className={scope} preserveAspectRatio="xMidYMax meet"
         style={{ height: "100%" }}
         role="img" aria-label={`${person.name} — ${held.reads}`}>
@@ -242,6 +260,8 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
             dangerouslySetInnerHTML={{ __html: inner }} />
         )).flatMap((el, i) => (i === foreAt && expr ? [<ExpressionLayer key="expr" e={expr} scope={scope} />, el] : [el]))}
         {expr && foreAt < 0 && markup.length ? <ExpressionLayer e={expr} scope={scope} /> : null}
+        {markup.length ? <MarksLayer person={person} /> : null}
+        {beat && markup.length ? <BeatOverlay kind={beat} /> : null}
         </g>
       </svg>
     </div>

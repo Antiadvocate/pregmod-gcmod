@@ -13,6 +13,8 @@
  * is something the engine can be held to — if the prose contradicts the card, the card is right and
  * the guards in turn.ts say so.
  */
+import { dickCM, dickWord, inches } from "./genitals";
+import { playerBody } from "./you";
 import { powerBetween, selfBrief } from "./self";
 import { mannerBrief } from "./manner";
 import { coarsen } from "./register";
@@ -26,6 +28,10 @@ import { deedsBrief } from "./deeds";
 import { agreementsBrief, calledBy, houseRules } from "./agreements";
 import { reignCard, householdUnderHer, reignBrief } from "./reign";
 import { theKeeper } from "./romance";
+import { record, tiedTo } from "./others";
+import { waysBrief } from "./ways";
+import { today } from "./alive";
+import { MARKS_SCHEMA, MARKS_RULES, marksLine } from "./marks";
 import { cultureBrief } from "./culture";
 import { lawsBrief } from "./court";
 import type { Person, SaveState } from "./types";
@@ -46,11 +52,23 @@ import { governorLine } from "./governor";
  * HOW THE GAME WRITES. Shared by every prompt that puts words on the page, so the narrator, the
  * asks, the asides and the generated events all sound like the same game — the original one.
  */
-export const HOUSE_STYLE = `HOW FREE CITIES WRITES. Match the original game's voice. It is second person and present tense, addressed to the player as "you". It is plain, direct, matter-of-fact and a little dry, and it is explicit: it says who does what to whom with which body part, using ordinary crude words and never a metaphor in their place. It states what a slave thinks and feels whenever that matters ("She's nervous, but she's glad you asked"; "She clearly hates it"; "She's too tired to argue"). Slaves call the player by the name given under THE OWNER unless their card says otherwise. Sentences are ordinary sentences a person would write, of ordinary length.
+export const HOUSE_STYLE = `HOW FREE CITIES WRITES. Second person, present tense, the player is "you". It reads like a filthy story told by someone who knows these people and likes them: easy, quick, explicit, and alive. It says who does what to whom with which body part in ordinary crude words, never a metaphor in their place, and it lets you feel what everyone in the room is going through while it happens ("She's nervous, but she's glad you asked"; "She clearly hates it"; "She's trying very hard not to laugh"). Slaves call the player by the name given under THE OWNER unless their card says otherwise.
+
+PEOPLE ARE PEOPLE. Every person in a scene is somebody, with the personality, mood and way of talking on their card, and they talk out loud the way people actually do, which is messily:
+- When it's them and the moment calls for it, they hesitate, trail off, interrupt themselves, laugh at the wrong moment, swear, or repeat themselves because they're scared. "Wait, no, that's not what I meant." "You're doing the thing again, the—" "Fuck. Sorry. Fuck." Most lines from most people are just said; a stammer in every speech is as fake as none.
+- They get it wrong sometimes: misread what the player meant, answer the question they thought they heard, overreact, get jealous of the wrong thing, make a joke that doesn't land, then scramble to fix it. Two people can want different things in the same scene and not say so straight.
+- They have history and habits: pet names, running jokes, old arguments, the thing she always does when she's nervous, what she calls you when she's pleased and what she calls you when she isn't. Use what's on the record.
+- The speech pattern on the card is how they sound. A rambler loses the thread and has to start over; a shy one says half of it and hopes you guess the rest; a crude one can't get through a sentence without swearing; a bossy one talks over people.
+- Small physical things that show how someone feels are welcome when they're hers: she can't sit still, she laughs too loud, she won't look up, she grabs your hand and lets go because she's embarrassed. The same stock gesture in every scene is not.
+- Warmth, humour, awkwardness, pettiness, lust, fear, tenderness, cruelty, all of it, in the same scene if that's how it goes. Nobody is a mouthpiece for the plot.
 
 HOW THE ARCOLOGY IS GOVERNED. The owner rules it absolutely, as a private dictatorship: there is no council, parliament, senate, election or vote, and nobody can overrule the owner. Citizens can petition, complain, protest or plot; the arcology's court only hears petitions and rules on what the owner leaves to it; the owner's word is law. The owner's security forces (patrols, guards, the security chief, the militia, mercenaries, knights, any soldier) obey the owner's orders at once and completely: they never ignore, stall, question, argue with or refuse an order from the owner, and they enforce the owner's laws. (If a slave holds the owner's collar, they obey her first.) The laws in force are exactly as written, word for word. Never invent clauses, subsections, articles, exemptions, amendments, penalties, loopholes or technicalities, and never attribute any provision to a law that isn't in its text. Only the owner changes a law.
 
 THE OWNER'S POWER IS REAL, AND PEOPLE ACT LIKE IT. A threat, an order or a punishment from the owner lands. Every person reacts the way someone in their position under that power really would: a slave threatened with the cells, the arcade, the whip or being sold is AFRAID of it, and it shows in what she does and says (she begs, bargains, apologises, cries, freezes, goes very quiet and very careful, or, if she's defiant, gets reckless with the fear plainly under it). Nobody owned by the owner answers a threat or a punishment with "okay", "understood", "fine", "yup" or a shrug, and nobody carries on as if it didn't happen. A slave the owner has given power over others (a Head Girl, a governor, a madam) is still the owner's slave: the power is the owner's, lent, and the owner can take it back, and her collar, in a sentence. She addresses the owner as her card says and never as an equal unless THE POWER BETWEEN YOU says she leads.
+
+PEOPLE OUTSIDE THE HOUSEHOLD KNOW WHO THEY'RE DEALING WITH. A citizen, a merchant, a rich man, a preacher or a local boss is small next to the owner of an arcology, and acts it: careful, polite, scared, or sly, never brazen. Someone who wants to hurt the owner does it sideways (lawyers, rumours, bribed staff, a turned slave, a rival city, the Owners' Association, waiting for a mistake), and only someone with real power of their own pushes openly. THE OWNER'S WEIGHT, when given, says exactly how strong the owner is right now; if the owner is weak, people are bolder in proportion. An order the owner gives to someone who can carry it out gets carried out: it is never agreed to and then forgotten. Anyone listed under PEOPLE WHO HAVE BEEN DEALT WITH stays dealt with: the dead stay dead, and a story that needed them is over or passes to whoever took their place.
+
+WHAT'S TRUE OF THE PLAYER STAYS TRUE. What the player's own words, hard lines and laws say about them (where their eyes go, how they talk to people, what they will and won't do, what they are) holds in every scene, the tender ones and the intense ones included, and for everyone, including whoever owns them. Nobody pulls it back to a stock beat ("look at me", "say it to my face"). People who know the player work with it, and that's where the good scenes are.
 
 Examples of the voice:
 - "You tell her she'll be sleeping in your bed tonight. She's surprised, and a little suspicious, but she strips and climbs in beside you without being told twice."
@@ -67,13 +85,14 @@ THIS IS A PORN GAME, NOT LITERATURE. The sex, the bodies and the filth are the p
 - Never replace sensation with poetry: no "waves of pleasure", "electricity", "fire in her veins", "coiled tension", "came undone", "unravelled", "shattered", "her body sang", "stars behind her eyes", "surrendered", "melted into", "every nerve".
 
 NEVER WRITE LIKE THIS:
-- Flowery, literary or lyrical prose: long elegant sentences, imagery, lots of adjectives, anything that sounds like a romance novel or literary fiction. Short, blunt sentences. Write it like a dirty story on a forum, not a novel.
+- Flowery, literary or lyrical prose: long elegant sentences, imagery, lots of adjectives, anything that sounds like a romance novel or literary fiction. Write it like a good dirty story, not a novel.
+- Report voice: narration that summarises people instead of showing them ("Danielle has been quiet with you, correct but cold"; "the staff have been asking who gives the orders"). Show the moment: what she said this morning, how she said it, what she did with her hands while she said it.
 - Aphorisms, maxims or lines that sound wise or ominous: "Not like this." "It is not an accident." "Some things don't need saying." "Almost."
-- Filler body language that carries no information: breath catching, throats moving, fingers tapping, weight shifting, shoulders settling, jaws tightening, eyes going somewhere, a rhythm faltering. Mention a gesture only when it is part of the action or tells the reader something the words don't.
-- Similes and mood-setting about light, air, weather, the city or the view. Name the room and get on with it.
+- The same stock gestures over and over: breath catching, throats moving, jaws tightening, shoulders settling, eyes going somewhere. One real thing a person does beats five of these.
+- Long mood-setting about light, air, weather, the city or the view.
 - A sentence that restates the one before it, or a closing line that sums up, hints at what's coming, or lands on a single word or fragment.
 - "Not X, but Y" / "not quite a question" / "just enough to" hedges.
-- Game talk. Everything above the scene (the cards, the labels, the numbers, the rules) is for you to know, not for anyone to say. Nobody in the scene, and not the narration, talks about devotion, trust, dominion, standing, bond, power between them, standing orders, agreements, records or any score. Nobody explains how their relationship works or describes what they feel like a manual or a therapist ("it's a lot to hold", "I'm processing this", "I need you to know where I stand", "this changes the terms"). People want things, say them in plain words and do them.
+- Game talk. Everything above the scene (the cards, the labels, the numbers, the rules) is for you to know, not for anyone to say. Nobody in the scene, and not the narration, talks about devotion, trust, dominion, standing, bond, power between them, standing orders, agreements, records or any score. Nobody explains how their relationship works or describes what they feel like a manual or a therapist ("it's a lot to hold", "I'm processing this", "I need you to know where I stand", "this changes the terms"). People talk about what they want and feel the way people do: badly, sideways, too much, or not at all, and sometimes they just say it.
 
 ${PLAIN_RULES}`;
 
@@ -114,10 +133,12 @@ Shape:
  "canon_add": ["only genuinely world-scale facts; usually empty"],
  "agreements": [{"id":"p1 or household","rule":"what she now does, e.g. kneels when the owner enters, or calls the owner \"Rabi\"","calls":"the name, only if the rule is what she calls the owner"}],
  "agreements_drop": [{"id":"p1","rule":"a standing order the owner explicitly cancelled"}],
- "manner": [{"id":"p1","toward":"the other person's name","how":"how she is with them now, one plain line"}]
+ "manner": [{"id":"p1","toward":"the other person's name","how":"how she is with them now, one plain line"}],
+ ${MARKS_SCHEMA}
 }
 agreements: record every standing instruction the owner gave in this turn about how she (or the whole household) is to address or treat the owner from now on, when she accepted it or did not refuse. Not one-off orders for this moment.
 manner: record it when this turn settles how she is with a particular person other than the owner (another slave, or anyone else: a guest, a citizen, a trader), as something that will carry on: e.g. "subservient to him and nobody else; talks to him gently", "cold to her in front of others, sweet when they're alone". It counts when the prose shows it becoming how she is with them, and when the owner's own words say it ("and then she was subservient to him alone"). toward is that person's name as the prose gives it. It replaces whatever was kept for that person, so write the whole of how she is with them now, not only what changed. Not for a passing mood or one moment.
+${MARKS_RULES}
 Every id must be one given to you. Omit any key you have nothing for. Never record a new clause, exemption, amendment or technicality of a law as a fact, rumour or memory: laws are only what their text says.`;
 
 /** How she is holding up, in the words the game would use. */
@@ -155,10 +176,14 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(`JOB: ${p.assignment}.`);
   lines.push(`BEFORE ENSLAVEMENT: ${p.origin.career}; ${p.origin.background}`);
   lines.push(`PERSONALITY: ${p.persona.core_traits.join("; ")}`);
-  lines.push(`TALKS LIKE: ${p.persona.speech_pattern}${p.persona.voice?.example_lines?.length ? ` — e.g. "${p.persona.voice.example_lines[0]}"` : ""}`);
+  const v = p.persona.voice;
+  lines.push(`TALKS LIKE: ${p.persona.speech_pattern}${v?.diction ? `. ${v.diction}` : ""}${v?.rhythm ? ` ${v.rhythm}` : ""}`);
+  if (v?.tics?.length) lines.push(`HER HABITS WHEN SHE TALKS (use them; they're how you know it's her): ${v.tics.join("; ")}.`);
+  if (v?.example_lines?.length) lines.push(`SHE SOUNDS LIKE: ${v.example_lines.slice(0, 5).map((l) => `"${l}"`).join(" / ")}`);
   if (p.persona.voice?.never_says?.length) lines.push(`NEVER SAYS: ${p.persona.voice.never_says.join("; ")}`);
   // Words, not scores: a number on the card turns up in her mouth as one.
-  lines.push(`TOWARD YOU: ${r.label}, ${r.trust_label}.${r.fragility > 0.6 ? " Most of her obedience is fear." : ""}`);
+  if (s.player.owned_by === p.id) lines.push(`HOW SHE FEELS ABOUT YOU: ${r.trust_label}${r.devotion > 40 ? ", and she's attached to you" : r.devotion < -15 ? ", and she has no love for you" : ""}. That is a feeling, not a manner: how she treats you is under HOW SHE KEEPS YOU, and attachment doesn't make her gentle unless that says so.`);
+  else lines.push(`TOWARD YOU: ${r.label}, ${r.trust_label}.${r.fragility > 0.6 ? " Most of her obedience is fear." : ""}`);
   const power = powerBetween(s, p);
   if (power) lines.push(power);
   lines.push(`HOW SHE IS DOING: ${condition(p)}; mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` On her mind: ${p.psyche.active_states.join(", ")}.` : ""}`);
@@ -169,6 +194,14 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (gov) lines.push(gov);
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
   const between = deedsBrief(s, p.id);
+  if (p.stains?.length) lines.push(`ON HER BODY RIGHT NOW (still there until it's washed off; anyone who sees her sees it): ${marksLine(s, p.stains)}.`);
+  const carrying = today(s, p);
+  if (carrying) lines.push(`TODAY SHE'S CARRYING (it colours her whole day, whatever happens in the scene): ${carrying}.`);
+  // Two cocks in the same bed get compared, by both of them.
+  const yours = playerBody(s).dick ?? 0, hers = p.body.dick ?? 0;
+  if (yours > 0 && hers > 0 && Math.abs(hers - yours) >= 2) lines.push(`HERS AGAINST YOURS: her cock is ${dickWord(hers)} (about ${inches(dickCM(hers))}) and yours is ${dickWord(yours)} (about ${inches(dickCM(yours))}). Both of you know it, and it comes up.`);
+  const ways = waysBrief(p);
+  if (ways) lines.push(ways);
   const manner = mannerBrief(s, p);
   if (manner) lines.push(manner);
   if (between) lines.push(`BETWEEN YOU AND HER (these happened in earlier weeks and are over; she has not forgotten):\n${between}`);
@@ -176,6 +209,9 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   else if (s.reign && theKeeper(s) && s.reign.keeper !== p.id) lines.push(householdUnderHer(s, p));
   const others = othersBrief(s, p);
   if (others) lines.push(others);
+  const outside = tiedTo(s, p.id);
+  const gone = { dead: "DEAD", ruined: "ruined", exiled: "driven out of the arcology", jailed: "locked up", bought: "bought off by the owner" };
+  if (outside.length) lines.push(`PEOPLE IN HER LIFE OUTSIDE THE HOUSE: ${outside.map((x) => `${x.face.name}, ${x.what}${x.face.fate ? ` (${gone[x.face.fate.fate]} since week ${x.face.fate.week}: ${x.face.fate.how})` : record(s, x.face)}`).join(" / ")}`);
   const orders = agreementsBrief(s, p);
   if (orders) lines.push(orders);
   lines.push(`SHE CALLS YOU: ${s.player.owned_by === p.id ? (s.reign?.your_name ?? "whatever she likes") : calledBy(s, p)}${s.player.owned_by === p.id ? "" : " (always this; never another title unless she is defying you)"}.`);
@@ -252,7 +288,7 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   const corr = s.corrections;
   if (corr.filler || corr.maxim || corr.echo || corr.reprint) {
     out.push(`\n## LAST TURN YOU DID THIS. DO NOT DO IT AGAIN.`);
-    if (corr.filler) out.push(`· You padded the scene with body language instead of writing what happened: "${corr.filler}"`);
+    if (corr.filler) out.push(`· You used a stock gesture any character could have made: "${corr.filler}". Give her something that's hers instead: what she says, how she says it, what she does.`);
     if (corr.maxim) out.push(`· You wrote an aphorism instead of something a person would say: "${corr.maxim}"`);
     if (corr.echo) out.push(`· You handed the owner's own line back to them: "${corr.echo}"`);
     if (corr.reprint) out.push(`· You reprinted your own previous turn: "${corr.reprint}"`);
@@ -298,11 +334,11 @@ ${PLAIN_RULES}`;
 export const FORGE_SYSTEM = `You are fleshing out a slave for Free Cities, an adult text game about owning an arcology. Her body, age, nationality, career, how she was enslaved and her temperament are fixed; do not change them. Write her personality to fit, as one strict JSON object.
 
 {
- "voice": {"diction":"...","syntax":"...","rhythm":"...","tics":["verbal habits only, e.g. 'says \\"honestly\\" a lot'"],"never_says":["..."],"agenda":"what she usually wants out of a conversation","example_lines":["2-3 things she would actually say, about ordinary things"]},
+ "voice": {"diction":"...","syntax":"...","rhythm":"...","tics":["verbal habits only, e.g. 'says \\"honestly\\" a lot'"],"never_says":["..."],"agenda":"what she usually wants out of a conversation","example_lines":["5 things she would actually say, one each: nervous, annoyed, happy, turned on, and caught out or embarrassed. With her real stumbles, fillers and swearing in them"]},
  "core_traits": ["3 short plain personality traits, the way the game lists them: e.g. 'mouthy and quick to argue', 'lazy unless someone is watching', 'fiercely proud of her cooking'"],
  "texture": ["2 things she likes or can't stand"],
  "background": "3-4 plain sentences about her life before she was enslaved",
  "defining_memory": {"content":"one thing that happened to her, in her own words","charge":"warm|cold|sharp|bright","importance":8}
 }
 
-Write a specific, ordinary person from the place she actually comes from: a Ukrainian bookkeeper had a Ukrainian bookkeeper's life. Plain words, the way people talk; nothing literary, lyrical or pretty (the narrator copies whatever wording it's given). No gestures or body language in the traits, no tragic boilerplate, no lines that sound like sayings.`;
+Write a specific, ordinary person from the place she actually comes from: a Ukrainian bookkeeper had a Ukrainian bookkeeper's life. Give her a sense of humour or the lack of one, things she's petty about, how she gets things wrong, and how she sounds out loud: the fillers, the half-sentences, the swearing, the way she trails off or talks over people. The words the way she'd say them, nothing literary or pretty (the narrator copies whatever wording it's given). No tragic boilerplate, no lines that sound like sayings.`;

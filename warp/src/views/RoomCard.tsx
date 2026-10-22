@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { BedDouble } from "lucide-react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Button, Card, Meter } from "../lib/ui";
 import { AXES, TOUCH_COST, type RoomAxis } from "../data/rooms";
 import { EXTRA_BY_ID } from "../data/rooms";
@@ -11,7 +12,8 @@ import { Reaction } from "./MomentCard";
 const money = (n: number) => `¤${Math.round(n).toLocaleString()}`;
 
 export default function RoomCard({ id }: { id: string }) {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("people");
   const [open, setOpen] = useState(false);
   const [touch, setTouch] = useState("");
   const [said, setSaid] = useState<{ line: string; what: string } | null>(null);

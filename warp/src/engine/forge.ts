@@ -41,7 +41,9 @@ function sketch(p: Person): string {
   ].join("\n");
 }
 
-export async function enrichPerson(s: SaveState, p: Person): Promise<boolean> {
+/** Flesh her out with the model. `voiceOnly` gives her a voice and leaves the rest of her alone: for
+ *  a woman who already has a history in this save, which a new background would contradict. */
+export async function enrichPerson(s: SaveState, p: Person, voiceOnly = false): Promise<boolean> {
   if (!modelsAvailable()) return false;
   const res = await call({
     system: FORGE_SYSTEM,
@@ -56,6 +58,7 @@ export async function enrichPerson(s: SaveState, p: Person): Promise<boolean> {
   if (!out) return false;
 
   if (out.voice) p.persona.voice = { ...p.persona.voice, ...out.voice };
+  if (voiceOnly) return !!out.voice;
   if (out.core_traits?.length) p.persona.core_traits = out.core_traits.slice(0, 4).map((t) => String(t).slice(0, 160));
   if (out.texture?.length) p.persona.texture = out.texture.slice(0, 3).map((t) => String(t).slice(0, 100));
   if (out.background) p.persona.background = String(out.background).slice(0, 800);

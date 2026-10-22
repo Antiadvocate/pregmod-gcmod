@@ -470,6 +470,14 @@ export interface Person {
   agreements?: import("./agreements").Agreement[];
   /** How she is with particular people, other slaves or anyone outside, kept between scenes. See engine/manner. */
   manner?: import("./manner").Manner[];
+  /** How she and the player do things, settled over many scenes: rituals, the way they talk, what
+   *  always happens. Kept, so a scene doesn't reset to a stranger's version of them (engine/ways). */
+  ways?: { text: string; week: number }[];
+  /** What's on her body right now, and the last thing it did (engine/marks). */
+  stains?: import("./marks").Mark[];
+  beat?: { kind: import("./marks").BeatKind; n: number };
+  /** What she woke up with this week (engine/alive). */
+  today?: { week: number; text: string };
   /** Gene treatments under way. See engine/fleshcraft. */
   growing?: import("./fleshcraft").Growing[];
   /** When she's been an idol. See engine/idols. */
@@ -757,6 +765,9 @@ export interface ModelSettings {
   context_memories_k: number;
   history_window: number;
   lean_mode: boolean;
+  /** Have the model write out what happens after you answer an event. Off: the game's own line and
+   *  what changed, and you can still ask for it played out. Default on. */
+  write_outcomes?: boolean;
   token_budget: number;
   /** 0–10: how much the world throws at you unprompted. 0 = it only ever answers what you do. */
   tension: number;
@@ -926,6 +937,8 @@ export interface SaveState {
   menials?: import("./menials").Menials;
   /** Faces of people who aren't yours but keep turning up. See engine/faces.ts. */
   faces?: Record<string, import("./faces").Face>;
+  /** How much the other powers bother you: envoys, offers, summits. Default "some". */
+  world_pace?: "none" | "some" | "full";
   /** Long stories grown from this arcology. See engine/saga.ts. */
   sagas?: import("./saga").SagaState;
   /** The city's message boards, written in the background (engine/feed.ts). */
@@ -980,6 +993,11 @@ export interface Player {
    *  the registry, holds you. See engine/romance.ts — this is the far end of the ladder, and it is
    *  a playable state rather than a game over. */
   owned_by?: string;
+  /** What's on your body right now, and the last thing it did (engine/marks). */
+  stains?: import("./marks").Mark[];
+  beat?: { kind: import("./marks").BeatKind; n: number };
+  /** Set when you kneel: whether you asked to keep a hand in running things (engine/share). */
+  ask_hand?: boolean;
   /** What you have left in the tank, 0–100. Spent on the interaction loop, back by the week: a
    *  body that has been at it all week is not a body that wants a fifth thing. */
   need?: number;

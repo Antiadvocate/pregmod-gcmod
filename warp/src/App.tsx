@@ -9,7 +9,7 @@
 import WarRoom from "./views/WarRoom";
 import { useEffect, useState } from "react";
 import {
-  Building2, Users, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, Globe2, BookOpen, Scale, GitCompareArrows, Earth, Dna, Newspaper, Swords } from "lucide-react";
+  Building2, BedDouble, Users, Contact, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, Globe2, BookOpen, Scale, GitCompareArrows, Earth, Dna, Newspaper, Swords } from "lucide-react";
 import type { SaveState } from "./engine/types";
 import { GameProvider, useGame } from "./lib/game";
 import { listSaves, getSave } from "./store";
@@ -35,14 +35,19 @@ import Compare from "./views/Compare";
 import World from "./views/World";
 import Genome from "./views/Genome";
 import Feed, { FeedTicker } from "./views/Feed";
+import Others from "./views/Others";
+import YourRoomView from "./views/YourRoom";
+import { Held, HandToast } from "./lib/hand";
 import { unread as feedUnread } from "./engine/feed";
 
-export type Route = "penthouse" | "feed" | "people" | "story" | "scene" | "city" | "society" | "compare" | "world" | "war" | "genome" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
+export type Route = "penthouse" | "yours" | "feed" | "people" | "others" | "story" | "scene" | "city" | "society" | "compare" | "world" | "war" | "genome" | "arcology" | "doctrine" | "market" | "orders" | "report" | "you" | "cheats" | "settings";
 
 const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "penthouse", label: "Penthouse", icon: Building2 },
+  { id: "yours", label: "Your room", icon: BedDouble },
   { id: "feed", label: "Feed", icon: Newspaper },
   { id: "people", label: "People", icon: Users },
+  { id: "others", label: "Others", icon: Contact },
   { id: "story", label: "Story", icon: BookOpen },
   { id: "scene", label: "Scene", icon: Play },
   { id: "city", label: "City", icon: Globe2 },
@@ -98,8 +103,8 @@ export default function App() {
  */
 type Group = { id: string; label: string; icon: typeof Building2; routes: Route[] };
 const GROUPS: Group[] = [
-  { id: "home", label: "Home", icon: Building2, routes: ["penthouse", "feed", "report"] },
-  { id: "people", label: "People", icon: Users, routes: ["people", "orders", "you", "genome"] },
+  { id: "home", label: "Home", icon: Building2, routes: ["penthouse", "yours", "feed", "report"] },
+  { id: "people", label: "People", icon: Users, routes: ["people", "others", "orders", "you", "genome"] },
   { id: "story", label: "Story", icon: BookOpen, routes: ["story", "scene"] },
   { id: "city", label: "City", icon: Globe2, routes: ["city", "arcology", "society", "doctrine", "world", "war", "compare"] },
   { id: "market", label: "Market", icon: ShoppingBag, routes: ["market"] },
@@ -108,6 +113,8 @@ const SYSTEM: Group = { id: "system", label: "Settings", icon: Cog, routes: ["se
 const groupOf = (r: Route) => GROUPS.find((g) => g.routes.includes(r)) ?? SYSTEM;
 /** The name a screen goes by in its family's tab row, where it differs from the rail. */
 const SHORT: Partial<Record<Route, string>> = { penthouse: "Today", report: "Week" };
+/** Your room is only a place once someone keeps you in it. */
+const shown = (s: SaveState, r: Route) => r !== "yours" || (!!s.player.owned_by && !!s.reign && !s.reign.ended);
 const labelOf = (r: Route) => SHORT[r] ?? NAV.find((n) => n.id === r)!.label;
 
 /** A line at the top while a rate-limited call waits to try again, so the screen isn't just stuck. */
@@ -158,7 +165,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
         </div>
         {group.routes.length > 1 ? (
           <div className="segtabs px-4 flex gap-5 overflow-x-auto no-scrollbar" role="tablist">
-            {group.routes.map((r) => (
+            {group.routes.filter((r) => shown(save, r)).map((r) => (
               <button key={r} role="tab" aria-selected={route === r} className={cx("segtab", route === r && "on")} onClick={() => setRoute(r)}>
                 {labelOf(r)}
                 {(r === "penthouse" && unseen) || (r === "feed" && route !== "feed" && feedUnread(save)) ? <span className="dot" /> : null}
@@ -174,7 +181,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
           {[...GROUPS, SYSTEM].map((g) => (
             <div key={g.id} className="mb-2">
               <div className="text-[10px] uppercase tracking-[.12em] dim px-3 pt-1 pb-1">{g.label}</div>
-              {g.routes.map((r) => {
+              {g.routes.filter((r) => shown(save, r)).map((r) => {
                 const n = NAV.find((x) => x.id === r)!;
                 return (
                   <button key={r} className={cx("railbtn", route === r && "on")} onClick={() => setRoute(r)}>
@@ -192,20 +199,22 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
         <main className="flex-1 min-w-0 overflow-y-auto">
           <div className={cx("mx-auto w-full", route === "scene" ? "max-w-3xl h-full" : "max-w-5xl p-4 sm:p-6")}>
             {route === "penthouse" && <Penthouse go={setRoute} />}
+            {route === "yours" && <YourRoomView />}
             {route === "feed" && <Feed />}
             {route === "people" && <Roster />}
+            {route === "others" && <Others />}
             {route === "story" && <Journal />}
             {route === "scene" && <Scene />}
             {route === "city" && <City />}
-            {route === "society" && <Society />}
+            {route === "society" && <Held domain="laws" soft><Society /></Held>}
             {route === "compare" && <Compare />}
-            {route === "world" && <World />}
-            {route === "war" && <WarRoom />}
-            {route === "genome" && <Genome />}
-            {route === "arcology" && <ArcologyView />}
-            {route === "doctrine" && <Doctrine />}
-            {route === "market" && <Market />}
-            {route === "orders" && <Orders />}
+            {route === "world" && <Held domain="war"><World /></Held>}
+            {route === "war" && <Held domain="war"><WarRoom /></Held>}
+            {route === "genome" && <Held domain="money"><Genome /></Held>}
+            {route === "arcology" && <Held domain="money"><ArcologyView /></Held>}
+            {route === "doctrine" && <Held domain="laws"><Doctrine /></Held>}
+            {route === "market" && <Held domain="money"><Market /></Held>}
+            {route === "orders" && <Held domain="people"><Orders /></Held>}
             {route === "report" && <Report />}
             {route === "you" && <You />}
             {route === "cheats" && <Cheats />}
@@ -228,6 +237,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
 
       <Ending onNewRun={onSwitch} />
       <FeedTicker />
+      <HandToast />
     </div>
   );
 }

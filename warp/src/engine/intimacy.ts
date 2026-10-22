@@ -315,7 +315,7 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
   lines.push(``);
   lines.push(sexual
     ? `Write it explicitly, in the game's own words. No fade to black, no cutting away, no moralizing.`
-    : `Write it plainly and concretely: what you do, what she does, what is said.`);
+    : `Write it concretely: what you do, what she does, what she says and how she says it.`);
   return lines.join("\n");
 }
 

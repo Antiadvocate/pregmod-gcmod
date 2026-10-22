@@ -44,12 +44,15 @@ import { grantAsk, refuseAsk, voiceAsk } from "./asks";
 import { generateWant, pickWants } from "./wants";
 import { weekSnapshot } from "./snapshot";
 import { GOV_VOICE } from "./talk";
-import { writeWeekProse } from "./forge";
+import { writeWeekProse, enrichPerson } from "./forge";
 import { runOf } from "./run";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { read } from "./obedience";
 import { romanceOf } from "./romance";
 import { clamp } from "./psyche";
+import { settledBrief, weightBrief } from "./fates";
+import { ownedBrief, handOf } from "./share";
+import { herDecides, readHer } from "./herwill";
 
 const ready = (s: SaveState) => modelsAvailable() && !s.models.lean_mode;
 
@@ -63,6 +66,9 @@ function cityBrief(s: SaveState): string {
     cultureBrief(s) ? `HOW PEOPLE BEHAVE: ${cultureBrief(s).replace(/\n/g, " ")}` : "",
     lawsBrief(s) ? `LAWS IN FORCE: ${lawsBrief(s).replace(/\n/g, " ")}` : "",
     `THE WORLD: ${worldBrief(s).replace(/\n/g, " ")}`,
+    weightBrief(s),
+    settledBrief(s, 8),
+    ownedBrief(s),
   ].filter(Boolean).join("\n");
 }
 
@@ -93,7 +99,9 @@ const WRITE_SYSTEM = `You write one event for Free Cities, an adult text game ab
 
 Rules:
 - Keep every fact: names, numbers, amounts, who did what. Add detail; do not change what happened.
-- Second person, present tense. One or two short paragraphs. End at the point where the player has to decide. Use the people's own voices.
+- Second person, present tense, as long as LENGTH says and no longer. Write it as something happening to the player, not a summary of a situation; if THE FACTS read like a report ("she has been cold with you"), turn it into what she actually says or does.
+- A stranger gets one detail, not a description of their hair, coat and posture. Nobody gives a speech about themself.
+- Don't end with someone asking the player what they'll do ("So. What do you tell him?"). End on the situation; the choices are the question.
 - Relabel every choice in the player's voice so it fits the scene you wrote (2 to 9 words). Each label must still be the same action with the same result as the original.
 - You may add up to two extra choices from EXTRA EFFECTS when they genuinely fit the scene; most of the time add none.
 
@@ -104,7 +112,9 @@ Output ONE strict JSON object and nothing else:
 
 /** Rewrite one pending event. Mutates it in place; returns whether it was written. */
 export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Promise<boolean> {
-  if (!ready(s) || e.written || e.kind === "dynamic") return false;
+  // What you did coming back weeks later is written like anything else that happens to you; the
+  // reader that set it up only sketched it.
+  if (!ready(s) || e.written || (e.kind === "dynamic" && !e.id.startsWith("echo-"))) return false;
   const def = EVENT_BY_ID[e.kind];
   const opts = def?.options ?? e.options;
   const ctx = eventContext(s, e);
@@ -114,6 +124,8 @@ export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Prom
       snap,
       ctx.text,
       `## THE FACTS (the game's own version; rewrite it)\n${e.seed}`,
+      // Business and the outside world get a few lines; the people in your house get room.
+      `## LENGTH\n${e.person ? "One or two short paragraphs." : "Two to four sentences. It's a decision, not a story."}`,
       `## THE CHOICES (id: what the player does → what it does)\n${opts.map((o) => `· ${o.id}: ${o.label}${o.note ? ` → ${o.note}` : ""}`).join("\n")}`,
       `## EXTRA EFFECTS (only for extra choices)\n${effectList()}${e.person ? `\nACT IDS: ${Object.keys(ACT_BY_ID).join(", ")}\nROOM ITEM IDS: ${Object.keys(EXTRA_BY_ID).join(", ")}` : ""}`,
       PLAIN_RULES,
@@ -255,6 +267,9 @@ export async function writeLetters(s: SaveState): Promise<number> {
   for (const g of activeGovernors(s)) {
     const p = s.people[g.person];
     if (!p) continue;
+    // Once someone holds your collar, the governors report to her, not you, unless she lets you
+    // keep a hand in; and the one who holds it is in the room with you, not writing from an island.
+    if (p.id === s.player.owned_by || handOf(s) === "locked") continue;
     // She writes when something happened, or when she hasn't for a long time. Never to say all is well.
     const last = g.letters.at(-1)?.week ?? g.since - 1;
     const fresh = (g.news ?? []).filter((n) => n.week > last).length;
@@ -301,11 +316,31 @@ function resolveGovEvent(s: SaveState, e: PendingEvent, optionId: string): strin
 /** Everything that needs writing after a week ends. One call at a time; each failure is skipped.
  *  Fewer things, each of them earned: the world events the week threw up, the one or two women
  *  with real reasons to want something, letters only from cities where something happened. */
+/** Who has no voice yet, the one who holds your collar first, then the ones you've been with lately. */
+function voiceless(s: SaveState): Person[] {
+  const seen = new Map<string, number>();
+  for (const m of s.moments ?? []) for (const id of [m.person, ...(m.others ?? [])]) if (id) seen.set(id, Math.max(seen.get(id) ?? 0, m.updated));
+  return Object.values(s.people)
+    .filter((p) => p.age >= 18 && !p.persona.voice?.example_lines?.length && (p.status === "owned" || p.status === "indentured" || s.player.owned_by === p.id || !!p.romance && p.status === "free"))
+    .sort((a, b) => Number(s.player.owned_by === b.id) - Number(s.player.owned_by === a.id) || (seen.get(b.id) ?? -1) - (seen.get(a.id) ?? -1) || b.economics.weeks_owned - a.economics.weeks_owned);
+}
+
 export async function liveWeek(s: SaveState, report: WeekReport | null, step: (what: string) => void = () => {}): Promise<void> {
   if (!ready(s)) return;
   const snap = weekSnapshot(s, report);
   if (report) { step("the week"); await writeWeekProse(s, report); }
-  const fresh = s.events.filter((e) => s.arcology.week - e.week <= 1 && !e.written && e.kind !== "dynamic" && e.kind !== "gov");
+  // Nobody in a scene should sound like everybody else. Two a week get a voice of their own, the
+  // ones you see most first.
+  for (const p of voiceless(s).slice(0, 2)) { step(`${p.name}'s voice`); await enrichPerson(s, p, p.economics.weeks_owned > 2); }
+  // Once she holds your collar, she decides her own week before anything is written about it.
+  if (s.player.owned_by && s.reign && !s.reign.ended) {
+    step(s.people[s.player.owned_by]?.name ?? "her");
+    // Who she is with you is read from everything between you, first, and every couple of months.
+    const keeper = s.people[s.player.owned_by];
+    if (s.reign.read_week === undefined || s.arcology.week - s.reign.read_week >= 8 || !keeper?.ways?.length) await readHer(s);
+    await herDecides(s);
+  }
+  const fresh = s.events.filter((e) => s.arcology.week - e.week <= 1 && !e.written && (e.kind !== "dynamic" || e.id.startsWith("echo-")) && e.kind !== "gov");
   for (const e of fresh) { step(e.person ? `${s.people[e.person]?.name ?? "her"}` : "what happened"); await writeEvent(s, e, snap); }
   for (const w of pickWants(s)) {
     step(w.p.name);

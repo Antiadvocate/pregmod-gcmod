@@ -6,9 +6,15 @@
  *  decisions of the week a screen and a half down. The end-of-week button floats over all of it
  *  and says how many things are still open. */
 import { momentsOf } from "../engine/moments";
-import { concludeMoment } from "../engine/deeds";
+import { collarOffered, concludeMoment } from "../engine/deeds";
 import AssistantCard from "./Assistant";
-import { Reaction as MomentReaction, OpenMoments } from "./MomentCard";
+import { CollarOffer, Reaction as MomentReaction, OpenMoments } from "./MomentCard";
+import { askForHand, askWait, giveHandUp, handOf, throughHer } from "../engine/share";
+import { YourWeek, TalkToHer } from "./YourRoom";
+import { readHer } from "../engine/herwill";
+import { takeStats, chipsBetween, type Chip } from "../lib/delta";
+import PassingBy from "./PassingBy";
+import { STYLE_NOTE } from "../engine/reign";
 import { useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import type { Route } from "../App";
@@ -33,7 +39,9 @@ import { band, wear } from "../engine/psyche";
 import { modelsAvailable } from "../config";
 
 export default function Penthouse({ go }: { go: (r: Route) => void }) {
-  const [outcomes, setOutcomes] = useState<{ id: string; setup?: string; chose: string; text: string; person?: string; others?: string[]; moment?: string; writing?: boolean; facts?: string }[]>([]);
+  const [outcomes, setOutcomes] = useState<{ id: string; setup?: string; chose: string; text: string; person?: string; others?: string[]; moment?: string; writing?: boolean; facts?: string; auto?: boolean; chips?: Chip[] }[]>([]);
+  // Whether each event's answer gets written out by the model; off just applies it.
+  const [writeOff, setWriteOff] = useState<Record<string, boolean>>({});
   /** Done: the card goes, and a scene played out under it ends where it is. */
   const finish = async (o: { id: string; moment?: string }) => {
     const m = o.moment ? momentsOf(save).find((x) => x.id === o.moment) : undefined;
@@ -103,6 +111,10 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
         <Fig label="idle" value={`${people.filter((p) => p.assignment === "rest").length}/${people.length}`} />
       </button>
 
+      {collarOffered(save) ? <div className="mb-4"><CollarOffer id={collarOffered(save)!.id} /></div> : null}
+
+      <PassingBy />
+
       {lastReport?.problems.length ? (
         <div className="mb-4 space-y-1">
           {lastReport.problems.slice(0, 3).map((p, i) => (
@@ -113,7 +125,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
       ) : null}
 
       {keeper ? (
-        <div className="row-note mb-4">{keeper.name} runs {arc.name} now. What you get is a say, when she asks for one.</div>
+        <><HandCard /><YourWeek /><TalkToHer /></>
       ) : null}
 
       <AssistantCard />
@@ -208,9 +220,10 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             {o.writing ? <div className="flex items-center gap-2 dim text-[12px]"><Loader2 size={13} className="animate-spin" /> writing what happens</div> : null}
             {o.text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[15px] leading-relaxed">{para}</p>)}
             {o.facts ? <p className="text-[12px] dim">{o.facts.split(/\n\n+/)[0]}</p> : null}
+            {o.chips?.length ? <div className="flex flex-wrap gap-1">{o.chips.map((c, i) => <span key={i} className={`chip ${c.good ? "good" : "bad"}`}>{c.text}</span>)}</div> : null}
           </div>
           <div className="flex flex-wrap items-center gap-x-2">
-            {o.person || modelsAvailable() ? <MomentReaction seed={{ person: o.person, others: o.others, title: o.chose, source: "event", setup: o.setup, you: o.chose, happened: o.text }} onOpen={(mid) => setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, moment: mid } : x)))} /> : null}
+            {o.person || modelsAvailable() ? <MomentReaction auto={!!o.auto} seed={{ person: o.person, others: o.others, title: o.chose, source: "event", setup: o.setup, you: o.chose, happened: o.text }} onOpen={(mid) => setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, moment: mid } : x)))} /> : null}
             <Button size="sm" kind="primary" className="mt-3" onClick={() => void finish(o)}>Done</Button>
           </div>
         </Card>
@@ -231,13 +244,29 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             {save.empire?.about[e.kind] && modelsAvailable() ? (
               <button className="text-[12px] acc underline mb-2" onClick={() => go("war")}>or talk to them yourself, in the War Room</button>
             ) : null}
+            {modelsAvailable() && !save.models.lean_mode && save.models.write_outcomes !== false ? (
+              <label className="flex items-center gap-1.5 text-[11.5px] dim mb-2 cursor-pointer">
+                <input type="checkbox" checked={!writeOff[e.id]} onChange={(ev) => setWriteOff((w) => ({ ...w, [e.id]: !ev.target.checked }))} />
+                write out what happens
+              </label>
+            ) : null}
             <Options options={choicesOf(e)} onPick={(o) => {
               let text = "";
-              mutate((s) => { text = resolveAny(s, e, o.id); });
-              const out = { id: e.id, setup: e.seed, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined };
-              setOutcomes((xs) => [...xs, { ...out, writing: modelsAvailable() && !save.models.lean_mode }]);
+              let chips: Chip[] = [];
+              const write = modelsAvailable() && !save.models.lean_mode && save.models.write_outcomes !== false && !writeOff[e.id];
+              // Once she holds your collar, what you pick goes through her.
+              mutate((s) => {
+                const before = takeStats(s, [e.person, e.other]);
+                const via = e.kind.startsWith("reign_") ? { id: o.id, line: "" } : throughHer(s, "people", o, choicesOf(e));
+                text = [via.line, resolveAny(s, e, via.id)].filter(Boolean).join("\n\n");
+                chips = chipsBetween(before, takeStats(s, [e.person, e.other]));
+              });
+              const out = { id: e.id, setup: e.seed, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined, chips };
+              // Going to her when she wants you is the scene itself: it opens and is played, not summed up.
+              if (e.kind === "reign_want" && o.id === "obey") { setOutcomes((xs) => [...xs, { ...out, auto: write }]); return; }
+              setOutcomes((xs) => [...xs, { ...out, writing: write }]);
               // The choice played out, with what the engine decided as the facts.
-              if (modelsAvailable() && !save.models.lean_mode) void narrateOutcome(save, { ...out, happened: text, title: e.written?.title }).then((t) => {
+              if (write) void narrateOutcome(save, { ...out, happened: text, title: e.written?.title }).then((t) => {
                 setOutcomes((xs) => xs.map((x) => (x.id === e.id ? { ...x, text: t ? `${t}` : x.text, facts: t ? text : undefined, writing: false } : x)));
               });
             }} />
@@ -381,11 +410,78 @@ function Options<O extends { id: string; label: string; note?: string }>({ optio
   );
 }
 
-/** The situation you answered, kept above what came of it so the card still says what it was about. */
+/** The situation you answered, kept above what came of it so the card still says what it was about.
+ *  Folded to its first lines: you've read it already. */
 function Setup({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const short = text.length > 220 && !open;
   return (
-    <div className="space-y-2 mb-3">
-      {text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[14px] leading-relaxed dim">{para}</p>)}
+    <div className="mb-3">
+      {short
+        ? <p className="font-prose text-[14px] leading-relaxed dim">{text.slice(0, 200).replace(/\s+\S*$/, "")}… <button className="underline text-[12px]" onClick={() => setOpen(true)}>more</button></p>
+        : <div className="space-y-2">{text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[14px] leading-relaxed dim">{para}</p>)}</div>}
+    </div>
+  );
+}
+
+/** Where you stand with her: a hand in running things, or none, and what she's stopped. */
+function HandCard() {
+  const { save, mutate } = useGame();
+  const [said, setSaid] = useState("");
+  const keeper = theKeeper(save);
+  const hand = handOf(save);
+  if (!keeper || hand === "owner") return null;
+  const r = save.reign!;
+  const wait = askWait(save);
+  const recent = (r.overruled ?? []).slice(-3).reverse();
+  return (
+    <div className="card p-3 mb-4">
+      <p className="text-[13px]">{hand === "shared"
+        ? <>{keeper.name} owns you, and lets you keep running things. She can stop anything you do.</>
+        : <>{keeper.name} runs {save.arcology.name} now. You can see everything she does with it; you can't change any of it.</>}</p>
+      <HowSheKeepsYou />
+      {recent.length ? <ul className="mt-2 space-y-0.5 text-[12px] mid">{recent.map((x, i) => <li key={i}>· week {x.week}: {x.line}</li>)}</ul> : null}
+      <div className="flex flex-wrap gap-2 mt-2">
+        {hand === "locked"
+          ? <Button size="sm" disabled={wait > 0} onClick={() => { let l = ""; mutate((s) => { l = askForHand(s); }); setSaid(l); }}>{wait > 0 ? `Ask her again in ${wait} week${wait === 1 ? "" : "s"}` : "Ask for a say in running things"}</Button>
+          : <Button size="sm" kind="ghost" onClick={() => { let l = ""; mutate((s) => { l = giveHandUp(s); }); setSaid(l); }}>Give her all of it</Button>}
+      </div>
+      {said ? <p className="text-[12.5px] mt-2 acc">{said}</p> : null}
+    </div>
+  );
+}
+
+/** How the game reads her with you, and a way to say it's wrong. Every scene with her gets this. */
+function HowSheKeepsYou() {
+  const { save, mutate } = useGame();
+  const [fixing, setFixing] = useState(false);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const r = save.reign;
+  if (!r || r.ended) return null;
+  const go = async () => {
+    setBusy(true); setErr("");
+    const ok = await readHer(save, note);
+    mutate(() => {});
+    setBusy(false);
+    if (ok) { setFixing(false); setNote(""); } else setErr("That didn't work; try again.");
+  };
+  return (
+    <div className="mt-2">
+      <p className="text-[12.5px] font-prose mid">{r.portrait ?? STYLE_NOTE[r.style]}</p>
+      {modelsAvailable() ? (!fixing
+        ? <button className="text-[11.5px] dim underline mt-1" onClick={() => setFixing(true)}>that isn't her</button>
+        : (
+          <div className="mt-2">
+            <textarea className="w-full" rows={3} placeholder="What's wrong with it: how she's actually treated you, what you've told her, what you are to her." value={note} onChange={(e) => setNote(e.target.value)} />
+            <div className="flex gap-2 mt-1">
+              <Button size="sm" kind="primary" disabled={busy} onClick={() => void go()}>{busy ? "Reading her again…" : "Read her again"}</Button>
+              <Button size="sm" kind="ghost" onClick={() => setFixing(false)}>never mind</Button>
+            </div>
+            {err ? <p className="text-[12px] bad mt-1">{err}</p> : null}
+          </div>
+        )) : null}
     </div>
   );
 }

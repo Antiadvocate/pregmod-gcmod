@@ -4,6 +4,7 @@
  *  find out, and you will not always find all of it. Buying is a judgement, not a shopping trip. */
 import { useState } from "react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Button, Card, Chip, Empty, Meter, Money, Section, Sheet } from "../lib/ui";
 import { MARKETS, askingPrice, buy, inspect } from "../engine/market";
 import { read } from "../engine/obedience";
@@ -15,7 +16,8 @@ import MenialsPanel from "./Menials";
 import SubTabs from "./SubTabs";
 
 export default function Market() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("money");
   const [open, setOpen] = useState<MarketOffer | null>(null);
   const [found, setFound] = useState<Record<string, string[]>>({});
 

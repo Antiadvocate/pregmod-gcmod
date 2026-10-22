@@ -1,6 +1,7 @@
 /** THE CORPORATION — found it, grow it, take what it pays. */
 import { useState } from "react";
 import { useGame } from "../lib/game";
+import { useHand } from "../lib/hand";
 import { Button, Card, Section, Stat } from "../lib/ui";
 import { buyShares, canExpand, corpValue, DIVISIONS, drawSlave, expand, foundCorp, FOUNDING, invest, sellShares, type Division } from "../engine/corp";
 
@@ -14,7 +15,8 @@ function Spark({ pts }: { pts: number[] }) {
 }
 
 export default function Corporation() {
-  const { save, mutate } = useGame();
+  const { save } = useGame();
+  const mutate = useHand("money");
   const c = save.corp;
   const [name, setName] = useState(`${save.arcology.name} Holdings`);
   const [put, setPut] = useState(10000);
