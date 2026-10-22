@@ -13,6 +13,7 @@
  * other direction and you get forty women who are all quietly "guarded but kind" with randomised
  * hair, which is what most character generators produce and why they all feel the same.
  */
+import { applyAlbinism, featureFacts, rollFeatures } from "./features";
 import { reconcileAnatomy } from "./genitals";
 import type { Body, Bond, Health, Person, Persona, Psyche, Skills, Womb, Pronouns } from "./types";
 import { NATIONS, CAREERS, ORIGINS, NATION_WEIGHT, type Nation } from "../data/people";
@@ -181,6 +182,14 @@ export function generatePerson(opts: GenOptions = {}): Person {
   };
   finishGenitals(p);
   reconcileAnatomy(p);
+  // What makes her look like nobody else, rolled once; an albino's colouring is hers from birth.
+  p.body.features = rollFeatures(p, { generated: true });
+  if (p.body.features.some((f) => f.id === "albino")) {
+    applyAlbinism(p);
+    p.body.appearance_facts = describeBody(p.body, nation, age);
+  }
+  const marks = featureFacts(p);
+  if (marks) p.body.appearance_facts += ` ${marks}`;
   return p;
 }
 

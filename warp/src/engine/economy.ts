@@ -7,6 +7,7 @@
  * transaction: `earn` and `spend` write a line, and the week's cash delta is the sum of the lines.
  * If the number on screen is wrong, the line that is wrong is on screen next to it.
  */
+import { rarityValue } from "./features";
 import { foodCap } from "./works";
 import { foodEats } from "./menials";
 import { jobMoney } from "./idols";
@@ -216,6 +217,8 @@ export function valuePerson(state: SaveState, p: Person): number {
   if (p.psyche.state === "broken") v *= 0.55;
   if (p.body.eyes === "blind" || p.body.ears === "deaf") v *= 0.8;
   if (p.fame.prestige) v *= 1 + p.fame.prestige * 0.5;
+  // What she looks like that nobody else does: a rare woman is worth having.
+  v *= rarityValue(p);
   // Doctrine premium: your own market pays for what your own culture wants.
   v *= 1 + clamp(societyScore(state, p).total, -0.6, 0.6) * 0.3;
   return Math.max(400, Math.round(v / 50) * 50);

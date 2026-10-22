@@ -107,6 +107,9 @@ export interface Body {
   appearance_facts: string;
   /** Permanent grown changes: real ears, a tail, scales. See engine/fleshcraft. */
   traits?: string[];
+  /** What makes her look like nobody else: freckles, a beauty mark, two eye colours. Rolled once
+   *  from her id. See engine/features. */
+  features?: import("./features").Feature[];
   /** Her colouring before any gene program touched it (engine/genome), so it can be given back. */
   born?: { skin: string; hair_color: string; eye_color: string };
   /** Current presentation: clothes, grime, visible state. Rewritten freely. */

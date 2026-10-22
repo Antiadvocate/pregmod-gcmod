@@ -26,6 +26,7 @@ import "./execute.test.ts";
 import "./power.test.ts";
 import "./self.test.ts";
 import "./feet.test.ts";
+import "./features.test.ts";
 import "./cuckold.test.ts";
 import "./cuckwriter.test.ts";
 import "./plot.test.ts";

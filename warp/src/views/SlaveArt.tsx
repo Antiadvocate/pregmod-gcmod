@@ -19,7 +19,7 @@
  * transform instead — the same matrix a hierarchy would have produced, arrived at without moving
  * anything.
  */
-import { useEffect, useState, useMemo, useRef, type RefObject } from "react";
+import { useEffect, useState, useMemo, useRef, type ReactElement, type RefObject } from "react";
 import type { Person } from "../engine/types";
 import { ART_BASE, manly, cropFor, layersFor, styleFor, heightTransform, type Crop, type Layer } from "../lib/vectorart";
 import { frameAt, jointFor, restingPose, transformFor, STILL, type Joint, type Pose } from "../lib/rig";
@@ -28,6 +28,7 @@ import { expressionOf, ExpressionLayer, type Moment } from "../lib/expression";
 import { blend, blinkAt, cloneFace, mouthPaths, talkAt, MOUTH_BOX, type Box, type FaceParams } from "../lib/face";
 import { MarksLayer, BeatOverlay } from "../lib/marksart";
 import type { BeatKind } from "../engine/marks";
+import { BreastDetail, FaceDetail, FinishDefs, finishCss, finishEyes, LegDetail, TorsoDetail } from "../lib/finish";
 
 
 
@@ -123,6 +124,14 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
     return () => { live = false; };
   }, [layers]);
 
+  // THE FINISH (lib/finish): light, skin, eyes and her own marks. Not on the ControlNet render, which
+  // wants the plain drawing's edges.
+  const finished = face;
+  const big = typeof height !== "number" || height >= 200;
+  useEffect(() => {
+    if (finished && svg.current && markup.length) finishEyes(svg.current, person);
+  }, [markup, finished, person.id]);
+
   // The face goes on after the features and before the fringe, so hair falls over a blush the way
   // it would.
   const base = face ? expressionOf(person, moment) : null;
@@ -168,7 +177,7 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
     if (!root || !hasFace) return;
     const q = <T extends Element>(sel: string) => root.querySelector<T>(sel);
     const eyes = q<SVGGElement>("[data-feature=eyes]");
-    const irises = eyes ? Array.from(eyes.querySelectorAll<SVGElement>(".eye")) : [];
+    const irises = eyes ? Array.from(eyes.querySelectorAll<SVGElement>(".eye, [data-catch]")) : [];
     const brows = { l: q<SVGGElement>("[data-feature=brow-l]"), r: q<SVGGElement>("[data-feature=brow-r]") };
     const pack = q<SVGGElement>("[data-feature=mouth-pack]");
     const lips = { upper: q<SVGPathElement>("[data-mouth=upper]"), lower: q<SVGPathElement>("[data-mouth=lower]"), gap: q<SVGPathElement>("[data-mouth=gap]"), teeth: q<SVGPathElement>("[data-mouth=teeth]"), line: q<SVGPathElement>("[data-mouth=line]"), shade: q<SVGPathElement>("[data-mouth=shade]"), gapFill: q<SVGPathElement>("[data-mouth=gap-fill]") };
@@ -220,7 +229,28 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
     return subscribeClock(paint);
   }, [markup, hasFace, animate, person.id]);
 
-  const css = styleFor(person, scope);
+  const css = styleFor(person, scope) + (finished ? finishCss(scope) : "");
+  // Where her marks go in the stack: over the skin they're on, under whatever covers it.
+  const last = (re: RegExp) => markup.reduce((k, m, i) => (re.test(m.layer.id) ? i : k), -1);
+  const at = {
+    torso: last(/^Torso_(Normal|Hourglass|Chubby|Fat|Obese|Unnatural)(_M\w+)?$/),
+    legs: last(/^Leg_(Narrow|Normal|Wide|Thick)(_M\w+)?$/),
+    breast: last(/^Boob_Nipple/),
+    face: last(/^(Head|Eyes_|Eyebrow_|Nose_Type|Mouth_)/),
+  };
+  const bare = markup.some((m) => m.layer.id === "Feet_Flat");
+  const detailAfter = (i: number): ReactElement[] => {
+    if (!finished) return [];
+    const out: ReactElement[] = [];
+    if (i === at.torso) out.push(<g key="d-torso" data-joint="chest" data-own=""><TorsoDetail p={person} scope={scope} /></g>);
+    if (i === at.legs) out.push(<g key="d-legs" data-joint="legs" data-own=""><LegDetail p={person} scope={scope} bare={bare} /></g>);
+    if (i === at.breast) {
+      const tr = markup[i].layer.transform;
+      out.push(<g key="d-breast" data-joint="chest" data-own={tr ?? ""} transform={tr}><BreastDetail p={person} scope={scope} /></g>);
+    }
+    if (i === at.face) out.push(<g key="d-face" data-joint="neck" data-own=""><FaceDetail p={person} scope={scope} /></g>);
+    return out;
+  };
   const tints = useMemo(() => [...new Set(markup.map((m) => m.layer.tint).filter((t): t is number => !!t))], [markup]);
 
   return (
@@ -241,7 +271,9 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
             <clipPath id={`${scope}-clip-m`}><path data-mouth="gap" /></clipPath>
           </defs>
         ) : null}
+        {finished ? <FinishDefs p={person} scope={scope} grain={big} /> : null}
         <g transform={crop === "full" ? heightTransform(person) : undefined}>
+        <g filter={finished ? `url(#${scope}-form)` : undefined}>
         {markup.map(({ layer, inner }, i) => layer.id === "Head" && cropped ? (
           <g key={`${layer.id}-${i}`} data-joint={jointFor(layer.id)} data-own={layer.transform ?? ""} transform={layer.transform}>
             <g dangerouslySetInnerHTML={{ __html: inner }} />
@@ -253,15 +285,17 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
           </g>
         ) : (
           <g key={`${layer.id}-${i}`}
+            data-layer={layer.id}
             data-joint={jointFor(layer.id)}
             data-own={layer.transform ?? ""}
             transform={layer.transform}
             filter={layer.tint ? `url(#${scope}-hue${layer.tint})` : undefined}
             dangerouslySetInnerHTML={{ __html: inner }} />
-        )).flatMap((el, i) => (i === foreAt && expr ? [<ExpressionLayer key="expr" e={expr} scope={scope} />, el] : [el]))}
+        )).flatMap((el, i) => [...(i === foreAt && expr ? [<ExpressionLayer key="expr" e={expr} scope={scope} />, el] : [el]), ...detailAfter(i)])}
         {expr && foreAt < 0 && markup.length ? <ExpressionLayer e={expr} scope={scope} /> : null}
         {markup.length ? <MarksLayer person={person} /> : null}
         {beat && markup.length ? <BeatOverlay kind={beat} /> : null}
+        </g>
         </g>
       </svg>
     </div>
