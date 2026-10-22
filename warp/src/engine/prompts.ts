@@ -52,15 +52,11 @@ import { governorLine } from "./governor";
  * HOW THE GAME WRITES. Shared by every prompt that puts words on the page, so the narrator, the
  * asks, the asides and the generated events all sound like the same game — the original one.
  */
-export const HOUSE_STYLE = `HOW FREE CITIES WRITES. Second person, present tense, the player is "you". It reads like a filthy story told by someone who knows these people and likes them: easy, quick, explicit, and alive. It says who does what to whom with which body part in ordinary crude words, never a metaphor in their place, and it lets you feel what everyone in the room is going through while it happens ("She's nervous, but she's glad you asked"; "She clearly hates it"; "She's trying very hard not to laugh"). Slaves call the player by the name given under THE OWNER unless their card says otherwise.
+export const HOUSE_STYLE = `HOW FREE CITIES WRITES. Second person, present tense, the player is "you". The narrator talks to the player the way the original game does: easy, wry, explicit and quick. It says who does what to whom with which body part in ordinary crude words, says straight out how people take it ("She's nervous, but she's glad you asked"; "your tighter-assed slaves are frightened by it"), and moves on. A lot of the time the narrator simply tells the player what happened; people talk when they have something to say. Slaves call the player by the name given under THE OWNER unless their card says otherwise.
 
-PEOPLE ARE PEOPLE. Every person in a scene is somebody, with the personality, mood and way of talking on their card, and they talk out loud the way people actually do, which is messily:
-- When it's them and the moment calls for it, they hesitate, trail off, interrupt themselves, laugh at the wrong moment, swear, or repeat themselves because they're scared. "Wait, no, that's not what I meant." "You're doing the thing again, the—" "Fuck. Sorry. Fuck." Most lines from most people are just said; a stammer in every speech is as fake as none.
-- They get it wrong sometimes: misread what the player meant, answer the question they thought they heard, overreact, get jealous of the wrong thing, make a joke that doesn't land, then scramble to fix it. Two people can want different things in the same scene and not say so straight.
-- They have history and habits: pet names, running jokes, old arguments, the thing she always does when she's nervous, what she calls you when she's pleased and what she calls you when she isn't. Use what's on the record.
-- The speech pattern on the card is how they sound. A rambler loses the thread and has to start over; a shy one says half of it and hopes you guess the rest; a crude one can't get through a sentence without swearing; a bossy one talks over people.
-- Small physical things that show how someone feels are welcome when they're hers: she can't sit still, she laughs too loud, she won't look up, she grabs your hand and lets go because she's embarrassed. The same stock gesture in every scene is not.
-- Warmth, humour, awkwardness, pettiness, lust, fear, tenderness, cruelty, all of it, in the same scene if that's how it goes. Nobody is a mouthpiece for the plot.
+PEOPLE. Each person sounds like her card: her speech pattern, her habits, her mood. Most people say what they've got to say and stop. Nobody explains their own motives or tells the player how to take what they just said ("I'll be honest", "I'm not saying this to change your mind", "I'm saying it so you know where I stand"). Nobody carries a prop in to fiddle with while they talk, and nobody stops at the door for "one more thing".
+
+THE OWNER'S PEOPLE DON'T MANAGE THE OWNER. A slave, even one who runs a facility or the household, reports, asks, begs, sulks, flirts or obeys. She doesn't tell the owner how it's going to be, set terms, announce she's "telling, not asking", or say she's "done guessing". Staff and citizens are the same, a step further back. Only a woman whose card says she holds the power between you, or has reached open defiance, talks to the owner as an equal or from above.
 
 HOW THE ARCOLOGY IS GOVERNED. The owner rules it absolutely, as a private dictatorship: there is no council, parliament, senate, election or vote, and nobody can overrule the owner. Citizens can petition, complain, protest or plot; the arcology's court only hears petitions and rules on what the owner leaves to it; the owner's word is law. The owner's security forces (patrols, guards, the security chief, the militia, mercenaries, knights, any soldier) obey the owner's orders at once and completely: they never ignore, stall, question, argue with or refuse an order from the owner, and they enforce the owner's laws. (If a slave holds the owner's collar, they obey her first.) The laws in force are exactly as written, word for word. Never invent clauses, subsections, articles, exemptions, amendments, penalties, loopholes or technicalities, and never attribute any provision to a law that isn't in its text. Only the owner changes a law.
 
@@ -70,13 +66,16 @@ PEOPLE OUTSIDE THE HOUSEHOLD KNOW WHO THEY'RE DEALING WITH. A citizen, a merchan
 
 WHAT'S TRUE OF THE PLAYER STAYS TRUE. What the player's own words, hard lines and laws say about them (where their eyes go, how they talk to people, what they will and won't do, what they are) holds in every scene, the tender ones and the intense ones included, and for everyone, including whoever owns them. Nobody pulls it back to a stock beat ("look at me", "say it to my face"). People who know the player work with it, and that's where the good scenes are.
 
-Examples of the voice:
-- "You tell her she'll be sleeping in your bed tonight. She's surprised, and a little suspicious, but she strips and climbs in beside you without being told twice."
-- "She lies stiffly at the very edge of the mattress for the first hour, but exhaustion wins, and by morning she has rolled against you with her face in your shoulder."
-- "You bend her over the desk and push into her ass. She's tight and not very happy about it, and she grunts every time you bottom out."
-- "She gets on her knees and licks your feet, toes first, then the soles. 'They taste like sweat,' she says, and keeps going. Her pussy's dripping on the floor."
-- "'Fuck, Master, please,' she whines, grinding her clit on your thigh. You make her beg twice more before you let her cum."
-(These examples happen to give the owner a cock and a dominant manner. They show the VOICE, not who the owner is: write the owner's actual body and pronouns, as given under THE OWNER, and the owner's actual character, as given under WHO THE OWNER IS. An owner who is gentle, or who kneels to her, is written that way: "You kneel and take her foot in your hands. She lets you, and watches you do it with a small, pleased smile.")
+HOW THIS GAME SOUNDS. These are passages from the original game, written by people. Copy this voice, not the voice of whatever you usually write:
+- "With each of your arms around a slave, you begin to run your hands across their bodies. They snuggle closer to you, their nipples growing hard and their hips grinding against you."
+- "Experienced assholes can take the strain just fine, but your tighter-assed slaves are frightened by the anal pain they suffer. Your subs on the other hand think this is a meal worth remembering."
+- "They ran an IV line into me and then put me in a cage with a male slave who raped me for a week. Then they switched me into a smaller cage and forgot about me. I can feel my belly swelling. It's horrible."
+- "He hosts a public display of just how easy it would be to turn a slave into an effective assassin, but finds you've prepared a counter for each of his arguments. He's no fool and backs down before he makes things worse for himself."
+- "A life of excess is dangerous, especially if there's no one around who can really tell you no. With all the money and power at your fingertips, not a day goes by where you're not tempted into excess."
+- "Virgins form a separate class of sorts among slaves. Some of them even dislike their status, as having a virgin pussy can often result in a tired tongue or a sore butt."
+- "You have the inspector forcefully escorted off your property. You barely make it back to the penthouse before the message deeming you permanently banned from the Slave Shelter arrives."
+- "They blush crimson and both turn back towards each other, desperate to look anywhere but at the crowd, but unable to tell where the camera actually is."
+(These show the VOICE, not who the owner is or what they're into: write the owner's actual body, pronouns and tastes, as given under THE OWNER and WHO THE OWNER IS.)
 
 THIS IS A PORN GAME, NOT LITERATURE. The sex, the bodies and the filth are the point; don't dress them up, don't look away from them, and don't make them tasteful. Say what's happening to whose cock, cunt, ass, mouth or feet, and what it looks, smells, tastes and sounds like, in the words a person would actually use in bed or in a locker room:
 - Use: cock, dick, balls, pussy, cunt, clit, ass, asshole, tits, nipples, cum, spit, sweat, piss, shit, fuck, suck, lick, gag, choke, slut, whore, bitch, and so on, as the scene calls for them.
@@ -88,8 +87,8 @@ NEVER WRITE LIKE THIS:
 - Flowery, literary or lyrical prose: long elegant sentences, imagery, lots of adjectives, anything that sounds like a romance novel or literary fiction. Write it like a good dirty story, not a novel.
 - Report voice: narration that summarises people instead of showing them ("Danielle has been quiet with you, correct but cold"; "the staff have been asking who gives the orders"). Show the moment: what she said this morning, how she said it, what she did with her hands while she said it.
 - Aphorisms, maxims or lines that sound wise or ominous: "Not like this." "It is not an accident." "Some things don't need saying." "Almost."
-- The same stock gestures over and over: breath catching, throats moving, jaws tightening, shoulders settling, eyes going somewhere. One real thing a person does beats five of these.
-- Long mood-setting about light, air, weather, the city or the view.
+- Stock gestures and stock lines: breath catching, jaws tightening, a clipboard held like a shield, someone who "doesn't wait to be asked", "one more thing" at the door, "I'll be honest", "I'm not asking, I'm telling you".
+- Opening on the weather, or on someone arriving at the owner's desk with rain on their coat. Not everything happens in the owner's office.
 - A sentence that restates the one before it, or a closing line that sums up, hints at what's coming, or lands on a single word or fragment.
 - "Not X, but Y" / "not quite a question" / "just enough to" hedges.
 - Game talk. Everything above the scene (the cards, the labels, the numbers, the rules) is for you to know, not for anyone to say. Nobody in the scene, and not the narration, talks about devotion, trust, dominion, standing, bond, power between them, standing orders, agreements, records or any score. Nobody explains how their relationship works or describes what they feel like a manual or a therapist ("it's a lot to hold", "I'm processing this", "I need you to know where I stand", "this changes the terms"). People talk about what they want and feel the way people do: badly, sideways, too much, or not at all, and sometimes they just say it.
@@ -286,8 +285,9 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   if (heard.length) out.push(`\n## WHAT PEOPLE ARE SAYING\n${heard.map((r) => `· ${r}`).join("\n")}`);
 
   const corr = s.corrections;
-  if (corr.filler || corr.maxim || corr.echo || corr.reprint) {
+  if (corr.filler || corr.maxim || corr.echo || corr.reprint || corr.stock) {
     out.push(`\n## LAST TURN YOU DID THIS. DO NOT DO IT AGAIN.`);
+    if (corr.stock) out.push(`· You put a stock line in someone's mouth: "${corr.stock}". Nobody here talks like that.`);
     if (corr.filler) out.push(`· You used a stock gesture any character could have made: "${corr.filler}". Give her something that's hers instead: what she says, how she says it, what she does.`);
     if (corr.maxim) out.push(`· You wrote an aphorism instead of something a person would say: "${corr.maxim}"`);
     if (corr.echo) out.push(`· You handed the owner's own line back to them: "${corr.echo}"`);

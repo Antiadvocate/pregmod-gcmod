@@ -22,6 +22,7 @@
  *
  * Without a model, each of these returns nothing and the game's own text stands.
  */
+import { noteStock, stockLine } from "./turn";
 import type { PendingEvent, Person, SaveState, WeekReport } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
@@ -99,7 +100,7 @@ const WRITE_SYSTEM = `You write one event for Free Cities, an adult text game ab
 
 Rules:
 - Keep every fact: names, numbers, amounts, who did what. Add detail; do not change what happened.
-- Second person, present tense, as long as LENGTH says and no longer. Write it as something happening to the player, not a summary of a situation; if THE FACTS read like a report ("she has been cold with you"), turn it into what she actually says or does.
+- Second person, present tense, as long as LENGTH says and no longer. It doesn't have to be someone coming to see the player: often the narrator just tells the player what happened and what it did to people, the way the original game's events do. If THE FACTS read like a status report, say what actually happened instead.
 - A stranger gets one detail, not a description of their hair, coat and posture. Nobody gives a speech about themself.
 - Don't end with someone asking the player what they'll do ("So. What do you tell him?"). End on the situation; the choices are the question.
 - Relabel every choice in the player's voice so it fits the scene you wrote (2 to 9 words). Each label must still be the same action with the same result as the original.
@@ -126,6 +127,7 @@ export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Prom
       `## THE FACTS (the game's own version; rewrite it)\n${e.seed}`,
       // Business and the outside world get a few lines; the people in your house get room.
       `## LENGTH\n${e.person ? "One or two short paragraphs." : "Two to four sentences. It's a decision, not a story."}`,
+      stockLine(s),
       `## THE CHOICES (id: what the player does → what it does)\n${opts.map((o) => `· ${o.id}: ${o.label}${o.note ? ` → ${o.note}` : ""}`).join("\n")}`,
       `## EXTRA EFFECTS (only for extra choices)\n${effectList()}${e.person ? `\nACT IDS: ${Object.keys(ACT_BY_ID).join(", ")}\nROOM ITEM IDS: ${Object.keys(EXTRA_BY_ID).join(", ")}` : ""}`,
       PLAIN_RULES,
@@ -142,6 +144,7 @@ export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Prom
   if (!out?.situation || String(out.situation).length < 40) return false;
   const live = s.events.find((x) => x.id === e.id) ?? e;
   live.seed = String(out.situation).slice(0, 2400);
+  noteStock(s, live.seed);
   const relabel = new Map((out.choices ?? []).filter((c) => c?.id && c.label).map((c) => [String(c.id), String(c.label).slice(0, 80)]));
   live.options = opts.map((o) => ({ id: o.id, label: relabel.get(o.id) ?? o.label, note: o.note }));
   const extra = (out.extra ?? []).filter((x) => x?.label && x.effect && DYNAMIC_EFFECTS[String(x.effect)]).slice(0, 2)
@@ -206,6 +209,7 @@ export async function narrateOutcome(s: SaveState, o: { person?: string; others?
       `THE SITUATION: ${o.setup}`,
       `THE PLAYER CHOSE: ${o.chose}`,
       `WHAT CAME OF IT (facts): ${o.happened}`,
+      stockLine(s),
       PLAIN_RULES,
       p ? REGISTER_TAIL : "",
     ].filter(Boolean).join("\n\n"),
@@ -213,7 +217,10 @@ export async function narrateOutcome(s: SaveState, o: { person?: string; others?
     fallback: s.models.fallback_model,
     maxTokens: 900,
   });
-  return res.ok ? coarsen(res.text).trim() : "";
+  if (!res.ok) return "";
+  const text = coarsen(res.text).trim();
+  noteStock(s, text);
+  return text;
 }
 
 const PULSE_SYSTEM = `You write the lines of an arcology's weekly report about how its citizens are living with its laws, for Free Cities, an adult game about owning an arcology. For each law you get its text, how well it's kept (a number: above 30 kept willingly, 0 to 30 kept grudgingly, below 0 broken or resisted), the game's own line, and what was said about it in earlier weeks. Only write about a law if something specific happened this fortnight because of it: a person, a place, what they did, ideally tied to something in THIS WEEK. Leave out any law where you'd only be saying it's being kept or broken; fewer, better lines. Make it follow on from the earlier weeks (the same people can come back, a quarrel can get worse, a habit can spread). Never repeat an earlier line. Keep any number in the game's line.

@@ -442,3 +442,19 @@ import { practise, skill } from "../src/engine/player.ts";
   check("and the household is still on the rota rather than parked in the spa", working >= 3, working);
 }
 check("but a person being a person isn't filler", !findFiller("She doesn't look at you. Her fingers curl in the sheet and she shifts her weight, twice."));
+
+// The assistant's stock lines get caught and quoted back to the next writer.
+{
+  const { findStock, noteStock, stockLine } = await import("../src/engine/turn.ts");
+  const { HOUSE_STYLE } = await import("../src/engine/prompts.ts");
+  check("a clipboard held like a shield is caught", !!findStock("She stands in front of your desk, clipboard held against her chest like a shield."));
+  check("so is telling, not asking", !!findStock(`"I'm not asking you to reimburse it. I'm telling you."`));
+  check("and the Columbo exit", !!findStock(`She goes to the door, then stops. "One more thing."`));
+  check("ordinary talk isn't", !findStock(`"Fuck, Master, please," she whines, grinding against your thigh.`));
+  const s = { corrections: {} } as never as import("../src/engine/types.ts").SaveState;
+  noteStock(s, "I'll be honest with you, he means it, he does.");
+  check("the next writer is told", /DON'T WRITE THIS AGAIN/.test(stockLine(s)));
+  noteStock(s, "She sucks you off and goes back to work.");
+  check("and it's forgotten once someone writes clean", stockLine(s) === "");
+  check("the style is the original game's, not a list of rules", /HOW THIS GAME SOUNDS[\s\S]*tighter-assed slaves/.test(HOUSE_STYLE) && /DON'T MANAGE THE OWNER/.test(HOUSE_STYLE));
+}

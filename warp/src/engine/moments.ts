@@ -21,7 +21,7 @@ import { ownedBrief } from "./share";
 import { walkIn, walkInLine, misreads, misreadLine } from "./alive";
 import { HOUSE_STYLE, personCard, BOOKKEEPER_SYSTEM, bookkeeperContext } from "./prompts";
 import { worldBrief } from "./world";
-import { applyDiff, salvage, type Diff } from "./turn";
+import { applyDiff, salvage, noteStock, stockLine, type Diff } from "./turn";
 import { say } from "./voice";
 import { rng } from "./rng";
 import { applyTreatment, refresh } from "./obedience";
@@ -216,6 +216,7 @@ export async function playMoment(
     `## THE SCENE SO FAR (${m.title})\n${coarsen(transcript(m))}`,
     reply ? `## THE PLAYER'S REPLY\n${reply}` : `## WRITE THIS MOMENT OUT IN FULL, then offer the options.`,
     beats.length ? `## THIS TIME\n${beats.join("\n")}` : "",
+    stockLine(s),
     REGISTER_TAIL,
   ].filter(Boolean).join("\n\n");
 
@@ -244,6 +245,7 @@ export async function playMoment(
   const ours = new Set(Object.values(s.people).filter((x) => x.status === "owned" || x.status === "indentured").map((x) => keyOf(x.name)));
   for (const c of cast) if (!ours.has(keyOf(c.name))) meet(s, c);
   for (const f of facesIn(s, prose, 6)) meet(s, f);
+  noteStock(s, prose);
   m.log.push({ role: "scene", text: prose });
   m.options = options.length >= 2 ? options : fallbackOptions();
   m.unexpanded = false;
