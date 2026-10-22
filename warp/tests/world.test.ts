@@ -458,3 +458,9 @@ check("but a person being a person isn't filler", !findFiller("She doesn't look 
   check("and it's forgotten once someone writes clean", stockLine(s) === "");
   check("the style is the original game's, not a list of rules", /HOW THIS GAME SOUNDS[\s\S]*tighter-assed slaves/.test(HOUSE_STYLE) && /DON'T MANAGE THE OWNER/.test(HOUSE_STYLE));
 }
+
+{
+  const { findStock } = await import("../src/engine/turn.ts");
+  check("the messenger fresh from outside is caught", !!findStock("Orla comes in with her coat still streaming, a drone tablet held flat in both hands.") && !!findStock("She's standing in your lobby with dust still grey on her boots."));
+  check("and the hand-off", !!findStock(`"Give me a budget and I'll go round every one of them tonight. Your call, boss."`));
+}

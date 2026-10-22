@@ -244,7 +244,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             {save.empire?.about[e.kind] && modelsAvailable() ? (
               <button className="text-[12px] acc underline mb-2" onClick={() => go("war")}>or talk to them yourself, in the War Room</button>
             ) : null}
-            {modelsAvailable() && !save.models.lean_mode && save.models.write_outcomes !== false ? (
+            {e.person && modelsAvailable() && !save.models.lean_mode && save.models.write_outcomes !== false ? (
               <label className="flex items-center gap-1.5 text-[11.5px] dim mb-2 cursor-pointer">
                 <input type="checkbox" checked={!writeOff[e.id]} onChange={(ev) => setWriteOff((w) => ({ ...w, [e.id]: !ev.target.checked }))} />
                 write out what happens
@@ -253,7 +253,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             <Options options={choicesOf(e)} onPick={(o) => {
               let text = "";
               let chips: Chip[] = [];
-              const write = modelsAvailable() && !save.models.lean_mode && save.models.write_outcomes !== false && !writeOff[e.id];
+              // Only what happens to your own people gets written out; business stays the game's line and what changed.
+              const write = !!e.person && modelsAvailable() && !save.models.lean_mode && save.models.write_outcomes !== false && !writeOff[e.id];
               // Once she holds your collar, what you pick goes through her.
               mutate((s) => {
                 const before = takeStats(s, [e.person, e.other]);

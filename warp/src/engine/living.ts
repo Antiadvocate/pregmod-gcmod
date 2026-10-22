@@ -116,6 +116,10 @@ export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Prom
   // What you did coming back weeks later is written like anything else that happens to you; the
   // reader that set it up only sketched it.
   if (!ready(s) || e.written || (e.kind === "dynamic" && !e.id.startsWith("echo-"))) return false;
+  // Business and the outside world keep the game's own words. Asked to write them, the model
+  // invents a messenger nobody has met (a security chief with rain on her coat, a man with
+  // invoices) to stand in your office and deliver it. Only events about your own people get written.
+  if (!e.person) return false;
   const def = EVENT_BY_ID[e.kind];
   const opts = def?.options ?? e.options;
   const ctx = eventContext(s, e);
