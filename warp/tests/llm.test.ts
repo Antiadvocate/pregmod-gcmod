@@ -65,6 +65,32 @@ check("stopping doesn't fall through to the fallback model", !stopped.ok && stop
   check("a paid model's rate limit names the provider refusing", /by Mistral: Rate limit exceeded[\s\S]*not your account/.test(r.error ?? ""), r.error);
 }
 
+// Stop works while a call is still waiting behind others, an urgent call goes first, and a dead
+// request doesn't hold up everything behind it.
+{
+  let release: () => void = () => {};
+  const order: string[] = [];
+  g.fetch = async (_u: string, init: { body: string; signal?: AbortSignal }) => {
+    const who = JSON.parse(init.body).messages[1].content as string;
+    order.push(who);
+    if (who === "slow") await new Promise<void>((r) => { release = r; init.signal?.addEventListener("abort", () => r()); });
+    return new Response(JSON.stringify({ choices: [{ message: { content: who } }] }), { status: 200 });
+  };
+  const slow = call({ system: "s", user: "slow", model: "m/x" });
+  await new Promise((r) => setTimeout(r, 20));
+  const bg = call({ system: "s", user: "background", model: "m/x" });
+  const ctl = new AbortController();
+  const stuck = call({ system: "s", user: "waiting", model: "m/x", signal: ctl.signal, urgent: true });
+  const first = call({ system: "s", user: "urgent", model: "m/x", urgent: true });
+  const t0 = Date.now();
+  ctl.abort();
+  const r = await stuck;
+  check("Stop ends a call still waiting its turn, at once", !r.ok && r.error === "stopped" && Date.now() - t0 < 200, [r, Date.now() - t0]);
+  release();
+  await Promise.all([slow, bg, first]);
+  check("an urgent call goes ahead of the background, and a stopped one never goes", order.join() === "slow,urgent,background", order);
+}
+
 g.fetch = oldFetch;
 if (hadLS) g.localStorage = oldLS; else delete g.localStorage;
 if (!hadLoc) delete g.location; else g.location = oldLoc;
