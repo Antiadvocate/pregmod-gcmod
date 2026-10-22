@@ -1,15 +1,18 @@
 /**
- * THE OTHER MAN, WRITTEN — each chapter and each outcome put into words by the model, for this
- * woman, this owner and this man.
+ * THE OTHER MAN, WRITTEN — every word of it comes from the model.
  *
- * The engine still decides everything: which chapter is next, what each choice does to her, to
- * you and to the three numbers. The hand-written chapter in data/cuckold.ts becomes the OUTLINE:
- * what happens, in what order, and what has to be said. The model writes it fresh from her card
- * (her voice, her body, her past, what she remembers), from who the owner is (their body and
- * their own description of themself, appended to every call by llm.ts), from the man as he was
- * first written, and from every chapter before this one, so no two runs read the same.
+ *   writeChapter  the next chapter: what happens, her in it, him in it, and the choices, each one
+ *                 something the owner would actually say or do, in the owner's own voice, tagged
+ *                 with a move from the engine's closed table (engine/cuckold.ts MOVES).
+ *   readOwn       when you type your own answer instead: which move it amounts to.
+ *   writeOutcome  what came of it, with the engine's facts (what the move did to her body, the
+ *                 numbers, any money, any ending) kept exactly.
  *
- * Without a model, or when a call fails, the game's own words stand.
+ * Each prompt carries her whole card (voice, body, past, tastes, memories), the owner (body and
+ * their own self-description, appended to every call by llm.ts), every answer the owner has given
+ * so far (so the choices sound like them), why she agreed, how far it has gone, the man as he was
+ * first written, and the story so far. The engine decides the phase and what each choice does;
+ * the model never decides an outcome. Without a model the story doesn't start.
  */
 import type { SaveState } from "./types";
 import { call, parseJson } from "../llm";
@@ -18,146 +21,227 @@ import { coarsen, REGISTER_TAIL } from "./register";
 import { HOUSE_STYLE, personCard } from "./prompts";
 import { PLAIN_RULES } from "./style";
 import { noteStock, stockLine } from "./turn";
-import { bullDickWords, type CuckState, type Motive } from "./cuckold";
-import { beatNow, cx } from "../data/cuckold";
+import { hasWomb } from "./pregnancy";
+import { hasCock } from "./you";
+import {
+  type Candidate, type Choice, type CuckState, type Motive, type Move,
+  allowed, answer, bullDickWords, herOf, movesNow, offerPrice, pregnantByHim, ready, yourDick,
+} from "./cuckold";
+import { dickWord } from "./genitals";
 
 export const canWrite = (s: SaveState) => modelsAvailable() && !s.models.lean_mode;
 
 const MOTIVE: Record<Motive, string> = {
-  for_you: "She is doing this FOR THE OWNER. She loves them (or near enough) and they asked. Every step costs her something, and the sting is watching her find out she likes what it costs.",
+  for_you: "She is doing this FOR THE OWNER. She loves them, or near enough, and they asked. Every step costs her something, and the sting is watching her find out she likes what it costs.",
   for_her: "She is doing this FOR HERSELF. She wanted a man like him and the owner gave her leave. She tries to be kind to the owner about it, which is worse than if she weren't.",
-  spite: "She is doing this TO HURT THE OWNER. She has resented them for a while and they just handed her the knife. She is polite on the surface and enjoys every inch of it.",
+  spite: "She is doing this TO HURT THE OWNER. She has resented them for a while and they handed her the knife. Polite on the surface, and she enjoys every inch of it.",
 };
 
-function howFar(c: CuckState): string {
-  const fall = c.fall < 20 ? "She's barely started with him." : c.fall < 45 ? "He's had her, or nearly, and she's starting to want it." : c.fall < 70 ? "She goes to him gladly and thinks about him when she's with the owner." : "In her body and her habits she's his.";
-  const pull = c.pull > 40 ? "Her heart is still the owner's." : c.pull > 0 ? "She's still more the owner's than his, just." : c.pull > -40 ? "She's more his than the owner's now, and both men know it." : "She's his. The owner is someone she lives with.";
-  const you = c.yielded < 20 ? "The owner arranged this and still thinks of it as arranging." : c.yielded < 50 ? "The owner has started sitting and watching, and getting off on it." : c.yielded < 80 ? "The owner has taken the role: the one who waits, watches, cleans up." : "The owner is all the way in: their cuck, and they know it.";
-  return `${fall} ${pull} ${you} She has spent ${c.nights} night${c.nights === 1 ? "" : "s"} with him so far.`;
+function howFar(s: SaveState, c: CuckState): string {
+  const fall = c.fall < 20 ? "She's barely started with him." : c.fall < 45 ? "She's starting to want him." : c.fall < 70 ? "She goes to him gladly and thinks about him when she's with the owner." : "In her body and her habits she's his.";
+  const pull = c.pull > 40 ? "Her heart is still the owner's." : c.pull > 0 ? "She's still more the owner's than his, just." : c.pull > -40 ? "She's more his than the owner's now, and both of them know it." : "She's his. The owner is someone she lives with.";
+  const you = c.yielded < 20 ? "The owner arranged this and still thinks of it as arranging." : c.yielded < 50 ? "The owner has started watching, and getting off on it." : c.yielded < 80 ? "The owner has taken the role: the one who waits, watches, cleans up." : "The owner is all the way in, and knows what they are.";
+  const extra = [
+    c.nights ? `She has spent ${c.nights} night${c.nights === 1 ? "" : "s"} with him.` : "",
+    c.firsts.length ? `He took ${c.firsts.join(" and ")}.` : "",
+    c.caged ? "The owner is locked in a chastity cage; he has the key." : "",
+    c.breeding === "yes" ? "The owner has let him try to breed her." : c.breeding === "hers" ? "Whether he breeds her is up to her." : c.breeding === "no" ? "She's on contraceptives by the owner's order." : "",
+  ];
+  const p = herOf(s);
+  if (p && pregnantByHim(s, p)) extra.push(`She is pregnant with his child (${p.womb.weeks} weeks).`);
+  return [fall, pull, you, ...extra].filter(Boolean).join(" ");
 }
 
-function himBrief(c: CuckState): string {
-  const b = c.bull!;
-  const kind = b.kind === "broker" ? "a broker, rich and patient, who has tried to buy her from the owner before" : b.kind === "brute" ? "a contractor on the owner's own security detail, big and crude, who has wanted her for months" : "a dock hand, young and beautiful";
-  return `${b.name} (she calls him ${b.short}), ${b.age}, ${kind}. He has ${bullDickWords(b)}, bigger than the owner's, and he knows it.${b.manner ? ` HOW HE IS (keep him exactly this man): ${b.manner}` : ""}`;
+function himBrief(s: SaveState, c: CuckState): string {
+  const b = c.bull;
+  if (!b) return "";
+  const yours = hasCock(s) ? `the owner's is ${dickWord(yourDick(s))}` : "the owner has no cock";
+  return `## HIM (keep him exactly this man)\n${b.name}, ${b.age}. ${b.who}\nHow he is: ${b.manner}\nHe has ${bullDickWords(b)}; ${yours}.`;
 }
 
-function soFar(c: CuckState): string {
-  if (!c.log.length) return "";
-  const lines = c.log.map((l, i) => {
-    const full = i >= c.log.length - 2;
+function ownerVoice(c: CuckState): string {
+  const said = c.log.map((l) => `${l.own ? "(typed it themselves) " : ""}"${l.chose}"`);
+  return said.length
+    ? `## WHAT THE OWNER HAS SAID AND DONE SO FAR (this is their voice: the choices you write must sound like this person, and the ones they typed themselves count most)\n${said.join("\n")}`
+    : "";
+}
+
+function soFar(c: CuckState, skipLast = false): string {
+  const log = skipLast ? c.log.slice(0, -1) : c.log;
+  if (!log.length) return "";
+  const lines = log.map((l, i) => {
+    const full = i >= log.length - 2;
     return full
-      ? `### Week ${l.week}, ${l.title}\n${l.setup ? `${l.setup.slice(0, 1800)}\n` : ""}THE OWNER CHOSE: ${l.chose}\n${l.text.slice(0, 1800)}`
-      : `· Week ${l.week}, ${l.title}: the owner chose "${l.chose}". ${l.text.slice(0, 260).replace(/\n+/g, " ")}…`;
+      ? `### Week ${l.week}, ${l.title}\n${l.scene.slice(0, 2400)}\nTHE OWNER: ${l.chose}\n${l.text.slice(0, 2400)}`
+      : `· Week ${l.week}, ${l.title}: the owner: "${l.chose}". ${l.facts.join(" ")} ${l.text.slice(0, 300).replace(/\n+/g, " ")}…`;
   });
-  return `## THE STORY SO FAR (build on it; people remember; never repeat a line or a beat from it)\n${lines.join("\n\n")}`;
+  return `## THE STORY SO FAR (build on it; people remember; never repeat a situation, a line or a beat from it)\n${lines.join("\n\n")}`;
 }
 
-const CHAPTER_SYSTEM = `You write one chapter of a netorare (NTR, cuckold) story inside Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. The player is the owner, written as "you". They have given one of their slave women to another man, a little more every week, and they watch her go.
+/** What this chapter is for. Direction, not prose: the model writes all of it. */
+function direction(s: SaveState, c: CuckState, must: Move[]): string {
+  const p = herOf(s)!;
+  switch (c.phase) {
+    case "choose": return `This is the first chapter. The owner tells ${p.name} what they want: another man, chosen by the owner, to have her while the owner watches or waits, and she tells the owner about it after. Write her hearing it and answering out of who she is. The owner has three men in mind: invent THREE, each a different kind of man who would want her and would plausibly be in this arcology, each a real person with a name, an age, who he is and how he talks. Offer each as a "pick" choice with the man filled in, plus a "never" choice.`;
+    case "tease": return `He hasn't had her yet. This is chapter ${c.in_phase + 1} before he does. Each chapter goes a step further than the last: meeting him, being looked at, touched, kissed, his hands on her with the owner there, her wanting it. No sex happens in the scene itself.${must.some((m) => m.id === "first") ? " This chapter builds to the night he takes her: the \"first\" choice must be there." : ""}`;
+    case "affair": return `He's having her now, on her own nights between chapters. This is chapter ${c.in_phase + 1} of the affair. Each chapter is a new turn of the screw, picked to fit how far it has gone and what hasn't happened yet in the story so far: she comes home from him, she compares, he calls while he's in her, she says his name in the owner's bed, he takes her in the owner's own bed, he wants to breed her, she starts dressing for him, she stops needing the owner. Never repeat a situation.`;
+    case "offer": return `This is the LAST chapter. He wants her for good. He offers ¤${offerPrice(s, p).toLocaleString()} for her papers, or to keep her as his without them. Write the scene where it gets decided, with her in it showing where she stands. The choices are the endings.`;
+  }
+}
 
-Write it the way the best NTR stories are written: slow, specific and humiliating. The sting is in the small things: the comparisons, her eyes going to him and not coming back, what she says and what she stops saying, the owner noticing every one. He is confident and enjoys it. She changes a little each chapter, in her own way. Explicit sex in plain crude words when the outline has sex in it.
+const CHAPTER_SYSTEM = `You write a netorare (NTR, cuckold) story inside Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. The player is the owner, written as "you". They have chosen to give one of their slave women to another man, a little more every week, and watch her go. This is the owner's own taste and they asked for it.
 
-What you have:
-- THE OUTLINE is what happens in this chapter, in order. Keep every event in it: who does what to whom, what's said that matters, how it ends. It is the game's own version and many players have read it: write it FRESH in your own words. Never reuse its sentences. Add detail, dialogue and setting from the cards.
-- HER card: her voice, body, history, tastes and memories. She speaks like herself, not like the outline. Use her past, her body and what she's into.
-- THE OWNER's body and their own description of themself (attached below). Every comparison is to that actual body; never give the owner anything they don't have. Their self-description is how they see themself; let the chapter press on it.
-- WHY SHE'S DOING IT and HOW FAR IT HAS GONE: every line she says comes out of these.
-- THE STORY SO FAR: this is the next chapter of it. Pick up threads, call back to things.
+Write it the way the best NTR stories are written: slow, specific and humiliating. The sting is in the small things: the comparisons, her eyes going to him and not coming back, what she says and what she stops saying, the owner noticing every one. He's confident and enjoys it. She changes a little each chapter, in her own way, out of her own personality: her voice, her past, her body, what she's into, her memories. Nothing she says could be said by a different woman. Explicit, in plain crude words, when there's sex.
 
-Rules: second person, present tense. Four to seven paragraphs. Never decide what the owner does or feels at the moment the chapter ends; stop at the moment of choice; the choices are the question. Never invent another named person. Relabel each choice in the owner's voice to fit what you wrote (3 to 12 words); each must still be the same action.
+You write the chapter and the owner's choices. THE CHOICES ARE THE OWNER SPEAKING OR ACTING: each label is the actual thing the owner says out loud or does, in the owner's own voice and character, the way this particular person would say it (their self-description, their body, how they've answered so far). Not menu text, not generic, not what any owner would say. 4 to 25 words each. Each choice is tagged with one move from MOVES THAT CAN BE OFFERED; the move is what will happen, so the words must match it. Offer three to five choices, every move under MUST BE OFFERED among them, and the rest whichever moves fit the scene best (moves can repeat with different words).
+
+Rules: second person, present tense, four to seven paragraphs. Stop at the moment of choice; never decide what the owner does or feels at the end. Never invent another named person apart from the men in a "pick". Continue THE STORY SO FAR.
 
 ${HOUSE_STYLE}
 
 Output ONE strict JSON object and nothing else:
-{"scene":"the chapter","choices":[{"id":"the original id","label":"new label"}],"him":"only if HOW HE IS is missing: one or two sentences fixing how he looks, moves and talks, for every later chapter"}`;
+{"title":"2-6 words","scene":"the chapter","choices":[{"label":"what the owner says or does","move":"move id","man":{"name":"First Last","age":30,"who":"who he is, one sentence","manner":"how he looks, moves and talks, one or two sentences"}}]}
+("man" only on "pick" choices.)`;
 
-/** Write the chapter waiting. Returns whether it was written; mutates `s.cuckold.written`. */
+function context(s: SaveState, query: string): string[] {
+  const c = s.cuckold!;
+  const p = herOf(s)!;
+  return [
+    `## HER\n${personCard(s, p, query)}`,
+    himBrief(s, c),
+    `## WHY SHE'S DOING IT\n${MOTIVE[c.motive]}`,
+    `## HOW FAR IT HAS GONE\n${howFar(s, c)}`,
+  ].filter(Boolean);
+}
+
+function movesList(may: Move[], must: Move[]): string {
+  return `## MOVES THAT CAN BE OFFERED (id: what it does)\n${may.map((m) => `· ${m.id}: ${m.does}`).join("\n")}\n## MUST BE OFFERED\n${must.map((m) => m.id).join(", ") || "nothing in particular"}`;
+}
+
+/** Write the chapter waiting. Mutates `s.cuckold.chapter` on success. */
 export async function writeChapter(s: SaveState, signal?: AbortSignal): Promise<{ ok: boolean; error?: string }> {
-  const x = cx(s);
-  const b = beatNow(s);
-  if (!x || !b || !canWrite(s)) return { ok: false };
-  if (x.c.written?.beat === b.id) return { ok: true };
-  const opts = b.options(x);
+  const c = s.cuckold;
+  if (!c || !ready(s)) return { ok: false };
+  if (c.chapter) return { ok: true };
+  if (!canWrite(s)) return { ok: false, error: "needs a model set up in Settings" };
+  const { may, must } = movesNow(s);
+  let note = "";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await call({
+      system: CHAPTER_SYSTEM,
+      user: [
+        ...context(s, c.bull ? `${c.bull.short} the owner` : "another man"),
+        ownerVoice(c),
+        soFar(c),
+        `## THIS CHAPTER\n${direction(s, c, must)}`,
+        movesList(may, must),
+        note,
+        stockLine(s),
+        PLAIN_RULES,
+        REGISTER_TAIL,
+      ].filter(Boolean).join("\n\n"),
+      model: s.models.narrator_model,
+      fallback: s.models.fallback_model,
+      json: true,
+      maxTokens: 3200,
+      temperature: 0.95,
+      signal,
+    });
+    if (!res.ok) return { ok: false, error: res.error ?? "the model didn't answer" };
+    const out = parseJson<{ title?: string; scene?: string; choices?: { label?: string; move?: string; man?: Partial<Candidate> }[] }>(res.text);
+    const scene = out?.scene ? coarsen(String(out.scene)).trim() : "";
+    const choices: Choice[] = (out?.choices ?? [])
+      .filter((x) => x?.label && x.move)
+      .map((x) => ({ label: coarsen(String(x.label)).trim().slice(0, 240), move: String(x.move), man: x.man?.name ? { name: String(x.man.name), age: Number(x.man.age) || 30, who: String(x.man.who ?? ""), manner: String(x.man.manner ?? "") } : undefined }))
+      .filter((x) => allowed(s, x))
+      .slice(0, 6);
+    const missing = must.filter((m) => !choices.some((x) => x.move === m.id));
+    const enough = scene.length >= 300 && choices.length >= 2 && (c.phase !== "choose" || choices.filter((x) => x.move === "pick").length >= 2);
+    if (enough && (!missing.length || attempt === 1)) {
+      // The story may have moved while the model was writing.
+      if (s.cuckold !== c || c.ended || c.chapter || !ready(s)) return { ok: false };
+      c.chapter = { title: String(out?.title ?? "").slice(0, 60) || `Week ${s.arcology.week}`, scene: scene.slice(0, 9000), choices, model: res.model, week: s.arcology.week };
+      noteStock(s, scene);
+      return { ok: true };
+    }
+    if (signal?.aborted) return { ok: false };
+    note = `## LAST TIME YOU GOT THIS WRONG\n${!enough ? "The chapter or its choices came back too short or with moves that aren't allowed. Write the whole chapter and at least three allowed choices." : `You left out these moves, which must be offered: ${missing.map((m) => m.id).join(", ")}.`}`;
+  }
+  return { ok: false, error: "the model's chapter didn't hold together" };
+}
+
+const READ_SYSTEM = `You read what the owner typed in answer to a chapter of a cuckold story in Free Cities, an adult game, and decide which ONE move from the list it amounts to. Pick the move whose effect is closest to what they said or did. If they named or described a man of their own in a "pick", fill in "man" (invent the details they didn't give). Output JSON only: {"move":"move id","man":{"name":"First Last","age":30,"who":"...","manner":"..."}}`;
+
+/** Answer the chapter in your own words. Returns the log entry, still to be written. */
+export async function answerOwn(s: SaveState, typed: string, signal?: AbortSignal): Promise<{ ok: boolean; error?: string }> {
+  const c = s.cuckold;
+  const ch = c?.chapter;
+  const text = typed.trim().slice(0, 600);
+  if (!c || !ch || !text) return { ok: false };
+  if (!canWrite(s)) return { ok: false, error: "needs a model set up in Settings" };
+  const { may } = movesNow(s);
   const res = await call({
-    system: CHAPTER_SYSTEM,
+    system: READ_SYSTEM,
     user: [
-      `## HER\n${personCard(s, x.p, `${x.him} ${b.title}`)}`,
-      x.c.bull ? `## HIM\n${himBrief(x.c)}` : `## HIM\nNot chosen yet: the owner picks him at the end of this chapter, from the choices.`,
-      `## WHY SHE'S DOING IT\n${MOTIVE[x.c.motive]}`,
-      `## HOW FAR IT HAS GONE\n${howFar(x.c)}`,
-      soFar(x.c),
-      `## THIS CHAPTER: ${b.title}\n### THE OUTLINE\n${b.text(x)}`,
-      `## THE CHOICES (id: what the owner does)\n${opts.map((o) => `· ${o.id}: ${o.label}${o.hint ? ` (${o.hint})` : ""}${o.locked?.(x) ? " [locked for now; label it anyway]" : ""}`).join("\n")}`,
-      stockLine(s),
-      PLAIN_RULES,
-      REGISTER_TAIL,
+      `## THE CHAPTER\n${ch.scene.slice(-2500)}`,
+      c.phase === "choose" ? `## THE MEN ON OFFER\n${ch.choices.filter((x) => x.man).map((x) => `· ${x.man!.name}, ${x.man!.age}: ${x.man!.who}`).join("\n")}` : "",
+      `## WHAT THE OWNER TYPED\n${text}`,
+      `## MOVES (id: what it does)\n${may.map((m) => `· ${m.id}: ${m.does}`).join("\n")}`,
     ].filter(Boolean).join("\n\n"),
     model: s.models.narrator_model,
     fallback: s.models.fallback_model,
     json: true,
-    maxTokens: 2600,
-    temperature: 0.95,
+    maxTokens: 300,
+    temperature: 0.2,
     signal,
   });
-  if (!res.ok) return { ok: false, error: res.error };
-  const out = parseJson<{ scene?: string; choices?: { id?: string; label?: string }[]; him?: string }>(res.text);
-  const scene = out?.scene ? coarsen(String(out.scene)).trim() : "";
-  if (scene.length < 200) return { ok: false, error: "the model's chapter came back empty" };
-  // The story may have moved while the model was writing.
-  const live = s.cuckold;
-  if (!live || live.ended || beatNow(s)?.id !== b.id) return { ok: false };
-  const ids = new Set(opts.map((o) => o.id));
-  const labels: Record<string, string> = {};
-  for (const ch of out?.choices ?? []) if (ch?.id && ch.label && ids.has(String(ch.id))) labels[String(ch.id)] = String(ch.label).slice(0, 90);
-  live.written = { beat: b.id, scene: scene.slice(0, 7000), labels, model: res.model };
-  if (live.bull && !live.bull.manner && out?.him) live.bull.manner = String(out.him).slice(0, 400);
-  noteStock(s, scene);
-  return { ok: true };
+  if (!res.ok) return { ok: false, error: res.error ?? "the model didn't answer" };
+  const out = parseJson<{ move?: string; man?: Partial<Candidate> }>(res.text);
+  let man: Candidate | undefined = out?.man?.name ? { name: String(out.man.name), age: Number(out.man.age) || 30, who: String(out.man.who ?? ""), manner: String(out.man.manner ?? "") } : undefined;
+  // A man from the chapter, named in what you typed.
+  if (out?.move === "pick" && man) man = ch.choices.find((x) => x.man && x.man.name.toLowerCase() === man!.name.toLowerCase())?.man ?? man;
+  const choice: Choice = { label: text, move: String(out?.move ?? ""), man, own: true };
+  if (s.cuckold !== c || c.chapter !== ch) return { ok: false };
+  if (!allowed(s, choice)) return { ok: false, error: "couldn't tell what that does here; try saying it another way" };
+  return answer(s, choice) ? { ok: true } : { ok: false, error: "that can't happen right now" };
 }
 
-const OUTCOME_SYSTEM = `You write what happens next in a netorare (NTR, cuckold) story inside Free Cities, an adult text game about owning an arcology. The owner ("you") was shown the chapter and made a choice. The game has decided what comes of it: WHAT HAPPENS is the game's own version, many players have read it, and you write it FRESH in your own words without reusing its sentences. Keep every event, who does what, everything said that matters, any money, and how it ends; don't add consequences it doesn't have. Carry on straight from the chapter as written: same room, same people, same voices, same man.
+const OUTCOME_SYSTEM = `You write what happens next in a netorare (NTR, cuckold) story inside Free Cities, an adult text game about owning an arcology. The owner ("you") answered the chapter. WHAT THE GAME DECIDED is true and final: keep every fact in it (who did what, what happened to her body, any money, any pregnancy, how it ends) and add nothing that contradicts it. If the owner typed their answer in their own words, play out exactly what they said and did, in their words, and the facts are what came of it.
 
-Two to five paragraphs, second person, present tense. Her lines come out of her card, why she's doing it and how far it has gone. Explicit in plain crude words when there's sex. If WHAT HAPPENS ends the story, end it properly: land it.
+Carry on straight from the chapter: same room, same people, same voices, same man. Her lines come out of her card, why she's doing it and how far it has gone, and nobody else could say them. Two to five paragraphs, second person, present tense. Explicit in plain crude words when there's sex. If the story ends here, land it properly. Don't end on a question to the owner.
 
 ${HOUSE_STYLE}`;
 
-/** Rewrite the outcome of the last choice. Returns the text, or "" to keep the game's own. */
-export async function writeOutcome(s: SaveState, signal?: AbortSignal): Promise<string> {
+/** Write what came of the last answer. Returns the text, or "" if it couldn't be written. */
+export async function writeOutcome(s: SaveState, signal?: AbortSignal): Promise<{ ok: boolean; error?: string }> {
   const c = s.cuckold;
-  const x = cx(s);
   const last = c?.log.at(-1);
-  if (!c || !x || !last || last.written || !canWrite(s)) return "";
-  const earlier = { ...c, log: c.log.slice(0, -1) };
+  const p = herOf(s);
+  if (!c || !last || !p || last.text) return { ok: !!last?.text };
+  if (!canWrite(s)) return { ok: false, error: "needs a model set up in Settings" };
   const res = await call({
     system: OUTCOME_SYSTEM,
     user: [
-      `## HER\n${personCard(s, x.p, `${x.him} ${last.chose}`)}`,
-      c.bull ? `## HIM\n${himBrief(c)}` : "",
-      `## WHY SHE'S DOING IT\n${MOTIVE[c.motive]}`,
-      `## HOW FAR IT HAS GONE (after this choice)\n${howFar(c)}`,
-      soFar(earlier),
-      `## THE CHAPTER, AS THE OWNER READ IT: ${last.title}\n${last.setup ?? ""}`,
-      `## THE OWNER CHOSE\n${last.chose}`,
-      `## WHAT HAPPENS (the game's version; rewrite it)\n${last.text}`,
-      c.ended ? `## THIS IS THE END OF THE STORY\nIt ends here: ${c.ended.ending.replace("_", " ")}.` : "",
+      ...context(s, `${c.bull?.short ?? ""} ${last.chose}`),
+      soFar(c, true),
+      `## THE CHAPTER: ${last.title}\n${last.scene}`,
+      `## THE OWNER ${last.own ? "(in their own words)" : ""}\n${last.chose}`,
+      `## WHAT THE GAME DECIDED\n${last.facts.join("\n") || "Nothing beyond what the owner said and did."}${c.ended ? `\nTHE STORY ENDS HERE: ${c.ended.ending.replace("_", " ")}.` : ""}${hasWomb(p) && pregnantByHim(s, p) && !last.facts.some((f) => /pregnan|conceiv/.test(f)) ? "\n(She is carrying his child.)" : ""}`,
       stockLine(s),
       PLAIN_RULES,
       REGISTER_TAIL,
     ].filter(Boolean).join("\n\n"),
     model: s.models.narrator_model,
     fallback: s.models.fallback_model,
-    maxTokens: 1800,
+    maxTokens: 2000,
     temperature: 0.9,
     signal,
   });
-  if (!res.ok) return "";
+  if (!res.ok) return { ok: false, error: res.error ?? "the model didn't answer" };
   const text = coarsen(res.text).trim();
-  if (text.length < 120) return "";
-  // Only if nothing else was answered in the meantime.
-  if (s.cuckold?.log.at(-1) !== last) return "";
-  last.text = text.slice(0, 7000);
-  last.written = true;
-  if (c.ended) c.ended.text = last.text;
+  if (text.length < 120) return { ok: false, error: "the model's answer came back empty" };
+  if (s.cuckold?.log.at(-1) !== last) return { ok: false };
+  last.text = text.slice(0, 9000);
   noteStock(s, text);
-  return last.text;
+  return { ok: true };
 }

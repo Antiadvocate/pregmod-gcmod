@@ -1,12 +1,12 @@
 /**
- * THE OTHER MAN — she can be given, every chapter reads and answers, the nights happen between
- * them, and each ending does what it says.
+ * THE OTHER MAN — the engine under the model: the phases, the moves, the nights between chapters,
+ * and every ending doing what it says. Chapters here are stand-ins offering every allowed move;
+ * the model's side is tests/cuckwriter.test.ts.
  */
 import { check } from "./harness.ts";
 import { newGame } from "../src/engine/state.ts";
 import { endWeek } from "../src/engine/week.ts";
-import { begin, eligible, ready, tickCuckold } from "../src/engine/cuckold.ts";
-import { answerBeat, beatNow, cx, BEATS } from "../src/data/cuckold.ts";
+import { answer, begin, eligible, movesNow, ready, tickCuckold, type Choice } from "../src/engine/cuckold.ts";
 import type { SaveState } from "../src/engine/types.ts";
 
 function setup(seed: string): SaveState {
@@ -14,24 +14,27 @@ function setup(seed: string): SaveState {
   s.arcology.cash = 400000;
   return s;
 }
+const grown = (s: SaveState) => Object.values(s.people).find((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 18 && p.health.recovery_weeks <= 0)!;
 
-function grown(s: SaveState) {
-  return Object.values(s.people).find((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 18 && p.health.recovery_weeks <= 0)!;
+/** A stand-in chapter offering every move allowed now, and three men in the first. */
+function stage(s: SaveState): Choice[] {
+  const { may } = movesNow(s);
+  const choices: Choice[] = may.filter((m) => m.id !== "pick").map((m) => ({ label: `say ${m.id}`, move: m.id }));
+  if (may.some((m) => m.id === "pick")) for (const n of ["Kade Whitlock", "Julian Marr", "Eli Brandt"]) choices.unshift({ label: `him, ${n}`, move: "pick", man: { name: n, age: 33, who: "a man", manner: "quiet" } });
+  s.cuckold!.chapter = { title: "t", scene: "s", choices, model: "test", week: s.arcology.week };
+  return choices;
 }
 
-/** Answer every chapter with the option at `pref` (or the first one open), until it ends or runs out of weeks. */
-function play(s: SaveState, pref: (beat: string) => string, weeks = 40): string[] {
+function play(s: SaveState, prefer: string[], weeks = 50): string[] {
   const seen: string[] = [];
   for (let w = 0; w < weeks && s.cuckold && !s.cuckold.ended; w++) {
-    for (let i = 0; i < 3 && ready(s); i++) {
-      const b = beatNow(s)!;
-      const x = cx(s)!;
-      const opts = b.options(x).filter((o) => !o.locked?.(x));
-      const want = pref(b.id);
-      const o = opts.find((q) => q.id === want) ?? opts.find((q) => q.id !== "stop" && q.id !== "never") ?? opts[0];
-      seen.push(`${b.id}:${o.id}`);
-      const r = answerBeat(s, o.id);
-      check(`${b.id} answered with ${o.id} writes something`, !!r && r.text.length > 40 && !/undefined|\[object/.test(r.text), r?.text.slice(0, 200));
+    if (ready(s)) {
+      const choices = stage(s);
+      const ch = prefer.map((m) => choices.find((x) => x.move === m)).find(Boolean) ?? choices.find((x) => !["stop", "never"].includes(x.move))!;
+      const e = answer(s, ch);
+      check(`${ch.move} is answerable`, !!e, ch);
+      seen.push(`${s.cuckold!.phase}:${ch.move}`);
+      if (e) e.text = "written";
     }
     if (s.cuckold && !s.cuckold.ended) endWeek(s);
   }
@@ -45,33 +48,24 @@ function play(s: SaveState, pref: (beat: string) => string, weeks = 40): string[
   const young = Object.values(s.people).find((p) => p.age < 18);
   if (young) check("a child never can", eligible(s, young) !== null);
   begin(s, her);
-  check("the first chapter is ready straight away", ready(s));
-  const all = BEATS.map((b) => b.id);
-  const seen = play(s, (b) => ({ ask: "brute", dinner: "lap", kiss: "taste", first: "chair", home: "clean", call: "stay", name: "again", bed: "cage", seed: "yes", offer: "his" } as Record<string, string>)[b]);
-  check("the whole way down reaches an ending", !!s.cuckold!.ended, seen);
-  check("it went through the chapters in order", seen[0].startsWith("ask") && seen.some((x) => x.startsWith("first")) && seen.at(-1)!.startsWith("offer"), seen);
-  check("every chapter name is real", seen.every((x) => all.includes(x.split(":")[0])));
-  check("she spent nights with him", s.cuckold!.nights >= 3, s.cuckold!.nights);
-  check("she's gone a long way to him", s.cuckold!.fall >= 60, s.cuckold!.fall);
-  check("he's the one she goes to now", s.cuckold!.pull < 40, s.cuckold!.pull);
-  const ending = s.cuckold!.ended!.ending;
-  check("pushing all the way can end with her his", ending === "his" || ending === "shared" || ending === "lost", ending);
-  // After an ending that leaves her with him, the nights keep coming in the week report.
-  if (ending === "his") {
-    const before = s.cuckold!.nights;
-    const lines = tickCuckold(s);
-    check("the nights go on after she's his", s.cuckold!.nights > before && lines.length > 0, lines);
-  }
+  check("the first chapter is due straight away", ready(s));
+  check("the first chapter must offer a way out", movesNow(s).must.some((m) => m.id === "never"));
+  const seen = play(s, ["pick", "first", "clean", "cage", "breed_yes", "his", "push"]);
+  const c = s.cuckold!;
+  check("the whole way down reaches an ending", !!c.ended, seen);
+  check("he was picked, then had her, then made his offer", !!c.bull && seen.some((x) => x.endsWith(":first")) && ["his", "share", "sell", "reclaim"].some((m) => seen.at(-1)!.endsWith(m)), seen);
+  check("she spent nights with him", c.nights >= 5, c.nights);
+  check("pushed all the way, she's gone a long way", c.fall >= 60 && c.pull < 40, [c.fall, c.pull]);
+  check("and you went far enough to give her to him", c.ended!.ending === "his", c.ended);
+  const before = c.nights;
+  check("the nights go on after she's his", tickCuckold(s).length > 0 && c.nights > before);
 }
 
 {
   const s = setup("cuck-b");
-  const her = grown(s);
-  begin(s, her);
-  const seen = play(s, (b) => (b === "ask" ? "broker" : b === "dinner" ? "stop" : ""));
-  check("you can call it off early", s.cuckold!.ended?.ending === "called_off", seen);
-  check("calling it off before he's had her leaves no nights", s.cuckold!.nights === 0);
-  check("and someone else can be asked after", eligible(s, Object.values(s.people).find((p) => p.id !== her.id && p.age >= 18 && p.status === "owned") ?? her) === null);
+  begin(s, grown(s));
+  play(s, ["pick", "stop"]);
+  check("you can call it off before he has her", s.cuckold!.ended?.ending === "called_off" && s.cuckold!.nights === 0);
 }
 
 {
@@ -79,19 +73,26 @@ function play(s: SaveState, pref: (beat: string) => string, weeks = 40): string[
   const her = grown(s);
   const cash = s.arcology.cash;
   begin(s, her);
-  play(s, (b) => ({ ask: "boy", offer: "sell" } as Record<string, string>)[b] ?? "");
+  play(s, ["pick", "first", "sell", "watch"]);
   check("selling her to him ends it", s.cuckold!.ended?.ending === "sold", s.cuckold!.ended);
-  check("and she leaves the household", s.people[her.id].status === "sold");
-  check("and he paid for her", s.arcology.cash > cash - 50000, [cash, s.arcology.cash]);
+  check("and she leaves the household, paid for", s.people[her.id].status === "sold" && s.arcology.cash > cash - 50000);
   check("nothing happens once she's gone", tickCuckold(s).length === 0);
 }
 
 {
   const s = setup("cuck-d");
-  const her = grown(s);
-  begin(s, her);
-  play(s, (b) => ({ ask: "broker", dinner: "hand", kiss: "watch", first: "listen", home: "reclaim", call: "hang", name: "forgive", bed: "no", seed: "no", offer: "back" } as Record<string, string>)[b] ?? "");
+  begin(s, grown(s));
+  play(s, ["pick", "first", "reclaim", "hold"]);
   const e = s.cuckold!.ended?.ending;
-  check("holding on the whole way, you can take her back", e === "reclaimed" || e === "lost", e);
+  check("holding on, you can take her back", e === "reclaimed" || e === "lost", e);
   check("taking her back stops the nights", tickCuckold(s).length === 0);
+}
+
+{
+  const s = setup("cuck-e");
+  begin(s, grown(s));
+  stage(s);
+  check("a move that isn't allowed now does nothing", answer(s, { label: "sell her", move: "sell" }) === null && !s.cuckold!.ended);
+  check("nor one that doesn't exist", answer(s, { label: "?", move: "teleport" }) === null);
+  check("a pick needs a man", answer(s, { label: "him", move: "pick" }) === null);
 }
