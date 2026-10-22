@@ -14,6 +14,7 @@
  * first written, and the story so far. The engine decides the phase and what each choice does;
  * the model never decides an outcome. Without a model the story doesn't start.
  */
+import { pickOption } from "./ownwords";
 import type { SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
@@ -171,40 +172,26 @@ export async function writeChapter(s: SaveState, signal?: AbortSignal): Promise<
   return { ok: false, error: "the model's chapter didn't hold together" };
 }
 
-const READ_SYSTEM = `You read what the owner typed in answer to a chapter of a cuckold story in Free Cities, an adult game, and decide which ONE move from the list it amounts to. Pick the move whose effect is closest to what they said or did. If they named or described a man of their own in a "pick", fill in "man" (invent the details they didn't give). Output JSON only: {"move":"move id","man":{"name":"First Last","age":30,"who":"...","manner":"..."}}`;
-
-/** Answer the chapter in your own words. Returns the log entry, still to be written. */
+/** Answer the chapter in your own words. Which move they amount to is read by engine/ownwords,
+ *  and always comes out as one of the moves allowed now: what you typed is what's played out. */
 export async function answerOwn(s: SaveState, typed: string, signal?: AbortSignal): Promise<{ ok: boolean; error?: string }> {
   const c = s.cuckold;
   const ch = c?.chapter;
   const text = typed.trim().slice(0, 600);
   if (!c || !ch || !text) return { ok: false };
   if (!canWrite(s)) return { ok: false, error: "needs a model set up in Settings" };
-  const { may } = movesNow(s);
-  const res = await call({
-    system: READ_SYSTEM,
-    user: [
-      `## THE CHAPTER\n${ch.scene.slice(-2500)}`,
-      c.phase === "choose" ? `## THE MEN ON OFFER\n${ch.choices.filter((x) => x.man).map((x) => `· ${x.man!.name}, ${x.man!.age}: ${x.man!.who}`).join("\n")}` : "",
-      `## WHAT THE OWNER TYPED\n${text}`,
-      `## MOVES (id: what it does)\n${may.map((m) => `· ${m.id}: ${m.does}`).join("\n")}`,
-    ].filter(Boolean).join("\n\n"),
-    model: s.models.narrator_model,
-    fallback: s.models.fallback_model,
-      urgent: true,
-    json: true,
-    maxTokens: 300,
-    temperature: 0.2,
-    signal,
-  });
-  if (!res.ok) return { ok: false, error: res.error ?? "the model didn't answer" };
-  const out = parseJson<{ move?: string; man?: Partial<Candidate> }>(res.text);
-  let man: Candidate | undefined = out?.man?.name ? { name: String(out.man.name), age: Number(out.man.age) || 30, who: String(out.man.who ?? ""), manner: String(out.man.manner ?? "") } : undefined;
-  // A man from the chapter, named in what you typed.
-  if (out?.move === "pick" && man) man = ch.choices.find((x) => x.man && x.man.name.toLowerCase() === man!.name.toLowerCase())?.man ?? man;
-  const choice: Choice = { label: text, move: String(out?.move ?? ""), man, own: true };
+  // The men on offer are choices of their own; every other allowed move is one choice.
+  const men = ch.choices.filter((x) => x.move === "pick" && x.man);
+  const moves = movesNow(s).may.filter((m) => m.id !== "pick");
+  const opts = [
+    ...men.map((x, i) => ({ id: `man:${i}`, label: `choose ${x.man!.name}`, note: x.man!.who })),
+    ...moves.map((m) => ({ id: m.id, label: m.does })),
+  ];
+  const r = await pickOption(s, ch.scene, opts, text, signal);
+  if (r.stopped) return { ok: false, error: "stopped" };
   if (s.cuckold !== c || c.chapter !== ch) return { ok: false };
-  if (!allowed(s, choice)) return { ok: false, error: "couldn't tell what that does here; try saying it another way" };
+  const man = r.option.id.startsWith("man:") ? men[Number(r.option.id.slice(4))]?.man : undefined;
+  const choice: Choice = { label: text, move: man ? "pick" : r.option.id, man, own: true };
   return answer(s, choice) ? { ok: true } : { ok: false, error: "that can't happen right now" };
 }
 

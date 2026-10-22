@@ -95,16 +95,28 @@ const r2 = await writeChapter(s);
 check("a failed call writes nothing", !r2.ok && !c.chapter);
 fail = false;
 
-// Events take your own words too: the model says which of the event's choices they amount to.
+// Events take your own words too, and they always go through.
 {
   const { readOwnAnswer } = await import("../src/engine/living.ts");
-  const e = { id: "ev1", kind: "test", seed: "A citizen is caught in the stairwell with stolen wine.", options: [{ id: "flog", label: "Have him flogged" }, { id: "fine", label: "Fine him" }] } as never;
-  reply = (system) => /You read what the owner typed in answer to an event/.test(system) ? JSON.stringify({ id: "fine" }) : "";
-  const r = await readOwnAnswer(s, e, "Take what he owes out of his pay, darling, and send him home.");
-  check("a typed answer to an event becomes one of its choices", r.id === "fine", r);
-  reply = () => JSON.stringify({ id: "pardon" });
-  const r2 = await readOwnAnswer(s, e, "Pardon him.");
-  check("and a choice the event doesn't have is refused, not invented", !r2.id && !!r2.error, r2);
+  const e = { id: "ev1", kind: "test", seed: "A citizen is caught in the stairwell with stolen wine.", options: [{ id: "flog", label: "Have him flogged" }, { id: "fine", label: "Fine him what the wine cost" }, { id: "x0:pardon:", label: "Let him go" }] } as never;
+  const typed = "Take what he owes out of his pay, darling, and send him home.";
+  reply = () => JSON.stringify({ choice: 2 });
+  check("the model's number picks the choice", (await readOwnAnswer(s, e, typed)).id === "fine");
+  reply = () => JSON.stringify({ id: "x0:pardon:" });
+  check("so does an id", (await readOwnAnswer(s, e, "Let him go.")).id === "x0:pardon:");
+  reply = () => JSON.stringify({ choice: "Have him flogged" });
+  check("so do a choice's own words", (await readOwnAnswer(s, e, "whip him")).id === "flog");
+  // A model that thought and sent nothing, or answered with something that isn't a choice.
+  reply = () => "";
+  const r1 = await readOwnAnswer(s, e, "Fine him for the wine, then.");
+  check("an empty answer still goes through, to the closest choice by your words", r1.id === "fine" && !r1.error, r1);
+  reply = () => JSON.stringify({ choice: 9 });
+  const r2 = await readOwnAnswer(s, e, "Flog him in the square.");
+  check("and so does a wrong one", r2.id === "flog" && !r2.error, r2);
+  fail = true;
+  const r3 = await readOwnAnswer(s, e, "let him go");
+  check("and so does a failed call", r3.id === "x0:pardon:" && !r3.error, r3);
+  fail = false;
 }
 
 g.fetch = oldFetch;
