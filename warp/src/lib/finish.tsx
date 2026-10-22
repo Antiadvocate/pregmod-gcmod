@@ -250,7 +250,7 @@ export function BreastDetail({ p, scope }: { p: Person; scope: string }) {
 }
 
 /** Hips, thighs, knees, and her feet when they're bare. */
-export function LegDetail({ p, scope, bare }: { p: Person; scope: string; bare: boolean }) {
+export function LegDetail({ p, scope }: { p: Person; scope: string }) {
   const out: ReactElement[] = [];
   const skin = skinHex(p);
   // Knees: a soft crease and a little shadow under the cap, so the legs aren't two tubes.
@@ -266,7 +266,6 @@ export function LegDetail({ p, scope, bare }: { p: Person; scope: string; bare: 
     if (f.id === "vitiligo" && f.where === "knees and shins") out.push(<Patches key="vit" f={f} at={[[256, 702, 8, 6], [330, 706, 7, 6], [262, 765, 5, 7]]} scope={scope} />);
     if (f.id === "vitiligo" && f.where === "belly and hips") out.push(<Patches key="vit2" f={f} at={[[346, 425, 7, 9]]} scope={scope} />);
   }
-  if (bare) out.push(<FeetDetail key="feet" p={p} scope={scope} />);
   return <g pointerEvents="none">{out}</g>;
 }
 
@@ -303,20 +302,4 @@ function Stretch({ f, at, skin, scope }: { f: Feature; at: [number, number][]; s
   );
 }
 
-/**
- * Bare feet. Warp's own Feet_Flat draws both feet from the front with five toes and a nail on each
- * (coloured by the palette's `toenail`, her polish or her own nail). This adds the shadow along
- * each inner arch and under the ball of the foot.
- */
-export function FeetDetail({ p, scope }: { p: Person; scope: string }) {
-  const skin = skinHex(p);
-  return (
-    <g pointerEvents="none" filter={`url(#${scope}-blur2)`} opacity={0.22} fill={shade(skin, 0.5)}>
-      <ellipse cx={272} cy={917} rx={3.2} ry={9} />
-      <ellipse cx={315} cy={919} rx={3} ry={8} />
-      <ellipse cx={252} cy={927} rx={12} ry={2.2} opacity={0.6} />
-      <ellipse cx={331} cy={928} rx={12} ry={2.2} opacity={0.6} />
-    </g>
-  );
-}
 

@@ -31,7 +31,7 @@ import { SKIN, match, shade } from "../lib/vectorart";
 type Pt = [number, number];
 
 /** A smooth path through points (Catmull-Rom, converted to cubic Béziers). */
-function smooth(pts: Pt[], closed: boolean, k = 1): string {
+export function smooth(pts: Pt[], closed: boolean, k = 1): string {
   const n = pts.length;
   const at = (i: number) => (closed ? pts[(i + n) % n] : pts[Math.max(0, Math.min(n - 1, i))]);
   let d = `M${pts[0][0].toFixed(2)},${pts[0][1].toFixed(2)}`;
@@ -132,7 +132,7 @@ export function footGenes(p: Person): FootGenes {
   };
 }
 
-function nailColour(g: FootGenes, toenails: string): { fill: string; painted: boolean; french: boolean } {
+export function nailColour(g: FootGenes, toenails: string): { fill: string; painted: boolean; french: boolean } {
   const french = /french/i.test(toenails);
   const painted = !!toenails && toenails !== "bare" && !g.prosthetic;
   const fill = french ? "#f3d8d2" : painted ? match(NAIL, toenails, "#a8121f") : mix(g.skin, "#f6d2cb", 0.5);

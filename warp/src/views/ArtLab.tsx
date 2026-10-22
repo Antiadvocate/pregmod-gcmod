@@ -7,11 +7,17 @@
  */
 import { useState } from "react";
 import { generatePerson } from "../engine/generate";
+import { feetOf } from "../engine/genitals";
 import SlaveArt from "./SlaveArt";
 
 export default function ArtLab() {
   const [base, setBase] = useState(1);
-  const people = Array.from({ length: 6 }, (_, i) => generatePerson({ seed: base * 100 + i, age: 19 + ((base + i * 3) % 15), sex: "female" }));
+  const people = Array.from({ length: 6 }, (_, i) => {
+    const p = generatePerson({ seed: base * 100 + i, age: 19 + ((base + i * 3) % 15), sex: "female" });
+    // Every other woman with her toenails painted, so polish gets judged too.
+    if (i % 2) p.body.feet = { ...feetOf(p), toenails: ["red", "pale pink", "black"][i % 3] };
+    return p;
+  });
   return (
     <div style={{ background: "#141210", minHeight: "100vh", padding: 16, color: "#ddd" }}>
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 12 }}>

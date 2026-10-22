@@ -28,6 +28,7 @@ import { expressionOf, ExpressionLayer, type Moment } from "../lib/expression";
 import { blend, blinkAt, cloneFace, mouthPaths, talkAt, MOUTH_BOX, type Box, type FaceParams } from "../lib/face";
 import { MarksLayer, BeatOverlay } from "../lib/marksart";
 import type { BeatKind } from "../engine/marks";
+import { StandingFeet } from "../lib/standfeet";
 import { BreastDetail, FaceDetail, FinishDefs, finishCss, finishEyes, LegDetail, TorsoDetail } from "../lib/finish";
 
 
@@ -240,10 +241,13 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
   };
   const bare = markup.some((m) => m.layer.id === "Feet_Flat");
   const detailAfter = (i: number): ReactElement[] => {
-    if (!finished) return [];
     const out: ReactElement[] = [];
+    // Her bare feet are drawn, not taken from the pack: over the bottom of her legs, under anything
+    // she wears on them. Geometry, not finish, so the ControlNet render has them too.
+    if (i === at.legs && bare) out.push(<g key="d-feet" data-joint="legs" data-own=""><StandingFeet p={person} scope={scope} /></g>);
+    if (!finished) return out;
     if (i === at.torso) out.push(<g key="d-torso" data-joint="chest" data-own=""><TorsoDetail p={person} scope={scope} /></g>);
-    if (i === at.legs) out.push(<g key="d-legs" data-joint="legs" data-own=""><LegDetail p={person} scope={scope} bare={bare} /></g>);
+    if (i === at.legs && finished) out.push(<g key="d-legs" data-joint="legs" data-own=""><LegDetail p={person} scope={scope} /></g>);
     if (i === at.breast) {
       const tr = markup[i].layer.transform;
       out.push(<g key="d-breast" data-joint="chest" data-own={tr ?? ""} transform={tr}><BreastDetail p={person} scope={scope} /></g>);
@@ -274,7 +278,7 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
         {finished ? <FinishDefs p={person} scope={scope} grain={big} /> : null}
         <g transform={crop === "full" ? heightTransform(person) : undefined}>
         <g filter={finished ? `url(#${scope}-form)` : undefined}>
-        {markup.map(({ layer, inner }, i) => layer.id === "Head" && cropped ? (
+        {markup.map(({ layer, inner }, i) => layer.id === "Feet_Flat" ? <g key={`${layer.id}-${i}`} /> : layer.id === "Head" && cropped ? (
           <g key={`${layer.id}-${i}`} data-joint={jointFor(layer.id)} data-own={layer.transform ?? ""} transform={layer.transform}>
             <g dangerouslySetInnerHTML={{ __html: inner }} />
             <CroppedHair scope={scope} />
