@@ -119,6 +119,22 @@ fail = false;
   fail = false;
 }
 
+// An order in your own words is carried out: the person is dealt with for good, and it's a fact
+// the outcome is written from. Never your own slaves, from here.
+{
+  const { readOwnAnswer } = await import("../src/engine/living.ts");
+  const { applyOrders } = await import("../src/engine/ownwords.ts");
+  const mine = Object.values(s.people).find((p) => p.status === "owned")!;
+  const e = { id: "ev2", kind: "test", seed: "Oksana Hrytsenko, who speaks for the grain farms, says they'll hold the grain back until they see who really runs this place.", options: [{ id: "threat", label: "Tell Oksana the grain ships or else" }, { id: "pay", label: "Offer the farms a better price" }] } as never;
+  reply = () => JSON.stringify({ choice: 1, orders: [{ name: "Oksana Hrytsenko", fate: "executed", how: "shot, then hanged in the market hall" }, { name: mine.name, fate: "dead", how: "shot" }] });
+  const r = await readOwnAnswer(s, e, "I have her shot then hung. This is why. I have an entire army and you're all here at my pleasure.");
+  check("the choice and the order both come back", r.id === "threat" && r.orders?.length === 2 && r.orders[0].fate === "dead", r);
+  const facts = applyOrders(s, r.orders!);
+  check("she is dead, on file, for good", s.faces?.["oksana hrytsenko"]?.fate?.fate === "dead", s.faces?.["oksana hrytsenko"]);
+  check("and the outcome is written from it", facts.length === 1 && /Oksana Hrytsenko was killed \(shot, then hanged/.test(facts[0]), facts);
+  check("one of your own slaves is never killed from a typed answer", s.people[mine.id].status === "owned");
+}
+
 g.fetch = oldFetch;
 if (hadLS) g.localStorage = oldLS; else delete g.localStorage;
 if (!hadLoc) delete g.location; else g.location = oldLoc;
