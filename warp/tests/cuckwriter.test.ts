@@ -95,6 +95,18 @@ const r2 = await writeChapter(s);
 check("a failed call writes nothing", !r2.ok && !c.chapter);
 fail = false;
 
+// Events take your own words too: the model says which of the event's choices they amount to.
+{
+  const { readOwnAnswer } = await import("../src/engine/living.ts");
+  const e = { id: "ev1", kind: "test", seed: "A citizen is caught in the stairwell with stolen wine.", options: [{ id: "flog", label: "Have him flogged" }, { id: "fine", label: "Fine him" }] } as never;
+  reply = (system) => /You read what the owner typed in answer to an event/.test(system) ? JSON.stringify({ id: "fine" }) : "";
+  const r = await readOwnAnswer(s, e, "Take what he owes out of his pay, darling, and send him home.");
+  check("a typed answer to an event becomes one of its choices", r.id === "fine", r);
+  reply = () => JSON.stringify({ id: "pardon" });
+  const r2 = await readOwnAnswer(s, e, "Pardon him.");
+  check("and a choice the event doesn't have is refused, not invented", !r2.id && !!r2.error, r2);
+}
+
 g.fetch = oldFetch;
 if (hadLS) g.localStorage = oldLS; else delete g.localStorage;
 if (!hadLoc) delete g.location; else g.location = oldLoc;

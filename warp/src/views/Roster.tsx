@@ -5,6 +5,8 @@
  * is she like that", which is the question the old game could not answer at any price because the
  * answer was distributed across every passage that had ever touched her.
  */
+import { latitudeOf, LATITUDE_LABEL, type Latitude } from "../engine/voice";
+import { setLatitude } from "../engine/self";
 import { freeLine } from "../engine/freed";
 import PhotoPortrait from "./PhotoPortrait";
 import MenialsPanel from "./Menials";
@@ -183,6 +185,34 @@ function AskHer({ id }: { id: string }) {
   );
 }
 
+/** HOW SHE MAY SPEAK TO YOU. A slave speaks as one until you say otherwise; courting, marrying or
+ *  giving her the collar loosens it on its own. */
+function SpeaksTo({ id }: { id: string }) {
+  const { save } = useGame();
+  const mutate = useHand("people");
+  const p = save.people[id];
+  if (!p) return null;
+  const now = latitudeOf(p);
+  const set = (lat: Latitude | undefined) => mutate((s) => { const her = s.people[id]; if (her) setLatitude(s, her, lat); });
+  return (
+    <div className="mb-4">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[11px] uppercase tracking-wider dim mr-1">she speaks to you</span>
+        {(["slave", "latitude", "free"] as Latitude[]).map((l) => (
+          <Chip key={l} on={now === l} onClick={() => set(l)}>{LATITUDE_LABEL[l]}</Chip>
+        ))}
+        {p.latitude ? <button className="text-[11px] dim underline ml-1" onClick={() => set(undefined)}>as her standing allows</button> : null}
+      </div>
+      <div className="text-[11.5px] dim mt-1">
+        {now === "slave" ? "By your title, deferring to you, refusals only as pleas, however close she is to you."
+          : now === "latitude" ? "She may speak her mind, disagree respectfully and tease a little; she still uses your title and knows she's yours."
+          : "She talks to you as she likes, as an equal in words."}
+        {!p.latitude && now !== "slave" ? " (from her standing with you)" : ""}
+      </div>
+    </div>
+  );
+}
+
 /** Anything already worn by somebody in the household is paid for. */
 function ownedGarments(save: ReturnType<typeof useGame>["save"]): Set<string> {
   const worn = new Set<string>();
@@ -339,6 +369,7 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
         {mine ? null : <Button className="flex-1" onClick={onDress}>Dress her</Button>}
       </div>
       {!mine && cuckoldButton(save, id) ? <Button kind="ghost" className="w-full -mt-2 mb-4" onClick={onOther}>{cuckoldButton(save, id)}</Button> : null}
+      {!mine ? <SpeaksTo id={id} /> : null}
       {mine ? <div className="text-[12px] dim -mt-2 mb-4">{isKeeper(save, p) ? "She owns you." : isPartner(save, p) ? "She's free, and your equal." : "She's free now."} You can {isKeeper(save, p) ? "go to" : "be with"} her, ask her things and see how she is; what she wears, where she works and what's done to her body are hers to decide.</div> : null}
 
       <div className="flex flex-wrap gap-1 mb-4">

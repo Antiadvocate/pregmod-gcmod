@@ -15,19 +15,20 @@ import { readHer } from "../engine/herwill";
 import { takeStats, chipsBetween, type Chip } from "../lib/delta";
 import PassingBy from "./PassingBy";
 import { STYLE_NOTE } from "../engine/reign";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import type { Route } from "../App";
 import { useGame } from "../lib/game";
 import { Button, Card, Fold, Meter, Money, cx } from "../lib/ui";
 import { endWeek } from "../engine/week";
 import { generateDynamicEvent, dynamicReadiness } from "../engine/dynamic";
-import { choicesOf, liveWeek, narrateOutcome, resolveAny } from "../engine/living";
+import { choicesOf, liveWeek, narrateOutcome, readOwnAnswer, resolveAny } from "../engine/living";
 import { governedPlaces } from "../engine/governor";
 import { AskList } from "./AskCard";
 import StoryCard from "./StoryCard";
 import { pendingBeat } from "../engine/story";
 import { SagaNotice } from "./Sagas";
+import { AnswerOwn } from "./AnswerOwn";
 import Cuckold, { CuckoldNotice } from "./Cuckold";
 import { ready as cuckReady } from "../engine/cuckold";
 import Ambitions from "./Ambitions";
@@ -101,6 +102,29 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
     const e = await generateDynamicEvent(save);
     if (e) mutate((s) => { s.events.push(e); });
     setInventing(false);
+  };
+
+  /** Answer an event: one of its choices, or your own words read as one of them. */
+  const pick = (e: (typeof save.events)[number], o: { id: string; label: string; note?: string }) => {
+    let text = "";
+    let chips: Chip[] = [];
+    // Only what happens to your own people gets written out; business stays the game's line and what changed.
+    const write = !!e.person && modelsAvailable() && !save.models.lean_mode && save.models.write_outcomes !== false && !writeOff[e.id];
+    // Once she holds your collar, what you pick goes through her.
+    mutate((s) => {
+      const before = takeStats(s, [e.person, e.other]);
+      const via = e.kind.startsWith("reign_") ? { id: o.id, line: "" } : throughHer(s, "people", o, choicesOf(e));
+      text = [via.line, resolveAny(s, e, via.id)].filter(Boolean).join("\n\n");
+      chips = chipsBetween(before, takeStats(s, [e.person, e.other]));
+    });
+    const out = { id: e.id, setup: e.seed, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined, chips };
+    // Going to her when she wants you is the scene itself: it opens and is played, not summed up.
+    if (e.kind === "reign_want" && o.id === "obey") { setOutcomes((xs) => [...xs, { ...out, auto: write }]); return; }
+    setOutcomes((xs) => [...xs, { ...out, writing: write }]);
+    // The choice played out, with what the engine decided as the facts.
+    if (write) void narrateOutcome(save, { ...out, happened: text, title: e.written?.title }).then((t) => {
+      setOutcomes((xs) => xs.map((x) => (x.id === e.id ? { ...x, text: t ? `${t}` : x.text, facts: t ? text : undefined, writing: false } : x)));
+    });
   };
 
   return (
@@ -255,27 +279,15 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
                 write out what happens
               </label>
             ) : null}
-            <Options options={choicesOf(e)} onPick={(o) => {
-              let text = "";
-              let chips: Chip[] = [];
-              // Only what happens to your own people gets written out; business stays the game's line and what changed.
-              const write = !!e.person && modelsAvailable() && !save.models.lean_mode && save.models.write_outcomes !== false && !writeOff[e.id];
-              // Once she holds your collar, what you pick goes through her.
-              mutate((s) => {
-                const before = takeStats(s, [e.person, e.other]);
-                const via = e.kind.startsWith("reign_") ? { id: o.id, line: "" } : throughHer(s, "people", o, choicesOf(e));
-                text = [via.line, resolveAny(s, e, via.id)].filter(Boolean).join("\n\n");
-                chips = chipsBetween(before, takeStats(s, [e.person, e.other]));
-              });
-              const out = { id: e.id, setup: e.seed, chose: o.label, text, person: e.person, others: e.other ? [e.other] : undefined, chips };
-              // Going to her when she wants you is the scene itself: it opens and is played, not summed up.
-              if (e.kind === "reign_want" && o.id === "obey") { setOutcomes((xs) => [...xs, { ...out, auto: write }]); return; }
-              setOutcomes((xs) => [...xs, { ...out, writing: write }]);
-              // The choice played out, with what the engine decided as the facts.
-              if (write) void narrateOutcome(save, { ...out, happened: text, title: e.written?.title }).then((t) => {
-                setOutcomes((xs) => xs.map((x) => (x.id === e.id ? { ...x, text: t ? `${t}` : x.text, facts: t ? text : undefined, writing: false } : x)));
-              });
-            }} />
+            <Options options={choicesOf(e)} onPick={(o) => pick(e, o)} />
+            {modelsAvailable() ? <AnswerOwn onSay={async (typed, signal) => {
+              const r = await readOwnAnswer(save, e, typed, signal);
+              if (!r.id) return r.error ?? "couldn't do that";
+              const live = save.events.find((x) => x.id === e.id);
+              if (!live) return "";
+              pick(live, { id: r.id, label: typed });
+              return "";
+            }} /> : null}
           </Card>
         );
       })}

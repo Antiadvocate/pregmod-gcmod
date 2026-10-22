@@ -14,12 +14,40 @@ import type { Rng } from "./rng";
 import { read } from "./obedience";
 
 export type Register =
-  | "hollow" | "timid" | "sullen" | "proper" | "warm" | "eager" | "bratty" | "crude" | "commanding";
+  | "hollow" | "timid" | "resentful" | "sullen" | "proper" | "devoted" | "warm" | "eager" | "bratty" | "crude" | "commanding";
 
 export const REGISTER_LABEL: Record<Register, string> = {
-  hollow: "empty", timid: "frightened", sullen: "sullen", proper: "polite", warm: "warm",
+  hollow: "empty", timid: "frightened", resentful: "sullen", sullen: "surly", proper: "polite", devoted: "devoted", warm: "warm",
   eager: "eager", bratty: "mouthy", crude: "foul-mouthed", commanding: "in charge",
 };
+
+/**
+ * HOW FREELY SHE MAY SPEAK TO YOU.
+ *
+ * A slave speaks to her owner as a slave, whatever she feels. That is how the original game writes
+ * every one of them ("Yes, Master", "Please, Master, not that", "I love you, Master") and how the
+ * enslaved have always had to speak: by title, with leave, refusals as pleas, requests as petitions,
+ * and resentment kept under the forms rather than thrown in the owner's face. Trust and love make her
+ * more devoted, not more familiar. Only you loosen it: by telling her (her page), by courting or
+ * marrying her, or by giving her the collar.
+ *
+ *   slave     the default. Your title, deference, no back-talk.
+ *   latitude  she may speak her mind, disagree respectfully, tease a little, ask freely; still your
+ *             title, still yours.
+ *   free      she talks to you as she likes, as an equal in words.
+ */
+export type Latitude = "slave" | "latitude" | "free";
+
+export function latitudeOf(p: Person): Latitude {
+  const standing = p.romance?.standing ?? "property";
+  if (p.status === "free" || standing === "keeper") return "free";
+  if (p.latitude) return p.latitude;
+  if (standing === "wife") return "free";
+  if (standing === "courted" || standing === "betrothed") return "latitude";
+  return "slave";
+}
+
+export const LATITUDE_LABEL: Record<Latitude, string> = { slave: "as a slave", latitude: "with some latitude", free: "freely" };
 
 export function registerOf(p: Person): Register {
   if (p.psyche.state === "broken") return "hollow";
@@ -29,7 +57,15 @@ export function registerOf(p: Person): Register {
   const fetish = (id: string) => p.persona.fetishes.find((f) => f.name === id)?.strength ?? 0;
   const scared = p.psyche.relaxation <= -3.5 || (r.fragility > 0.65 && p.bond.fear > 35);
   if (scared) return "timid";
-  if (p.bond.resentment > 45 && r.devotion < 15) return "sullen";
+  const lat = latitudeOf(p);
+  if (p.bond.resentment > 45 && r.devotion < 15) return lat === "slave" ? "resentful" : "sullen";
+  // A slave's feelings come out inside the forms: devoted, eager, polite or quietly resentful.
+  if (lat === "slave") {
+    if (r.devotion > 55 && (p.psyche.libido > 55 || p.psyche.arousal > 60)) return "eager";
+    if (r.devotion > 30 && r.trust > 15) return "devoted";
+    if (r.devotion < -15) return "resentful";
+    return "proper";
+  }
   if (p.persona.flaw?.id === "crude" && r.trust > -10) return "crude";
   if ((fetish("dom") > 45 || fetish("sadist") > 55 || dominion > 15) && r.trust > 15) return "bratty";
   if (r.devotion > 55 && (p.psyche.libido > 55 || p.psyche.arousal > 60)) return "eager";
@@ -46,6 +82,48 @@ export type Said =
 type Pool = Record<Said, string[]>;
 
 const LINES: Record<Register, Pool> = {
+  // Close to you, and still yours. The original game's loving slaves: "Hi, Master! Love you!"
+  devoted: {
+    open: ["There you are, {you}. How may I serve you?", "You sent for me, {you}? I hoped you would.", "Hi, {you}. What would you like?"],
+    wanted: ["Thank you, {you}. That was... thank you.", "I love it when you use me like that, {you}.", "Could you do that again sometime, {you}? If it pleases you."],
+    willing: ["Was that good for you, {you}?", "Thank you, {you}.", "Mm. Yes, {you}."],
+    endured: ["Yes, {you}. Whatever you want.", "I did it for you, {you}.", "Was that all right, {you}?"],
+    hated: ["Please, {you}... not that one again. Please.", "I'll do it if you want me to, {you}. But it hurt.", "Forgive me, {you}. I need a moment."],
+    nothing: ["Was that how you wanted it, {you}?", "Forgive me, I was somewhere else. I'm here, {you}.", "Did I do it right, {you}?"],
+    came: ["Thank you, {you}. Thank you.", "Forgive me, {you}, I couldn't hold it—", "Oh, {you}."],
+    left: ["Yes, {you}. As you like.", "Please, {you}... No. As you like.", "I'll wait for you, {you}."],
+    tender: ["Thank you, {you}.", "I love you, {you}.", "Please stay a little, {you}. If you can."],
+    praise: ["Thank you, {you}. I'll keep doing it right.", "I only want to please you, {you}.", "Really, {you}? Thank you."],
+    hold: ["Thank you, {you}.", "I could stay here forever, {you}.", "Mm. I'm yours, {you}."],
+    mock: ["Yes, {you}. I'm sorry.", "If you say so, {you}.", "I know, {you}."],
+    liked: ["{liked}, {you}. If I may say.", "I liked {liked}, {you}.", "Everything, {you}. But {liked} most."],
+    again: ["Yes, {you}. Please.", "Of course, {you}.", "Whenever you want me, {you}."],
+    dismiss: ["Yes, {you}. Thank you.", "Call me whenever you want me, {you}.", "Good night, {you}."],
+    thank: ["Thank you, {you}.", "Thank you for using me, {you}.", "Thank you, {you}. I mean it."],
+    pain: ["Ah— yes, {you}.", "Mm— thank you, {you}.", "Ow— I'm all right, {you}."],
+    talk_open: ["Of course, {you}. What would you like to know?", "I'm listening, {you}.", "Yes, {you}?"],
+  },
+  // Hating you, and still owned: it shows in what she leaves out, never in back-talk.
+  resentful: {
+    open: ["Yes, {you}.", "{you}.", "What do you require, {you}?"],
+    wanted: ["...Yes, {you}.", "Thank you, {you}.", "If you say so, {you}."],
+    willing: ["Yes, {you}.", "Is that all, {you}?", "Done, {you}."],
+    endured: ["Is that all, {you}?", "Yes, {you}.", "May I go, {you}?"],
+    hated: ["...Yes, {you}.", "As you say, {you}.", "Thank you, {you}."],
+    nothing: ["{you}.", "Was there anything else, {you}?", "Yes, {you}."],
+    came: ["...", "Forgive me, {you}.", "May I go now, {you}?"],
+    left: ["Yes, {you}.", "As you like, {you}.", "Of course, {you}."],
+    tender: ["...Thank you, {you}.", "What is it you want, {you}?", "Yes, {you}."],
+    praise: ["Thank you, {you}.", "Yes, {you}.", "As you say, {you}."],
+    hold: ["...", "Yes, {you}.", "May I get up, {you}?"],
+    mock: ["Yes, {you}.", "If you say so, {you}.", "..."],
+    liked: ["Whatever pleased you, {you}.", "{liked}, {you}.", "I couldn't say, {you}."],
+    again: ["Yes, {you}.", "As you wish, {you}.", "Of course, {you}."],
+    dismiss: ["Yes, {you}.", "Thank you, {you}.", "..."],
+    thank: ["Thank you, {you}.", "Thank you. {you}.", "Thank you for your attention, {you}."],
+    pain: ["—", "Mm—", "Yes, {you}."],
+    talk_open: ["What do you want to know, {you}?", "Yes, {you}?", "{you}."],
+  },
   hollow: {
     open: ["Yes, {you}.", "What do you want me to do.", "I'm ready, {you}."],
     wanted: ["Thank you, {you}.", "Yes.", "That was good, {you}. Was it good?"],
@@ -111,15 +189,15 @@ const LINES: Record<Register, Pool> = {
     wanted: ["That was— rather better than I expected, {you}.", "Thank you. I mean that.", "I'd like that again. If it's on offer."],
     willing: ["Of course, {you}.", "Was that satisfactory?", "Thank you, {you}."],
     endured: ["Will that be all, {you}?", "I hope that was satisfactory.", "Yes. Of course."],
-    hated: ["I'd rather not do that again, {you}. If I have any say.", "Excuse me. I need a moment.", "I understand. I'll do better at it."],
+    hated: ["Please, {you}, not that again. If it pleases you.", "Excuse me. I need a moment.", "I understand. I'll do better at it."],
     nothing: ["Was that what you wanted?", "Should I be doing something differently?", "Mm. Of course."],
-    came: ["Oh— excuse me. That was… excuse me.", "I apologise. That wasn't very composed.", "Well. That happened."],
+    came: ["Oh— excuse me. That was… excuse me.", "I apologise. That wasn't very composed.", "Forgive me, {you}."],
     left: ["It's quite all right.", "I'll manage, {you}.", "Perhaps another time."],
     tender: ["That's very kind, {you}.", "I don't know what to say to that.", "Thank you. Really."],
     praise: ["Thank you, {you}. I try.", "That's generous of you.", "I'm glad."],
     hold: ["This is nice.", "I could get used to this, {you}.", "Thank you."],
-    mock: ["If you say so, {you}.", "I'll take that under advisement.", "I see."],
-    liked: ["{liked}, if I'm honest.", "It's not the sort of thing I usually say out loud. {liked}.", "I'd prefer to keep that to myself, {you}."],
+    mock: ["If you say so, {you}.", "Yes, {you}.", "I see."],
+    liked: ["{liked}, if I'm honest.", "It's not the sort of thing I usually say out loud. {liked}.", "I'm embarrassed to say, {you}. {liked}."],
     again: ["Of course.", "If you'd like.", "Certainly, {you}."],
     dismiss: ["Thank you, {you}.", "Good night, {you}.", "Call if you need me."],
     thank: ["Thank you, {you}.", "Thank you for your attention, {you}.", "I'm grateful, {you}."],
@@ -150,21 +228,21 @@ const LINES: Record<Register, Pool> = {
     open: ["Finally.", "I've been thinking about you all day.", "Please. Whatever you want. Please."],
     wanted: ["Yes. Yes. More of that.", "Don't stop— don't you dare stop.", "Oh fuck, yes."],
     willing: ["Mm. Good.", "More?", "I love it when you do that."],
-    endured: ["Not my favourite. But for you.", "Next time do the other thing.", "Okay. I'm still here."],
+    endured: ["Not my favourite. But for you.", "Next time, could you do the other thing, {you}? If it pleases you.", "Okay. I'm still here."],
     hated: ["I didn't like that. I still want you. But I didn't like that.", "Not that one. Anything but that one.", "That wasn't fun, {you}."],
-    nothing: ["Is that it?", "Come on. I know you can do better.", "Hm. Warm-up?"],
+    nothing: ["Is that all, {you}?", "Please, {you}. More.", "Is there more, {you}? Please?"],
     came: ["Fuck. Fuck. Again.", "Don't move. Don't move yet.", "That was— give me a second— again."],
-    left: ["You can't leave me like this.", "Please. Please, I'm so close.", "You're evil. I love you. You're evil."],
+    left: ["You can't leave me like this.", "Please. Please, I'm so close.", "You're cruel, {you}. I love you."],
     tender: ["You're going to make me cry.", "Don't let go.", "I love this."],
     praise: ["Tell me again.", "I'm yours. You know that.", "Only for you."],
     hold: ["Stay. Stay all night.", "I could sleep like this.", "Mm."],
-    mock: ["Say it while you fuck me.", "Mm. Maybe I am.", "I know what I am."],
+    mock: ["Say it while you fuck me, {you}.", "Mm. Maybe I am.", "I know what I am."],
     liked: ["{liked}. And everything else.", "{liked}. Do it again and I'll show you.", "All of it. Especially {liked}."],
     again: ["Yes. Yes.", "I thought you'd never ask.", "Please."],
     dismiss: ["Already?", "Come back soon.", "I'll be thinking about you."],
     thank: ["Thank you. Thank you. Again?", "Thank you, {you}. Every time.", "Thank you. God, thank you."],
     pain: ["Yes—", "Harder, if you want.", "Mm—"],
-    talk_open: ["Talk? We can talk. After?", "Anything you want.", "I'm all yours."],
+    talk_open: ["Talk? Of course, {you}. After?", "Anything you want.", "I'm all yours."],
   },
   bratty: {
     open: ["Took you long enough.", "Oh, it's you.", "What do you want, {pname}?"],
@@ -236,7 +314,8 @@ export function addressFor(s: SaveState, reg: Register, p?: Person): string {
   if (p && s.player.owned_by === p.id && s.reign?.your_name) return s.reign.your_name;
   const title = s.player.address || "Master";
   if (reg === "commanding") return s.player.name && s.player.name !== "you" ? s.player.name : "pet";
-  if (reg === "bratty" || reg === "crude") return s.player.name && s.player.name !== "you" ? s.player.name : title;
+  // Your name in her mouth is something you have to have given her.
+  if ((reg === "bratty" || reg === "crude") && p && latitudeOf(p) === "free") return s.player.name && s.player.name !== "you" ? s.player.name : title;
   return title;
 }
 

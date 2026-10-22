@@ -213,6 +213,8 @@ function hedge(reg: Register, truth: string, r: ReturnType<typeof rng>): string 
   switch (reg) {
     case "timid": return r.pick([`…${truth}`, `I— ${lower(truth)}`, `${truth} Sorry.`]);
     case "sullen": return r.pick([`${truth} Happy?`, `Why do you care. …${truth}`, truth]);
+    case "resentful": return r.pick([`…${truth}`, truth]);
+    case "devoted": return r.pick([`${truth} I've never told anyone that.`, truth]);
     case "hollow": return truth.split(/(?<=[.!?])\s/)[0];
     case "bratty": return r.pick([`${truth} Don't make it weird.`, `Oh, we're doing this? Fine. ${truth}`]);
     case "crude": return r.pick([`${truth} So.`, `Christ. ${truth}`]);
@@ -227,6 +229,8 @@ function deflect(reg: Register, r: ReturnType<typeof rng>): string {
     timid: ["I don't— I'd rather not. Sorry.", "Does it matter?", "Nowhere. Nothing. It doesn't matter."],
     sullen: ["None of your business.", "Why would I tell you that?", "Ask someone who likes you."],
     hollow: ["Whatever you want it to be.", "It doesn't matter now."],
+    resentful: ["There's nothing to tell.", "It doesn't matter now.", "I'd rather not say, if I'm allowed."],
+    devoted: ["May I tell you another time? Please?", "It's silly. It doesn't matter.", "Please don't make me, not tonight."],
     proper: ["I'd prefer not to go into it.", "That's rather personal.", "Another time, perhaps."],
     warm: ["Ask me another time.", "Not tonight, okay?"],
     eager: ["Later. Kiss me first.", "Does it matter?"],
