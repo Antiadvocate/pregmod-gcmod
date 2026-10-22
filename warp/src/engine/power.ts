@@ -35,6 +35,14 @@ export interface PowerRec {
   grudge: number;
   pact?: boolean;
   since?: number;
+  /** How well they know you, 0–100: a new owner is nobody to most of the world (engine/region). */
+  known?: number;
+  /** What they're short of right now, and why, if anything (engine/region). */
+  need?: { what: "food" | "medicine" | "money" | "soldiers"; why: string; since: number };
+  /** Week they first took notice of you. */
+  met?: number;
+  /** Week you helped them when they asked: they owe you. */
+  owed?: number;
   /** They won't ask you for money again before this week: you threw them out, or paid. */
   no_fee_until?: number;
   /** Last week you sent them anything, and last week they did anything to you. */
@@ -361,49 +369,31 @@ export function tickPowers(s: SaveState): { lines: string[]; cash: number } {
       continue;
     }
     // Opinion drifts: your diplomacy, your media, pacts, and what they hold against you.
-    if (p.kind !== "neighbour") rec.attitude = clamp(rec.attitude + skill.diplomacy(s) * 1.2 + (has(s, "media") ? 0.6 : 0) + (has(s, "airline") ? 0.3 : 0) + (rec.pact ? 0.4 : 0) - rec.grudge / 60, -100, 100);
+    // Nobody forms an opinion of someone they've never heard of.
+    if (p.kind !== "neighbour") rec.attitude = clamp(rec.attitude + ((skill.diplomacy(s) * 1.2 + (has(s, "media") ? 0.6 : 0) + (has(s, "airline") ? 0.3 : 0) + (rec.pact ? 0.4 : 0)) * (rec.known ?? 0) / 100) - rec.grudge / 60, -100, 100);
     if (rec.pact) cash += Math.round(p.strength * 25);
-    if (p.atWar) continue;
-    // What they do about you. At most once every five weeks each, and not every time they could.
-    if (rec.last_them !== undefined && week - rec.last_them < 5) continue;
-    // How much the rest of the world bothers you is yours to set; enemies at war don't ask.
-    const pace = s.world_pace ?? "some";
-    if (pace === "none" && p.attitude > -60) continue;
-    if (!r.chance(pace === "full" ? 0.18 : 0.08)) continue;
-    const a = p.attitude;
-    const theirs = p.strength, mine = f.total;
-    let kind = "";
-    if (a <= -60 && week > 20 && theirs > mine * 0.9 && r.chance(0.35)) { rec.last_them = week; lines.push(startWarLine(s, p.id, "them")); continue; }
-    if (a <= -60) kind = r.pick(["assassins", "terror", "sabotage"]);
-    else if (a <= -25) kind = r.pick(["sanctions", "smear", "sabotage", "raiders"]);
-    else if (a < 25) {
-      // What a power that hasn't made up its mind about you does depends on how it measures up. One
-      // a fraction of your size courts you; an equal bargains; only a bigger one holds its hand out,
-      // and it only does that now and then, and not again soon to someone who threw it out.
-      const ratio = theirs / Math.max(1, mine);
-      const mayAsk = (rec.no_fee_until ?? -1) <= week && week - (e.last_fee ?? -99) >= 8;
-      if (ratio < 0.6) kind = r.pick(["protection_ask", "trade_offer", "courting"]);
-      else if (ratio < 1.3) kind = r.pick(["trade_offer", "summit", mayAsk && r.chance(0.3) ? "envoy_demand" : "trade_offer"]);
-      else kind = mayAsk ? "envoy_demand" : "summit";
-    }
-    else if (a < 60) kind = rec.pact ? "summit" : "trade_offer";
-    else kind = rec.status === "allied" ? "ally_gift" : "alliance_offer";
-    if (!kind) continue;
-    rec.last_them = week;
-    if (kind === "sanctions") { const n = Math.round(4_000 + theirs * 60); cash -= n; lines.push(`${p.name} has put sanctions on your trade. It's costing you ¤${n.toLocaleString()} this week.`); note(s, `${p.name} sanctioned you.`); continue; }
-    if (kind === "smear") { s.arcology.rep = Math.max(0, s.arcology.rep - 250); lines.push(`${p.name}'s state media has been running stories about you all week. Some of them are true.`); continue; }
-    if (kind === "courting") {
-      const n = Math.round(3_000 + theirs * 90);
-      cash += n; shift(s, p.id, 4);
-      lines.push(`${p.name} sent ¤${n.toLocaleString()} and a letter full of compliments. They'd like you to think well of them.`);
-      continue;
-    }
-    if (kind === "envoy_demand") e.last_fee = week;
-    if (kind === "raiders") { const h = (s.battles ??= []); if (!s.events.some((x) => x.kind === "attack")) { h.push({ attacker: "mercs", size: +(3 + theirs / 40).toFixed(1), week }); fireEvent(s, "attack"); lines.push(`${p.name} has paid a mercenary company to hit you.`); } continue; }
-    e.about[kind] = p.id;
-    if (fireEvent(s, kind)) note(s, `${p.name}: ${kind.replace(/_/g, " ")}.`);
+    // What they do about you is engine/region's: only for a reason, and only once they know you.
   }
   return { lines, cash };
+}
+
+/** They act on you, for a reason the region found. Returns a line for the week, or "" when it
+ *  becomes an event instead. */
+export function theyAct(s: SaveState, p: PowerView, kind: string, why: string): { line: string; cash: number } {
+  const e = empireOf(s);
+  const week = s.arcology.week;
+  p.rec.last_them = week;
+  const theirs = p.strength;
+  if (kind === "war") return { line: `${why} ${startWarLine(s, p.id, "them")}`, cash: 0 };
+  if (kind === "sanctions") { const n = Math.round(4_000 + theirs * 60); note(s, `${p.name} sanctioned you.`); return { line: `${p.name} has put sanctions on your trade: ${why} It's costing you ¤${n.toLocaleString()} this week.`, cash: -n }; }
+  if (kind === "smear") { s.arcology.rep = Math.max(0, s.arcology.rep - 250); return { line: `${p.name}'s state media has been running stories about you all week: ${why}`, cash: 0 }; }
+  if (kind === "courting") { const n = Math.round(3_000 + theirs * 90); shift(s, p.id, 4); return { line: `${p.name} sent ¤${n.toLocaleString()} and a careful, flattering letter. ${why}`, cash: n }; }
+  if (kind === "raiders") { const h = (s.battles ??= []); if (!s.events.some((x) => x.kind === "attack")) { h.push({ attacker: "mercs", size: +(3 + theirs / 40).toFixed(1), week }); fireEvent(s, "attack"); } return { line: `${p.name} has paid a mercenary company to hit you. ${why}`, cash: 0 }; }
+  if (kind === "envoy_demand") e.last_fee = week;
+  e.about[kind] = p.id;
+  const ev = fireEvent(s, kind);
+  if (ev) { ev.cause = why; note(s, `${p.name}: ${kind.replace(/_/g, " ")}.`); }
+  return { line: "", cash: 0 };
 }
 
 /* ── what they send you ──────────────────────────────────────────────────────────────────────── */
@@ -468,6 +458,29 @@ export const POWER_EVENTS: EventDef[] = [
         shift(s, p.id, -15); p.rec.grudge = clamp(p.rec.grudge + 10, 0, 100); p.rec.no_fee_until = s.arcology.week + 30;
         return `You have her escorted to the lifts. ${p.name} recalls its ambassador from the Free Cities' council in protest, and they're the kind to remember it. Your citizens like the story.`;
       } },
+    ],
+  },
+  {
+    id: "first_contact", severity: "minor", endogenous: false, candidates: () => [], weight: () => 0,
+    seed: (s) => { const p = aboutOf(s, "first_contact"); return `${p.name} has noticed you. A letter comes from its government, polite and careful and saying very little: they'd like to know what kind of neighbour you mean to be.`; },
+    options: [
+      { id: "warm", label: "Answer warmly, and invite them", resolve: (s) => { const p = aboutOf(s, "first_contact"); shift(s, p.id, 12); p.rec.known = clamp((p.rec.known ?? 0) + 15, 0, 100); return `You write back yourself, and ask them to visit. ${p.name} reads it as a good sign, and starts paying attention to you.`; } },
+      { id: "cool", label: "Answer coolly, and let them wonder", resolve: (s) => { const p = aboutOf(s, "first_contact"); p.rec.known = clamp((p.rec.known ?? 0) + 10, 0, 100); p.rec.grudge = Math.max(0, p.rec.grudge - 2); return `Two lines, correct and nothing more. ${p.name} files you as someone to be careful with.`; } },
+      { id: "ignore", label: "Don't answer", resolve: (s) => { const p = aboutOf(s, "first_contact"); shift(s, p.id, -6); p.rec.known = clamp((p.rec.known ?? 0) + 5, 0, 100); return `You don't answer. ${p.name} notices that too, and decides you're either very busy or very rude, and can't make up its mind which is worse.`; } },
+    ],
+  },
+  {
+    id: "aid_ask", severity: "notable", endogenous: false, candidates: () => [], weight: () => 0,
+    seed: (s) => { const p = aboutOf(s, "aid_ask"); const n = p.rec.need; return `${p.name} is asking for help: it needs ${n?.what ?? "money"}. ${n?.why ?? ""} ${(p.rec.known ?? 0) < 40 ? "They don't know you, and the request is careful, almost apologetic." : "They know who they're asking."}`.trim(); },
+    options: [
+      { id: "give", label: "Send what they need", note: "it costs you", resolve: (s) => {
+        const p = aboutOf(s, "aid_ask"); const n = p.rec.need; const cost = Math.round(6_000 + p.strength * 150);
+        if (n?.what === "soldiers") { empireOf(s).readiness = clamp(empireOf(s).readiness - 15, 0, 100); } else s.arcology.cash -= cost;
+        shift(s, p.id, 25); p.rec.grudge = Math.max(0, p.rec.grudge - 10); p.rec.known = clamp((p.rec.known ?? 0) + 15, 0, 100); p.rec.owed = s.arcology.week; delete p.rec.need;
+        s.arcology.rep += 150;
+        return n?.what === "soldiers" ? `Your soldiers go. ${p.name} won't forget who came when it counted.` : `It costs you ¤${cost.toLocaleString()}. ${p.name} won't forget who came when it counted, and they owe you now.`; } },
+      { id: "price", label: "Help them, at a price", resolve: (s) => { const p = aboutOf(s, "aid_ask"); const gain = Math.round(p.strength * 120); s.arcology.cash += gain; shift(s, p.id, 6); p.rec.known = clamp((p.rec.known ?? 0) + 10, 0, 100); delete p.rec.need; return `You help, and you name your price: ¤${gain.toLocaleString()} more than it cost you, and a favour later. They pay it, because they have to.`; } },
+      { id: "no", label: "Turn them down", resolve: (s) => { const p = aboutOf(s, "aid_ask"); shift(s, p.id, -8); p.rec.known = clamp((p.rec.known ?? 0) + 5, 0, 100); return `You turn them down. ${p.name} goes looking elsewhere, and remembers where it looked first.`; } },
     ],
   },
   {

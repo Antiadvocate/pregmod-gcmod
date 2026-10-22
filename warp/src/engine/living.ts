@@ -22,6 +22,8 @@
  *
  * Without a model, each of these returns nothing and the game's own text stands.
  */
+import { regionOf, regionNews, knownWord, bring } from "./region";
+import { powers } from "./power";
 import { noteStock, stockLine } from "./turn";
 import type { PendingEvent, Person, SaveState, WeekReport } from "./types";
 import { call, parseJson } from "../llm";
@@ -102,6 +104,7 @@ Rules:
 - Keep every fact: names, numbers, amounts, who did what. Add detail; do not change what happened.
 - Second person, present tense, as long as LENGTH says and no longer. It doesn't have to be someone coming to see the player: often the narrator just tells the player what happened and what it did to people, the way the original game's events do. If THE FACTS read like a status report, say what actually happened instead.
 - A stranger gets one detail, not a description of their hair, coat and posture. Nobody gives a speech about themself.
+- Never invent a named person. You may name the people in the context (the player's own people, a power's ruler, anyone on file); anyone else stays unnamed: an envoy, a letter, a trader.
 - Don't end with someone asking the player what they'll do ("So. What do you tell him?"). End on the situation; the choices are the question.
 - Relabel every choice in the player's voice so it fits the scene you wrote (2 to 9 words). Each label must still be the same action with the same result as the original.
 - You may add up to two extra choices from EXTRA EFFECTS when they genuinely fit the scene; most of the time add none.
@@ -119,7 +122,7 @@ export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Prom
   // Business and the outside world keep the game's own words. Asked to write them, the model
   // invents a messenger nobody has met (a security chief with rain on her coat, a man with
   // invoices) to stand in your office and deliver it. Only events about your own people get written.
-  if (!e.person) return false;
+  if (!e.person && !e.cause) return false;
   const def = EVENT_BY_ID[e.kind];
   const opts = def?.options ?? e.options;
   const ctx = eventContext(s, e);
@@ -336,10 +339,64 @@ function voiceless(s: SaveState): Person[] {
     .sort((a, b) => Number(s.player.owned_by === b.id) - Number(s.player.owned_by === a.id) || (seen.get(b.id) ?? -1) - (seen.get(a.id) ?? -1) || b.economics.weeks_owned - a.economics.weeks_owned);
 }
 
+const DESK_SYSTEM = `You are the world desk for Free Cities, an adult game about owning an arcology where slavery is legal. The other powers in the region live their own lives. Below are the real reasons any of them has to approach the player this week, each with its cause and the history between them. Decide whether any of it is worth the player's attention this week, and if so, write that one.
+
+How to decide: most weeks one thing is worth it; some weeks nothing is, and -1 is the right answer then. Prefer what grows out of what has already happened between them, or out of something the player did.
+
+How to write it:
+- It grows out of the cause and WHAT HAS ALREADY HAPPENED with that power: if they've dealt before, this is the next thing, and they remember.
+- How well they know the player decides how they come. One that barely knows the player comes carefully: a letter, a junior envoy, a feeler through a trader, polite and unsure. One that knows the player well comes as itself.
+- The player's weight (army, money, name) is real to them, in proportion to how much they know of it.
+- The only people you may name are the power's ruler, given below, and the player's own people. Anyone else stays unnamed.
+- Two to four sentences. The narrator tells the player what is happening. No visitor fresh in from the weather, no prop, nobody asking the player what they'll do: the choices are the question.
+- Relabel the choices so they fit what you wrote: same ids, same actions.
+
+${HOUSE_STYLE}
+
+Output ONE strict JSON object and nothing else:
+{"pick": the number of the one you chose, or -1, "title":"2-5 words","situation":"what's happening","choices":[{"id":"the original choice id","label":"new label"}]}`;
+
+/** The region's week, read by the model: whether anything is worth your attention, and how it comes. */
+async function worldDesk(s: SaveState, snap: string): Promise<void> {
+  const m = regionOf(s);
+  const all = powers(s);
+  const pace = s.world_pace ?? "some";
+  if (pace === "none" || s.arcology.week - (m.last ?? -99) < (pace === "full" ? 1 : 2)) return;
+  const options = m.openings.filter((o) => o.kind !== "courting" && EVENT_BY_ID[o.kind] && !s.events.some((e) => e.kind === o.kind)).slice(0, 4);
+  if (!options.length) return;
+  const blocks = options.map((o, i) => {
+    const p = all.find((x) => x.id === o.power)!;
+    const def = EVENT_BY_ID[o.kind];
+    return [`## ${i}: ${p.name} — ${o.kind.replace(/_/g, " ")}`, `WHY NOW: ${o.why}`, `HOW WELL THEY KNOW THE PLAYER: ${knownWord(p.rec.known)}.`, powerBrief(s, p), chronicleBrief(s, [`place:${p.id}`], 6),
+      `CHOICES (id: what it does): ${def.options.map((x) => `${x.id}: ${x.label}${x.note ? ` (${x.note})` : ""}`).join(" | ")}`].filter(Boolean).join("\n");
+  });
+  const res = await call({
+    system: DESK_SYSTEM,
+    user: [snap, weightBrief(s), regionNews(s), ...blocks, stockLine(s), PLAIN_RULES].filter(Boolean).join("\n\n"),
+    model: s.models.narrator_model, fallback: s.models.fallback_model, json: true, maxTokens: 900, temperature: 0.8,
+  });
+  const out = res.ok ? parseJson<{ pick?: number; title?: string; situation?: string; choices?: { id?: string; label?: string }[] }>(coarsen(res.text)) : null;
+  // No model answer: the strongest reason comes as the game's own words.
+  const i = out ? Number(out.pick) : 0;
+  if (!(i >= 0 && i < options.length)) return;
+  const o = options[i];
+  const p = all.find((x) => x.id === o.power)!;
+  bring(s, p, o);
+  const e = s.events.find((x) => x.kind === o.kind && x.week === s.arcology.week);
+  if (!e || !out?.situation || String(out.situation).length < 30) return;
+  e.seed = String(out.situation).slice(0, 1600);
+  noteStock(s, e.seed);
+  const relabel = new Map((out.choices ?? []).filter((c) => c?.id && c.label).map((c) => [String(c.id), String(c.label).slice(0, 80)]));
+  e.options = e.options.map((x) => ({ ...x, label: relabel.get(x.id) ?? x.label }));
+  e.written = { model: res.model, title: out.title ? String(out.title).slice(0, 60) : undefined };
+}
+
 export async function liveWeek(s: SaveState, report: WeekReport | null, step: (what: string) => void = () => {}): Promise<void> {
   if (!ready(s)) return;
   const snap = weekSnapshot(s, report);
   if (report) { step("the week"); await writeWeekProse(s, report); }
+  step("the region");
+  await worldDesk(s, snap);
   // Nobody in a scene should sound like everybody else. Two a week get a voice of their own, the
   // ones you see most first.
   for (const p of voiceless(s).slice(0, 2)) { step(`${p.name}'s voice`); await enrichPerson(s, p, p.economics.weeks_owned > 2); }

@@ -19,6 +19,7 @@
 import { tickMarks } from "./marks";
 import "./grandevents";
 import { tickPowers } from "./power";
+import { tickRegion } from "./region";
 import { tickWars } from "./war";
 import { tickFreed } from "./freed";
 import { occupants } from "./places";
@@ -358,6 +359,11 @@ export function endWeek(s: SaveState): WeekReport {
   const pow = tickPowers(s);
   led.entry("Empire", "Arsenal upkeep, tribute, pacts and sanctions", pow.cash);
   for (const l of pow.lines) push(l, "warning", 9);
+  // The other powers' own week, and anything it brings to you. With a model, what's worth your
+  // attention is decided after the week by engine/living's world desk.
+  const reg = tickRegion(s, !(modelsAvailable() && !s.models.lean_mode));
+  if (reg.cash) led.entry("Empire", "What the other powers sent or cost you", reg.cash);
+  for (const l of reg.lines) push(l, "warning", 8);
   const gov = tickGovernors(s);
   if (gov.cash) led.entry("Empire", "Your soldiers in the cities your women run", gov.cash);
   for (const l of gov.lines) push(l.text, l.tone, 9, l.person);
