@@ -64,6 +64,31 @@ appears directly underneath, newest at the bottom; the acts and follow-ups sit a
 Her requests show on the Penthouse and her panel. They follow what she actually needs, don't
 repeat once answered, and change once she has the standing to tell you instead of asking.
 
+## The other man
+
+On any grown woman you own, **Give her to another man** (on her page) starts a netorare story
+that runs beside the arcology rather than through it: you, her, and one man you pick (a broker
+who's tried to buy her, a guard who's wanted her for months, or a dock hand half your age). Ten
+chapters a week or two apart: asking her, a dinner where his hand goes under the table, a kiss at
+the door, the first night with you in the chair, the night she comes home late in his shirt, the
+call, his name in your bed, your own bed, his seed, and his offer. Between chapters she goes to
+him on her own nights, and the week report tells you how many.
+
+Every chapter lets you push her further, sit and watch, or try to pull her back. Why she agreed
+(for you, for herself, or to hurt you) is set by how she already feels about you and colours
+everything she says. Three bars track it: how much of her is still yours, how far she's gone to
+him, and how far you've gone. It ends with you calling it off, taking her back (if she'll still
+come), keeping her shared, selling her to him, or giving her to him in all but the papers. What
+he does stays on her body, she remembers it, and his child is his.
+
+With a model set, every chapter and every outcome is written by it, not looked up. The game's own
+chapter becomes the outline (what happens, in what order); the model writes it fresh from her
+card (her voice, body, past, tastes and memories), from who you are (your body and your own
+description of yourself), from why she agreed and how far it's gone, from the man as he was
+first written, and from every chapter before, so it's a different story for every woman and every
+run. The choices are relabelled to fit and still do what they did. Tap **rewrite** for another
+take; if the model fails or you stop it, the game's own words stand.
+
 ## With a model, the week is written, not looked up
 
 The engine still decides what happens each week and what every choice does. With a model set in
