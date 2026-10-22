@@ -135,6 +135,54 @@ export function ready(s: SaveState): boolean {
   return !!c && !c.ended && c.due <= s.arcology.week && !!herOf(s);
 }
 
+/* ── saves from before ────────────────────────────────────────────────────────────────────────
+ * The first version of this ran a fixed script of chapters (`beat`) and kept the chapter you read
+ * as `setup`. Carry such a story on from where it was: the chapter it was waiting on tells us the
+ * phase, and what you read and chose stays in the log for the model to build on. */
+
+const OLD_BEATS: Record<string, [Phase, number]> = {
+  ask: ["choose", 0], dinner: ["tease", 0], kiss: ["tease", 1], first: ["tease", 2],
+  home: ["affair", 0], call: ["affair", 1], name: ["affair", 2], bed: ["affair", 3], seed: ["affair", 4], offer: ["offer", 0],
+};
+const OLD_KIND: Record<string, string> = {
+  broker: "a broker, rich and patient, who has tried to buy her from the owner before",
+  brute: "a contractor on the owner's own security detail, big and crude, who has wanted her for months",
+  boy: "a dock hand, young and beautiful",
+};
+
+/** Load-path repair. Idempotent. */
+export function repairCuckold(s: SaveState): void {
+  const c = s.cuckold as (CuckState & { beat?: string; written?: unknown; ended?: { text?: string } }) | undefined;
+  if (!c) return;
+  if (!c.phase) {
+    const [phase, n] = OLD_BEATS[c.beat ?? ""] ?? (c.seeing ? ["affair", 0] : ["tease", 0]);
+    c.phase = !c.bull && phase !== "choose" ? "choose" : phase;
+    c.in_phase = n;
+  }
+  c.in_phase = c.in_phase ?? 0;
+  c.firsts = c.firsts ?? [];
+  c.log = Array.isArray(c.log) ? c.log : [];
+  for (const l of c.log as (CuckLog & { setup?: string })[]) {
+    l.scene = l.scene ?? l.setup ?? "";
+    l.facts = l.facts ?? [];
+    l.move = l.move ?? "";
+    l.text = l.text ?? "";
+    l.chose = l.chose ?? "";
+    l.title = l.title ?? "";
+    delete l.setup;
+  }
+  if (c.bull) {
+    const b = c.bull as Bull & { kind?: string };
+    b.who = b.who ?? OLD_KIND[b.kind ?? ""] ?? "";
+    b.manner = b.manner ?? "";
+    delete b.kind;
+  }
+  delete c.beat;
+  delete c.written;
+  if (c.chapter && !Array.isArray(c.chapter.choices)) delete c.chapter;
+  if (c.ended) delete c.ended.text;
+}
+
 /* ── why she does it ─────────────────────────────────────────────────────────────────────────── */
 
 export function motiveFor(s: SaveState, p: Person): Motive {

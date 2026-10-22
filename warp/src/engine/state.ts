@@ -7,6 +7,7 @@
  * is a crash somewhere far away with no clue in it. Everything it fills is a default that a
  * running game would have produced anyway.
  */
+import { repairCuckold } from "./cuckold";
 import { compactMemory, similar } from "./memory";
 import { hasWomb } from "./pregnancy";
 import { reconcileAnatomy } from "./genitals";
@@ -291,6 +292,8 @@ export function sanitize(raw: SaveState): SaveState {
   // from here, with no origin arc — it already has a history.
   if (!s.story && s.arcology) newStory(s, "none", s.id, true, s.arcology.week < 6);
   if (!s.run && s.arcology) newRun(s, s.id, []);
+  // A story with another man from before every word of it was the model's.
+  repairCuckold(s);
 
   // A save written before the return rule existed has the old three orders and a household that
   // may already be parked in the spa with no way out. Add the missing one rather than resetting

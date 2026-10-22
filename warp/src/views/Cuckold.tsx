@@ -116,7 +116,9 @@ export default function Cuckold({ id, onClose }: { id: string; onClose: () => vo
     const ctl = new AbortController();
     stopper.current = ctl;
     setWriting(kind); setErr("");
-    const r = await job(ctl.signal);
+    // Whatever goes wrong, the screen hears that it's over. A write that throws used to leave it
+    // on "writing it…" for good.
+    const r = await job(ctl.signal).catch((e: unknown) => ({ ok: false, error: e instanceof Error ? e.message : String(e) }));
     stopper.current = null;
     setWriting(null);
     if (ctl.signal.aborted) setErr("stopped");

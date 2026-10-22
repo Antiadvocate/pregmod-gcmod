@@ -4,7 +4,7 @@
  * the model's side is tests/cuckwriter.test.ts.
  */
 import { check } from "./harness.ts";
-import { newGame } from "../src/engine/state.ts";
+import { newGame, sanitize } from "../src/engine/state.ts";
 import { endWeek } from "../src/engine/week.ts";
 import { answer, begin, eligible, movesNow, ready, tickCuckold, type Choice } from "../src/engine/cuckold.ts";
 import type { SaveState } from "../src/engine/types.ts";
@@ -95,4 +95,25 @@ function play(s: SaveState, prefer: string[], weeks = 50): string[] {
   check("a move that isn't allowed now does nothing", answer(s, { label: "sell her", move: "sell" }) === null && !s.cuckold!.ended);
   check("nor one that doesn't exist", answer(s, { label: "?", move: "teleport" }) === null);
   check("a pick needs a man", answer(s, { label: "him", move: "pick" }) === null);
+}
+
+{
+  // A save from the scripted version, waiting on "His Name" after the player had answered.
+  const s = setup("cuck-old");
+  const her = grown(s);
+  (s as unknown as Record<string, unknown>).cuckold = {
+    her: her.id, motive: "for_her", beat: "name", due: s.arcology.week, fall: 50, pull: -5, yielded: 30, nights: 6, firsts: [], seeing: true, started: 1,
+    bull: { kind: "brute", name: "Kade Whitlock", short: "Kade", age: 34, dick: 6 },
+    log: [{ week: 1, beat: "ask", title: "Asking Her", chose: "Kade Whitlock, from your security detail", text: "He answers in a minute.", setup: "You call her up." }],
+    written: { beat: "name", scene: "x", labels: {}, model: "m" },
+  };
+  const loaded = sanitize(JSON.parse(JSON.stringify(s)));
+  const c = loaded.cuckold!;
+  check("an old story carries on in the right phase", c.phase === "affair" && c.in_phase === 2, [c.phase, c.in_phase]);
+  check("its log keeps what was read and chosen", c.log[0].scene === "You call her up." && Array.isArray(c.log[0].facts) && c.log[0].text === "He answers in a minute.");
+  check("its man keeps who he was", c.bull!.who.includes("security detail") && c.bull!.manner === "");
+  check("and nothing of the old script is left", !("beat" in c) && !("written" in c));
+  check("it can be answered again", ready(loaded) && stage(loaded).length >= 3 && !!answer(loaded, loaded.cuckold!.chapter!.choices[0]));
+  const again = sanitize(JSON.parse(JSON.stringify(loaded)));
+  check("repairing twice changes nothing", JSON.stringify(again.cuckold) === JSON.stringify(loaded.cuckold));
 }
