@@ -2,6 +2,7 @@
  *
  *  What a seller says is on the card. What they are not saying costs 3% of the asking price to
  *  find out, and you will not always find all of it. Buying is a judgement, not a shopping trip. */
+import RarityChips from "./Rarity";
 import { useState } from "react";
 import { useGame } from "../lib/game";
 import { useHand } from "../lib/hand";
@@ -50,6 +51,7 @@ export default function Market() {
                       <div className="font-prose text-[13px] mid mt-1.5">&ldquo;{o.pitch}&rdquo;</div>
                       <div className="text-[11.5px] dim mt-1.5">{p.body.appearance_facts}</div>
                       <div className="flex flex-wrap gap-1.5 mt-2.5">
+                        <RarityChips p={p} />
                         <Chip>{band(p.psyche)}</Chip>
                         <Chip>{p.origin.career}</Chip>
                         {Math.abs(fit) > 0.15 ? <Chip tone={fit > 0 ? "good" : "bad"}>doctrine {fit > 0 ? "+" : ""}{fit.toFixed(2)}</Chip> : null}

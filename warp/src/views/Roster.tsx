@@ -5,6 +5,7 @@
  * is she like that", which is the question the old game could not answer at any price because the
  * answer was distributed across every passage that had ever touched her.
  */
+import RarityChips from "./Rarity";
 import { latitudeOf, LATITUDE_LABEL, type Latitude } from "../engine/voice";
 import { setLatitude } from "../engine/self";
 import { freeLine } from "../engine/freed";
@@ -301,6 +302,7 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
       </div>
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {p.romance && p.romance.standing !== "property" ? <Chip on>{RUNG_BY_ID[p.romance.standing].name}</Chip> : null}
+        <RarityChips p={p} all />
         <Chip>{p.origin.nationality}</Chip>
         <Chip>{p.age}</Chip>
         <Chip>{p.pronouns}</Chip>

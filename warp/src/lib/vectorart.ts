@@ -26,6 +26,8 @@
  *     tx = −282.841 · s + 292.349
  *     ty = −225.438 · s + 216.274
  */
+import { rng } from "../engine/rng";
+import { hasFeature } from "../engine/features";
 import type { Person } from "../engine/types";
 import { restingPose, type ArmPos, type Pose } from "./rig";
 import { garment } from "../data/wardrobe";
@@ -97,6 +99,7 @@ export const SKIN: [RegExp, string][] = [
   [/blue \(engineered\)/i, "#5b8eb7"], [/green \(engineered\)/i, "#7fae6a"], [/(purple|violet) \(engineered\)/i, "#8a4fa8"],
   [/teal \(engineered\)/i, "#3f9a94"], [/(grey|silver) \(engineered\)/i, "#b9bec4"], [/gold \(engineered\)/i, "#d9b54a"],
   [/red \(engineered\)/i, "#c2554a"], [/pink \(engineered\)/i, "#f09ab8"], [/white \(engineered\)/i, "#f4f1ec"], [/black \(engineered\)/i, "#262222"],
+  [/milk-white|albino/i, "#fbf1ec"],
   [/pale|porcelain/i, "#f5ded3"],
   [/fair|light(?! brown)/i, "#f0d5c0"],
   [/olive/i, "#d9b48f"],
@@ -123,7 +126,7 @@ const EYE: [RegExp, string][] = [
   [/blue/i, "#5b8fbe"],
   [/green/i, "#5f8c5a"],
   [/hazel/i, "#8a6b3b"],
-  [/grey|gray/i, "#8d9395"], [/purple|violet/i, "#7b4fb0"], [/gold|amber/i, "#c99a2e"], [/red/i, "#b3382c"], [/teal/i, "#2f8f8a"], [/silver|white/i, "#c9ced4"], [/pink/i, "#e07aa6"], [/black/i, "#15110f"],
+  [/pale violet/i, "#b6a2d4"], [/grey|gray/i, "#8d9395"], [/purple|violet/i, "#7b4fb0"], [/gold|amber/i, "#c99a2e"], [/red/i, "#b3382c"], [/teal/i, "#2f8f8a"], [/silver|white/i, "#c9ced4"], [/pink/i, "#e07aa6"], [/black/i, "#15110f"],
   [/dark brown/i, "#3a2618"],
   [/brown/i, "#6b4423"],
 ];
@@ -180,7 +183,18 @@ export function paletteFor(p: Person): Record<string, string> {
     eart: hair,
     tail: hair,
     outfit_base: suit ?? "#4a4a4a",
+    // Her toenails: the polish she's wearing, or her own nail, a little lighter than her skin.
+    toenail: toenailHex(p, skin),
   };
+}
+
+const POLISH: [RegExp, string][] = [[/red/i, "#b0283c"], [/pink/i, "#e486a8"], [/gold/i, "#d4ad3c"], [/purple/i, "#5d2a6e"], [/black/i, "#161214"], [/white/i, "#f1ece4"], [/blue/i, "#3b5fa8"], [/nude|natural|clear/i, "#e8c8b8"]];
+function toenailHex(p: Person, skin: string): string {
+  const polish = p.body.feet?.toenails;
+  if (polish && polish !== "bare") return match(POLISH, polish, "#b0283c");
+  const n = parseInt(skin.slice(1), 16);
+  const f = (c: number) => Math.round(c + (255 - c) * 0.35);
+  return `#${((f((n >> 16) & 255) << 16) | (f((n >> 8) & 255) << 8) | f(n & 255)).toString(16).padStart(6, "0")}`;
 }
 
 /** The stylesheet for one person, scoped to a class so many can be on screen at once. */
@@ -516,11 +530,23 @@ function faceLayers(p: Person): Layer[] {
   const [eyes, mouth, nose, brow] = rows[shape];
   // Only the brow's fullness is hers to vary — the four features are a set and stay one.
   const fullness = manly(p) ? (faceHash(p) % 2 ? "Bushy" : "Thick") : BROW_FULLNESS[faceHash(p) % BROW_FULLNESS.length];
+  // HER OWN FACE. The four features are one set per race and face shape, so without this every
+  // woman of the same background had the same face. Each gets her own proportions on top of the
+  // set, from her id: eye size, spacing and tilt (all eyes a little smaller and narrower than the
+  // pack's, which draws them anime-large), nose size, mouth width and fullness, brow height.
+  const r = rng(`face:${p.id}`);
+  const v = (lo: number, hi: number) => lo + r() * (hi - lo);
+  const about = (x: number, y: number, t: string) => `translate(${x} ${y}) ${t} translate(${-x} ${-y})`;
+  const full = !!hasFeature(p, "full_lips");
+  const eyeT = about(289, 133, `translate(0 ${v(-0.6, 1.2).toFixed(2)}) rotate(${v(-1.6, 1.6).toFixed(2)}) scale(${v(0.88, 0.97).toFixed(3)} ${v(0.78, 0.9).toFixed(3)})`);
+  const mouthT = about(285, 166, `scale(${v(0.9, 1.08).toFixed(3)} ${(full ? v(1.12, 1.25) : v(0.9, 1.06)).toFixed(3)}) translate(0 ${v(-0.5, 0.8).toFixed(2)})`);
+  const noseT = about(281, 151, `scale(${v(0.88, 1.1).toFixed(3)} ${v(0.92, 1.1).toFixed(3)})`);
+  const browT = `translate(0 ${v(-1.4, 0.8).toFixed(2)})`;
   return [
-    { id: `Eyes_${eyes}` },
-    { id: `Mouth_${mouth}` },
-    { id: `Nose_${nose}` },
-    { id: `Eyebrow_${brow}_${fullness}` },
+    { id: `Eyes_${eyes}`, transform: eyeT },
+    { id: `Mouth_${mouth}`, transform: mouthT },
+    { id: `Nose_${nose}`, transform: noseT },
+    { id: `Eyebrow_${brow}_${fullness}`, transform: browT },
   ];
 }
 

@@ -13,6 +13,7 @@
  * is something the engine can be held to — if the prose contradicts the card, the card is right and
  * the guards in turn.ts say so.
  */
+import { featuresLine } from "./features";
 import { dickCM, dickWord, inches } from "./genitals";
 import { playerBody } from "./you";
 import { powerBetween, selfBrief } from "./self";
@@ -169,6 +170,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(`ASS: ${assWord(p.body.butt)}${p.body.butt_implant ? " (implants)" : ""}; asshole ${anusWord(p.body.anus)}.`);
   lines.push(`FEET: ${describeFeet(p)}`);
   if (p.body.traits?.length || p.growing?.length) lines.push(`ALTERED (fact; these are real and part of her body): ${describeTraits(p)}`);
+  const distinct = featuresLine(p);
+  if (distinct) lines.push(distinct);
   if (p.womb.fetuses.length) lines.push(`PREGNANT: ${p.womb.weeks} weeks, ${p.womb.fetuses.length > 1 ? `${p.womb.fetuses.length} babies` : "one baby"}.`);
   if (p.body.lactation) lines.push(`LACTATING.`);
   if (p.health.health < -20) lines.push(`HEALTH: ill (${p.health.health}). ${p.health.injuries.filter((i) => !i.healed_week).map((i) => i.what).join("; ")}`);
