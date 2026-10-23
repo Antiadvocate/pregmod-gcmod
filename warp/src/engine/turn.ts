@@ -33,7 +33,8 @@ import { ACT_BY_ID } from "../data/intimacy";
 import { getLocalImage } from "../config";
 import { generateLocalImage, DEFAULT_NEGATIVE } from "../lib/diffusion";
 import { controlPrompt, CONTROL_NEGATIVE } from "../lib/dollrender";
-import { scenePrompt, lockSignature, portraitPrompt, visualSignature, genitalClause } from "./portrait";
+import { scenePrompt, lockSignature, portraitPrompt, visualSignature, physicalDescription } from "./portrait";
+import { expressionFor } from "../lib/portrait";
 
 export interface Diff {
   summary?: string;
@@ -288,11 +289,10 @@ export async function paintRealistic(
   if (!p || !getLocalImage()) return null;
   const dialect = getLocalImage()?.prompt_style === "tags" ? "tags" : "natural";
   lockSignature(p, dialect);
-  const worn = p.clothes === "no clothing"
-    ? [dialect === "tags" ? "nude" : "wearing nothing", genitalClause(p, dialect)].filter(Boolean).join(", ")
-    : `wearing ${p.clothes}`;
+  // The signature leads so her look holds from picture to picture; everything else on her card
+  // follows it, because the doll already fixes her shape and the words only have to add detail.
   const img = await generateLocalImage({
-    prompt: controlPrompt(`${p.body.visual_signature ?? visualSignature(p, dialect)}, ${worn}`),
+    prompt: controlPrompt(`${p.body.visual_signature ?? visualSignature(p, dialect)}. ${physicalDescription(p)} Her expression: ${expressionFor(s, p)}.`),
     negative: `${CONTROL_NEGATIVE}, ${DEFAULT_NEGATIVE}`,
     pose: poseDataUrl,
     denoise: opts?.denoise ?? 0.72,

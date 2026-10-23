@@ -16,7 +16,8 @@ import { getLocalImage } from "../config";
 import { ACT_BY_ID } from "../data/intimacy";
 import { hash } from "./rng";
 import { buildOf } from "./build";
-import { ballsWord, dickWord } from "./genitals";
+import { ballsCM, ballsWord, clitWord, dickCM, dickWord, feetOf, footSizeWord, labiaWord } from "./genitals";
+import { FEATURES, featuresOf } from "./features";
 
 /** The bedrock clause. Written once, stored on the person, never regenerated. */
 export function visualSignature(p: Person, style: "natural" | "tags"): string {
@@ -55,6 +56,63 @@ export function genitalClause(p: Person, style: "natural" | "tags"): string {
   }
   if (b.vagina === null) return style === "tags" ? "featureless crotch" : "smooth and featureless between the legs";
   return "";
+}
+
+/**
+ * EVERYTHING ON HER CARD THAT A CAMERA COULD SEE, for the realistic pass. That pass already has her
+ * shape from the doll, so the words are free to carry detail the line art cannot: the measurements,
+ * the marks, the state of her cock and labia, the paint on her toenails. What is felt rather than
+ * seen (wetness, ticklishness, what comes out of her) stays out — a sampler cannot draw it.
+ */
+export function physicalDescription(p: Person): string {
+  const b = p.body;
+  const out: string[] = [b.appearance_facts.trim().replace(/\.?$/, ".")];
+  if (b.appearance_now && !/^wearing whatever/.test(b.appearance_now)) out.push(`${b.appearance_now.trim().replace(/\.?$/, ".")}`);
+  // Numbers a sampler can use stay numbers; the 0–100 and 0–10 scales become words, which it can.
+  const face = b.face > 85 ? "stunningly beautiful" : b.face > 65 ? "beautiful" : b.face > 45 ? "pretty" : b.face > 25 ? "ordinary-looking" : "plain";
+  const butt = b.butt >= 8 ? "an enormous butt" : b.butt >= 6 ? "a big round butt" : b.butt >= 4 ? "a full butt" : b.butt >= 2 ? "a modest butt" : "a flat butt";
+  out.push(`${/^[aeiou]/.test(face) ? "An" : "A"} ${face} face; ${b.weight_kg}kg; ${b.hair_length}cm of ${b.hair_color} hair.`);
+  out.push(`Breasts about ${b.boobs}cc${b.boob_implant ? ", visibly implanted" : ""}${b.lactation ? ", swollen with milk" : ""}; ${butt}.`);
+  if (p.womb.weeks > 16) out.push(`Visibly pregnant, ${p.womb.weeks} weeks along.`);
+
+  const naked = p.clothes === "no clothing";
+  const dick = b.dick ?? 0, balls = b.balls ?? 0;
+  const groin: string[] = [];
+  if (dick > 0) {
+    const cut = b.foreskin === 0 ? "circumcised" : "uncut";
+    groin.push(p.chastity.penis
+      ? `a ${dickWord(dick)} ${cut} penis, about ${dickCM(dick)}cm, locked in a chastity cage`
+      : `a ${dickWord(dick)} ${cut} penis, about ${dickCM(dick)}cm long, hanging soft`);
+    groin.push(balls > 0 ? `${ballsWord(balls)} testicles, about ${ballsCM(balls)}cm each, ${(b.scrotum ?? balls) > balls ? "in a loose, hanging scrotum" : (b.scrotum ?? balls) < balls ? "in a tight, stretched scrotum" : "in a normal scrotum"}` : "no testicles");
+  }
+  if (b.vagina !== null) groin.push(`${dick > 0 ? "below that " : ""}a vulva with ${labiaWord(b.labia)} labia and a ${clitWord(b.clit)} clit`);
+  if (dick <= 0 && b.vagina === null) groin.push("nothing at all: smooth and featureless");
+  if (naked && groin.length) out.push(`Between her legs, clearly visible: ${groin.join("; ")}.`);
+  else if (groin.length) out.push(`Under her clothes she has ${groin.join("; ")}.`);
+
+  const marks = [
+    ...featuresOf(p).map((f) => FEATURES[f.id].words(f)),
+    ...b.marks.map((m) => `${m.what} on ${m.where}`),
+  ];
+  if (marks.length) out.push(`Distinctive, and must be visible: ${marks.join("; ")}.`);
+
+  const worn = [
+    naked ? "nothing" : p.clothes,
+    p.collar && !/^(none|no collar)$/.test(p.collar) ? p.collar : "",
+    p.legwear && p.legwear !== "bare legs" ? p.legwear : "",
+    p.shoes && !/^(none|barefoot)$/.test(p.shoes) ? p.shoes : "barefoot",
+  ].filter(Boolean);
+  out.push(`Wearing ${worn.join(", ")}.`);
+
+  const f = feetOf(p);
+  const feet = [
+    `${footSizeWord(f.size)} feet`,
+    f.toenails !== "bare" ? `toenails painted ${f.toenails}` : "",
+    ...f.jewelry,
+    f.heels_clipped ? "standing on her toes, heels never touching the floor" : "",
+  ].filter(Boolean);
+  out.push(`Feet: ${feet.join(", ")}.`);
+  return out.join(" ");
 }
 
 /** Lock it in. Called the first time a portrait is actually produced. */
