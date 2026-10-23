@@ -16,6 +16,7 @@ import { getLocalImage } from "../config";
 import { ACT_BY_ID } from "../data/intimacy";
 import { hash } from "./rng";
 import { buildOf } from "./build";
+import { ballsWord, dickWord } from "./genitals";
 
 /** The bedrock clause. Written once, stored on the person, never regenerated. */
 export function visualSignature(p: Person, style: "natural" | "tags"): string {
@@ -35,6 +36,25 @@ export function visualSignature(p: Person, style: "natural" | "tags"): string {
     ].filter(Boolean).join(", ");
   }
   return `a ${age.replace(" years old", "-year-old")} ${p.origin.nationality} woman with ${b.skin} skin, ${hair} and ${b.eye_color} eyes, ${build}, ${chest}`;
+}
+
+/**
+ * What shows between her legs when she is naked. Kept out of bedrock on purpose: cocks get cut
+ * off, grown and caged, and a locked clause would go on drawing the old one. Without it the word
+ * "woman" wins and the sampler paints over a cock the doll plainly has.
+ */
+export function genitalClause(p: Person, style: "natural" | "tags"): string {
+  const b = p.body;
+  const dick = b.dick ?? 0, balls = b.balls ?? 0;
+  if (dick > 0) {
+    const caged = !!p.chastity.penis;
+    if (style === "tags") return ["futanari", "penis", caged ? "chastity cage" : "", balls > 0 ? "testicles" : ""].filter(Boolean).join(", ");
+    const size = dickWord(dick);
+    const cock = `${/^[aeiou]/.test(size) ? "an" : "a"} ${size} penis${caged ? " locked in a chastity cage" : ""}`;
+    return `with ${cock}${balls > 0 ? ` and ${ballsWord(balls)} testicles` : " and no testicles"}`;
+  }
+  if (b.vagina === null) return style === "tags" ? "featureless crotch" : "smooth and featureless between the legs";
+  return "";
 }
 
 /** Lock it in. Called the first time a portrait is actually produced. */
@@ -72,13 +92,13 @@ export function scenePrompt(s: SaveState, opts?: { act?: string; people?: string
   const bodies = cast.map((p) => {
     const sig = visualSignature(p, dialect);
     const bits: string[] = [sig];
-    if (p.clothes === "no clothing") bits.push(dialect === "tags" ? "nude" : "naked");
+    if (p.clothes === "no clothing") bits.push(dialect === "tags" ? "nude" : "naked", genitalClause(p, dialect));
     else bits.push(`wearing ${p.clothes}`);
     if (p.womb.weeks > 16) bits.push(dialect === "tags" ? "pregnant, big belly" : "visibly pregnant");
     if (p.body.lactation) bits.push("lactating");
     if (p.collar && p.collar !== "none") bits.push(`wearing ${p.collar}`);
     if (p.psyche.relaxation <= -6) bits.push(dialect === "tags" ? "tense, distressed" : "visibly braced, holding herself still");
-    return bits.join(dialect === "tags" ? ", " : " ");
+    return bits.filter(Boolean).join(dialect === "tags" ? ", " : " ");
   });
 
   const doing = act ? act.what : opts?.summary ?? "";

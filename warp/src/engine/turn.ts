@@ -33,7 +33,7 @@ import { ACT_BY_ID } from "../data/intimacy";
 import { getLocalImage } from "../config";
 import { generateLocalImage, DEFAULT_NEGATIVE } from "../lib/diffusion";
 import { controlPrompt, CONTROL_NEGATIVE } from "../lib/dollrender";
-import { scenePrompt, lockSignature, portraitPrompt, visualSignature } from "./portrait";
+import { scenePrompt, lockSignature, portraitPrompt, visualSignature, genitalClause } from "./portrait";
 
 export interface Diff {
   summary?: string;
@@ -288,7 +288,9 @@ export async function paintRealistic(
   if (!p || !getLocalImage()) return null;
   const dialect = getLocalImage()?.prompt_style === "tags" ? "tags" : "natural";
   lockSignature(p, dialect);
-  const worn = p.clothes === "no clothing" ? (dialect === "tags" ? "nude" : "wearing nothing") : `wearing ${p.clothes}`;
+  const worn = p.clothes === "no clothing"
+    ? [dialect === "tags" ? "nude" : "wearing nothing", genitalClause(p, dialect)].filter(Boolean).join(", ")
+    : `wearing ${p.clothes}`;
   const img = await generateLocalImage({
     prompt: controlPrompt(`${p.body.visual_signature ?? visualSignature(p, dialect)}, ${worn}`),
     negative: `${CONTROL_NEGATIVE}, ${DEFAULT_NEGATIVE}`,
