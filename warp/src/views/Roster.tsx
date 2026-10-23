@@ -271,6 +271,7 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
   const [tab, setTab] = useState<"her" | "read" | "body" | "theatre" | "work" | "history">("read");
   const [together, setTogether] = useState<string | null>(null);
   const [painting, setPainting] = useState(false);
+  const [bigPhoto, setBigPhoto] = useState(false);
   const [forging, setForging] = useState(false);
   const [pose, setPose] = useState<Pose | undefined>(undefined);
   const [note, setNote] = useState("");
@@ -289,7 +290,12 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
           <SlaveArt person={p} height="clamp(270px, 78vw, 430px)" pose={pose} svgRef={doll} />
         </div>
         <div className="flex-1 min-w-0">
-          {p.body.portrait_url ? <img src={p.body.portrait_url} alt="" className="w-full max-h-40 object-cover rounded-lg mb-2" /> : null}
+          {/* Whole picture, never cropped: a realistic pass is a full-length portrait, and a fixed-height
+              cover crop showed only her chest. Click to see it at full size. */}
+          {p.body.portrait_url ? (
+            <img src={p.body.portrait_url} alt="" onClick={() => setBigPhoto((b) => !b)}
+              className={`block max-w-full w-auto object-contain rounded-lg mb-2 cursor-zoom-in ${bigPhoto ? "max-h-[80vh] cursor-zoom-out" : "max-h-64"}`} />
+          ) : null}
           <PhotoPortrait id={id} body={doll} />
           <p className="font-prose text-[13.5px] leading-snug">{p.body.appearance_facts}</p>
           <p className="text-[12px] dim mt-1">{p.clothes === "no clothing" ? "Naked." : `Wearing ${p.clothes}.`}{p.body.appearance_now && !/^wearing whatever/.test(p.body.appearance_now) ? ` ${p.body.appearance_now}.` : ""}</p>
