@@ -27,7 +27,7 @@ import { agreementsBrief } from "./agreements";
 import { mannerLines } from "./manner";
 import { read } from "./obedience";
 import { coarsen } from "./register";
-import { cleanList } from "./ownlife";
+import { cleanList, OWN_LIFE_ASK, OWN_V } from "./ownlife";
 import { surgeryPast } from "./health";
 
 /** Weeks between readings of the same woman. */
@@ -35,8 +35,9 @@ const EVERY = 6;
 /** The version of the reading. A woman read by an older one is read again, whatever happened since:
  *  version 1 wrote quirk lists the narrator caricatured; 2 writes a grounded person and short
  *  ordinary exchanges instead; 3 gives her a life of her own (what she does with her time, what she
- *  wants in the long run) and knows that what's done is done. */
-export const GROW_V = 3;
+ *  wants in the long run) and knows that what's done is done; 4 gives those a sexual edge, from her
+ *  personality. */
+export const GROW_V = 4;
 
 function lastRead(p: Person): number { return p.persona.grown_week ?? p.origin.acquired_week ?? 0; }
 
@@ -69,7 +70,7 @@ Rules that matter most:
 - Don't turn a one-off joke, image or number from a scene into who she is. If a scene had her call herself bread, or count to eighty-nine, that was one moment; leave it there.
 - "tics": at most two small, believable habits real people have (a word from her own language when she swears, what she calls the owner, a way she laughs), each something she does only now and then. Leave it empty if nothing fits. Never generic fillers ("like", "just", "honestly", "okay", "I mean").
 - What's done is done. An operation, a punishment, a promise or a scene that already happened is in her past: it can have changed her, but she doesn't count the days since it, wait for it, or bring it up every time she talks. DONE TO HER BODY and the weeks on everything tell you what's over.
-- She has a life of her own besides the owner and what's been done to her: "interests" are two or three things she does with her own time (from her life before, her nature and what she has here: things she does, not things she likes), and "goals" are one or two things she wants for herself in the long run. Keep the ones on her card that still fit, change what her weeks here would have changed.
+- She has a life of her own besides the owner and what's been done to her. This is a porn game, so it has a sexual edge, and it grows out of her personality traits first, then her fetishes, then the job she had. "interests": ${OWN_LIFE_ASK.interests}. "goals": ${OWN_LIFE_ASK.goals}. Keep the ones on her card that still fit, and change what her weeks here would have changed.
 - "exchanges": three short, ordinary exchanges with the owner, the kind that happen every day, in the relationship they actually have (THE POWER BETWEEN THEM and her STANDING ORDERS decide how she speaks to him). The owner says something ordinary ("How are you?", "Come here.", "What do you think of the new room?") and she answers in one to three plain sentences, as herself. These set the length and plainness of how she talks, so keep them short and natural.
 
 Also:
@@ -160,6 +161,7 @@ export async function growPersona(s: SaveState, p: Person, signal?: AbortSignal)
   const does = cleanList(out.interests, 3), wants = cleanList(out.goals, 2);
   if (does.length) live.persona.interests = does;
   if (wants.length) live.persona.goals = wants;
+  if (does.length && wants.length) live.persona.own_v = OWN_V;
   live.persona.life_history = clip(out.life_history, 1200);
   if (out.signature) live.persona.signature = clip(out.signature, 240);
   live.persona.grown_week = s.arcology.week;

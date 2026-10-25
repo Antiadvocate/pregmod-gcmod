@@ -199,6 +199,8 @@ export interface Persona {
   interests?: string[];
   /** What she wants for herself in the long run, past this week and this scene. See engine/ownlife. */
   goals?: string[];
+  /** Which version of engine/ownlife's tables (or of the model's brief) wrote the two above. */
+  own_v?: number;
   core_traits: string[];          // things their hands do, written so a scene could show it
   values: string[];
   speech_pattern: string;

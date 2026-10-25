@@ -6,74 +6,127 @@
  * So every conversation was about whatever had happened to her lately (Océane counted the days
  * since a surgery that was over), because there was nothing else on her card to talk about.
  *
- * Now each woman has two or three things she does with her own time, from her life before and her
- * nature (the teacher drilling a kitchen girl's handwriting, the farmer with seedlings in a cup under
- * the bathroom light), and one or two things she wants in the long run. The model writes them when
- * she's fleshed out (engine/forge) and again when she's re-read (engine/growth); until then, and with
- * no model, they come from her career here, so a woman in an old save has them too.
+ * Now each woman has two things she does with her own time and one or two things she wants in the
+ * long run. This is a porn game, so each of them has a sexual edge, and each grows out of who she
+ * is: her personality traits first (the eager-to-please one practises her deepthroat on whatever's
+ * the right shape in the kitchen; the one who keeps score keeps a tally of who's been called to the
+ * owner's bed), then what she's into, then the job she had before. The model writes them when she's
+ * fleshed out (engine/forge) and again when she's re-read (engine/growth); until then, and with no
+ * model, they come from the tables here, so a woman in an old save has them too.
  */
 import type { Person } from "./types";
 import { rng, type Rng } from "./rng";
 
-const BY_CAREER: Record<string, { does: string[]; wants: string[] }> = {
-  student: { does: ["keeps a notebook of words in the languages she hears around the house", "does the puzzles in any paper she can get hold of"], wants: ["to finish her degree someday"] },
-  waitress: { does: ["reorganises the kitchen when nobody's looking", "watches people from the window and makes up lives for them"], wants: ["to run a little café of her own one day"] },
-  nurse: { does: ["keeps a first-aid kit she put together herself and patches up the other girls", "reads any medical book she can get"], wants: ["to work in a real clinic again"] },
-  teacher: { does: ["has started teaching one of the other girls to read and write", "keeps a notebook of lessons she means to teach someday"], wants: ["to teach again, even if it's only the other girls"] },
-  prostitute: { does: ["does the other girls' makeup, and she's good at it", "plays cards for sweets and cheats a little"], wants: ["to be paid what she's worth, for once"] },
-  escort: { does: ["follows the arcology's society gossip like it's a sport", "picks up languages from the people she meets"], wants: ["to be kept by someone rich and important"] },
-  dancer: { does: ["runs through her old routines every morning wherever there's floor", "makes up little dances to whatever music is on"], wants: ["to dance in front of a real audience again"] },
-  soldier: { does: ["does push-ups and runs the stairs whenever she's allowed", "takes things apart and puts them back together"], wants: ["to get out, one way or another"] },
-  "police officer": { does: ["reads crime novels and works out who did it before the end", "watches people and notices more than she lets on"], wants: ["to see the people who sold her pay for it"] },
-  farmer: { does: ["keeps seedlings growing in a cup under whatever light she can find", "fixes anything with a hinge or a motor"], wants: ["to have a patch of real earth to grow things in"] },
-  housewife: { does: ["cooks for the other girls whenever she's let into the kitchen", "mends everyone's clothes"], wants: ["to have a home that feels like hers again"] },
-  "office worker": { does: ["keeps lists and schedules for everything, including things nobody asked for", "does crosswords"], wants: ["to run something properly, an office or a floor"] },
-  musician: { does: ["writes songs in her head and taps the rhythms out on anything", "has been teaching herself on a borrowed instrument"], wants: ["to play for an audience again"] },
-  athlete: { does: ["trains in her room: sit-ups, stretches, sprints down the corridor", "follows the pit fights and the arcology's sports results"], wants: ["to compete again, and win"] },
-  criminal: { does: ["plays cards and dice, and usually wins", "has been learning how every lock in the building works"], wants: ["to get rich, one way or another"] },
-  servant: { does: ["polishes and arranges things until they're right", "knows everyone's business in the house"], wants: ["to run the household one day"] },
-  engineer: { does: ["fixes broken things around the house: a lamp, a radio, a door that sticks", "sketches machines and buildings in the margins of anything"], wants: ["to build something in the arcology that lasts"] },
-  model: { does: ["spends hours on her hair, skin and nails, and on everyone else's", "keeps up with fashion from whatever she can see"], wants: ["to be famous in the arcology"] },
-  gamer: { does: ["plays anything with a screen she can get her hands on", "invents games for the other girls"], wants: ["to get back online and find her old friends"] },
-  nun: { does: ["prays at set hours and keeps the saints' days", "sings hymns under her breath while she works"], wants: ["to keep her faith whatever is done to her"] },
+/** Version of these tables. A woman seeded by an older one is seeded again; the first were
+ *  ordinary hobbies (seedlings, crosswords) with nothing sexual in them. */
+export const OWN_V = 2;
+
+type Life = { does: string[]; wants: string[] };
+
+/** By her personality: matched against her traits, how she talks, her quirk and her flaw. */
+const BY_TRAIT: [RegExp, Life][] = [
+  [/neat|tidy|clean|order|fold|fix|fuss/, { does: ["keeps the toy drawer cleaned and sorted, and gets snippy when anyone puts a plug back in the wrong place"], wants: ["to run the house's bedrooms her way: who sleeps where, and who gets used when"] }],
+  [/nervous|fidget|anxious|jumpy|flinch|scared|frightened|timid/, { does: ["reads the filthiest books she can find under the covers, and blushes at her own pages"], wants: ["to be told she's good in bed by someone who means it"] }],
+  [/joke|funny|laugh|giggl|grin|mischie|playful|wit/, { does: ["makes up rude nicknames for every man who's had her and tells the other girls", "draws dirty cartoons of the house on scraps and passes them round the other girls"], wants: ["to make the owner laugh with his cock in her mouth"] }],
+  [/suspicious|guarded|evasive|cold|distant|wary|closed|secret/, { does: ["keeps a notebook of who's sleeping with whom in the house, in a code only she can read"], wants: ["to be the one girl in the house nobody can touch without her say-so"] }],
+  [/says yes and|stubborn|defian|mouthy|argu|proud|bratty|sharp|sulk/, { does: ["bets the other girls on who can make a man come fastest, and usually wins"], wants: ["to make the owner beg for it, just once"] }],
+  [/shy|quiet|slow to open|reserved|repressed|shamefast/, { does: ["writes dirty stories in a notebook she'd die if anyone read"], wants: ["to have one person she can be completely filthy with and not be ashamed"] }],
+  [/eager|please|devot|obedient|follow instructions|careful|dutiful/, { does: ["practises her deepthroat on whatever's the right shape in the kitchen, so she'll be better for the owner", "practises the positions from the house manual until she has them perfect"], wants: ["to be the owner's favourite and sleep at the foot of his bed every night"] }],
+  [/grudge|score|jealous|compet|ambiti|rival/, { does: ["keeps a tally of who's been called to the owner's bed and how often, and checks it every night"], wants: ["to be called to the owner's bed more often than anyone else in the house"] }],
+  [/touchy|cuddl|affection|warm|sweet|gentle|kind|caring/, { does: ["curls up with whichever girl is on the couch and lets her hands wander"], wants: ["to have someone to sleep tangled up with every night"] }],
+  [/self-conscious|her body|vain|mirror|looks|pretty/, { does: ["tries on lingerie in front of the mirror when she thinks nobody's watching, and practises poses"], wants: ["to be the one men stop and stare at on the concourse"] }],
+  [/friendly|sociable|chatty|gossip|outgoing|familiar/, { does: ["trades gossip about who's fucking who, and always knows first"], wants: ["to have her own regulars who ask for her by name"] }],
+  [/lazy|sleepy|bath|comfort|idle/, { does: ["spends her free hour in the bath with the shower head"], wants: ["to be kept: fed, fucked and never made to work"] }],
+  [/cook|bak|kitchen|food/, { does: ["bakes things shaped like cocks to make the other girls laugh"], wants: ["to cook for the owner in an apron and nothing else, every night"] }],
+  [/strong|tough|fight|hard|athlet/, { does: ["wrestles the other girls for the good blanket, and it doesn't always stay wrestling"], wants: ["to pin the owner down, just once, and see what he does"] }],
+  [/crude|perver|dirty|filthy/, { does: ["tells the filthiest jokes in the house at dinner"], wants: ["to try everything at least once, with the owner watching"] }],
+  [/romantic|idealist|dream/, { does: ["writes the owner love letters she never gives him"], wants: ["to be the owner's, really his, not just owned"] }],
+];
+
+/** By what she's into, strongest first. */
+const BY_FETISH: Record<string, Life> = {
+  boobs: { does: ["oils and massages her tits every night and admires them in the mirror"], wants: ["bigger tits, and everyone staring at them"] },
+  buttslut: { does: ["stretches herself with a plug in her free time and calls it training"], wants: ["to take the owner's cock in her ass every day"] },
+  cumslut: { does: ["keeps count of how many loads she's swallowed this month, and tries to beat it"], wants: ["to be the house's favourite mouth"] },
+  humiliation: { does: ["volunteers for the jobs where people can watch her"], wants: ["to be used in front of a crowd on the concourse"] },
+  submissive: { does: ["practises kneeling still for an hour at a time"], wants: ["to be owned completely, with nothing left that's hers"] },
+  dom: { does: ["orders the newer girls around and makes them call her ma'am"], wants: ["to have a slave of her own"] },
+  masochist: { does: ["pinches and bites herself in the shower to see how far she can go"], wants: ["to be marked by the owner where it shows"] },
+  sadist: { does: ["teases the other girls until they squirm, and enjoys every second"], wants: ["to be allowed to punish the other girls"] },
+  pregnancy: { does: ["knits baby things she says are for someone else"], wants: ["to be bred by the owner, and keep the baby"] },
+  tease: { does: ["flashes the guards on the stairs to watch them lose their place"], wants: ["to make the owner wait for her, and want it"] },
+  romantic: { does: ["writes the owner love letters she never gives him"], wants: ["to be the owner's, really his, not just owned"] },
+  perverted: { does: ["collects dirty pictures and trades them with the other girls"], wants: ["to try everything at least once, with the owner watching"] },
+};
+
+/** By the job she had before. */
+const BY_CAREER: Record<string, Life> = {
+  student: { does: ["takes notes on what works in bed like it's coursework"], wants: ["to be top of the class in everything the house's trainers teach"] },
+  waitress: { does: ["serves the other girls' drinks in nothing but an apron to make them laugh"], wants: ["to run a bar where the waitresses are on the menu"] },
+  nurse: { does: ["patches the other girls up after rough clients and checks them over a little too thoroughly"], wants: ["to run the clinic, gloves and all"] },
+  teacher: { does: ["teaches the new girls how to give head, with a banana and a lot of notes"], wants: ["to train the house's girls her way"] },
+  prostitute: { does: ["does the other girls' makeup for work and teaches them tricks with their mouths"], wants: ["to be paid what she's worth, and keep it"] },
+  escort: { does: ["follows the society gossip to learn which rich men like what in bed"], wants: ["to be kept by someone rich and important"] },
+  dancer: { does: ["practises her lap dance on the bedpost in her room", "makes up dances to whatever's playing, and they get dirtier every week"], wants: ["to dance for a real audience again, in nothing but heels"] },
+  soldier: { does: ["trains in her room in her underwear, and wrestles anyone who'll take her on"], wants: ["to get the guard captain under her, one way or another"] },
+  "police officer": { does: ["handcuffs the other girls to things for fun"], wants: ["to be the one holding the cuffs again"] },
+  farmer: { does: ["grows a cucumber in a pot by her bed, and everyone knows what it's for"], wants: ["to have her own patch of land, and a big man to work it with"] },
+  housewife: { does: ["cooks for the other girls in an apron and nothing else"], wants: ["to keep house for the owner like a wife, in bed too"] },
+  "office worker": { does: ["keeps a schedule of who the owner sees at night, in neat columns"], wants: ["to be the owner's secretary, desk and all"] },
+  musician: { does: ["writes dirty songs about the men in the house"], wants: ["to sing for a crowd that wants her"] },
+  athlete: { does: ["trains in her room, then shows off what it's done to her ass"], wants: ["to win in the pit and take her pick of the crowd"] },
+  criminal: { does: ["plays strip poker with the other girls, and cheats"], wants: ["to get rich, one way or another, and a lot of it on her back"] },
+  servant: { does: ["knows everyone's business in the house, especially who's in whose bed"], wants: ["to run the household and decide who goes to the owner's bed"] },
+  engineer: { does: ["builds the house's toys better than the shop does, and tests them herself"], wants: ["to build a machine in the arcology that makes the girls scream"] },
+  model: { does: ["spends hours on her hair, skin and nails, practising looking fuckable"], wants: ["to be on posters men touch themselves to"] },
+  gamer: { does: ["plays anything with a screen, and strip versions of everything else"], wants: ["to stream herself again, to a lot more watchers"] },
+  nun: { does: ["prays at set hours and confesses things that make the guards blush"], wants: ["to keep her faith whatever is done to her, and stop enjoying it"] },
 };
 
 const DOES = [
-  "draws on whatever scraps of paper she can find", "reads anything she can get", "sings when she thinks she's alone",
-  "keeps a diary hidden in her room", "looks after a plant on her windowsill", "braids the other girls' hair",
-  "works out in her room", "writes letters she has nowhere to send", "is learning another girl's language from her",
-  "sews and alters her own clothes", "does yoga in the mornings", "plays cards with whoever will play",
-  "collects small things: buttons, ribbons, bottle caps", "cooks when she gets the chance", "watches the city from the highest window she can get to",
+  "dances for herself in the mirror in nothing but heels", "keeps a diary of every man who's had her, with grades",
+  "reads trashy romance novels and dog-ears the dirty parts", "does yoga in tight shorts where the guards can see",
+  "paints her toenails and shows them off to anyone who looks",
 ];
 
-const WANTS = [
-  "to be free someday", "to find out what happened to her family", "to be so good at something that she can't be done without",
-  "to see the sea again", "to have a room of her own with a window", "to never be sold", "to have a child and keep it",
-  "to go home", "to matter to someone here",
-];
+const WANTS = ["to be the owner's favourite", "to have her own regulars who ask for her by name", "to wear the owner's collar", "to be worth more than any slave on the market"];
 
 const VALUE_WANTS: [RegExp, string][] = [
-  [/free/, "to be free someday"],
-  [/family/, "to find out what happened to her family"],
-  [/useful|good at/, "to be so good at something that she can't be done without"],
-  [/privacy/, "to have a room of her own with a door that locks"],
-  [/owing/, "to owe nobody anything"],
+  [/free/, "to fuck her way to her freedom papers"],
+  [/family/, "to earn enough on her back to buy her family out"],
+  [/useful|good at/, "to be the girl the owner can't do without, in bed and out of it"],
+  [/privacy/, "to have a room of her own where she decides who comes in"],
+  [/owing/, "to have men paying her, and owe nobody anything"],
+  [/body/, "to decide who gets to touch her"],
+  [/word|lied/, "to be the one the owner tells the truth to, in bed"],
 ];
 
-/** Fill in what she does with her time and what she wants, if nothing has written them yet. */
+/** Fill in what she does with her time and what she wants, if nothing has written them yet under
+ *  the current tables. */
 export function seedOwnLife(p: Person, r: Rng = rng(`ownlife:${p.id}`)): void {
+  const fresh = (p.persona.own_v ?? 1) < OWN_V;
+  if (p.persona.interests?.length && p.persona.goals?.length && !fresh) return;
+  const traits = [...p.persona.core_traits, p.persona.speech_pattern ?? "", p.persona.quirk?.id ?? "", p.persona.flaw?.id ?? ""].join(" ").toLowerCase();
+  const byTrait = BY_TRAIT.filter(([re]) => re.test(traits)).map(([, l]) => l);
+  const byFetish = p.persona.fetishes.filter((f) => f.strength >= 30 && BY_FETISH[f.name]).sort((a, b) => b.strength - a.strength).map((f) => BY_FETISH[f.name]);
   const career = BY_CAREER[p.origin.career?.toLowerCase() ?? ""];
-  if (!p.persona.interests?.length) {
-    const mine = career ? r.shuffle([...career.does]).slice(0, r.chance(0.5) ? 2 : 1) : [];
-    const more = r.shuffle(DOES.filter((x) => !mine.includes(x))).slice(0, Math.max(0, 2 - mine.length));
-    p.persona.interests = [...mine, ...more];
+  const take = (groups: Life[], k: "does" | "wants") => r.shuffle(groups.flatMap((l) => l[k]));
+
+  if (!p.persona.interests?.length || fresh) {
+    // Her nature first, then what she's into or what she did before.
+    const first = take(byTrait, "does")[0];
+    const second = take([...byFetish.slice(0, 1), ...(career ? [career] : [])], "does").find((x) => x !== first);
+    const picked = [first, second].filter((x): x is string => !!x);
+    for (const x of r.shuffle([...DOES])) if (picked.length < 2 && !picked.includes(x)) picked.push(x);
+    p.persona.interests = picked;
   }
-  if (!p.persona.goals?.length) {
+  if (!p.persona.goals?.length || fresh) {
     const fromValues = (p.persona.values ?? []).map((v) => VALUE_WANTS.find(([re]) => re.test(v))?.[1]).filter((x): x is string => !!x);
-    const first = career && r.chance(0.6) ? career.wants[0] : fromValues[0] ?? r.pick(WANTS);
-    const second = [...fromValues, ...r.shuffle([...WANTS])].find((x) => x !== first);
+    const first = take([...byTrait.slice(0, 2), ...byFetish.slice(0, 1)], "wants")[0] ?? career?.wants[0] ?? fromValues[0] ?? r.pick(WANTS);
+    const second = [...fromValues, ...(career?.wants ?? []), ...r.shuffle([...WANTS])].find((x) => x !== first);
     p.persona.goals = r.chance(0.5) && second ? [first, second] : [first];
   }
+  p.persona.own_v = OWN_V;
 }
 
 /** Her own life on her card: not a script, things that can come up. */
@@ -85,6 +138,12 @@ export function ownLifeLines(p: Person): string[] {
   if (wants.length) out.push(`WHAT SHE WANTS FOR HERSELF IN THE LONG RUN (it colours what she hopes for and asks for; she rarely says it outright): ${wants.join("; ")}.`);
   return out;
 }
+
+/** What the model is asked for, in the forge and the re-reading. */
+export const OWN_LIFE_ASK = {
+  interests: "2 or 3 things she does with her own time, each with a sexual edge and grown out of her personality traits (then her fetishes, then the job she had): things she does, not things she likes, e.g. for an eager-to-please one 'practises her deepthroat on whatever's the right shape in the kitchen', for one who keeps score 'keeps a tally of who's been called to the owner's bed', for a dancer 'practises her lap dance on the bedpost'",
+  goals: "1 or 2 things she wants for herself in the long run, with sex or desire in them, from her personality, e.g. 'to be called to the owner's bed more than anyone in the house', 'to fuck her way to her freedom papers', 'to have a slave of her own'",
+};
 
 /** Tidy what a model wrote: a few short plain lines. */
 export function cleanList(xs: unknown, k: number, n = 140): string[] {

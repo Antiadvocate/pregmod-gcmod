@@ -156,6 +156,9 @@ export const sagasOf = (s: SaveState): SagaState => (s.sagas ??= { list: [], use
 export const running = (s: SaveState) => sagasOf(s).list.filter((x) => x.status !== "ended");
 /** Chapters (or openings) waiting to be read. */
 export const waiting = (s: SaveState) => running(s).filter((x) => x.due <= s.arcology.week);
+/** What's written in the background this week: the next chapter of a story you've begun. One that's
+ *  only been offered waits on the Story screen until you begin it; it's too big a thing to start for you. */
+export const toWrite = (s: SaveState) => waiting(s).find((x) => x.status === "running" && !x.chapter);
 
 /* ── where they come from ───────────────────────────────────────────────────────────────────── */
 
@@ -324,7 +327,7 @@ export function tickSagas(s: SaveState, can = true): string[] {
       st.used.push(seed.id);
       st.list.push({ id: `saga_${week}_${st.list.length}`, seed, status: "unwritten", title: "", premise: "", stakes: "", acts: [], act: 0, cast: [], facts: [], paths: [], history: [], due: week, started: week });
       st.next_start = week + 6 + rng(`saga-gap:${week}`).int(0, 4);
-      lines.push(`Something is beginning: ${seed.text.split(/(?<=[.!?])\s/)[0]} (a new story on the Story screen)`);
+      lines.push(`A story could start here, if you want it: ${seed.text.split(/(?<=[.!?])\s/)[0]} (on the Story screen; nothing happens until you begin it)`);
     } else st.next_start = week + 2;
   }
   for (const x of running(s)) {

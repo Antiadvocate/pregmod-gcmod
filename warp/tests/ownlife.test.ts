@@ -19,8 +19,8 @@ const { newMemory, learn, remember } = await import("../src/engine/memory.ts");
 const { refresh } = await import("../src/engine/obedience.ts");
 const { operate } = await import("../src/engine/surgery.ts");
 const { tickHealth, settleOldSurgery } = await import("../src/engine/health.ts");
-const { personCard } = await import("../src/engine/prompts.ts");
-const { seedOwnLife } = await import("../src/engine/ownlife.ts");
+const { personCard, FORGE_SYSTEM } = await import("../src/engine/prompts.ts");
+const { seedOwnLife, OWN_V } = await import("../src/engine/ownlife.ts");
 const { whereabouts, ing } = await import("../src/engine/whereabouts.ts");
 const { arrivalLead } = await import("../src/engine/writer.ts");
 const { openMoment, playMoment } = await import("../src/engine/moments.ts");
@@ -87,10 +87,19 @@ g.fetch = async (_u: string, init: { body: string }) => {
   check("a new woman has things she does with her time", (p.persona.interests ?? []).length >= 1, p.persona.interests);
   check("and something she wants in the long run", (p.persona.goals ?? []).length >= 1, p.persona.goals);
   const t = generatePerson({ seed: "life-2", sex: "female" });
-  t.origin.career = "teacher"; t.persona.interests = undefined; t.persona.goals = undefined;
-  let teacherish = false;
-  for (let i = 0; i < 12 && !teacherish; i++) { t.persona.interests = undefined; t.persona.goals = undefined; seedOwnLife(t, rng(`t${i}`)); teacherish = (t.persona.interests ?? []).some((x) => /read|lesson/.test(x)) || (t.persona.goals ?? []).some((x) => /teach/.test(x)); }
-  check("they come from her life before", teacherish, [t.persona.interests, t.persona.goals]);
+  t.origin.career = "teacher"; t.persona.core_traits = ["eager to please"]; t.persona.speech_pattern = "terse"; t.persona.quirk = undefined; t.persona.flaw = undefined; t.persona.fetishes = [{ name: "none", strength: 0, known: false }];
+  t.persona.interests = undefined; t.persona.goals = undefined;
+  seedOwnLife(t, rng("t"));
+  check("what she does with her time comes from her personality first, with a sexual edge", /deepthroat|positions/.test(t.persona.interests?.[0] ?? ""), t.persona.interests);
+  check("then from the job she had", (t.persona.interests ?? []).some((x) => /give head/.test(x)), t.persona.interests);
+  check("and what she wants is sexual too, from who she is", /owner's favourite|bed/.test(t.persona.goals?.[0] ?? ""), t.persona.goals);
+  const old = { ...t, persona: { ...t.persona, interests: ["keeps seedlings growing in a cup"], goals: ["to see the sea again"], own_v: undefined } };
+  seedOwnLife(old as typeof t);
+  check("the ordinary hobbies the first version gave her are replaced", !old.persona.interests.includes("keeps seedlings growing in a cup") && old.persona.own_v === OWN_V, old.persona.interests);
+  const written = { ...t, persona: { ...t.persona, interests: ["fucks the pool boy on Thursdays"], goals: ["to own the pool"], own_v: OWN_V } };
+  seedOwnLife(written as typeof t);
+  check("what the model wrote under the current brief is kept", written.persona.interests[0] === "fucks the pool boy on Thursdays");
+  check("the forge asks the model for the same", FORGE_SYSTEM.includes("sexual edge") && FORGE_SYSTEM.includes("personality traits"));
   const s = newGame({ seed: "life", starting_slaves: 2 });
   const her = Object.values(s.people).find((x) => x.status === "owned")!;
   her.persona.interests = undefined; her.persona.goals = undefined;
@@ -100,7 +109,7 @@ g.fetch = async (_u: string, init: { body: string }) => {
   her.persona.goals = ["to teach dance again"];
   const card = personCard(s, her);
   check("her card has her own time and what she wants", card.includes("HER OWN TIME") && card.includes("seedlings") && card.includes("IN THE LONG RUN") && card.includes("teach dance"));
-  check("the re-reading is a new version, so everyone gets a life of her own", GROW_V >= 3);
+  check("the re-reading is a new version, so everyone is re-read with a sexual life of her own", GROW_V >= 4);
 }
 
 /* ── where she is ──────────────────────────────────────────────────────────────────────────── */
@@ -123,7 +132,7 @@ g.fetch = async (_u: string, init: { body: string }) => {
   let own = false;
   for (let t = 0; t < 40 && !own; t++) own = !!whereabouts(s, a, t).own;
   check("some of the time she's on her own time, doing her own thing", own);
-  check("what she does reads as something she's in the middle of", ing("keeps seedlings growing in a cup") === "keeping seedlings growing in a cup" && ing("knows everyone's business") === null);
+  check("what she does reads as something she's in the middle of", ing("keeps seedlings growing in a cup") === "keeping seedlings growing in a cup" && ing("knows everyone's business") === null && ing("bets the girls on it, and usually wins") === "betting the girls on it, and usually winning");
 
   reply = "She keeps typing for a second, then looks up.\n\nOPTIONS:\n- a\n- b\n- c\n- d";
   bodies.length = 0;
