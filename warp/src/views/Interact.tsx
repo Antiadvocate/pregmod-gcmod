@@ -27,7 +27,8 @@ import { modelsAvailable } from "../config";
 import { closeMoment, momentsOf, noteMoment, openMoment, playMoment, type MomentLine } from "../engine/moments";
 import { concludeMoment } from "../engine/deeds";
 import { DeedCard } from "./MomentCard";
-import SlaveArt from "./SlaveArt";
+import SlaveArt, { SlaveHead } from "./SlaveArt";
+import { useVisibleViewport } from "../lib/viewport";
 import type { Moment } from "../lib/expression";
 import { RoomBackdrop } from "../lib/rooms";
 
@@ -206,11 +207,19 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     if (!engaged.current) mutate((s) => closeMoment(s, m));
   }, []);
 
+  // The text is the scene: her whole figure only if you ask for it, and nothing but the text and the
+  // box you're typing in while the keyboard is up. The screen is sized to what the keyboard leaves.
+  const vp = useVisibleViewport();
+  const [typing, setTyping] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [figure, setFigure] = useState(() => { try { return localStorage.getItem("warp-with-figure") === "1"; } catch { return false; } });
+  const toggleFigure = () => setFigure((f) => { try { localStorage.setItem("warp-with-figure", f ? "0" : "1"); } catch { /* private mode */ } return !f; });
+
   // Keep the newest thing in view. This is the whole reason the screen exists.
   useEffect(() => {
     const el = logRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [log, stream, busy]);
+  }, [log, stream, busy, typing, vp.height]);
 
   // Lock the page behind the overlay so a phone does not scroll two things at once.
   useEffect(() => {
@@ -319,10 +328,13 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
   const knownFetish = p.persona.fetishes.filter((f) => f.known && f.name !== "none");
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: "var(--ink-0)" }}>
+    <div className="fixed left-0 right-0 z-[60] flex flex-col" style={{ background: "var(--ink-0)", top: vp.top, height: vp.height }}>
       {/* header */}
-      <header className="topbar flex items-center gap-2 px-2 py-2 shrink-0" style={{ paddingTop: "max(8px, env(safe-area-inset-top))" }}>
+      <header className="topbar flex items-center gap-2 px-2 py-2 shrink-0" style={{ paddingTop: typing ? 8 : "max(8px, env(safe-area-inset-top))" }}>
         <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="back"><ChevronLeft size={18} /></button>
+        <button type="button" className="shrink-0 rounded-full overflow-hidden" onClick={toggleFigure} title={figure ? "Hide her figure" : "Show her figure"} aria-label={figure ? "Hide her figure" : "Show her figure"}>
+          <SlaveHead person={p} size={34} />
+        </button>
         <div className="min-w-0 flex-1">
           <div className="text-[15px] leading-tight truncate">{p.name}</div>
           <div className="text-[11px] dim truncate">{REGISTER_LABEL[reg]} · {band(p.psyche)} · {place.name}{pub ? " · in public" : ""}</div>
@@ -333,8 +345,8 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
         </div>
       </header>
 
-      {/* her */}
-      <div className="stage-room shrink-0 relative flex justify-center" style={{ height: tray ? "28dvh" : "36dvh", transition: "height .25s ease" }}>
+      {/* her, when you want to see her */}
+      {figure && !typing ? <div className="stage-room shrink-0 relative flex justify-center" style={{ height: tray ? "24dvh" : "32dvh", transition: "height .25s ease" }}>
         <RoomBackdrop place={place.id} />
         <div className={cx("h-full relative", rx)} onAnimationEnd={() => setRx("")}>
           <SlaveArt person={p} height="100%" pose={pose} moment={moment} />
@@ -345,7 +357,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
             {p.persona.flaw?.known ? <span className="chip bad">{p.persona.flaw.id}</span> : null}
           </div>
         ) : null}
-      </div>
+      </div> : null}
 
       {/* what happened */}
       <div ref={logRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
@@ -360,29 +372,34 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
       </div>
 
       {/* what you do next */}
-      <div className="shrink-0 hairline-top" style={{ background: "var(--ink-1)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="shrink-0 hairline-top" style={{ background: "var(--ink-1)", paddingBottom: typing ? 6 : "env(safe-area-inset-bottom)" }}>
         {ended ? (
           <div className="p-3 flex gap-2">
             <button className="btn btn-primary flex-1" onClick={onClose}>Leave her be</button>
             <button className="btn" onClick={() => setEnded(false)}>Call her back</button>
           </div>
         ) : null}
-        {!ended && replies.length && !busy ? (
+        {!ended && replies.length && !busy && !typing ? (
           <div className="flex flex-col gap-1.5 px-3 pt-3">
             {replies.map((r) => <button key={r} className="choice !py-2" onClick={() => void carryOn(r)}><span className="block text-[13.5px] leading-snug">{r}</span></button>)}
           </div>
         ) : null}
         {!ended ? (
-          <form className="flex gap-2 px-3 pt-3" onSubmit={(e) => { e.preventDefault(); const t = said.trim(); if (t) { setSaid(""); void carryOn(t); } }}>
-            <input className="flex-1 min-w-0" value={said} disabled={busy} onChange={(e) => setSaid(e.target.value)} placeholder={`Say or do something to ${p.name}`} />
+          <form className={cx("flex gap-2 px-3", typing ? "pt-1.5" : "pt-3")} onSubmit={(e) => {
+            e.preventDefault();
+            const t = said.trim();
+            // Sent: the keyboard goes, so her answer has the screen. (A disabled input doesn't always say it lost focus.)
+            if (t) { setSaid(""); inputRef.current?.blur(); setTyping(false); void carryOn(t); }
+          }}>
+            <input ref={inputRef} className="flex-1 min-w-0" value={said} disabled={busy} onChange={(e) => setSaid(e.target.value)} onFocus={() => setTyping(true)} onBlur={() => setTyping(false)} placeholder={`Say or do something to ${p.name}`} />
             {busy && stopper.current
               ? <button type="button" className="btn btn-sm btn-danger" onClick={() => stopper.current?.abort()} title="Stop the model; this reply is thrown away"><Square size={12} /> stop</button>
-              : <button className="btn btn-sm btn-primary" disabled={busy || !said.trim()}>Go</button>}
+              : <button className="btn btn-sm btn-primary" disabled={busy || !said.trim()} onMouseDown={(e) => e.preventDefault()}>Go</button>}
             {!busy && lastCall.current ? <button type="button" className="btn btn-sm" onClick={retry} title="Throw away that response and ask the model again"><RotateCcw size={12} /> retry</button> : null}
             {mid && engaged.current ? <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void endHere()} title="End the scene; what you did in it starts to count">Done</button> : null}
           </form>
         ) : null}
-        {!ended && next.length ? (
+        {!ended && next.length && !typing ? (
           <div className="flex flex-wrap gap-2 px-3 pt-3">
             {next.map((f) => (
               <button key={f.id} disabled={busy} onClick={() => doFollow(f)}
@@ -390,7 +407,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
             ))}
           </div>
         ) : null}
-        {ended ? null : <>
+        {ended || typing ? null : <>
         <div className="flex gap-1.5 px-3 pt-3 pb-2 overflow-x-auto no-scrollbar">
           {groups.map((g) => (
             <button key={g.id} onClick={() => { if (group === g.id) setTray((t) => !t); else { setGroup(g.id); setTray(true); } }}
