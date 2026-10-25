@@ -34,6 +34,7 @@ import { workplaceOf, inPlace } from "./whereabouts";
 import { tiedTo, file, tie, note } from "./others";
 import { castBrief } from "./faces";
 import { rng } from "./rng";
+import { betweenEvents, forcedAllowed, rulesLine, sexBetween } from "./houserules";
 
 export interface Going {
   /** Cooldown key: the same pair, or the same woman and the same kind, sits out a few weeks. */
@@ -78,9 +79,10 @@ export function goingsCandidates(s: SaveState): Going[] {
   const lines = report && report.week >= week - 1 ? report.lines.map((l) => l.text) : [];
   const first = (p: Person) => p.name.split(" ")[0];
 
-  // Two of yours.
-  for (let i = 0; i < people.length; i++) for (let j = i + 1; j < people.length; j++) {
-    const a = people[i], b = people[j];
+  // Two of yours: only when the house rules have things between them come to you (engine/houserules).
+  const pairs = betweenEvents(s) ? people : [];
+  for (let i = 0; i < pairs.length; i++) for (let j = i + 1; j < pairs.length; j++) {
+    const a = pairs[i], b = pairs[j];
     const ea = getEdge(s.edges, a.id, b.id), eb = getEdge(s.edges, b.id, a.id);
     const facts: string[] = [feeling(s, a, b), feeling(s, b, a)].filter(Boolean);
     let w = 1 + (Math.abs(ea?.warmth ?? 0) + Math.abs(eb?.warmth ?? 0)) / 50 + Math.max(ea?.attraction ?? 0, eb?.attraction ?? 0) / 50;
@@ -117,7 +119,7 @@ export function goingsCandidates(s: SaveState): Going[] {
       facts: [
         does.length ? `What she does with her own time: ${does.join("; ")}.` : "",
         wants.length ? `What she wants in the long run: ${wants.join("; ")}.` : "",
-        "Someone else gets involved in it this week: another of the owner's women, someone where she works, or a citizen.",
+        `Someone else gets involved in it this week: ${betweenEvents(s) ? "another of the owner's women, " : ""}someone where she works, or a citizen.`,
       ].filter(Boolean),
     });
   }
@@ -152,7 +154,7 @@ const GOING_SYSTEM = `You write one event for Free Cities, an adult text game ab
 How to build it:
 - Start from THE FACTS: they are true, and they're why it's happening now. Build it out of them, the people's natures, how they feel about each other, where they are, and this week.
 - It happens somewhere real: where she works, somewhere in the house, on the concourse. Say where.
-- This is an adult game and sex is most of what happens between people in it. Something is actually happening, with a shape, and more often than not it's sexual: two of the girls fucking in the showers or the laundry, one using the other, one teaching the other how to suck cock, a customer who won't pay or gets rough, a coworker or her boss with his hands on her, a crowd gathering to watch, a client who wants her for a whole night, a rival making her crawl, a crush turning into her mouth between someone's legs. It can also be a quarrel, a favour, a deal, a debt, a secret found out or a competition, but it doesn't have to stay clean. Their fetishes, bodies and what they're into (on their cards) decide what it is. Write the sex as plainly as the rest. Not a mood and not a status report.
+- This is an adult game and sex is most of what happens between people in it. Something is actually happening, with a shape, and more often than not it's sexual: a customer who won't pay or gets rough, a coworker or her boss with his hands on her, a crowd gathering to watch, a client who wants her for a whole night. Between two of the owner's own women, only what BETWEEN THEM below allows. It can also be a quarrel, a favour, a deal, a debt, a secret found out or a competition, but it doesn't have to stay clean. Their fetishes, bodies and what they're into (on their cards) decide what it is. Write the sex as plainly as the rest. Not a mood and not a status report.
 - People act as their place allows: a slave is a slave to the owner (THE POWER BETWEEN YOU on her card), and outsiders know who the owner is.
 - An outsider in it who has no name yet gets a name and one detail, and goes under "cast".
 - Second person, present tense, one or two short paragraphs, ending where the owner can step in. Their words in their own voices, short and plain.
@@ -163,6 +165,13 @@ ${HOUSE_STYLE}
 
 Output ONE strict JSON object and nothing else:
 {"title":"2-5 words","situation":"...","options":[{"label":"what you do, 2-9 words","note":"a few plain words for the player, like \\"she won't forget it\\"; never the effect's description","effect":"effect id","on":"main","value":"optional"}],"hook":"what this leaves open for later, or empty","cast":[{"name":"...","pronoun":"she or he","what":"who they are, a few words","to_her":"what they are to her, a few words"}]}`;
+
+/** What may happen between two of your own women, by the house rules. */
+function betweenThem(s: SaveState): string {
+  if (!sexBetween(s)) return "Nothing sexual happens between these two: the house rules keep it to everything else (a quarrel, a favour, a rivalry, a friendship, a theft, a secret).";
+  if (!forcedAllowed(s)) return "It can be sexual between them (two of the girls fucking in the showers, one teaching the other how to suck cock, a crush turning into her mouth between the other's legs), always with both of them willing: no slave forces another.";
+  return "It can be sexual between them (two of the girls fucking in the showers, one teaching the other how to suck cock, a crush turning into her mouth between the other's legs), and the house rules let one take the other whether she wants it or not.";
+}
 
 /** Write one of them. Null when there's no model or it came back unusable. */
 export async function generateGoing(s: SaveState, g: Going, snapshot = ""): Promise<PendingEvent | null> {
@@ -177,6 +186,8 @@ export async function generateGoing(s: SaveState, g: Going, snapshot = ""): Prom
       castBrief(s, g.facts.join("\n")),
       chronicleBrief(s, people.map((p) => p.id), 6),
       `## THE FACTS\n${g.facts.map((f) => `· ${f}`).join("\n")}`,
+      rulesLine(s),
+      g.other ? `## BETWEEN THEM\n${betweenThem(s)}` : "",
       `## EFFECT IDS\n${effectList()}${g.other ? `\n${pair.join("\n")}` : ""}\nACT IDS (for "act"): ${Object.keys(ACT_BY_ID).join(", ")}`,
       PLAIN_RULES,
       REGISTER_TAIL,

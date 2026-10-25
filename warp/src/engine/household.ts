@@ -16,6 +16,7 @@ import { remember } from "./memory";
 import { getEdge, moveEdge, addRole, startRumor } from "./social";
 import { registerEvents, type EventDef } from "./events";
 import { rng, type Rng } from "./rng";
+import { betweenEvents, forcedAllowed, friendships, lovers, sexBetween } from "./houserules";
 
 const adults = (s: SaveState) => Object.values(s.people).filter((p) => p.status === "owned" && p.health.recovery_weeks === 0);
 const warmth = (s: SaveState, a: Person, b: Person) => getEdge(s.edges, a.id, b.id)?.warmth ?? 0;
@@ -25,6 +26,8 @@ const weeksHere = (s: SaveState, p: Person) => s.arcology.week - (p.origin.acqui
 
 interface Incident {
   id: string;
+  /** What the house rules have to allow for it to happen (engine/houserules). */
+  needs?: "friends" | "lovers" | "sex" | "forced";
   /** How likely, for this pair (a does it to or with b). 0 = can't. */
   w: (s: SaveState, a: Person, b: Person) => number;
   /** What happened, and what it did. Returns the report line. */
@@ -40,7 +43,7 @@ const both = (s: SaveState, a: Person, b: Person, d: { warmth?: number; trust?: 
 const INCIDENTS: Incident[] = [
   { id: "cover", w: (s, a, b) => (warmth(s, a, b) > 20 ? 2 : 0),
     run: (s, a, b) => { both(s, a, b, { warmth: 3, trust: 3 }); mem(s, b, `${a.name} covered for me when I couldn't finish my work`, "warm"); return `${a.name} covered ${b.name}'s shift when ${b.name} couldn't get out of bed.`; } },
-  { id: "hair", w: (s, a, b) => (warmth(s, a, b) > 10 ? 1.5 : 0.3),
+  { id: "hair", needs: "friends", w: (s, a, b) => (warmth(s, a, b) > 10 ? 1.5 : 0.3),
     run: (s, a, b) => { both(s, a, b, { warmth: 2 }); shove(a.psyche, 0.2); shove(b.psyche, 0.2); return `${a.name} spent an evening braiding ${b.name}'s hair, and they talked until lights out.`; } },
   { id: "teach", w: (s, a, b) => (weeksHere(s, a) > 10 && weeksHere(s, b) < 6 && a.persona.conscience > 0.4 ? 3 : 0),
     run: (s, a, b) => { both(s, a, b, { warmth: 4, trust: 4 }); addRole(s.edges, b.id, a.id, "the one who showed her the ropes"); b.psyche.relaxation = clamp(b.psyche.relaxation + 0.5, -10, 10); mem(s, b, `${a.name} showed me how things work here, and what not to do`, "warm", 5); return `${a.name} took the new girl, ${b.name}, under her wing: where to stand, what not to say, which guards to avoid.`; } },
@@ -48,7 +51,7 @@ const INCIDENTS: Incident[] = [
     run: (s, a, b) => { both(s, a, b, { warmth: 4, trust: 2 }); b.psyche.relaxation = clamp(b.psyche.relaxation + 0.6, -10, 10); mem(s, b, `${a.name} held me after what you did`, "warm", 5); return `${a.name} sat up with ${b.name} after what happened to her this week, and held her until she slept.`; } },
   { id: "share_food", w: (s, a, b) => (a.persona.conscience > 0.5 && b.health.health < 10 ? 2 : 0.2),
     run: (s, a, b) => { both(s, a, b, { warmth: 2 }); return `${a.name} has been sneaking half her dinner to ${b.name}.`; } },
-  { id: "confide", w: (s, a, b) => (getEdge(s.edges, a.id, b.id)?.trust ?? 0) > 20 ? 1.5 : 0,
+  { id: "confide", needs: "friends", w: (s, a, b) => (getEdge(s.edges, a.id, b.id)?.trust ?? 0) > 20 ? 1.5 : 0,
     run: (s, a, b) => { both(s, a, b, { trust: 4 }); mem(s, b, `${a.name} told me about her life before`, "warm", 4); return `${a.name} told ${b.name} about her life before she was enslaved. ${b.name} hasn't told anyone.`; } },
   { id: "gossip", w: (s, a, b) => (warmth(s, a, b) > 5 ? 1.5 : 0.5),
     run: (s, a, b) => { both(s, a, b, { warmth: 1 }); startRumor(s, `${a.name} and ${b.name} have been laughing about the owner behind their back`, { from: a.id, salience: 3 }); return `${a.name} and ${b.name} were overheard doing impressions of you in the kitchen.`; } },
@@ -62,22 +65,24 @@ const INCIDENTS: Incident[] = [
     run: (s, a, b) => { moveEdge(s.edges, b.id, a.id, { warmth: -4 }); shove(b.psyche, -0.3); return `${a.name} mocked ${b.name} in front of the others at dinner, and some of them laughed.`; } },
   { id: "compete", w: (s, a, b) => ((a.romance?.standing ?? "property") !== "property" && (b.romance?.standing ?? "property") !== "property" ? 2 : 0),
     run: (s, a, b) => { both(s, a, b, { warmth: -3 }); addRole(s.edges, a.id, b.id, "rival for the owner"); return `${a.name} and ${b.name} are competing for your attention, and it's getting obvious.`; } },
-  { id: "flirt", w: (s, a, b) => (attraction(s, a, b) > 35 ? 2 : 0),
+  { id: "flirt", needs: "lovers", w: (s, a, b) => (attraction(s, a, b) > 35 ? 2 : 0),
     run: (s, a, b) => { moveEdge(s.edges, a.id, b.id, { attraction: 2 }); moveEdge(s.edges, b.id, a.id, { attraction: 1, warmth: 1 }); return `${a.name} has been finding reasons to be wherever ${b.name} is.`; } },
-  { id: "showers", w: (s, a, b) => (attraction(s, a, b) > 45 && attraction(s, b, a) > 30 ? 1.5 : 0),
+  { id: "showers", needs: "sex", w: (s, a, b) => (attraction(s, a, b) > 45 && attraction(s, b, a) > 30 ? 1.5 : 0),
     run: (s, a, b) => { both(s, a, b, { attraction: 3, warmth: 2 }); a.psyche.arousal = clamp((a.psyche.arousal ?? 0) - 20, 0, 100); b.psyche.arousal = clamp((b.psyche.arousal ?? 0) - 20, 0, 100); mem(s, a, `${b.name} and I in the showers`, "bright", 5); mem(s, b, `${a.name} and I in the showers`, "bright", 5); return `${a.name} and ${b.name} were caught fucking in the showers after lights out. The guard let them finish.`; } },
-  { id: "practice", w: (s, a, b) => (fet(a, "dom") + fet(a, "sadist") > 40 && fet(b, "submissive") + fet(b, "masochist") > 40 ? 2 : 0),
+  { id: "practice", needs: "sex", w: (s, a, b) => (fet(a, "dom") + fet(a, "sadist") > 40 && fet(b, "submissive") + fet(b, "masochist") > 40 ? 2 : 0),
     run: (s, a, b) => { both(s, a, b, { attraction: 3, warmth: 2 }); addRole(s.edges, a.id, b.id, "plays rough with her"); return `${a.name} has had ${b.name} on her knees in the dormitory most nights this week. They both seem happier for it.`; } },
   { id: "plot", w: (s, a, b) => (a.bond.resentment > 45 && b.bond.resentment > 40 && warmth(s, a, b) > 10 ? 2 : 0),
     run: (s, a, b) => { both(s, a, b, { trust: 5 }); a.bond.resentment = clamp(a.bond.resentment + 2, 0, 100); b.bond.resentment = clamp(b.bond.resentment + 2, 0, 100); addRole(s.edges, a.id, b.id, "conspirator"); return `${a.name} and ${b.name} have been whispering in corners. Security thinks they're planning something.`; } },
   { id: "fight", w: (s, a, b) => (warmth(s, a, b) < -25 ? 1.5 : 0),
     run: (s, a, b) => { both(s, a, b, { warmth: -6 }); a.health.health = clamp(a.health.health - 3, -100, 100); b.health.health = clamp(b.health.health - 5, -100, 100); return `${a.name} and ${b.name} got into a fight in the laundry. ${b.name} came off worse.`; } },
+  { id: "taken", needs: "forced", w: (s, a, b) => (fet(a, "dom") + fet(a, "sadist") > 50 || a.persona.conscience < 0.3) && b.bond.fear > 30 && attraction(s, a, b) > 10 ? 2 : 0,
+    run: (s, a, b) => { moveEdge(s.edges, a.id, b.id, { power: 8 }); moveEdge(s.edges, b.id, a.id, { warmth: -8, trust: -8 }); shove(b.psyche, -0.8, { hard: true }); a.psyche.arousal = clamp((a.psyche.arousal ?? 0) - 30, 0, 100); addRole(s.edges, a.id, b.id, "takes her when she wants"); mem(s, b, `${a.name} held me down in the dormitory and took me, and nobody stopped her`, "sharp", 7); return `${a.name} took ${b.name} in the dormitory this week when she said no. Your rules allow it, and every girl in the house knows it now.`; } },
   { id: "sing", w: (s, a, b) => (a.skills?.entertainment > 40 ? 0.8 : 0.1),
     run: (s, a, b) => { both(s, a, b, { warmth: 1 }); shove(b.psyche, 0.2); return `${a.name} sang in the dormitory one night, and ${b.name} cried.`; } },
 ];
 
 /** Settleable ones: these come to you. */
-interface Dispute { id: string; when: (s: SaveState, a: Person, b: Person) => boolean; seed: (a: Person, b: Person) => string; options: { id: string; label: string; run: (s: SaveState, a: Person, b: Person) => string }[] }
+interface Dispute { id: string; needs?: Incident["needs"]; when: (s: SaveState, a: Person, b: Person) => boolean; seed: (a: Person, b: Person) => string; options: { id: string; label: string; run: (s: SaveState, a: Person, b: Person) => string }[] }
 
 const DISPUTES: Dispute[] = [
   { id: "hh_fight", when: (s, a, b) => warmth(s, a, b) < -30 && warmth(s, b, a) < -20,
@@ -102,14 +107,14 @@ const DISPUTES: Dispute[] = [
       { id: "order", label: "Leave it: it's how a household sorts itself", run: (s, a, b) => { shove(b.psyche, -0.6); return `You leave it. ${a.name} takes that as permission. ${b.name} takes it as an answer.`; } },
       { id: "reverse", label: "Put her victim in charge of her for a month", run: (s, a, b) => { const e = getEdge(s.edges, a.id, b.id); if (e) e.roles = e.roles.filter((r) => r !== "makes her do her chores"); addRole(s.edges, b.id, a.id, "was put in charge of her"); moveEdge(s.edges, b.id, a.id, { power: 20 }); shove(b.psyche, 0.8); applyTreatment(a, { kind: "coercion", size: 3, why: `put under ${b.name}` }, s.arcology.week); return `You put ${b.name} in charge of ${a.name} for a month. ${b.name} doesn't know what to do with it for three days, and then she does.`; } },
     ] },
-  { id: "hh_caught", when: (s, a, b) => attraction(s, a, b) > 45 && attraction(s, b, a) > 30,
+  { id: "hh_caught", needs: "sex", when: (s, a, b) => attraction(s, a, b) > 45 && attraction(s, b, a) > 30,
     seed: (a, b) => `You walk into the dormitory and find ${a.name} and ${b.name} together on ${a.name}'s bed, naked, too busy to hear the door.`,
     options: [
       { id: "leave", label: "Leave them to it", run: (s, a, b) => { both(s, a, b, { attraction: 4, warmth: 3 }); addRole(s.edges, a.id, b.id, "sleeps with her"); addRole(s.edges, b.id, a.id, "sleeps with her"); return `You close the door quietly. They find out you saw them the next morning, and neither of them can look at you all day.`; } },
       { id: "watch", label: "Stay and watch", run: (s, a, b) => { both(s, a, b, { attraction: 2 }); for (const p of [a, b]) p.psyche.arousal = clamp((p.psyche.arousal ?? 0) + 20, 0, 100); return `You pull up a chair. ${a.name} notices first and freezes; you tell them to carry on, and after a moment they do.`; } },
       { id: "forbid", label: "Forbid it", run: (s, a, b) => { for (const p of [a, b]) applyTreatment(p, { kind: "coercion", size: 3, why: "caught with another slave" }, s.arcology.week); both(s, a, b, { attraction: 3 }); return `You forbid it. They're put in separate dormitories. It doesn't stop them; it just makes them careful.`; } },
     ] },
-  { id: "hh_room", when: (s, a, b) => warmth(s, a, b) > 45 && warmth(s, b, a) > 40,
+  { id: "hh_room", needs: "friends", when: (s, a, b) => warmth(s, a, b) > 45 && warmth(s, b, a) > 40,
     seed: (a, b) => `${a.name} and ${b.name} have asked, together, if they can share a room. ${a.name} does the talking. ${b.name} is holding her hand.`,
     options: [
       { id: "yes", label: "Let them", run: (s, a, b) => { both(s, a, b, { warmth: 5, trust: 3 }); for (const p of [a, b]) applyTreatment(p, { kind: "kindness", size: 3, why: "you let them share a room" }, s.arcology.week); addRole(s.edges, a.id, b.id, "shares her room"); addRole(s.edges, b.id, a.id, "shares her room"); return `You let them. They move their things that evening, and the dormitory is quieter for it.`; } },
@@ -127,10 +132,16 @@ registerEvents(DISPUTES.map((d): EventDef => ({
   } })),
 })));
 
-/** Weekly: two or three things happen between them, and sometimes one comes to you. */
+/** Whether the house rules let it happen. */
+function allowed(s: SaveState, needs: Incident["needs"]): boolean {
+  return !needs || (needs === "friends" ? friendships(s) : needs === "lovers" ? lovers(s) : needs === "sex" ? sexBetween(s) : sexBetween(s) && forcedAllowed(s));
+}
+
+/** Weekly: two or three things happen between them, and sometimes one comes to you. Only when the
+ *  house rules say things between your slaves come to you at all; out of the box, they don't. */
 export function tickHousehold(s: SaveState): string[] {
   const people = adults(s);
-  if (people.length < 2) return [];
+  if (people.length < 2 || !betweenEvents(s)) return [];
   const r = rng(`household:${s.story?.seed ?? s.arcology.name}:${s.arcology.week}`);
   const out: string[] = [];
   const used = new Set<string>();
@@ -139,7 +150,7 @@ export function tickHousehold(s: SaveState): string[] {
     const pool: { i: Incident; a: Person; b: Person; w: number }[] = [];
     for (const a of people) for (const b of people) {
       if (a.id === b.id || used.has(a.id) || used.has(b.id)) continue;
-      for (const i of INCIDENTS) { const w = i.w(s, a, b); if (w > 0) pool.push({ i, a, b, w }); }
+      for (const i of INCIDENTS) { if (!allowed(s, i.needs)) continue; const w = i.w(s, a, b); if (w > 0) pool.push({ i, a, b, w }); }
     }
     if (!pool.length) break;
     const pick = r.weighted(pool, (x) => x.w);
@@ -150,7 +161,7 @@ export function tickHousehold(s: SaveState): string[] {
   // A dispute for you, at most one open, at most one every other week.
   if (!s.events.some((e) => e.kind.startsWith("hh_")) && s.arcology.week - (s.event_log?.["hh_any"] ?? -9) >= 2 && r.chance(0.5)) {
     const options: { d: Dispute; a: Person; b: Person }[] = [];
-    for (const a of people) for (const b of people) if (a.id !== b.id) for (const d of DISPUTES) if (d.when(s, a, b)) options.push({ d, a, b });
+    for (const a of people) for (const b of people) if (a.id !== b.id) for (const d of DISPUTES) if (allowed(s, d.needs) && d.when(s, a, b)) options.push({ d, a, b });
     if (options.length) {
       const { d, a, b } = r.pick(options);
       const e: PendingEvent = {

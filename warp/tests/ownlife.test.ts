@@ -30,6 +30,7 @@ const { getEdge, moveEdge } = await import("../src/engine/social.ts");
 const { tiedTo } = await import("../src/engine/others.ts");
 const { GROW_V } = await import("../src/engine/growth.ts");
 const { rng } = await import("../src/engine/rng.ts");
+const { rulesOf } = await import("../src/engine/houserules.ts");
 setApiKey("sk-test");
 
 const bodies: { messages: { content: string }[] }[] = [];
@@ -149,6 +150,8 @@ g.fetch = async (_u: string, init: { body: string }) => {
   const s = newGame({ seed: "goings", starting_slaves: 3 });
   s.models.narrator_model = "test/model";
   const [a, b] = Object.values(s.people).filter((x) => x.status === "owned" && x.age >= 18);
+  check("out of the box, nothing between two of your women is an event", !goingsCandidates(s).some((x) => x.kind === "between"));
+  rulesOf(s).between = "social";
   moveEdge(s.edges, a.id, b.id, { warmth: -40 });
   moveEdge(s.edges, b.id, a.id, { warmth: -35 });
   const all = goingsCandidates(s);
@@ -169,6 +172,8 @@ g.fetch = async (_u: string, init: { body: string }) => {
     hook: "", cast: [{ name: "Mara Kell", pronoun: "she", what: "runs the laundry", to_her: "the laundry boss who watches her" }],
   });
   const e = await generateGoing(s, pair, "");
+  const asked = bodies.at(-1)!.messages[1].content;
+  check("the model is told the house rules, and that nothing sexual happens between them", asked.includes("HOUSE RULES BETWEEN SLAVES") && /Nothing sexual happens between these two/.test(asked));
   check("the model writes it as an event between the two of them", !!e && e.person === pair.main.id && e.other === pair.other!.id && e.options.length === 4, e);
   check("each choice says which of them it lands on", !!e && e.options.some((o) => o.id.includes("@other")));
   check("the outsider it brought in goes on file, tied to her", tiedTo(s, pair.main.id).some((t) => t.face.name === "Mara Kell"));

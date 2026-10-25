@@ -12,6 +12,7 @@ import { freeLine } from "../engine/freed";
 import PhotoPortrait from "./PhotoPortrait";
 import MenialsPanel from "./Menials";
 import SubTabs from "./SubTabs";
+import { HouseRulesPanel } from "./HouseRules";
 import { sane, recoveryNote, rushCost, rushRecovery } from "../engine/health";
 import { DRUGS, canStart } from "../data/drugs";
 import { describeGenitals, describeFeet, mobility, dickCM, ballsWord, vaginaWord, anusWord, feetOf } from "../engine/genitals";
@@ -140,6 +141,7 @@ export default function Roster() {
       ) : null}
 
         </>) },
+        { id: "rules", label: "House rules", render: () => <HouseRulesPanel /> },
         { id: "menials", label: "Menials", badge: save.menials?.owned ? save.menials.owned.toLocaleString() : undefined, render: () => <MenialsPanel /> },
       ]} />
       <Sheet open={!!openId} onClose={() => setOpenId(null)} title={openId ? save.people[openId]?.name ?? "" : ""} wide>

@@ -26,6 +26,7 @@ import { occupants } from "./places";
 import { PLACE_BY_ID } from "../data/places";
 import { lawPulseTagged } from "./lawlife";
 import { tickHousehold } from "./household";
+import { weeklyRelease } from "./houserules";
 import { tickBattles } from "./battles";
 import { tickFCTV } from "./fctv";
 import { tickCorp } from "./corp";
@@ -196,6 +197,7 @@ export function endWeek(s: SaveState): WeekReport {
     const hw = tickHealth(s, p, { health: load.health + (managedByThem && mgr ? mgr.health : 0), energy: load.energy });
     for (const n of hw.notes) push(`${p.name}: ${n}.`, n.includes("healed") || n.includes("back on her feet") ? "good" : "bad", 5, p.id);
     if (hw.died) { dead.push(p); continue; }
+    weeklyRelease(s, p);
 
     // SEX, AND WHAT COMES OF IT
     const exposure = sexualExposure(p, s);
