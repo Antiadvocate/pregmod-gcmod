@@ -23,6 +23,7 @@ import type { ActionMode, Person, SaveState, TurnEntry } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { BOOKKEEPER_SYSTEM, NARRATOR_SYSTEM, bookkeeperContext, digest } from "./prompts";
+import { didntFollow } from "./style";
 import { applyTreatment, refresh, type Treatment } from "./obedience";
 import { clamp, shove, tickPsyche, addState, band, tensionCue } from "./psyche";
 import { remember, learn } from "./memory";
@@ -71,7 +72,7 @@ export interface TurnResult {
 
 const MODE_FRAME: Record<ActionMode, (a: string) => string> = {
   do: (a) => `## THE PLAYER'S ACTION\n${a}\nWrite this happening, all the way through, and how the people it involves react.`,
-  say: (a) => `## THE PLAYER SAYS\n"${a}"\nWrite how the people it's said to answer and what they do about it. Don't repeat the line back.`,
+  say: (a) => `## THE PLAYER SAYS\n"${a}"\nWrite how the people it's said to answer and what they do about it. Don't repeat the line back.${didntFollow(a) ? `\n${didntFollow(a)}` : ""}`,
   think: (a) => `## THE PLAYER IS THINKING (silent; nobody hears it)\n${a}\nUse it to decide what the scene pays attention to. Nobody reacts to it.`,
   story: (a) => `## DIRECTION FOR THE WRITER (not something that happens in the scene; never quote it)\n${a}`,
 };

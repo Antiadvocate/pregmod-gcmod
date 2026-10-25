@@ -19,7 +19,19 @@ Write the way a person tells a story to a friend: what happened, who said what a
 
 NO REPORT VOICE. Nobody in this game talks like a status report, a press release or an accounting ledger.
 - Never: "I have implemented", "as you commanded", "the streets are clean/quiet/safe", "order is maintained", "the city is thriving/prospering", "productivity", "compliance", "efficiency", "morale is high", "everything is under control", "the people are grateful", "your laws are being enforced", "the patrols make sure of it", "rest assured", "I am pleased to report".
-- Never recite numbers or stats at the reader. If a number matters, it comes up the way a person would mention it ("we're down to two weeks of grain").`;
+- Never recite numbers or stats at the reader. If a number matters, it comes up the way a person would mention it ("we're down to two weeks of grain").
+
+THE PLAYER HAS TO BE ABLE TO FOLLOW IT. Whoever brings something up says plainly what it is: who (by name), what happened, and what they want, in words the player can follow having read nothing but this scene. No "them", "their wives" or "the thing" for people and things nobody in the scene has named. Only bring up what's on the cards or has already happened in the scene: never invent a worry, a rumour, a deal, a threat or a history and talk about it as if the player already knows it. Feelings can come out sideways; facts don't.`;
+
+/** You said you didn't follow: the next reply explains, plainly, and adds nothing. Without this a
+ *  model asked "fine about what?" answered with two more things nobody had heard of, and then
+ *  settled the matter for the player and moved on. */
+const LOST = /\b(what do you mean|what are you (talking about|asking|saying|on about)|what (is|was) (she|he|this|that|it) (talking|on) about|i don'?t (understand|get it|follow|know what you mean)|makes? no sense|confus(ed|ing)|wait,? what|who (is|are) (they|them)|\w+ about what\s*[?.!]*\s*$)|^\s*(what|huh|sorry)\?+\s*$/i;
+
+export function didntFollow(said: string | null | undefined): string {
+  if (!said || !LOST.test(said)) return "";
+  return "THE PLAYER DIDN'T FOLLOW THAT. Before anything else, whoever said it explains it plainly, in a sentence or two: who they meant, by name, what happened, and what they want, using only what's on the cards and in the scene so far. If it had no basis there, they say they got muddled and drop it. Add nothing new (no new people, worries, rumours or stakes), and don't settle it for the player.";
+}
 
 /** Fix what can be fixed mechanically. In the narration, dashes between words become commas and a
  *  dash at a break becomes a full stop. Inside what people say they stay: people break off,

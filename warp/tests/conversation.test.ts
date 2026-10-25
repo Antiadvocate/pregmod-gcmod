@@ -49,6 +49,28 @@ check("her habits are marked as rare", card.includes("NOW AND THEN SHE"));
 her.persona.grown_week = s.arcology.week; her.persona.grown_v = 1; her.economics.weeks_owned = 10;
 check("a woman written by the old reading is read again", GROW_V >= 2 && dueToGrow(s).includes(her));
 
+// Nobody talks in riddles, and "fine about what?" gets a plain answer, not two new mysteries.
+{
+  const { didntFollow, PLAIN_RULES } = await import("../src/engine/style.ts");
+  const { whole, partIn, note, record } = await import("../src/engine/others.ts");
+  const { MOMENT_SYSTEM } = await import("../src/engine/moments.ts");
+  check("everyone who writes a scene is told the player has to follow it", PLAIN_RULES.includes("THE PLAYER HAS TO BE ABLE TO FOLLOW IT") && MOMENT_SYSTEM.includes("THE PLAYER HAS TO BE ABLE TO FOLLOW IT"));
+  check("saying you don't follow is heard", !!didntFollow("....what are you asking? I don't understand. Fine about what") && !!didntFollow("what?") && !!didntFollow("What do you mean"));
+  check("and ordinary talk isn't mistaken for it", ["Tell me about what happened at the canteen.", "Come here.", "What do you want for dinner?", "Who is she?", "How are you?"].every((x) => !didntFollow(x)));
+  const at = bodies.length;
+  await playMoment(s, id, "what are you asking? I don't understand. Fine about what");
+  const sent = bodies.slice(at).find((b) => JSON.stringify(b).includes("You continue a scene")) as { messages: { content: string }[] } | undefined;
+  check("then the next reply is told to explain plainly and add nothing", !!sent && /THE PLAYER DIDN'T FOLLOW THAT[^\n]*Add nothing new/.test(sent.messages[1].content));
+
+  const seed = "The storm has the workers' canteen on Block 3 packed, and Daryna is there with the household for the evening meal. Bohdan Kravets kneels in front of her on your order, head down, his mates at the next table watching with their jaws working. Half the canteen is watching too. A woman from the kitchen line, Nel Coster, an older cook with flour on her forearms, says quietly, 'Someone should tell her it's over. She's shaking.' Bohdan's mate mutters, 'He's knelt long enough.'";
+  const part = partIn(seed, "Nel Coster");
+  check("someone brought into an event remembers their own part of it", part.startsWith("A woman from the kitchen line, Nel Coster") && part.includes("She's shaking.") && !part.includes("storm"), part);
+  check("and a record is whole sentences, never cut off mid-thought", /[.!?'"…]$/.test(whole(seed, 200)) && !whole(seed, 200).endsWith("at the next"), whole(seed, 200));
+  const f = { name: "Nel Coster", pronoun: "she", age: 40, first: 1, last: 1, seen: 1 } as never;
+  note(s, f, "week 4: she spoke up in the canteen.");
+  check("with the week said once", !/week \d+: week/.test(record(s, f)), record(s, f));
+}
+
 g.fetch = oldFetch;
 if (hadLS) g.localStorage = oldLS; else delete g.localStorage;
 if (!hadLoc) delete g.location; else g.location = oldLoc;

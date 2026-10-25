@@ -19,6 +19,7 @@ import { castBrief, facesIn, keyOf, meet, parseCast } from "./faces";
 import { settledBrief, weightBrief } from "./fates";
 import { ownedBrief } from "./share";
 import { CONVERSATION, HOUSE_STYLE, personCard, BOOKKEEPER_SYSTEM, bookkeeperContext, householdLine } from "./prompts";
+import { didntFollow } from "./style";
 import { worldBrief } from "./world";
 import { applyDiff, salvage, noteStock, stockLine, type Diff } from "./turn";
 import { say } from "./voice";
@@ -260,6 +261,8 @@ export async function playMoment(
   // A private scene stays private: nobody walks in and she doesn't mishear on a dice roll. Both used
   // to be thrown in from here to make the house feel alive, and read as the writer losing the plot.
   const beats: string[] = [];
+  const lost = didntFollow(reply);
+  if (lost) beats.push(lost);
   const worn = p ? overused(s, p, m) : "";
   const card = p ? personCard(s, p, reply ?? m.title) : "";
   const city = !p && !walking;
