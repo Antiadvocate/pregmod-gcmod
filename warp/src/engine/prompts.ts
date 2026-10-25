@@ -17,6 +17,8 @@ import { featuresLine } from "./features";
 import { placeOf } from "./places";
 import { OWN_LIFE_ASK, ownLifeLines } from "./ownlife";
 import { rulesLine } from "./houserules";
+import { obeysLine } from "./compliance";
+import { characterLines } from "./character";
 import { surgeryPast } from "./health";
 import { dickCM, dickWord, inches } from "./genitals";
 import { playerBody } from "./you";
@@ -125,7 +127,7 @@ ${HOUSE_STYLE}
 
 THE RULES.
 1. WRITE THE ACTION THE PLAYER CHOSE, ALL THE WAY THROUGH. The chosen action is the whole scene. If they let her sleep in their bed, write her getting into the bed, what she wears, how she lies, whether she sleeps, what happens in the night and how she is in the morning. If they fuck her, write the fucking from start to finish. Every paragraph is about the action. A reader must be able to tell exactly what was done from your text alone.
-2. SAY HOW SHE TAKES IT. Use her card (devotion, trust, fetishes, flaws, how she is doing) to decide what she thinks and feels about it, and say so plainly, the way the game does.
+2. SAY HOW SHE TAKES IT. HOW SHE TAKES ORDERS on her card is decided by the game: a slave who resists doesn't come round, and what she won't do happens because she's made to. Use her card (devotion, trust, fetishes, flaws, how she is doing) to decide what she thinks and feels about it, and say so plainly, the way the game does.
 3. THE CARD IS FACT. Her body, age, history, voice and condition cannot be contradicted. If she is mute she does not speak. If she is nineteen weeks pregnant, she is.
 4. ONLY THE PEOPLE THE ACTION INVOLVES. Others listed as present get a sentence only if they take part or it matters to the action; otherwise leave them out. Nobody who is not listed as present appears.
 5. WRITE THE OWNER AS WHO THEY ARE. You may write what the owner says and does in the moment, freely, but in their manner as WHO THE OWNER IS describes it, never a stock cold slave-owner. Don't write their inner feelings, and don't have them make a big decision they didn't choose.
@@ -223,6 +225,9 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   // Words, not scores: a number on the card turns up in her mouth as one.
   if (s.player.owned_by === p.id) lines.push(`HOW SHE FEELS ABOUT YOU: ${r.trust_label}${r.devotion > 40 ? ", and she's attached to you" : r.devotion < -15 ? ", and she has no love for you" : ""}. That is a feeling, not a manner: how she treats you is under HOW SHE KEEPS YOU, and attachment doesn't make her gentle unless that says so.`);
   else lines.push(`TOWARD YOU: ${r.label}, ${r.trust_label}.${r.fragility > 0.6 ? " Most of her obedience is fear." : ""}`);
+  const orders = obeysLine(s, p);
+  if (orders) lines.push(orders);
+  lines.push(...characterLines(p));
   lines.push(`HOW SHE IS DOING: ${condition(p)}; mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` On her mind: ${p.psyche.active_states.join(", ")}.` : ""}`);
   if (edge?.roles.length) lines.push(`ROLES: ${edge.roles.join(", ")}`);
   const room = roomLine(p);
@@ -383,4 +388,4 @@ export const FORGE_SYSTEM = `You are fleshing out a slave for Free Cities, an ad
  "defining_memory": {"content":"one thing that happened to her, in her own words","charge":"warm|cold|sharp|bright","importance":8}
 }
 
-Write a specific, ordinary person from the place she actually comes from: a Ukrainian bookkeeper had a Ukrainian bookkeeper's life. Give her a sense of humour or the lack of one, things she's petty about, how she gets things wrong, and how she sounds out loud: the particular words and habits that make her sound like her and nobody else (a phrase she reaches for, a word from her own language, how she names things), not generic fillers like "like", "honestly" or "I mean". She's a slave and she knows it: with her owner she speaks as one (by title, deferential, refusals as pleas); her swearing, her jokes and her temper are for the other girls and for herself. The words the way she'd say them, nothing literary or pretty (the narrator copies whatever wording it's given). No tragic boilerplate, no lines that sound like sayings.`;
+Write a specific, ordinary person from the place she actually comes from: a Ukrainian bookkeeper had a Ukrainian bookkeeper's life. Give her some grain: contradictions (kind to animals and a good liar; brave in a crisis and a coward about small things), a few things she's petty or proud about, and the friction her flaw makes (if she's arrogant she talks back; if she's devout she calls it sin). Not every slave is sweet: some are cold, some are sly, some are hard work. Give her a sense of humour or the lack of one, things she's petty about, how she gets things wrong, and how she sounds out loud: the particular words and habits that make her sound like her and nobody else (a phrase she reaches for, a word from her own language, how she names things), not generic fillers like "like", "honestly" or "I mean". She's a slave and she knows it: with her owner she speaks as one (by title, deferential, refusals as pleas); her swearing, her jokes and her temper are for the other girls and for herself. The words the way she'd say them, nothing literary or pretty (the narrator copies whatever wording it's given). No tragic boilerplate, no lines that sound like sayings.`;

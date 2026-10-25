@@ -8,6 +8,7 @@
  * running game would have produced anyway.
  */
 import { seedOwnLife } from "./ownlife";
+import { seedCharacter } from "./character";
 import { repairCuckold } from "./cuckold";
 import { compactMemory, similar } from "./memory";
 import { hasWomb } from "./pregnancy";
@@ -279,6 +280,9 @@ export function sanitize(raw: SaveState): SaveState {
     p.skills.management = p.skills.management ?? {};
     p.persona.fetishes = p.persona.fetishes ?? [];
     p.persona.texture = p.persona.texture ?? [];
+    seedCharacter(p, undefined, false);
+    // Spoiling didn't exist before: read it off what she's been given and how long since she was disciplined.
+    if (p.bond.indulged === undefined) p.bond.indulged = Math.min(70, (p.room?.extras?.length ?? 0) * 4 + (p.bond.weeks_since_cruelty >= 6 ? 10 : 0));
     seedOwnLife(p);
     if (!s.memory[p.id]) s.memory[p.id] = newMemory();
     s.memory[p.id].facts = s.memory[p.id].facts ?? [];

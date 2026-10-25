@@ -40,8 +40,10 @@ function sketch(p: Person): string {
     `INTELLIGENCE: ${p.persona.intelligence}, education ${Math.round(p.persona.education)}/100`,
     `RESTING STATE: ${p.psyche.capacity_born > 1 ? "comes to rest open" : p.psyche.capacity_born < -1 ? "comes to rest braced" : "comes to rest about where anyone does"}`,
     `WANTS: ${p.persona.attracted_to}; drawn to ${p.persona.taste}`,
+    p.persona.behavior?.flaw ? `HER FLAW (fixed): ${p.persona.behavior.flaw}` : p.persona.behavior?.quirk ? `HER WAY (fixed): ${p.persona.behavior.quirk}` : "",
+    p.persona.talents?.length ? `GOOD AT: ${p.persona.talents.join(", ")}` : "",
     `THE ARCOLOGY: she is owned, and she knows exactly what that means.`,
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 /** Flesh her out with the model. `voiceOnly` gives her a voice and leaves the rest of her alone: for

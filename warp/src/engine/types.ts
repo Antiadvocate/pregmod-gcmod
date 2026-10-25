@@ -199,6 +199,12 @@ export interface Persona {
   interests?: string[];
   /** What she wants for herself in the long run, past this week and this scene. See engine/ownlife. */
   goals?: string[];
+  /** The original's behavioural flaw or quirk, and how worn down the flaw is. See data/behavior. */
+  behavior?: { flaw?: string; quirk?: string; worn?: number };
+  /** What she's good at besides sex. See engine/character. */
+  talents?: string[];
+  /** One of her traits has been given some grain (engine/character); done once. */
+  grain?: boolean;
   /** Which version of engine/ownlife's tables (or of the model's brief) wrote the two above. */
   own_v?: number;
   core_traits: string[];          // things their hands do, written so a scene could show it
@@ -388,6 +394,8 @@ export interface Bond {
   weeks_since_kindness: number;
   /** Weeks since anything they count as cruelty. */
   weeks_since_cruelty: number;
+  /** Spoiling: indulgence with nothing asked back, 0–100. Discipline takes it down. See engine/compliance. */
+  indulged?: number;
   /** The reading, cached each tick so the UI and prompts do not recompute it forty times a frame. */
   read: { devotion: number; trust: number; label: string };
 }
@@ -492,6 +500,8 @@ export interface Person {
   agreements?: import("./agreements").Agreement[];
   /** How she is with particular people, other slaves or anyone outside, kept between scenes. See engine/manner. */
   manner?: import("./manner").Manner[];
+  /** The last thing she did wrong, for the week and for punishing. See engine/compliance. */
+  misbehaved?: { week: number; what: string; kind: string };
   /** How she and the player do things, settled over many scenes: rituals, the way they talk, what
    *  always happens. Kept, so a scene doesn't reset to a stranger's version of them (engine/ways). */
   ways?: { text: string; week: number }[];

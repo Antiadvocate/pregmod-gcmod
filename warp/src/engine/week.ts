@@ -27,6 +27,8 @@ import { PLACE_BY_ID } from "../data/places";
 import { lawPulseTagged } from "./lawlife";
 import { tickHousehold } from "./household";
 import { weeklyRelease } from "./houserules";
+import { misbehave } from "./compliance";
+import { talentFits } from "./character";
 import { tickBattles } from "./battles";
 import { tickFCTV } from "./fctv";
 import { tickCorp } from "./corp";
@@ -47,6 +49,7 @@ import { tickPodolatry } from "./podolatry";
 import { tickCuckold } from "./cuckold";
 import { runOrders } from "./rules";
 import { selectEvents } from "./events";
+import { selectClassics } from "./classics";
 import { rollMarkets, recruitResult } from "./market";
 import { rng } from "./rng";
 import { runHeadGirl, runManager, type ManagerEffect } from "./managers";
@@ -137,6 +140,15 @@ export function endWeek(s: SaveState): WeekReport {
     for (const l of tickFlesh(s, p)) push(l, "neutral", 6, p.id);
     const money = weeklyMoney(s, p);
     if (managedByThem && mgr) money.income = Math.round(money.income * mgr.income);
+    // What she's good at, when her work uses it (engine/character).
+    const knack = talentFits(p);
+    if (knack && money.income > 0) money.income = Math.round(money.income * 1.15);
+    // And whether she did what she was told this week (engine/compliance).
+    const misdeed = misbehave(s, p);
+    if (misdeed) {
+      money.income = Math.round(money.income * misdeed.cut);
+      push(`${p.name} ${misdeed.what}.`, "bad", 7, p.id);
+    }
     if (money.income) led.earn("slaves", `${p.name} — ${money.note || p.assignment}`, money.income, p.id);
     led.spend("upkeep", `${p.name}`, money.upkeep, p.id);
     if (money.rep) led.entry("standing", `${p.name}`, 0, money.rep, p.id);
@@ -433,7 +445,7 @@ export function endWeek(s: SaveState): WeekReport {
     const who = s.people[ask.person];
     if (who) push(`${who.name} wants something.`, "neutral", 7, who.id);
   }
-  const fresh = selectEvents(s, { writer });
+  const fresh = [...selectEvents(s, { writer }), ...selectClassics(s)];
   // An event about someone who's gone (dead, sold) can't be about her any more.
   const here = (e: { person?: string }) => !e.person || ["owned", "indentured", "free"].includes(s.people[e.person]?.status ?? "");
   s.events = [...s.events.filter((e) => week - e.week < 2 && here(e)), ...fresh];

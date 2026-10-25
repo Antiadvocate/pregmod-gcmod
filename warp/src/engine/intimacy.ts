@@ -21,6 +21,7 @@
  *
  * Nothing here writes prose. It writes the facts the prose has to honour.
  */
+import { forced, obeys, type Stance } from "./compliance";
 import { footAct } from "./podolatry";
 import { sane, recoveryNote } from "./health";
 import { erection, feetOf, mobility } from "./genitals";
@@ -57,6 +58,8 @@ export interface ActOutcome {
   trained: Record<string, number>;
   /** What she will carry, if anything. */
   memory?: string;
+  /** How she took being told (engine/compliance); "resists" and "fights" mean it was forced on her. */
+  stance?: Stance;
 }
 
 /** Can this even be done to this body? Returns the reason it cannot, or null. */
@@ -146,6 +149,10 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
 
   const aff = affinity(p, act);
   const r = read(p, s.memory[p.id]);
+  // Her own moves when she holds your collar are hers; everything else she's told to do, and how she
+  // takes that is the game's call, not the narrator's.
+  const stance = act.group === "hers" ? undefined : obeys(s, p).stance;
+  const made = !!stance && forced(stance) && !act.receives;
   const willing = act.wants_devotion === undefined || r.devotion >= act.wants_devotion;
 
   // AROUSAL. Wanting it is most of it; a body that is already wound up needs less.
@@ -236,6 +243,8 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
 
   // HOW IT LANDED, in one word.
   const landing: ActOutcome["landing"] =
+    // Forced on her: at best her body goes along with what she didn't want.
+    made ? (aff.score > 0.55 ? "endured" : "hated") :
     aff.score > 0.55 ? "wanted" :
     aff.score < -0.4 ? "hated" :
     aff.score > 0.1 ? "willing" :
@@ -274,7 +283,7 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
   if (opts?.withId) moveEdge(s.edges, p.id, opts.withId, { warmth: landing === "hated" ? -3 : 1 });
 
   return {
-    act: actId, arousal: arousalDelta, relaxation, finished, landing,
+    act: actId, arousal: arousalDelta, relaxation, finished, landing, stance,
     because: aff.why || "it doesn't match anything she's into",
     bond: +bond.toFixed(2), resentment: +resent.toFixed(2),
     discovered, converted, first, trained, memory: memoryLine, believers,
@@ -301,6 +310,7 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
   lines.push(`Write this act happening with ${p.name}, from start to finish. It is the whole scene. Do not write a scene about something else.`);
   lines.push(``);
   lines.push(`## HOW SHE TAKES IT (decided by the game; write it this way)`);
+  if (out.stance) lines.push(OBEY_ACT[out.stance]);
   switch (out.landing) {
     case "wanted": lines.push(`She loves it. ${out.because}. Say so, and show her enjoying it.`); break;
     case "willing": lines.push(`She's happy enough to go along with it.`); break;
@@ -318,6 +328,18 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
     : `Write it concretely: what you do, what she does, what she says and how she says it.`);
   return lines.join("\n");
 }
+
+/** How the act goes, by how she takes being told (engine/compliance). */
+const OBEY_ACT: Record<Stance, string> = {
+  hollow: "She's mindbroken: she lets it happen and nobody is behind her eyes.",
+  eager: "She does what she's told gladly.",
+  obedient: "She does what she's told, properly.",
+  reluctant: "She does it slowly and grudgingly, and has to be told twice.",
+  terrified: "She submits because she's terrified of you: shaking, maybe crying, apologising, doing exactly what she's told so it'll be over.",
+  resists: "She doesn't want to: she pulls away, begs, makes excuses, and you have to make her (hold her, threaten her, or call the guards to hold her). Write her resisting and you forcing it; she doesn't come round.",
+  fights: "She fights it: she says no, struggles, tries to get away, maybe hits out. It happens because you force it (your hands, restraints, or the guards holding her down). Write the struggle; she doesn't give in or enjoy it, whatever her body does.",
+  free: "She isn't bound to obey: she's going along with this because she chose to, and how she takes it is below.",
+};
 
 /** Everything you could do to her right now, with the reason each blocked one is blocked. */
 export function availableActs(p: Person, s?: SaveState): { act: ActDef; blocked: string | null; affinity: number }[] {

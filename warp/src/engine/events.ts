@@ -47,6 +47,8 @@ export interface EventDef {
   /** True when this event came out of your household rather than out of the world. These fire at
    *  tension 0; world events do not. */
   endogenous: boolean;
+  /** One of the original's single-slave events: chosen by engine/classics, not the pressure pool. */
+  classic?: boolean;
 }
 
 /** How a person scores against one adopted doctrine — the flashpoint event's whole condition. */
@@ -507,7 +509,7 @@ export function selectEvents(s: SaveState, opts: { writer?: boolean } = {}): Pen
   const waiting = new Set(s.events.map((e) => e.kind));
   for (const def of EVENTS) {
     if (!def.endogenous && s.models.tension === 0) continue;
-    if (waiting.has(def.id) || !businessAllowed(s, def.id)) continue;
+    if (def.classic || waiting.has(def.id) || !businessAllowed(s, def.id)) continue;
     for (const c of def.candidates(s)) {
       // With a model writing the week, what a woman wants is engine/wants's job, built from her
       // reasons; the stock events about one woman stay out.
