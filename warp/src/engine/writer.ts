@@ -375,6 +375,12 @@ const ACT_TEXT: Record<string, ActText> = {
     ],
     yours: ["You come on her, then she comes in you."],
   },
+  "take charge": {
+    core: [
+      "You lie back and tell her it's hers. She doesn't ask twice: she pins your wrists over your head, takes what she wants from you at her own pace, and tells you exactly what to do with your mouth.",
+      "You give her control and she takes it like it was always hers: she shoves you flat, climbs up and sits on your face, and rides you until she's done with you, not before.",
+    ],
+  },
   "drain her": {
     core: [
       "You keep going after she comes the first time. And the second. She's begging you to stop long before you do.",

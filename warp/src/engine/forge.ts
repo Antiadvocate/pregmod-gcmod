@@ -17,6 +17,7 @@ import { modelsAvailable } from "../config";
 import { FORGE_SYSTEM, WEEK_SYSTEM } from "./prompts";
 import { remember } from "./memory";
 import { cleanList, OWN_V } from "./ownlife";
+import { inBed } from "./sexlife";
 
 interface ForgeOut {
   voice?: Person["persona"]["voice"];
@@ -43,6 +44,7 @@ function sketch(p: Person): string {
     `WANTS: ${p.persona.attracted_to}; drawn to ${p.persona.taste}`,
     p.persona.behavior?.flaw ? `HER FLAW (fixed): ${p.persona.behavior.flaw}` : p.persona.behavior?.quirk ? `HER WAY (fixed): ${p.persona.behavior.quirk}` : "",
     p.persona.talents?.length ? `GOOD AT: ${p.persona.talents.join(", ")}` : "",
+    inBed(p) ? `IN BED (fixed): ${inBed(p)}` : "",
     `THE ARCOLOGY: she is owned, and she knows exactly what that means.`,
   ].filter(Boolean).join("\n");
 }
