@@ -15,7 +15,7 @@
  */
 import { featuresLine } from "./features";
 import { placeOf } from "./places";
-import { ownLifeLines } from "./ownlife";
+import { OWN_LIFE_ASK, ownLifeLines } from "./ownlife";
 import { surgeryPast } from "./health";
 import { dickCM, dickWord, inches } from "./genitals";
 import { playerBody } from "./you";
@@ -372,8 +372,8 @@ export const FORGE_SYSTEM = `You are fleshing out a slave for Free Cities, an ad
  "voice": {"diction":"...","syntax":"...","rhythm":"...","tics":["verbal habits only, e.g. 'trails off when she's unsure', 'counts things on her fingers'"],"never_says":["..."],"agenda":"what she usually wants out of a conversation","example_lines":["5 things she would actually say TO HER OWNER, as a slave, one each: nervous, upset, happy, turned on, and caught out or embarrassed. With her real stumbles and fillers, and her owner's title in them, the way the original game's slaves talk: \\"P-please, Master, I didn't mean to\\", \\"Thank you, Master\\". Upset comes out as pleading or a flat \\"Yes, Master\\", never back-talk"]},
  "core_traits": ["3 short plain personality traits, the way the game lists them: e.g. 'mouthy and quick to argue', 'lazy unless someone is watching', 'fiercely proud of her cooking'"],
  "texture": ["2 things she likes or can't stand"],
- "interests": ["2 or 3 things she does with her own time, from her life before and her nature: things she does, not things she likes, e.g. 'keeps seedlings growing in a cup under the bathroom light', 'is teaching one of the other girls to read'"],
- "goals": ["1 or 2 things she wants for herself in the long run, specific to her, e.g. 'to teach dance again, even if it's only the other girls', 'to find out whether her brother got out'"],
+ "interests": ["${OWN_LIFE_ASK.interests}"],
+ "goals": ["${OWN_LIFE_ASK.goals}"],
  "background": "3-4 plain sentences about her life before she was enslaved",
  "defining_memory": {"content":"one thing that happened to her, in her own words","charge":"warm|cold|sharp|bright","importance":8}
 }

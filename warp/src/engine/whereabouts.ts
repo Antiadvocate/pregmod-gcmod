@@ -119,7 +119,7 @@ export function whereabouts(s: SaveState, p: Person, salt: string | number = s.t
   return at(job.place, r.pick(pool), { withYou: job.withYou });
 }
 
-const DOUBLE: Record<string, string> = { runs: "running", sits: "sitting", gets: "getting", puts: "putting", plans: "planning", swims: "swimming", jogs: "jogging" };
+const DOUBLE: Record<string, string> = { runs: "running", sits: "sitting", gets: "getting", puts: "putting", plans: "planning", swims: "swimming", jogs: "jogging", bets: "betting", knits: "knitting", grins: "grinning", sets: "setting", wins: "winning", begins: "beginning", stops: "stopping", drops: "dropping", slips: "slipping", rubs: "rubbing", hums: "humming", grabs: "grabbing", hugs: "hugging", chats: "chatting", skips: "skipping", strips: "stripping", flips: "flipping" };
 
 /** "keeps seedlings in a cup" → "keeping seedlings in a cup". Null when it isn't something she can be in the middle of. */
 export function ing(what: string): string | null {
@@ -129,10 +129,19 @@ export function ing(what: string): string | null {
   const [w, ...rest] = t.split(/\s+/);
   const v = verbIng(w);
   if (!v) return null;
-  // "sews and alters her clothes": both verbs.
-  if (rest[0] === "and" && rest[1]) rest[1] = verbIng(rest[1]) ?? rest[1];
+  // "sews and alters her clothes", "bets the girls on it, and usually wins": the later verbs too.
+  for (let i = 0; i < rest.length - 1; i++) {
+    if (rest[i] !== "and") continue;
+    let j = i + 1;
+    while (j < rest.length - 1 && ADVERB.test(rest[j])) j++;
+    const next = rest[j].replace(/[,.;]+$/, ""), tail = rest[j].slice(next.length);
+    if (i === 0 || AND_VERB.test(next)) rest[j] = (next === "knows" ? "knowing" : verbIng(next) ?? next) + tail;
+  }
   return [v, ...rest].join(" ");
 }
+
+const ADVERB = /^(usually|always|often|then|still|sometimes|never|quietly)$/;
+const AND_VERB = /^(passes|admires|wins|knows|checks|gets|blushes|tests|cheats|enjoys|shows|tells|keeps|makes|takes|gives|says|calls|laughs|watches|practises|teaches|trades|leaves|puts|lets|hides|counts|sends)$/;
 
 function verbIng(w: string): string | null {
   const lw = w.toLowerCase();

@@ -1,7 +1,7 @@
 import { check } from "./harness.ts";
 import { newGame } from "../src/engine/state.ts";
 import { writeLaw } from "../src/engine/court.ts";
-import { answerOwn, choose, cleanOption, locked, pickSeed, running, sagasOf, seedsFor, tickSagas, writeNext, type Saga, type Writer } from "../src/engine/saga.ts";
+import { answerOwn, choose, cleanOption, locked, pickSeed, running, sagasOf, seedsFor, tickSagas, toWrite, writeNext, type Saga, type Writer } from "../src/engine/saga.ts";
 import { facesOf, pruneFaces } from "../src/engine/faces.ts";
 
 const s = newGame({ seed: "saga-a" });
@@ -20,6 +20,7 @@ sagasOf(s).next_start = s.arcology.week;
 check("no model, no saga", tickSagas(s, false).length === 0 && !running(s).length);
 const lines = tickSagas(s, true);
 check("with one, a story begins, unwritten", running(s).length === 1 && running(s)[0].status === "unwritten" && lines.length === 1, lines);
+check("it's only offered: nothing writes it in the background until you begin it", !toWrite(s) && /if you want it/.test(lines[0]), lines);
 const x = running(s)[0];
 x.seed = { id: `slave:${her.id}:hate`, kind: "slave", people: [her.id], text: `${her.name} hates you.` };
 
@@ -64,6 +65,7 @@ check("the history holds what you chose", x.history.length === 1 && x.history[0]
 
 s.arcology.week = x.due;
 check("the next chapter is announced once", tickSagas(s, true).some((l) => /next chapter/.test(l)) && !tickSagas(s, true).some((l) => /next chapter/.test(l)));
+check("a story you've begun writes its next chapter in the background", toWrite(s) === x);
 await writeNext(s, x.id, fake([chapter()]));
 check("the fact you learned unlocks an option", locked(s, x, x.chapter!.options[2]) === null);
 choose(s, x.id, 2);

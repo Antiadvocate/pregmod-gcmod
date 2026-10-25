@@ -16,7 +16,7 @@ import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { FORGE_SYSTEM, WEEK_SYSTEM } from "./prompts";
 import { remember } from "./memory";
-import { cleanList } from "./ownlife";
+import { cleanList, OWN_V } from "./ownlife";
 
 interface ForgeOut {
   voice?: Person["persona"]["voice"];
@@ -65,6 +65,7 @@ export async function enrichPerson(s: SaveState, p: Person, voiceOnly = false): 
   const does = cleanList(out.interests, 3), wants = cleanList(out.goals, 2);
   if (does.length) p.persona.interests = does;
   if (wants.length) p.persona.goals = wants;
+  if (does.length && wants.length) p.persona.own_v = OWN_V;
   if (voiceOnly) return !!out.voice;
   if (out.core_traits?.length) p.persona.core_traits = out.core_traits.slice(0, 4).map((t) => String(t).slice(0, 160));
   if (out.texture?.length) p.persona.texture = out.texture.slice(0, 3).map((t) => String(t).slice(0, 100));

@@ -22,7 +22,7 @@
  *
  * Without a model, each of these returns nothing and the game's own text stands.
  */
-import { waiting, writeNext } from "./saga";
+import { toWrite, writeNext } from "./saga";
 import { dueToGrow, growPersona } from "./growth";
 import { pickOption, type Order } from "./ownwords";
 import { regionOf, regionNews, knownWord, bring } from "./region";
@@ -421,10 +421,10 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
   // through something big since they were last read, or were read by an older version of the
   // reading, are written again as who they've become (engine/growth).
   for (const p of dueToGrow(s).slice(0, 2)) { step(`who ${p.name} has become`); await growPersona(s, p); }
-  // The long stories write themselves now: one waiting chapter a week is written in the background
-  // and waits on the Penthouse like any event. They used to sit unwritten until someone found the
-  // button on the Story screen, and while two sat there no new one could start.
-  const saga = waiting(s).find((x) => !x.chapter);
+  // A long story you've begun writes its next chapter in the background, one a week, and it waits on
+  // the Penthouse like any event. A new one is only ever offered: it's a big thing to take on, so it
+  // waits on the Story screen until you begin it yourself.
+  const saga = toWrite(s);
   if (saga) {
     step(saga.title || "a new story");
     await writeNext(s, saga.id, async (system, user) => {

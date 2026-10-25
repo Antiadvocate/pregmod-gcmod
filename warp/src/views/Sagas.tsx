@@ -67,7 +67,7 @@ export function SagaNotice({ onOpen }: { onOpen: () => void }) {
     <button className="card p-3 mb-4 w-full text-left press flex items-center gap-2.5" onClick={onOpen}>
       <BookOpen size={15} className="acc shrink-0" />
       <span className="min-w-0 flex-1 text-[13.5px]">
-        {w.map((x) => (x.status === "unwritten" ? (x.seed.kind === "own" ? "Your story is ready to begin" : "A new story is beginning") : `${x.title}: the next chapter`)).join(" · ")}
+        {w.map((x) => (x.status === "unwritten" ? (x.seed.kind === "own" ? "Your story is ready to begin" : "A story you could start") : `${x.title}: the next chapter`)).join(" · ")}
       </span>
       <ChevronRight size={15} className="dim shrink-0" />
     </button>
@@ -124,7 +124,7 @@ export function SagaCard({ id }: { id: string }) {
     return (
       <div className="card p-4 fade-in">
         <div className="text-[12px] font-medium acc mb-1.5 flex items-center gap-1.5">
-          <BookOpen size={13} /> {mine ? "Your story" : "Something is beginning"}{x.restarts ? <span className="dim font-normal"> · started over</span> : null}
+          <BookOpen size={13} /> {mine ? "Your story" : "A story you could start"}{x.restarts ? <span className="dim font-normal"> · started over</span> : null}
         </div>
         <p className="font-prose text-[15px] leading-relaxed">{x.seed.text}</p>
         <div className="flex flex-wrap gap-2 mt-3 items-center">
