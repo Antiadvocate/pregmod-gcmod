@@ -19,6 +19,7 @@ import { OWN_LIFE_ASK, ownLifeLines } from "./ownlife";
 import { rulesLine } from "./houserules";
 import { obeysLine } from "./compliance";
 import { characterLines } from "./character";
+import { desireLines, skillsLine } from "./sexlife";
 import { fitLines, herFitLine } from "./fit";
 import { surgeryPast } from "./health";
 import { dickCM, dickWord, inches } from "./genitals";
@@ -240,6 +241,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   const orders = obeysLine(s, p);
   if (orders) lines.push(orders);
   lines.push(...characterLines(p));
+  lines.push(skillsLine(p), ...desireLines(p));
   if (s.player.owned_by !== p.id || p.body.dick) { lines.push(...fitLines(s, p)); const hers = herFitLine(s, p); if (hers) lines.push(hers); }
   lines.push(`HOW SHE IS DOING: ${condition(p)}; mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` On her mind: ${p.psyche.active_states.join(", ")}.` : ""}`);
   if (edge?.roles.length) lines.push(`ROLES: ${edge.roles.join(", ")}`);

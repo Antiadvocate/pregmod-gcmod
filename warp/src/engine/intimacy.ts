@@ -21,6 +21,7 @@
  *
  * Nothing here writes prose. It writes the facts the prose has to honour.
  */
+import { actSkillLine, fed } from "./sexlife";
 import { fitWords, holeFor, ownerSize, penetrate, type Strain } from "./fit";
 import { forced, obeys, type Stance } from "./compliance";
 import { footAct } from "./podolatry";
@@ -152,6 +153,8 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
 
   const aff = affinity(p, act);
   const r = read(p, s.memory[p.id]);
+  // Something she's into, given to her: it counts as fed this week (engine/sexlife).
+  if (p.persona.fetishes.some((f) => f.strength >= 30 && FETISH_BY_ID[f.name] && (act.tags.some((t) => FETISH_BY_ID[f.name].acts.includes(t)) || FETISH_BY_ID[f.name].acts.includes(act.id)))) fed(p, s.arcology.week);
   // Her own moves when she holds your collar are hers; everything else she's told to do, and how she
   // takes that is the game's call, not the narrator's.
   const stance = act.group === "hers" ? undefined : obeys(s, p).stance;
@@ -317,6 +320,8 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
   lines.push(``);
   lines.push(`## HOW SHE TAKES IT (decided by the game; write it this way)`);
   if (out.stance) lines.push(`${OBEY_ACT[out.stance]} How that comes out is hers: in her own voice, words and habits from her card, not a stock slave's.`);
+  const skill = actSkillLine(p, out.act);
+  if (skill) lines.push(skill);
   if (out.strain) {
     lines.push(`HOW IT FITS (fact): ${fitWords(out.strain.fit, ownerSize(s).what, p)}`);
     if (out.strain.after) lines.push(`WHAT IT DOES TO HER (fact; show it, and show it afterwards): ${out.strain.after}.`);
