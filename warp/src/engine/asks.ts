@@ -124,7 +124,7 @@ const IN_HER_WORDS: Record<string, string> = {
   getoff: "you getting me off", toys: "the drawer, and all of it", "public use": "you taking me out on the concourse",
   exposure: "you showing me off", degradation: "you putting me in my place in front of people",
   restraint: "you tying me down", discipline: "you punishing me", orders: "you giving me orders",
-  "suck her": "you sucking my cock", "stroke her": "your hand on my cock", "ride her": "you riding me",
+  "suck her": "you sucking my cock", "stroke her": "your hand on my cock", "ride her": "you riding me", "take charge": "you letting me take charge",
   "eat her": "you going down on me", "worship her": "you worshipping me", "worship feet": "you worshipping my feet",
   "breed her back": "me breeding you", kissing: "you kissing me", slow: "a whole night, slow",
   "sleeping together": "staying the night", milking: "you milking me", suckle: "you nursing from me",

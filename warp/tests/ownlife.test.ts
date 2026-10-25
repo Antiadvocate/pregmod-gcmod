@@ -111,6 +111,7 @@ g.fetch = async (_u: string, init: { body: string }) => {
   const card = personCard(s, her);
   check("her card has her own time and what she wants", card.includes("HER OWN TIME") && card.includes("seedlings") && card.includes("IN THE LONG RUN") && card.includes("teach dance"));
   check("the re-reading is a new version, so everyone is re-read with a sexual life of her own", GROW_V >= 4);
+  check("and again, told who she is in bed, so a dom written meek is written again", GROW_V >= 5);
 }
 
 /* ── where she is ──────────────────────────────────────────────────────────────────────────── */

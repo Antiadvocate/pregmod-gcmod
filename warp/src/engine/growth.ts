@@ -29,6 +29,7 @@ import { read } from "./obedience";
 import { coarsen } from "./register";
 import { cleanList, OWN_LIFE_ASK, OWN_V } from "./ownlife";
 import { surgeryPast } from "./health";
+import { inBed } from "./sexlife";
 
 /** Weeks between readings of the same woman. */
 const EVERY = 6;
@@ -36,8 +37,9 @@ const EVERY = 6;
  *  version 1 wrote quirk lists the narrator caricatured; 2 writes a grounded person and short
  *  ordinary exchanges instead; 3 gives her a life of her own (what she does with her time, what she
  *  wants in the long run) and knows that what's done is done; 4 gives those a sexual edge, from her
- *  personality. */
-export const GROW_V = 4;
+ *  personality; 5 is told who she is in bed (fetish, paraphilia, quirk, flaw) and writes her
+ *  personality with room for it, after a dom with an abusive streak came out meek. */
+export const GROW_V = 5;
 
 function lastRead(p: Person): number { return p.persona.grown_week ?? p.origin.acquired_week ?? 0; }
 
@@ -73,6 +75,7 @@ Rules that matter most:
 - Don't turn a one-off joke, image or number from a scene into who she is. If a scene had her call herself bread, or count to eighty-nine, that was one moment; leave it there.
 - "tics": at most two small, believable habits real people have (a word from her own language when she swears, what she calls the owner, a way she laughs), each something she does only now and then. Leave it empty if nothing fits. Never generic fillers ("like", "just", "honestly", "okay", "I mean").
 - Her body is fact. Where a memory says something her body couldn't have done (a cock far too big for a throat taken all the way down, say), the body wins: it went as far as it physically could, and that's who she is and what she remembers.
+- IN BED is fact. Her core traits, voice and agenda must have room for it and say how it comes out: a quiet, careful or obedient woman can be a dom or a sadist in bed. Write the contrast, never write it away.
 - What's done is done. An operation, a punishment, a promise or a scene that already happened is in her past: it can have changed her, but she doesn't count the days since it, wait for it, or bring it up every time she talks. DONE TO HER BODY and the weeks on everything tell you what's over.
 - She has a life of her own besides the owner and what's been done to her. This is a porn game, so it has a sexual edge, and it grows out of her personality traits first, then her fetishes, then the job she had. "interests": ${OWN_LIFE_ASK.interests}. "goals": ${OWN_LIFE_ASK.goals}. Keep the ones on her card that still fit, and change what her weeks here would have changed.
 - "exchanges": three short, ordinary exchanges with the owner, the kind that happen every day, in the relationship they actually have (THE POWER BETWEEN THEM and her STANDING ORDERS decide how she speaks to him). The owner says something ordinary ("How are you?", "Come here.", "What do you think of the new room?") and she answers in one to three plain sentences, as herself. These set the length and plainness of how she talks, so keep them short and natural.
@@ -96,7 +99,7 @@ function brief(s: SaveState, p: Person): string {
     .sort((a, b) => a.week - b.week)
     .map((m) => `· week ${m.week}${m.times && m.times > 1 ? ` (×${m.times})` : ""}: ${m.content}`);
   const v = p.persona.voice;
-  const fetishes = p.persona.fetishes.filter((f) => f.strength >= 30).map((f) => `${f.name} (${f.strength >= 100 ? "past a preference" : f.strength >= 60 ? "strong" : "real"})`);
+  const bed = inBed(p);
   return [
     `## WHO SHE WAS WHEN SHE ARRIVED (week ${p.origin.acquired_week})`,
     `${p.name}, ${p.age}, ${p.origin.nationality}; was a ${p.origin.career}. ${p.persona.background}`,
@@ -105,7 +108,7 @@ function brief(s: SaveState, p: Person): string {
     `## HER BODY NOW\n${p.body.appearance_facts} ${featureFacts(p)}\nBetween her legs: ${describeGenitals(p)}\nFeet: ${describeFeet(p)}${p.body.traits?.length ? `\nAltered: ${p.body.traits.join(", ")}` : ""}`,
     surgeryPast(s, p, 999) ? `## DONE TO HER BODY (over; in the past)\n${surgeryPast(s, p, 999)}` : "",
     `## HER OWN LIFE, AS HER CARD HAS IT NOW\nWhat she does with her time: ${(p.persona.interests ?? []).join("; ") || "nothing written yet"}\nWhat she wants in the long run: ${(p.persona.goals ?? []).join("; ") || "nothing written yet"}\nLikes and dislikes: ${p.persona.texture.join("; ")}\nWorks as: ${p.assignment}. Before she was taken: ${p.origin.career}.`,
-    `## WHERE SHE STANDS WITH THE OWNER (week ${s.arcology.week})\nStanding: ${rom.standing}. Toward the owner: ${r.label}, ${r.trust_label}.${fetishes.length ? ` What she's into: ${fetishes.join(", ")}.` : ""}\n${powerBetween(s, p)}`,
+    `## WHERE SHE STANDS WITH THE OWNER (week ${s.arcology.week})\nStanding: ${rom.standing}. Toward the owner: ${r.label}, ${r.trust_label}.${bed ? `\nIN BED (fact): ${bed}.` : ""}\n${powerBetween(s, p)}`,
     agreementsBrief(s, p),
     mannerLines(p).length ? `## HOW SHE IS WITH OTHER PEOPLE\n${mannerLines(p).join("\n")}` : "",
     (mem?.facts ?? []).length ? `## WHAT SHE KNOWS ABOUT THE OWNER (with the week she learned it)\n${mem!.facts.map((f) => `· week ${f.week}: ${f.text}`).join("\n")}` : "",

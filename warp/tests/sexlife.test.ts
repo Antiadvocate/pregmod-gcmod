@@ -44,3 +44,38 @@ p.assignment = "public servant";
 const bond = p.bond.bond;
 const fedLine = weeklyDesires(s, p);
 check("fed by her work, she's happier and closer", /happier/.test(fedLine ?? "") && p.bond.bond > bond, fedLine);
+
+// A dom with an abusive streak, written meek by her forged voice: in bed the dom wins.
+{
+  const { refresh } = await import("../src/engine/obedience.ts");
+  const { inBed } = await import("../src/engine/sexlife.ts");
+  const s = newGame({ seed: "sexlife-dom", starting_slaves: 1, plot: false } as never) as SaveState;
+  const d = Object.values(s.people).find((x) => x.status === "owned" && x.age >= 18)! as Person;
+  d.persona.fetishes = [{ name: "dom", strength: 56, known: true }];
+  d.persona.paraphilia = "abusive" as never;
+  d.persona.core_traits = ["shuts down and goes still when she's frightened"];
+  d.psyche.state = "intact"; d.romance = undefined; d.latitude = undefined;
+  Object.assign(d.bond, { bond: 48, fear: 18, resentment: 12, hope: 90 });
+  refresh(d, s.memory[d.id]);
+  const card = personCard(s, d);
+  check("her dom fetish says what she does in bed", /HER FETISH \(known\): dom[^\n]*takes the top/.test(card));
+  check("her paraphilia says what the need is", /HER PARAPHILIA: abusive[^\n]*dominate and abuse/.test(card));
+  check("and it wins over the quieter reading of her personality", /IN BED \(fact\)[^\n]*win over the quieter reading/.test(card));
+  check("obeying and wanting control are both true", /IN BED[^\n]*obeys the owner and she wants control/.test(card), card.match(/IN BED[^\n]*/)?.[0]);
+  check("alone in the house, the need lands on the owner", /IN BED[^\n]*no other slave in the house/.test(card));
+  const { generatePerson } = await import("../src/engine/generate.ts");
+  const other = generatePerson({ seed: "sexlife-other", sex: "female" });
+  other.status = "owned"; other.age = Math.max(other.age, 20);
+  s.people[other.id] = other;
+  check("with others and the default rules, she may not touch them", /IN BED[^\n]*forbid her touching/.test(personCard(s, d)));
+
+  const used = resolveAct(s, d, "vaginal");
+  if (!("error" in used)) check("used, she'd rather be on top, and tries to turn it", /SHE'D RATHER BE ON TOP[^\n]*tries to turn it/.test(actDirective(s, d, used)));
+  d.counters.fed = -99;
+  const led = resolveAct(s, d, "take charge");
+  check("you can let her take charge", !("error" in led), led);
+  if (!("error" in led)) check("and then she's in charge for real, rough with it", /SHE'S IN CHARGE HERE[^\n]*rough/.test(actDirective(s, d, led)));
+  check("which feeds her", d.counters.fed === s.arcology.week);
+
+  check("the prompts that write her personality are told who she is in bed", /dom \(real\)[^;]*takes the top/.test(inBed(d)) && /paraphilia, abusive/.test(inBed(d)));
+}

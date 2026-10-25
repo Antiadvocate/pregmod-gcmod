@@ -206,6 +206,8 @@ export const ACTS: ActDef[] = [
     base: { arousal: -25, relaxation: 1.1, bond: 3.5, resentment: -3, release: 0 } },
   { id: "ride her", name: "Ride her", what: "you put her on her back and ride her cock", group: "hers", tags: ["penetrative", "hers", "domination"], needs: ["dick", "hard"],
     trains: { penetrative: 3.5 }, base: { arousal: 14, relaxation: 0.8, bond: 3, resentment: -1, release: 5 }, wants_devotion: 10 },
+  { id: "take charge", name: "Let her take charge", what: "you lie back and give her control: she decides what happens, pins you down, sits on your face and rides you, and uses you for her own pleasure", group: "hers", tags: ["domination", "hers", "using another"],
+    trains: { vaginal: 1.5, oral: 0.5 }, base: { arousal: 10, relaxation: 0.5, bond: 2.5, resentment: 0, release: 5 }, wants_devotion: 10 },
   { id: "drain her", name: "Empty her", what: "you milk her balls, making her cum over and over until she's dry", group: "hers", tags: ["hers", "oral", "rough", "denial"], needs: ["balls"],
     base: { arousal: -10, relaxation: -0.9, bond: 0.5, resentment: 4, release: 0 } },
   { id: "eat her", receives: true, name: "Go down on her", what: "you eat her pussy until she cums", group: "hers", tags: ["oral", "servicing", "hers", "worship", "tenderness"], needs: ["vagina"],

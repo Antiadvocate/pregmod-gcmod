@@ -21,7 +21,7 @@
  *
  * Nothing here writes prose. It writes the facts the prose has to honour.
  */
-import { actSkillLine, fed } from "./sexlife";
+import { actDesireLine, actSkillLine, fed } from "./sexlife";
 import { fitWords, holeFor, ownerSize, penetrate, type Strain } from "./fit";
 import { forced, obeys, type Stance } from "./compliance";
 import { footAct } from "./podolatry";
@@ -322,15 +322,18 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
   if (out.stance) lines.push(`${OBEY_ACT[out.stance]} How that comes out is hers: in her own voice, words and habits from her card, not a stock slave's.`);
   const skill = actSkillLine(p, out.act);
   if (skill) lines.push(skill);
+  const want = actDesireLine(s, p, out.act);
+  if (want) lines.push(want);
   if (out.strain) {
     lines.push(`HOW IT FITS (fact): ${fitWords(out.strain.fit, ownerSize(s).what, p)}`);
     if (out.strain.after) lines.push(`WHAT IT DOES TO HER (fact; show it, and show it afterwards): ${out.strain.after}.`);
   }
+  const because = out.because.replace(/[.\s]+$/, "");
   switch (out.landing) {
-    case "wanted": lines.push(`She loves it. ${out.because}. Say so, and show her enjoying it.`); break;
+    case "wanted": lines.push(`She loves it. ${because}. Say so, and show her enjoying it.`); break;
     case "willing": lines.push(`She's happy enough to go along with it.`); break;
     case "endured": lines.push(`She puts up with it because she has to. She does what's expected and doesn't enjoy it.`); break;
-    case "hated": lines.push(`She hates it. ${out.because}. She obeys because she's a slave, and it's obvious how much she hates it.`); break;
+    case "hated": lines.push(`She hates it. ${because}. She obeys because she's a slave, and it's obvious how much she hates it.`); break;
     default: lines.push(`It does nothing for her either way.`); break;
   }
   const sexual = act.group !== "tenderness" || act.base.release > 0 || out.finished;
