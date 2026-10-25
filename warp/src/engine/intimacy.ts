@@ -21,7 +21,6 @@
  *
  * Nothing here writes prose. It writes the facts the prose has to honour.
  */
-import { fcVoice } from "../data/fcvoice";
 import { fitWords, holeFor, ownerSize, penetrate, type Strain } from "./fit";
 import { forced, obeys, type Stance } from "./compliance";
 import { footAct } from "./podolatry";
@@ -317,7 +316,7 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
   lines.push(`Write this act happening with ${p.name}, from start to finish. It is the whole scene. Do not write a scene about something else.`);
   lines.push(``);
   lines.push(`## HOW SHE TAKES IT (decided by the game; write it this way)`);
-  if (out.stance) lines.push(OBEY_ACT[out.stance], fcVoice(out.stance, out.strain?.fit.hole));
+  if (out.stance) lines.push(`${OBEY_ACT[out.stance]} How that comes out is hers: in her own voice, words and habits from her card, not a stock slave's.`);
   if (out.strain) {
     lines.push(`HOW IT FITS (fact): ${fitWords(out.strain.fit, ownerSize(s).what, p)}`);
     if (out.strain.after) lines.push(`WHAT IT DOES TO HER (fact; show it, and show it afterwards): ${out.strain.after}.`);

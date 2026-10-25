@@ -41,6 +41,7 @@ function slave(s: SaveState, b: Partial<Person["bond"]>, extra: (p: Person) => v
 
   const rebel = slave(s, { bond: -70, resentment: 90, hope: 0 });
   check("her card tells the narrator how she takes orders", /HOW SHE TAKES ORDERS[^\n]*refuses/.test(personCard(s, rebel)));
+  check("but how it sounds is hers, not a stock slave's", /how it sounds is hers[^\n]*never a stock slave's lines/.test(personCard(s, rebel)));
   check("and the scene writer doesn't just do what the player says", MOMENT_SYSTEM.includes("happens only as far as HOW SHE TAKES ORDERS") && !MOMENT_SYSTEM.includes("Follow the player's reply exactly"));
   rebel.persona.fetishes = [{ name: "buttslut", strength: 90, known: true }];
   rebel.persona.flaw = undefined; rebel.persona.quirk = undefined;
