@@ -30,6 +30,9 @@ import { captureInstructions } from "./agreements";
 import { WALK_OPTIONS, WALK_SYSTEM, walkContext, walkOffline } from "./walk";
 import { whereLine, type Whereabouts } from "./whereabouts";
 import { rulesLine } from "./houserules";
+import { pairFitLine } from "./fit";
+import { fcVoice } from "../data/fcvoice";
+import { obeys } from "./compliance";
 
 export interface MomentLine { role: "you" | "scene"; text: string }
 
@@ -270,7 +273,7 @@ export async function playMoment(
     card ? `## ${walking ? "WITH THE PLAYER" : "THE SLAVE"}\n${card}` : "",
     m.where ? whereLine(m.where, m.where.summoned) : "",
     ...others.map((o) => `## ALSO IN THE SCENE\n${personCard(s, o, m.title)}`),
-    p && others.length ? `## BETWEEN THEM\n${others.flatMap((o) => [bond(p, o), bond(o, p)]).filter(Boolean).join("\n")}\nBoth of them talk and act in the scene, each in her own voice.` : "",
+    p && others.length ? `## BETWEEN THEM\n${others.flatMap((o) => [bond(p, o), bond(o, p), pairFitLine(s, p, o), pairFitLine(s, o, p)]).filter(Boolean).join("\n")}\nBoth of them talk and act in the scene, each in her own voice.` : "",
     s.world ? `## THE WORLD\n${worldBrief(s)}` : "",
     walking ? "" : lawsLine(s),
     walking || city ? "" : rulesLine(s),
@@ -282,6 +285,7 @@ export async function playMoment(
     `## THE SCENE SO FAR (${m.title})\n${coarsen(transcript(m))}`,
     reply ? `## THE PLAYER'S REPLY\n${reply}` : `## WRITE THIS MOMENT OUT IN FULL, then offer the options.`,
     beats.length ? `## THIS TIME\n${beats.join("\n")}` : "",
+    p && !walking && s.player.owned_by !== p.id ? fcVoice(obeys(s, p).stance) : "",
     worn,
     stockLine(s),
     REGISTER_TAIL,

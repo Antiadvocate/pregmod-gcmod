@@ -35,6 +35,7 @@ import { tiedTo, file, tie, note } from "./others";
 import { castBrief } from "./faces";
 import { rng } from "./rng";
 import { betweenEvents, forcedAllowed, rulesLine, sexBetween } from "./houserules";
+import { pairFitLine } from "./fit";
 
 export interface Going {
   /** Cooldown key: the same pair, or the same woman and the same kind, sits out a few weeks. */
@@ -188,7 +189,7 @@ export async function generateGoing(s: SaveState, g: Going, snapshot = ""): Prom
       chronicleBrief(s, people.map((p) => p.id), 6),
       `## THE FACTS\n${g.facts.map((f) => `· ${f}`).join("\n")}`,
       rulesLine(s),
-      g.other ? `## BETWEEN THEM\n${betweenThem(s)}` : "",
+      g.other ? `## BETWEEN THEM\n${[betweenThem(s), pairFitLine(s, g.main, g.other), pairFitLine(s, g.other, g.main)].filter(Boolean).join("\n")}` : "",
       `## EFFECT IDS\n${effectList()}${g.other ? `\n${pair.join("\n")}` : ""}\nACT IDS (for "act"): ${Object.keys(ACT_BY_ID).join(", ")}`,
       PLAIN_RULES,
       REGISTER_TAIL,

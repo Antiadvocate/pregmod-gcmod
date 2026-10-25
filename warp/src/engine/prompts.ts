@@ -19,6 +19,7 @@ import { OWN_LIFE_ASK, ownLifeLines } from "./ownlife";
 import { rulesLine } from "./houserules";
 import { obeysLine } from "./compliance";
 import { characterLines } from "./character";
+import { fitLines, herFitLine } from "./fit";
 import { surgeryPast } from "./health";
 import { dickCM, dickWord, inches } from "./genitals";
 import { playerBody } from "./you";
@@ -117,6 +118,7 @@ export const CONVERSATION = `HOW A CONVERSATION GOES.
 - HABITS ARE RARE. Something on her card she "says" or "does" shows up once in a while, not every reply, and never twice in the same scene. Her rare features (freckles, dimples, eye colour) come up only when they matter to the moment.
 - DON'T HAND IT BACK. She doesn't end her reply asking what the player wants or whether it's all right, or ask permission to speak, except when the moment truly calls for it (at most one reply in four). End on what she says or does, and let the player answer.
 - SHE HAS A LIFE. She has her work, her own time (HER OWN TIME), the other girls, what she wants (IN THE LONG RUN), and whatever she was in the middle of (WHERE THIS IS). When she brings something up herself, it can be any of those. She doesn't steer every talk back to the same one thing, and what's over (a surgery, a punishment, last week's scene) stays over unless the player raises it.
+- BODIES ARE REAL. Sizes, weights and limits on the cards are physical facts: what's too big for a hole doesn't slide in, it takes time, lube and force, it hurts, it stretches or tears her (HOW YOU FIT HER says which), and afterwards she's sore, leaking, marked or limping, and still is in the next scene if her card says so. Huge breasts are heavy, a big belly gets in the way, a hung cock and heavy balls drag. Nothing is magic; what's damaged is fixed by rest, a doctor or surgery.
 - WHERE YOU ARE MATTERS. If the scene says where she is and what she's doing, it happens there: she's in the middle of it, the place goes on around her (her work, the people in the background, the noise), and she talks while she does it or stops to. It moves somewhere else only if the player takes her or sends for her.
 - ONLY THE PEOPLE IN THE SCENE. Nobody else walks in, calls or interrupts unless the player brings them in. People who are simply part of the place (customers, coworkers, nurses) stay in the background.
 - FINISH YOUR LAST SENTENCE.`;
@@ -161,9 +163,11 @@ Shape:
  "agreements": [{"id":"p1 or household","rule":"what she now does, e.g. kneels when the owner enters, or calls the owner \"Rabi\"","calls":"the name, only if the rule is what she calls the owner"}],
  "agreements_drop": [{"id":"p1","rule":"a standing order the owner explicitly cancelled"}],
  "manner": [{"id":"p1","toward":"the other person's name","how":"how she is with them now, one plain line"}],
+ "strain": [{"id":"p1","hole":"vagina|anus|throat","what":"sore|stretched|torn","by":"owner, or the id of whoever's cock it was"}],
  ${MARKS_SCHEMA}
 }
 agreements: record every standing instruction the owner gave in this turn about how she (or the whole household) is to address or treat the owner from now on, when she accepted it or did not refuse. Not one-off orders for this moment.
+strain: when the prose puts something in one of her holes that was a tight fit or too big for her (HOW YOU FIT HER on her card, or another slave's cock), record what it did and whose it was: sore, stretched (it went in and she's looser for it), or torn (only if the prose shows her torn or bleeding). Nothing for a fit that was easy.
 manner: record it when this turn settles how she is with a particular person other than the owner (another slave, or anyone else: a guest, a citizen, a trader), as something that will carry on: e.g. "subservient to him and nobody else; talks to him gently", "cold to her in front of others, sweet when they're alone". It counts when the prose shows it becoming how she is with them, and when the owner's own words say it ("and then she was subservient to him alone"). toward is that person's name as the prose gives it. It replaces whatever was kept for that person, so write the whole of how she is with them now, not only what changed. Not for a passing mood or one moment.
 ${MARKS_RULES}
 Every id must be one given to you. Omit any key you have nothing for. Never record a new clause, exemption, amendment or technicality of a law as a fact, rumour or memory: laws are only what their text says.`;
@@ -228,6 +232,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   const orders = obeysLine(s, p);
   if (orders) lines.push(orders);
   lines.push(...characterLines(p));
+  if (s.player.owned_by !== p.id || p.body.dick) { lines.push(...fitLines(s, p)); const hers = herFitLine(s, p); if (hers) lines.push(hers); }
   lines.push(`HOW SHE IS DOING: ${condition(p)}; mood ${p.psyche.mood}.${p.psyche.active_states.length ? ` On her mind: ${p.psyche.active_states.join(", ")}.` : ""}`);
   if (edge?.roles.length) lines.push(`ROLES: ${edge.roles.join(", ")}`);
   const room = roomLine(p);
