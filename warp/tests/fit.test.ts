@@ -11,7 +11,6 @@ import { writeAct } from "../src/engine/writer.ts";
 import { applyDiff } from "../src/engine/turn.ts";
 import { tickHealth } from "../src/engine/health.ts";
 import { refresh } from "../src/engine/obedience.ts";
-import { fcVoice } from "../src/data/fcvoice.ts";
 import type { Person, SaveState } from "../src/engine/types.ts";
 
 function setup(seed: string, dick: number): { s: SaveState; p: Person } {
@@ -71,8 +70,6 @@ function setup(seed: string, dick: number): { s: SaveState; p: Person } {
   check("and against the owner, never the whole length", /HER COCK IN YOU[^\n]*never the whole length/.test(herFitLine(s, hung)));
 }
 
-check("the original's voice is matched to the hole", /butthole/.test(fcVoice("resists", "anus")) && !/pussy/.test(fcVoice("resists", "anus").split("\n").slice(1, 2).join("")));
-check("and to how she takes it", /sobs and cries/.test(fcVoice("resists", "vagina")) && /Love you/.test(fcVoice("eager")));
 
 {
   const { s, p } = setup("fit-forced", 3);

@@ -87,7 +87,7 @@ export function obeys(s: SaveState, p: Person): Obeys {
 /** For her card. */
 export function obeysLine(s: SaveState, p: Person): string {
   if (s.player.owned_by === p.id) return "";
-  return `HOW SHE TAKES ORDERS (decided by the game; write her this way): ${obeys(s, p).line}`;
+  return `HOW SHE TAKES ORDERS (decided by the game; write her this way): ${obeys(s, p).line} Whether she obeys is decided here; how it sounds is hers: her own words, voice and habits from the rest of her card, never a stock slave's lines. Two slaves who both resist don't sound alike.`;
 }
 
 /** Whether an act she's made to do is forced on her. */
