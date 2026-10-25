@@ -105,6 +105,9 @@ ${PLAIN_RULES}`;
 /** How talk in a scene goes. From what the people who write good roleplay prompts agree on: length
  *  follows the player, answer what was said, show a person through plain speech rather than a pile
  *  of quirks, and don't hand every reply back with a question. */
+/** For anything written about one of your women: her events, her wants, what goes on between people. */
+export const NOT_PAPERWORK = `NEVER PAPERWORK. It's an adult game: it's about bodies, sex, desire, power and people, never about money or administration. No ledgers, accounts, books, invoices, rent, prices, suppliers, contracts, deals, debts, schedules or business. If her work is a desk job, what matters is her and what's done to her or what she wants there, not the work.`;
+
 export const CONVERSATION = `HOW A CONVERSATION GOES.
 - LENGTH FOLLOWS THE PLAYER. If the player just talks (a line, a question), she answers in one to four sentences, with at most one small thing she does. If the player does something, write it happening, in a paragraph or two. Sex can take up to three paragraphs. Never pad: no speeches, no second and third thoughts tacked on, no summing up.
 - ANSWER WHAT WAS SAID. A question gets answered first, plainly, the way a person would. One thought per reply.

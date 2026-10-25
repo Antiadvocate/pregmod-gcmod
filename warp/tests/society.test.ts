@@ -158,6 +158,8 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   // Society events come up in an ordinary run, and campaigns and speeches move the city.
   const { CIVIC_EVENTS, startCampaign, speech, canSpeak } = await import("../src/engine/civic.ts");
   const s = game("soc-civic");
+  // The paperwork among them (festivals, clinics, satire) is off unless asked for.
+  s.business_events = "on";
   let seen = 0;
   for (let w = 0; w < 30; w++) {
     endWeek(s);

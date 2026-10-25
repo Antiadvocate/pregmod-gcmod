@@ -22,7 +22,7 @@ import type { PendingEvent, Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { coarsen, REGISTER_TAIL } from "./register";
-import { HOUSE_STYLE, personCard } from "./prompts";
+import { HOUSE_STYLE, NOT_PAPERWORK, personCard } from "./prompts";
 import { PLAIN_RULES } from "./style";
 import { chronicleBrief } from "./chronicle";
 import { DYNAMIC_EFFECTS, PAIR_EFFECTS, effectList } from "./dynamic";
@@ -154,7 +154,8 @@ const GOING_SYSTEM = `You write one event for Free Cities, an adult text game ab
 How to build it:
 - Start from THE FACTS: they are true, and they're why it's happening now. Build it out of them, the people's natures, how they feel about each other, where they are, and this week.
 - It happens somewhere real: where she works, somewhere in the house, on the concourse. Say where.
-- This is an adult game and sex is most of what happens between people in it. Something is actually happening, with a shape, and more often than not it's sexual: a customer who won't pay or gets rough, a coworker or her boss with his hands on her, a crowd gathering to watch, a client who wants her for a whole night. Between two of the owner's own women, only what BETWEEN THEM below allows. It can also be a quarrel, a favour, a deal, a debt, a secret found out or a competition, but it doesn't have to stay clean. Their fetishes, bodies and what they're into (on their cards) decide what it is. Write the sex as plainly as the rest. Not a mood and not a status report.
+- ${NOT_PAPERWORK}
+- This is an adult game and sex is most of what happens between people in it. Something is actually happening, with a shape, and more often than not it's sexual: a customer who gets rough, a coworker or her boss with his hands on her, a crowd gathering to watch, a client who wants her for a whole night. Between two of the owner's own women, only what BETWEEN THEM below allows. It can also be a quarrel, a favour, a dare, a secret found out or a competition, but it doesn't have to stay clean. Their fetishes, bodies and what they're into (on their cards) decide what it is. Write the sex as plainly as the rest. Not a mood and not a status report.
 - People act as their place allows: a slave is a slave to the owner (THE POWER BETWEEN YOU on her card), and outsiders know who the owner is.
 - An outsider in it who has no name yet gets a name and one detail, and goes under "cast".
 - Second person, present tense, one or two short paragraphs, ending where the owner can step in. Their words in their own voices, short and plain.

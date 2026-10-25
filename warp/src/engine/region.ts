@@ -155,7 +155,8 @@ export function tickRegion(s: SaveState, firesNow: boolean): { lines: string[]; 
   if (m.news.length > 40) m.news.splice(0, m.news.length - 40);
 
   // Whether anything reaches you this week. Hostile acts don't wait on your settings.
-  const pace = s.world_pace ?? "some";
+  // Envoys, offers and summits are paperwork: none at all while business events are off.
+  const pace = (s.business_events ?? "off") === "off" ? "none" : s.world_pace ?? "some";
   const gap = pace === "full" ? 1 : 2;
   const hostile = (o: Opening) => ["war", "assassins", "terror", "sabotage", "sanctions", "smear", "raiders"].includes(o.kind);
   const quietEnough = week - (m.last ?? -99) >= gap;

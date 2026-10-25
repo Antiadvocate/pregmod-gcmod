@@ -48,7 +48,7 @@ const AT: Record<string, string[]> = {
   pit_floor: ["training in the sand", "having her hands taped at the edge of the arena"],
   farmyard_floor: ["on her knees in the soil beds", "carrying feed to the pens", "checking the grow lights"],
   nursery_floor: ["rocking a baby", "picking toys up off the floor of the play area"],
-  office: ["going through a stack of invoices at her desk", "on the phone at her desk, taking notes", "at the copier with a pile of contracts", "in a meeting with two of the office staff"],
+  office: ["at her desk in the skirt the office dress code keeps short, with a manager reading over her shoulder", "bent over the copier while one of the managers stands too close behind her", "on her knees under a manager's desk", "kept late in her boss's office, her blouse buttoned wrong", "pouring coffee for a meeting, in a blouse the dress code says stays open"],
   classroom: ["at a desk taking notes", "standing at the board working through a problem"],
   schoolroom_floor: ["at her lessons with the other girls", "reciting for the tutor"],
   barracks_floor: ["drilling on the mat", "cleaning a rifle at the weapons rack"],

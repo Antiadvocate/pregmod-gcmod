@@ -90,7 +90,11 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
               <Chip on={!!save.models.lean_mode} onClick={() => mutate((s) => { s.models.lean_mode = true; })}>On</Chip>
               <Chip on={!save.models.lean_mode} onClick={() => mutate((s) => { s.models.lean_mode = false; })}>Off</Chip>
             </div>
-            <div className="text-[12px] dim mt-3 mb-1">How much the other powers bother you with envoys, offers and summits. Enemies will still come for you whatever this says.</div>
+            <div className="text-[12px] dim mt-3 mb-1">Business, money and politics as events: loans, suppliers, share raids, envoys and summits, strikes, festivals, citizens' meetings. Attacks and wars still come whatever this says.</div>
+            <div className="flex gap-1.5">
+              {(["off", "some", "on"] as const).map((k) => <Chip key={k} on={(save.business_events ?? "off") === k} onClick={() => mutate((s) => { s.business_events = k; })}>{{ off: "None of it", some: "One a month", on: "All of it" }[k]}</Chip>)}
+            </div>
+            <div className="text-[12px] dim mt-3 mb-1">How much the other powers bother you with envoys, offers and summits, when business events are on. Enemies will still come for you whatever this says.</div>
             <div className="flex gap-1.5">
               {(["none", "some", "full"] as const).map((k) => <Chip key={k} on={(save.world_pace ?? "some") === k} onClick={() => mutate((s) => { s.world_pace = k; })}>{{ none: "Leave me alone", some: "Now and then", full: "Constantly" }[k]}</Chip>)}
             </div>

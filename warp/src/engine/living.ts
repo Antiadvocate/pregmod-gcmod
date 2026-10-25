@@ -32,7 +32,7 @@ import type { PendingEvent, Person, SaveState, WeekReport } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { coarsen, REGISTER_TAIL } from "./register";
-import { HOUSE_STYLE, personCard } from "./prompts";
+import { NOT_PAPERWORK, HOUSE_STYLE, personCard } from "./prompts";
 import { PLAIN_RULES } from "./style";
 import { chronicle, chronicleBrief, chronicleOf } from "./chronicle";
 import { DYNAMIC_EFFECTS, effectList, dossier, npcEffect, resolveDynamic } from "./dynamic";
@@ -108,6 +108,7 @@ Rules:
 - Keep every fact: names, numbers, amounts, who did what. Add detail; do not change what happened.
 - Second person, present tense, as long as LENGTH says and no longer. It doesn't have to be someone coming to see the player: often the narrator just tells the player what happened and what it did to people, the way the original game's events do. If THE FACTS read like a status report, say what actually happened instead.
 - A stranger gets one detail, not a description of their hair, coat and posture. Nobody gives a speech about themself.
+- When it's about one of the owner's own people: ${NOT_PAPERWORK}
 - Never invent a named person. You may name the people in the context (the player's own people, a power's ruler, anyone on file); anyone else stays unnamed: an envoy, a letter, a trader.
 - Don't end with someone asking the player what they'll do ("So. What do you tell him?"). End on the situation; the choices are the question.
 - Relabel every choice in the player's voice so it fits the scene you wrote (2 to 9 words). Each label must still be the same action with the same result as the original.
@@ -377,7 +378,7 @@ Output ONE strict JSON object and nothing else:
 async function worldDesk(s: SaveState, snap: string): Promise<void> {
   const m = regionOf(s);
   const all = powers(s);
-  const pace = s.world_pace ?? "some";
+  const pace = (s.business_events ?? "off") === "off" ? "none" : s.world_pace ?? "some";
   if (pace === "none" || s.arcology.week - (m.last ?? -99) < (pace === "full" ? 1 : 2)) return;
   const options = m.openings.filter((o) => o.kind !== "courting" && EVENT_BY_ID[o.kind] && !s.events.some((e) => e.kind === o.kind)).slice(0, 4);
   if (!options.length) return;
@@ -456,7 +457,7 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
   // Any request still waiting (a model failed, or it came from her page) is written as a moment too.
   for (const a of s.asks ?? []) { step(`${s.people[a.person]?.name ?? "her"}'s request`); a.text = await voiceAsk(s, a); }
   if (report) { step("the laws"); await writeLawPulse(s, report, snap); }
-  if (activeGovernors(s).length) { step("letters"); await writeLetters(s); }
+  if (activeGovernors(s).length && (s.business_events ?? "off") !== "off") { step("letters"); await writeLetters(s); }
 }
 
 /* ── the end ─────────────────────────────────────────────────────────────────────────────────── */

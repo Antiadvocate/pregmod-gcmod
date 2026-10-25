@@ -21,6 +21,8 @@ import { weeklyMoney } from "../src/engine/economy.ts";
   check("office work pays by what's in her head", weeklyMoney(s, clerk).income > 300, weeklyMoney(s, clerk));
   check("a secretary catches overcharges", s.reports.at(-1)!.ledger.some((l) => l.category === "savings" && l.cash > 0));
   check("the idol's trouble is registered", ["idol_fan", "idol_scandal", "idol_rival", "idol_sponsor", "office_manager"].every((k) => EVENT_BY_ID[k]));
+  check("a brand deal is business: off by default", fireEvent(s, "idol_sponsor", { person: star }) === null);
+  s.business_events = "on";
   const e = fireEvent(s, "idol_sponsor", { person: star });
   const before = s.arcology.cash;
   const line = e ? resolveEvent(s, e, "take") : "";
