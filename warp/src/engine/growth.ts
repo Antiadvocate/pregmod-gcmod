@@ -27,13 +27,16 @@ import { agreementsBrief } from "./agreements";
 import { mannerLines } from "./manner";
 import { read } from "./obedience";
 import { coarsen } from "./register";
+import { cleanList } from "./ownlife";
+import { surgeryPast } from "./health";
 
 /** Weeks between readings of the same woman. */
 const EVERY = 6;
 /** The version of the reading. A woman read by an older one is read again, whatever happened since:
  *  version 1 wrote quirk lists the narrator caricatured; 2 writes a grounded person and short
- *  ordinary exchanges instead. */
-export const GROW_V = 2;
+ *  ordinary exchanges instead; 3 gives her a life of her own (what she does with her time, what she
+ *  wants in the long run) and knows that what's done is done. */
+export const GROW_V = 3;
 
 function lastRead(p: Person): number { return p.persona.grown_week ?? p.origin.acquired_week ?? 0; }
 
@@ -65,6 +68,8 @@ Rules that matter most:
 - She talks like a real person: mostly plain, ordinary sentences. Describe her voice the way you'd describe someone you know (blunt, quiet, quick, warm, dry), not as a list of gimmicks.
 - Don't turn a one-off joke, image or number from a scene into who she is. If a scene had her call herself bread, or count to eighty-nine, that was one moment; leave it there.
 - "tics": at most two small, believable habits real people have (a word from her own language when she swears, what she calls the owner, a way she laughs), each something she does only now and then. Leave it empty if nothing fits. Never generic fillers ("like", "just", "honestly", "okay", "I mean").
+- What's done is done. An operation, a punishment, a promise or a scene that already happened is in her past: it can have changed her, but she doesn't count the days since it, wait for it, or bring it up every time she talks. DONE TO HER BODY and the weeks on everything tell you what's over.
+- She has a life of her own besides the owner and what's been done to her: "interests" are two or three things she does with her own time (from her life before, her nature and what she has here: things she does, not things she likes), and "goals" are one or two things she wants for herself in the long run. Keep the ones on her card that still fit, change what her weeks here would have changed.
 - "exchanges": three short, ordinary exchanges with the owner, the kind that happen every day, in the relationship they actually have (THE POWER BETWEEN THEM and her STANDING ORDERS decide how she speaks to him). The owner says something ordinary ("How are you?", "Come here.", "What do you think of the new room?") and she answers in one to three plain sentences, as herself. These set the length and plainness of how she talks, so keep them short and natural.
 
 Also:
@@ -74,7 +79,7 @@ Also:
 - "signature": one sentence, the one thing about her nobody else in the house has, shown as something she does.
 Plain words, nothing literary. Keep everything true to the facts given; invent nothing that contradicts them.
 
-{"core_traits":["..."],"speech_pattern":"a few words","voice":{"diction":"...","syntax":"...","rhythm":"...","tics":["..."],"never_says":["..."],"agenda":"..."},"exchanges":[{"you":"...","her":"..."}],"life_history":"...","signature":"..."}`;
+{"core_traits":["..."],"interests":["..."],"goals":["..."],"speech_pattern":"a few words","voice":{"diction":"...","syntax":"...","rhythm":"...","tics":["..."],"never_says":["..."],"agenda":"..."},"exchanges":[{"you":"...","her":"..."}],"life_history":"...","signature":"..."}`;
 
 function brief(s: SaveState, p: Person): string {
   const r = read(p, s.memory[p.id]);
@@ -93,16 +98,20 @@ function brief(s: SaveState, p: Person): string {
     `Traits then: ${p.persona.core_traits.join("; ")}. Talked: ${p.persona.speech_pattern}. ${v?.diction ?? ""} Habits then: ${(v?.tics ?? []).join("; ")}.`,
     p.persona.life_history ? `Who she'd become, last time she was read (week ${p.persona.grown_week}): ${p.persona.life_history}` : "",
     `## HER BODY NOW\n${p.body.appearance_facts} ${featureFacts(p)}\nBetween her legs: ${describeGenitals(p)}\nFeet: ${describeFeet(p)}${p.body.traits?.length ? `\nAltered: ${p.body.traits.join(", ")}` : ""}`,
+    surgeryPast(s, p, 999) ? `## DONE TO HER BODY (over; in the past)\n${surgeryPast(s, p, 999)}` : "",
+    `## HER OWN LIFE, AS HER CARD HAS IT NOW\nWhat she does with her time: ${(p.persona.interests ?? []).join("; ") || "nothing written yet"}\nWhat she wants in the long run: ${(p.persona.goals ?? []).join("; ") || "nothing written yet"}\nLikes and dislikes: ${p.persona.texture.join("; ")}\nWorks as: ${p.assignment}. Before she was taken: ${p.origin.career}.`,
     `## WHERE SHE STANDS WITH THE OWNER (week ${s.arcology.week})\nStanding: ${rom.standing}. Toward the owner: ${r.label}, ${r.trust_label}.${fetishes.length ? ` What she's into: ${fetishes.join(", ")}.` : ""}\n${powerBetween(s, p)}`,
     agreementsBrief(s, p),
     mannerLines(p).length ? `## HOW SHE IS WITH OTHER PEOPLE\n${mannerLines(p).join("\n")}` : "",
-    (mem?.facts ?? []).length ? `## WHAT SHE KNOWS ABOUT THE OWNER\n${mem!.facts.map((f) => `· ${f.text}`).join("\n")}` : "",
+    (mem?.facts ?? []).length ? `## WHAT SHE KNOWS ABOUT THE OWNER (with the week she learned it)\n${mem!.facts.map((f) => `· week ${f.week}: ${f.text}`).join("\n")}` : "",
     `## WHAT HAS HAPPENED TO HER (the ones that matter most, in order)\n${memories.join("\n")}`,
   ].filter(Boolean).join("\n\n");
 }
 
 interface GrowOut {
   exchanges?: { you?: string; her?: string }[];
+  interests?: string[];
+  goals?: string[];
   core_traits?: string[];
   speech_pattern?: string;
   voice?: Person["persona"]["voice"];
@@ -148,6 +157,9 @@ export async function growPersona(s: SaveState, p: Person, signal?: AbortSignal)
     .filter((x) => x.you && x.her)
     .slice(0, 3);
   if (talk.length) live.persona.exchanges = talk;
+  const does = cleanList(out.interests, 3), wants = cleanList(out.goals, 2);
+  if (does.length) live.persona.interests = does;
+  if (wants.length) live.persona.goals = wants;
   live.persona.life_history = clip(out.life_history, 1200);
   if (out.signature) live.persona.signature = clip(out.signature, 240);
   live.persona.grown_week = s.arcology.week;

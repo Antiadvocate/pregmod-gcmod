@@ -13,6 +13,7 @@
  * other direction and you get forty women who are all quietly "guarded but kind" with randomised
  * hair, which is what most character generators produce and why they all feel the same.
  */
+import { seedOwnLife } from "./ownlife";
 import { applyAlbinism, featureFacts, rollFeatures } from "./features";
 import { reconcileAnatomy } from "./genitals";
 import type { Body, Bond, Health, Person, Persona, Psyche, Skills, Womb, Pronouns } from "./types";
@@ -190,6 +191,8 @@ export function generatePerson(opts: GenOptions = {}): Person {
   }
   const marks = featureFacts(p);
   if (marks) p.body.appearance_facts += ` ${marks}`;
+  // Her own time and what she wants, from her own stream so nothing else rolled above shifts.
+  seedOwnLife(p);
   return p;
 }
 

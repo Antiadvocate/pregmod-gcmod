@@ -13,7 +13,7 @@
  */
 import { reconcileAnatomy } from "./genitals";
 import { footSurgery } from "./podolatry";
-import { sane, recoveryNote } from "./health";
+import { sane, recoveryNote, surgeryDone } from "./health";
 import type { Person, ReportLine, SaveState } from "./types";
 import { PROCEDURE_BY_ID, type Procedure } from "../data/surgery";
 import { clamp, shove, addState } from "./psyche";
@@ -121,11 +121,12 @@ export function operate(s: SaveState, p: Person, procId: string): SurgeryResult 
   const mem = s.memory[p.id];
   if (mem) {
     remember(mem, {
-      content: `the ${proc.name.toLowerCase()} — ${proc.what}`,
+      content: `had surgery: ${proc.what}`,
       week, importance: Math.min(10, 4 + Math.abs(felt.score) / 6),
       charge: felt.score < -10 ? "sharp" : felt.score > 6 ? "bright" : "dull",
       core: Math.abs(felt.score) > 30,
     });
+    surgeryDone(mem, proc.name.toLowerCase(), proc.what, week);
   }
 
   // The household finds out. Genital work is the kind of thing everybody in the building knows by

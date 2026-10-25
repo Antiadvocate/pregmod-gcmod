@@ -17,6 +17,7 @@ import { FACILITY_BY_ID } from "../data/facilities";
 import { clamp, shove } from "./psyche";
 import { read, applyTreatment } from "./obedience";
 import { moveEdge } from "./social";
+import { healed } from "./health";
 
 export interface ManagerEffect {
   /** Multiplier on what the facility's workers earn. */
@@ -121,7 +122,7 @@ export function runManager(s: SaveState, facilityId: string): ManagerEffect {
       eff.health = 3 + q * 4;
       for (const id of fac.workers) {
         const w = s.people[id];
-        if (w && w.health.recovery_weeks > 0 && q > 0.9) w.health.recovery_weeks = Math.max(0, w.health.recovery_weeks - 1);
+        if (w && w.health.recovery_weeks > 0 && q > 0.9) { w.health.recovery_weeks = Math.max(0, w.health.recovery_weeks - 1); if (!w.health.recovery_weeks) healed(s, w); }
       }
       break;
     case "schoolroom":

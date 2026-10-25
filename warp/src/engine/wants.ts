@@ -124,7 +124,7 @@ export function wantScore(s: SaveState, p: Person, reasons = reasonsOf(s, p)): n
   return reasons.reduce((n, r) => n + r.weight, 0) * cool * voice;
 }
 
-export const WANT_THRESHOLD = 6;
+export const WANT_THRESHOLD = 5;
 
 /** Who has enough going on to carry an event this week. Usually nobody or one; two only when the
  *  house is boiling. */

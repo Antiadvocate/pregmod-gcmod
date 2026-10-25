@@ -45,5 +45,18 @@ export const PLACES: PlaceDef[] = [
   { id: "nursery_floor", name: "the nursery", look: "the nursery: cribs and a play area", privacy: "household", facility: "nursery", needs_facility: true },
 ];
 
-export const PLACE_BY_ID: Record<string, PlaceDef> = Object.fromEntries(PLACES.map((p) => [p.id, p]));
-export const PLACE_BY_NAME: Record<string, PlaceDef> = Object.fromEntries(PLACES.map((p) => [p.name, p]));
+/** Where your women work that isn't a room you walk around in: an office in somebody else's
+ *  business, a classroom, a stage. Somewhere you can go to find her (engine/whereabouts), not a
+ *  stop on your own rounds, so not in PLACES. */
+export const ELSEWHERE: PlaceDef[] = [
+  { id: "office", name: "an office on the commercial levels", look: "a citizen's office: desks, files, screens, a coffee machine, other people working", privacy: "public" },
+  { id: "classroom", name: "a classroom downtown", look: "a classroom: rows of desks, a board, other students", privacy: "public" },
+  { id: "schoolroom_floor", name: "the schoolroom", look: "the schoolroom: desks, a board, slaves at lessons", privacy: "household", facility: "schoolroom" },
+  { id: "barracks_floor", name: "the barracks", look: "the barracks: bunks, a weapons rack, a training mat", privacy: "household", facility: "barracks" },
+  { id: "stage", name: "a stage on the concourse", look: "a small stage on the concourse, lights, a crowd of fans and passers-by", privacy: "public", tags: ["exposure"] },
+  { id: "storeroom", name: "the storeroom under the penthouse", look: "a locked storeroom under the penthouse: a cot, a bucket, one bulb", privacy: "private", tags: ["restraint"] },
+  { id: "town_clinic", name: "a clinic downtown", look: "a clinic downtown: a ward, nurses, the smell of disinfectant", privacy: "public" },
+];
+
+export const PLACE_BY_ID: Record<string, PlaceDef> = Object.fromEntries([...PLACES, ...ELSEWHERE].map((p) => [p.id, p]));
+export const PLACE_BY_NAME: Record<string, PlaceDef> = Object.fromEntries([...PLACES, ...ELSEWHERE].map((p) => [p.name, p]));

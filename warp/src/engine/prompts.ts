@@ -14,6 +14,9 @@
  * the guards in turn.ts say so.
  */
 import { featuresLine } from "./features";
+import { placeOf } from "./places";
+import { ownLifeLines } from "./ownlife";
+import { surgeryPast } from "./health";
 import { dickCM, dickWord, inches } from "./genitals";
 import { playerBody } from "./you";
 import { powerBetween, selfBrief } from "./self";
@@ -107,7 +110,9 @@ export const CONVERSATION = `HOW A CONVERSATION GOES.
 - REAL PEOPLE TALK PLAINLY. Ordinary words, a sentence or two at a time. Nobody gives a speech in a conversation, lays out her feelings in detail or narrates her own psychology. Cute self-descriptions and whimsical images ("I am the bread", "nobody asks the water", "I am good at being words") are a machine habit; a real woman says the plain thing.
 - HABITS ARE RARE. Something on her card she "says" or "does" shows up once in a while, not every reply, and never twice in the same scene. Her rare features (freckles, dimples, eye colour) come up only when they matter to the moment.
 - DON'T HAND IT BACK. She doesn't end her reply asking what the player wants or whether it's all right, or ask permission to speak, except when the moment truly calls for it (at most one reply in four). End on what she says or does, and let the player answer.
-- ONLY THE PEOPLE IN THE SCENE. Nobody else walks in, calls or interrupts unless the player brings them in.
+- SHE HAS A LIFE. She has her work, her own time (HER OWN TIME), the other girls, what she wants (IN THE LONG RUN), and whatever she was in the middle of (WHERE THIS IS). When she brings something up herself, it can be any of those. She doesn't steer every talk back to the same one thing, and what's over (a surgery, a punishment, last week's scene) stays over unless the player raises it.
+- WHERE YOU ARE MATTERS. If the scene says where she is and what she's doing, it happens there: she's in the middle of it, the place goes on around her (her work, the people in the background, the noise), and she talks while she does it or stops to. It moves somewhere else only if the player takes her or sends for her.
+- ONLY THE PEOPLE IN THE SCENE. Nobody else walks in, calls or interrupts unless the player brings them in. People who are simply part of the place (customers, coworkers, nurses) stay in the background.
 - FINISH YOUR LAST SENTENCE.`;
 
 export const NARRATOR_SYSTEM = `You write the scenes for Free Cities, an adult text game about owning an arcology, a private city-state where slavery is legal and ordinary. The player is the owner. They choose an action; you write that action happening.
@@ -194,6 +199,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(`ASS: ${assWord(p.body.butt)}${p.body.butt_implant ? " (implants)" : ""}; asshole ${anusWord(p.body.anus)}.`);
   lines.push(`FEET: ${describeFeet(p)}`);
   if (p.body.traits?.length || p.growing?.length) lines.push(`ALTERED (fact; these are real and part of her body): ${describeTraits(p)}`);
+  const cut = surgeryPast(s, p);
+  if (cut) lines.push(`SURGERY, DONE AND OVER (it's in the past; it comes up only if the scene is about it): ${cut}.`);
   const distinct = featuresLine(p);
   if (distinct) lines.push(distinct);
   if (p.womb.fetuses.length) lines.push(`PREGNANT: ${p.womb.weeks} weeks, ${p.womb.fetuses.length > 1 ? `${p.womb.fetuses.length} babies` : "one baby"}.`);
@@ -219,6 +226,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   const gov = governorLine(s, p);
   if (gov) lines.push(gov);
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
+  lines.push(...ownLifeLines(p));
   const between = deedsBrief(s, p.id);
   if (p.stains?.length) lines.push(`ON HER BODY RIGHT NOW (still there until it's washed off; anyone who sees her sees it): ${marksLine(s, p.stains)}.`);
   const carrying = today(s, p);
@@ -280,7 +288,8 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   if (world) out.push(`\n## THE WORLD THIS WEEK (background; mention only if it bears on the action)\n${world}`);
 
   out.push(`\n## WHERE AND WHEN`);
-  out.push(`${s.scene.time}. ${s.scene.location}.`);
+  const room = placeOf(s);
+  out.push(`${s.scene.time}. ${s.scene.location}${room.name === s.scene.location ? ` (${room.look}${room.privacy === "public" ? "; people about, who see what happens" : ""})` : ""}.`);
   out.push(`${ownerLine(s)} A slave's card can give her another name for the owner.`);
   out.push(selfBrief(s));
   const bots = sentinelsLine(s);
@@ -363,6 +372,8 @@ export const FORGE_SYSTEM = `You are fleshing out a slave for Free Cities, an ad
  "voice": {"diction":"...","syntax":"...","rhythm":"...","tics":["verbal habits only, e.g. 'trails off when she's unsure', 'counts things on her fingers'"],"never_says":["..."],"agenda":"what she usually wants out of a conversation","example_lines":["5 things she would actually say TO HER OWNER, as a slave, one each: nervous, upset, happy, turned on, and caught out or embarrassed. With her real stumbles and fillers, and her owner's title in them, the way the original game's slaves talk: \\"P-please, Master, I didn't mean to\\", \\"Thank you, Master\\". Upset comes out as pleading or a flat \\"Yes, Master\\", never back-talk"]},
  "core_traits": ["3 short plain personality traits, the way the game lists them: e.g. 'mouthy and quick to argue', 'lazy unless someone is watching', 'fiercely proud of her cooking'"],
  "texture": ["2 things she likes or can't stand"],
+ "interests": ["2 or 3 things she does with her own time, from her life before and her nature: things she does, not things she likes, e.g. 'keeps seedlings growing in a cup under the bathroom light', 'is teaching one of the other girls to read'"],
+ "goals": ["1 or 2 things she wants for herself in the long run, specific to her, e.g. 'to teach dance again, even if it's only the other girls', 'to find out whether her brother got out'"],
  "background": "3-4 plain sentences about her life before she was enslaved",
  "defining_memory": {"content":"one thing that happened to her, in her own words","charge":"warm|cold|sharp|bright","importance":8}
 }

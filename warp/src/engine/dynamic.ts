@@ -32,7 +32,7 @@ import { modelsAvailable, isLocalModel } from "../config";
 import { clamp, shove, addState } from "./psyche";
 import { applyTreatment, read } from "./obedience";
 import { remember } from "./memory";
-import { startRumor } from "./social";
+import { moveEdge, startRumor } from "./social";
 import { shiftDominion, romanceOf } from "./romance";
 import { resolveAct } from "./intimacy";
 import { FETISH_BY_ID, ACT_BY_ID } from "../data/intimacy";
@@ -71,6 +71,25 @@ export const DYNAMIC_EFFECTS: Record<string, { note: string; value?: string; run
   room_take: { note: "you take something out of her room as a punishment", value: "which room item she has, by its id", run: (s, p, v) => { const have = p.room?.extras ?? []; const id = have.includes(String(v)) ? String(v) : have.find((x) => (EXTRA_BY_ID[x]?.comfort ?? 0) > 0); if (id) return changeRoom(s, p, { remove: id }); if ((p.room?.levels.bed ?? 0) > -1) return changeRoom(s, p, { axis: "bed", level: -1 }); return "there's nothing left in her room to take"; } },
   imprison: { note: "you have her locked in a cell", run: (s, p) => lockUp(s, p, "locked in a cell") },
   nothing: { note: "you leave it alone", run: () => "you did nothing" },
+};
+
+/** What a choice does to two of your women at once, for an event between them (engine/goings). */
+export const PAIR_EFFECTS: Record<string, { note: string; run: (s: SaveState, a: Person, b: Person) => string }> = {
+  closer: { note: "it brings the two of them closer", run: (s, a, b) => {
+    for (const [x, y] of [[a, b], [b, a]]) { moveEdge(s.edges, x.id, y.id, { warmth: 7, trust: 5 }); const m = s.memory[x.id]; if (m) remember(m, { content: `${y.name} and I got closer, over what happened in week ${s.arcology.week}`, week: s.arcology.week, importance: 5, charge: "warm" }); }
+    return `${a.name} and ${b.name} are closer for it`;
+  } },
+  rift: { note: "it drives the two of them apart", run: (s, a, b) => {
+    for (const [x, y] of [[a, b], [b, a]]) { moveEdge(s.edges, x.id, y.id, { warmth: -9, trust: -7 }); const m = s.memory[x.id]; if (m) remember(m, { content: `what happened with ${y.name} in week ${s.arcology.week}`, week: s.arcology.week, importance: 5, charge: "cold" }); }
+    return `${a.name} and ${b.name} have barely spoken since`;
+  } },
+  side_with: { note: "you take her side against the other one", run: (s, a, b) => {
+    applyTreatment(a, { kind: "recognition", size: 4, why: "you took her side" }, s.arcology.week);
+    applyTreatment(b, { kind: "neglect", size: 3, why: `you took ${a.name}'s side` }, s.arcology.week);
+    moveEdge(s.edges, b.id, a.id, { warmth: -6, power: -4 });
+    moveEdge(s.edges, a.id, b.id, { power: 5 });
+    return `${a.name} has the upper hand over ${b.name} now, and ${b.name} knows who gave it to her`;
+  } },
 };
 
 interface GeneratedEvent {
@@ -224,16 +243,25 @@ export function npcEffect(s: SaveState, effect: string, value: string | undefine
 
 export function resolveDynamic(s: SaveState, e: PendingEvent, optionId: string): string {
   const p = e.person ? s.people[e.person] : undefined;
-  const [, effect, value] = optionId.split(":");
+  const o = e.other ? s.people[e.other] : undefined;
+  const [, aimed, value] = optionId.split(":");
+  // "kindness@other": which of the two women in an event between them it lands on (engine/goings).
+  const [effect, on = "main"] = (aimed ?? "").split("@");
   const def = DYNAMIC_EFFECTS[effect];
-  if (!def) return "";
+  const pairDef = PAIR_EFFECTS[effect];
+  if (!def && !pairDef) return "";
   // Not every follow-up is about a slave: a promise to a citizen, a trader, a stranger comes back
   // too. Then the effect lands on your name in the city instead of on her.
-  const line = p ? def.run(s, p, value || undefined) : npcEffect(s, effect, value, e.seed);
+  let line: string;
+  if (pairDef) line = p && o ? (on === "other" ? pairDef.run(s, o, p) : pairDef.run(s, p, o)) : "";
+  else if (p && o && on === "both") line = [def.run(s, p, value || undefined), def.run(s, o, value || undefined)].join("; ");
+  else if (o && on === "other") line = def.run(s, o, value || undefined);
+  else line = p ? def.run(s, p, value || undefined) : npcEffect(s, effect, value, e.seed);
   s.events = s.events.filter((x) => x.id !== e.id);
-  const label = e.options.find((o) => o.id === optionId)?.label ?? "";
-  if (p) closeHooks(s, [p.id]);
-  chronicle(s, { keys: p ? [p.id] : ["city"], title: e.written?.title, text: `${e.seed.split(/\n/)[0].slice(0, 200)} You chose: ${label}. ${line}.`, hook: e.hook });
+  const label = e.options.find((x) => x.id === optionId)?.label ?? "";
+  const keys = [p?.id, o?.id].filter((x): x is string => !!x);
+  if (keys.length) closeHooks(s, keys);
+  chronicle(s, { keys: keys.length ? keys : ["city"], title: e.written?.title, text: `${e.seed.split(/\n/)[0].slice(0, 200)} You chose: ${label}. ${line}.`, hook: e.hook });
   s.notifications.push({ id: `n-${e.id}`, week: s.arcology.week, text: p ? `${p.name}: ${line}` : line, kind: "info", person: p?.id, seen: false });
   return line;
 }
