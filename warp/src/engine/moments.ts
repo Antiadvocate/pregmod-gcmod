@@ -29,6 +29,7 @@ import { concludeMoment } from "./deeds";
 import { captureInstructions } from "./agreements";
 import { WALK_OPTIONS, WALK_SYSTEM, walkContext, walkOffline } from "./walk";
 import { whereLine, type Whereabouts } from "./whereabouts";
+import { rulesLine } from "./houserules";
 
 export interface MomentLine { role: "you" | "scene"; text: string }
 
@@ -272,6 +273,7 @@ export async function playMoment(
     p && others.length ? `## BETWEEN THEM\n${others.flatMap((o) => [bond(p, o), bond(o, p)]).filter(Boolean).join("\n")}\nBoth of them talk and act in the scene, each in her own voice.` : "",
     s.world ? `## THE WORLD\n${worldBrief(s)}` : "",
     walking ? "" : lawsLine(s),
+    walking || city ? "" : rulesLine(s),
     walking || city ? "" : sentinelsLine(s),
     castBrief(s, `${m.title}\n${transcript(m)}\n${reply ?? ""}`),
     settledBrief(s, 8),

@@ -25,6 +25,7 @@ import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { resolveAct } from "./intimacy";
 import { chronicle } from "./chronicle";
 import { changeRoom, roomWish } from "./rooms";
+import { selfRelease } from "./houserules";
 
 export interface EventOption {
   id: string;
@@ -338,7 +339,8 @@ export const EVENTS: EventDef[] = [
   },
   {
     id: "caught_touching", severity: "minor", endogenous: true,
-    candidates: (s) => owned(s).filter((p) => p.age >= 5 && p.psyche.arousal > 65 && read(p).devotion < 40 && p.health.recovery_weeks === 0).map((person) => ({ person })),
+    // Only against the rules: a slave allowed to see to herself isn't caught at anything.
+    candidates: (s) => (selfRelease(s) ? [] : owned(s).filter((p) => p.age >= 5 && p.psyche.arousal > 65 && read(p).devotion < 40 && p.health.recovery_weeks === 0).map((person) => ({ person }))),
     weight: (_s, c) => 2 + c.person!.psyche.libido / 30,
     seed: (_s, c) => `You walk into the laundry and catch ${c.person!.name} bent over a pile of clean sheets with her hand between her legs, so close to cumming that she doesn't hear you come in.\n\nWhen she finally sees you she freezes, red-faced, fingers still inside herself.`,
     options: [

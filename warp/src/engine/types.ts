@@ -863,6 +863,8 @@ export interface PendingEvent {
 }
 
 export interface SaveState {
+  /** What your slaves may do with each other and themselves. See engine/houserules. */
+  slave_rules?: import("./houserules").SlaveRules;
   /** What has already happened, so the next thing can grow out of it. See engine/chronicle. */
   chronicle?: import("./chronicle").ChronicleEntry[];
   /** Rulers of the other powers, and what you've said to each other. See engine/diplomacy. */

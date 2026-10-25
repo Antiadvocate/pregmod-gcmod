@@ -30,6 +30,7 @@ import { chronicleBrief } from "./chronicle";
 import { DYNAMIC_EFFECTS, effectList } from "./dynamic";
 import { ACT_BY_ID } from "../data/intimacy";
 import { EXTRA_BY_ID } from "../data/rooms";
+import { betweenEvents, rulesLine } from "./houserules";
 
 export interface Reason { tag: string; why: string; weight: number; /** Happened this week, as opposed to how things have been for a while. */ fresh?: boolean }
 
@@ -58,7 +59,7 @@ export function reasonsOf(s: SaveState, p: Person): Reason[] {
     if (e.warmth > 40 && o.exit_week !== undefined && o.exit_week >= week) add("friend", `${o.name}, who she's close to, was ${o.status === "dead" ? "killed or died" : o.status === "sold" ? "sold" : "let go"} this week${o.exit_note ? ` (${o.exit_note})` : ""}.`, 4.5);
     if (e.warmth > 40 && o.status === "owned" && (o.psyche.state !== "intact" || o.health.health < -30)) add("friend", `${o.name}, who she's close to, is in a bad way (${o.psyche.state !== "intact" ? o.psyche.state : "ill"}).`, 2.5, false);
     if (e.warmth < -35 && o.status === "owned" && (o.romance?.since_week ?? -9) >= week) add("rival", `${o.name}, who she can't stand, just went up in the owner's favour.`, 2.5);
-    if (e.attraction > 60 && o.status === "owned") add("desire", `She wants ${o.name}, and it's getting hard to hide.`, 1.2);
+    if (e.attraction > 60 && o.status === "owned" && betweenEvents(s)) add("desire", `She wants ${o.name}, and it's getting hard to hide.`, 1.2);
   }
 
   // The laws, especially new ones.
@@ -173,6 +174,7 @@ export async function generateWant(s: SaveState, p: Person, reasons: Reason[], s
       `## HER\n${personCard(s, p)}`,
       chronicleBrief(s, [p.id], 8),
       `## HER REASONS THIS WEEK\n${reasons.slice(0, 6).map((r) => `· ${r.why}`).join("\n")}`,
+      rulesLine(s),
       ask ? `## ENGINE REQUEST\n${ask.text}${ask.against ? ` (It goes against ${ask.against}, and she knows.)` : ""}` : "",
       `## EFFECT IDS\n${effects.join("\n")}\nACT IDS: ${Object.keys(ACT_BY_ID).join(", ")}\nROOM ITEM IDS: ${Object.keys(EXTRA_BY_ID).join(", ")}`,
       PLAIN_RULES,

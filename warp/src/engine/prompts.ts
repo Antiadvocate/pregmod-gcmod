@@ -16,6 +16,7 @@
 import { featuresLine } from "./features";
 import { placeOf } from "./places";
 import { OWN_LIFE_ASK, ownLifeLines } from "./ownlife";
+import { rulesLine } from "./houserules";
 import { surgeryPast } from "./health";
 import { dickCM, dickWord, inches } from "./genitals";
 import { playerBody } from "./you";
@@ -298,6 +299,7 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   if (hers) out.push(hers);
   const rules = houseRules(s);
   if (rules.length) out.push(`STANDING ORDERS TO THE WHOLE HOUSEHOLD (every slave keeps these without being reminded): ${rules.map((r) => r.rule).join("; ")}.`);
+  out.push(rulesLine(s));
   if (s.scene.arrivals_pending.length) out.push(`ARRIVING — write them coming in: ${s.scene.arrivals_pending.map((id) => s.people[id]?.name).filter(Boolean).join(", ")}`);
   if (s.scene.departures_pending.length) out.push(`LEAVING — write them going: ${s.scene.departures_pending.map((d) => `${d.name} (${d.why})`).join(", ")}`);
 
