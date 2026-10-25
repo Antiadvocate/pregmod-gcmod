@@ -969,6 +969,9 @@ export interface SaveState {
   region?: import("./region").RegionMind;
   /** How much the other powers bother you: envoys, offers, summits. Default "some". */
   world_pace?: "none" | "some" | "full";
+  /** Business, money, diplomacy and city paperwork as events: off (the default), one a month, or all
+   *  of it. See engine/events isBusiness. */
+  business_events?: "off" | "some" | "on";
   /** Long stories grown from this arcology. See engine/saga.ts. */
   sagas?: import("./saga").SagaState;
   /** The city's message boards, written in the background (engine/feed.ts). */

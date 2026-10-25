@@ -448,10 +448,33 @@ export function registerEvents(defs: EventDef[], replace = false): void {
   }
 }
 
-/** Put one event in front of the player now, whatever the dice say. */
+/**
+ * BUSINESS, MONEY AND POLITICS — what s.business_events keeps off your desk.
+ *
+ * Loans, suppliers, share raids, envoys and summits, strikes, festivals and citizens' meetings
+ * about a law: the arcology's paperwork, and nothing anybody plays this game for. Off by default;
+ * "some" lets one through a month. Threats aren't in it (an attack, assassins, a war you're in):
+ * those come whatever this says, because ignoring them costs you the arcology.
+ */
+const BUSINESS = new Set([
+  "neighbour_scheme", "citizens_unhappy", "shark", "mercenary_offer", "storm_shelter", "idol_sponsor",
+  "law_praise", "law_protest", "law_abroad", "law_convert",
+  "envoy_demand", "first_contact", "aid_ask", "protection_ask", "trade_offer", "summit", "alliance_offer", "ally_gift",
+  "civic_festival", "civic_clinic", "civic_satire",
+]);
+const PERSONAL = new Set(["gx_turned", "sys_leased_abuse"]);
+export const isBusiness = (kind: string) => !PERSONAL.has(kind) && (BUSINESS.has(kind) || /^(gx_|corp_|sys_)/.test(kind));
+export function businessAllowed(s: SaveState, kind: string): boolean {
+  if (!isBusiness(kind)) return true;
+  const set = s.business_events ?? "off";
+  return set === "on" || (set === "some" && s.arcology.week - (s.event_log?.["business:last"] ?? -99) >= 4);
+}
+
+/** Put one event in front of the player now, whatever the dice say (but not paperwork you've turned off). */
 export function fireEvent(s: SaveState, id: string, c: { person?: Person; facility?: string } = {}): PendingEvent | null {
   const def = EVENT_BY_ID[id];
-  if (!def || s.events.some((e) => e.kind === id)) return null;
+  if (!def || s.events.some((e) => e.kind === id) || !businessAllowed(s, id)) return null;
+  if (isBusiness(id)) (s.event_log ??= {})["business:last"] = s.arcology.week;
   const e: PendingEvent = {
     id: `e${s.arcology.week}-${id}`, kind: id, person: c.person?.id, facility: c.facility,
     seed: def.seed(s, c), options: def.options.map((o) => ({ id: o.id, label: o.label, note: o.note })),
@@ -484,7 +507,7 @@ export function selectEvents(s: SaveState, opts: { writer?: boolean } = {}): Pen
   const waiting = new Set(s.events.map((e) => e.kind));
   for (const def of EVENTS) {
     if (!def.endogenous && s.models.tension === 0) continue;
-    if (waiting.has(def.id)) continue;
+    if (waiting.has(def.id) || !businessAllowed(s, def.id)) continue;
     for (const c of def.candidates(s)) {
       // With a model writing the week, what a woman wants is engine/wants's job, built from her
       // reasons; the stock events about one woman stay out.
@@ -509,6 +532,7 @@ export function selectEvents(s: SaveState, opts: { writer?: boolean } = {}): Pen
     if (!pickFrom.length) break;
     const choice = r.weighted(pickFrom, (x) => x.w);
     used.add(choice.def.id);
+    if (isBusiness(choice.def.id)) recent["business:last"] = s.arcology.week;
     recent[choice.c.person ? `${choice.def.id}:${choice.c.person.id}` : choice.def.id] = s.arcology.week;
     out.push({
       id: `e${s.arcology.week}-${choice.def.id}`,

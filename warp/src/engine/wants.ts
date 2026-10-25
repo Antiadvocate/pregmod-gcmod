@@ -24,7 +24,7 @@ import { comfort, roomOf } from "./rooms";
 import { generateAsk, type Ask } from "./asks";
 import { call, parseJson } from "../llm";
 import { coarsen, REGISTER_TAIL } from "./register";
-import { HOUSE_STYLE, personCard } from "./prompts";
+import { HOUSE_STYLE, NOT_PAPERWORK, personCard } from "./prompts";
 import { PLAIN_RULES } from "./style";
 import { chronicleBrief } from "./chronicle";
 import { DYNAMIC_EFFECTS, effectList } from "./dynamic";
@@ -154,6 +154,8 @@ How to build it:
 - Second person, present tense, one or two short paragraphs, ending where the owner has to answer. Her words in her voice.
 
 Then three or four choices for the owner, each a genuinely different response, at least one of which lets it go.
+
+${NOT_PAPERWORK}
 
 ${HOUSE_STYLE}
 

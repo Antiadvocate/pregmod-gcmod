@@ -173,6 +173,7 @@ g.fetch = async (_u: string, init: { body: string }) => {
   });
   const e = await generateGoing(s, pair, "");
   const asked = bodies.at(-1)!.messages[1].content;
+  check("and never to make it paperwork", bodies.at(-1)!.messages[0].content.includes("NEVER PAPERWORK"));
   check("the model is told the house rules, and that nothing sexual happens between them", asked.includes("HOUSE RULES BETWEEN SLAVES") && /Nothing sexual happens between these two/.test(asked));
   check("the model writes it as an event between the two of them", !!e && e.person === pair.main.id && e.other === pair.other!.id && e.options.length === 4, e);
   check("each choice says which of them it lands on", !!e && e.options.some((o) => o.id.includes("@other")));

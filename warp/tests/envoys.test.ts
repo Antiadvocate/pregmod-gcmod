@@ -11,6 +11,7 @@ import { fireEvent } from "../src/engine/events.ts";
 import { resolveAny } from "../src/engine/living.ts";
 
 const s = newGame({ seed: "envoys", starting_slaves: 2, plot: false } as never);
+s.business_events = "on";
 const e = empireOf(s);
 // A very big army: everyone is small next to you.
 const gun = PROGRAMS.filter((p) => p.power > 0).sort((a, b) => b.power - a.power)[0];
@@ -34,6 +35,7 @@ check("they come asking for your protection instead", asks > 0, asks);
 // A new owner is nobody: no one far away comes knocking in the first weeks.
 {
   const n = newGame({ seed: "envoys-new", starting_slaves: 2, plot: false } as never);
+  n.business_events = "on";
   let came = 0;
   for (let w = 0; w < 6; w++) { n.arcology.week++; tickPowers(n); tickRegion(n, true); came += n.events.filter((x) => empireOf(n).about[x.kind] && powers(n).find((p) => p.id === empireOf(n).about[x.kind])?.kind !== "neighbour").length; n.events = []; }
   check("far-off powers haven't heard of a new owner", came === 0, came);
@@ -43,6 +45,7 @@ check("they come asking for your protection instead", asks > 0, asks);
 
 // An equal who's thrown out doesn't come back for a long time.
 const t = newGame({ seed: "envoys-2", starting_slaves: 2, plot: false } as never);
+t.business_events = "on";
 const te = empireOf(t);
 const them = powers(t)[0];
 te.about["envoy_demand"] = them.id;
