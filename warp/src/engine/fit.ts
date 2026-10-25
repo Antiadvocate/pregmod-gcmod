@@ -41,8 +41,9 @@ export interface Fit {
 /** What a hole takes comfortably, on the dick scale. */
 export function capacity(p: Person, hole: Hole, s?: SaveState): number {
   let cap: number;
-  if (hole === "vagina") cap = (p.body.vagina ?? 0) + 2;
-  else if (hole === "anus") cap = [1.5, 2.5, 4, 5.5, 7][clamp(p.body.anus ?? 0, 0, 4)];
+  // Technique is worth something: a practised woman relaxes and takes more than her size alone would.
+  if (hole === "vagina") cap = (p.body.vagina ?? 0) + 2 + (p.skills.vaginal ?? 0) / 60;
+  else if (hole === "anus") cap = [1.5, 2.5, 4, 5.5, 7][clamp(p.body.anus ?? 0, 0, 4)] + (p.skills.anal ?? 0) / 50;
   else cap = 2 + (p.skills.oral ?? 0) / 25;
   // Sore takes a size off.
   if (s && soreUntil(p, hole) >= s.arcology.week) cap -= 1;
@@ -146,9 +147,12 @@ export function penetrate(s: SaveState, p: Person, hole: Hole, size: number, opt
     notes.push(hole === "throat" ? "her throat is raw afterwards and her voice is hoarse" : `her ${NAME[hole]} is sore afterwards${f.word === "snug" ? "" : " for days"}`);
     // How it lands: pain, unless pain or size is what she's after.
     if (!likesBig && !masochist) {
-      shove(p.psyche, -0.3 * f.over, { hard: f.over > 1.5 });
-      p.bond.resentment = clamp(p.bond.resentment + f.over * (opts.forced ? 1.5 : 0.6), 0, 100);
-      p.psyche.arousal = clamp(p.psyche.arousal - f.over * 8, 0, 100);
+      // An untrained woman fights her own body; a practised one knows how to take it.
+      const practised = hole === "throat" ? p.skills.oral : hole === "anus" ? p.skills.anal : p.skills.vaginal;
+      const pain = f.over * (1 - clamp((practised ?? 0) / 200, 0, 0.5));
+      shove(p.psyche, -0.3 * pain, { hard: pain > 1.5 });
+      p.bond.resentment = clamp(p.bond.resentment + pain * (opts.forced ? 1.5 : 0.6), 0, 100);
+      p.psyche.arousal = clamp(p.psyche.arousal - pain * 8, 0, 100);
     } else p.psyche.arousal = clamp(p.psyche.arousal + f.over * 6, 0, 100);
   }
   out.after = notes.join("; ");

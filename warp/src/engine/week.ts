@@ -29,6 +29,7 @@ import { tickHousehold } from "./household";
 import { weeklyRelease } from "./houserules";
 import { misbehave } from "./compliance";
 import { talentFits } from "./character";
+import { jobFit, weeklyDesires } from "./sexlife";
 import { tickBattles } from "./battles";
 import { tickFCTV } from "./fctv";
 import { tickCorp } from "./corp";
@@ -143,6 +144,12 @@ export function endWeek(s: SaveState): WeekReport {
     // What she's good at, when her work uses it (engine/character).
     const knack = talentFits(p);
     if (knack && money.income > 0) money.income = Math.round(money.income * 1.15);
+    // Her quirk suits the work, or her flaw gets in its way (engine/sexlife).
+    const suits = jobFit(s, p);
+    if (money.income > 0 && suits.mult !== 1) money.income = Math.round(money.income * suits.mult);
+    // And her work feeds what she needs, or doesn't.
+    const need = weeklyDesires(s, p);
+    if (need) push(need, need.includes("happier") ? "good" : "bad", 6, p.id);
     // And whether she did what she was told this week (engine/compliance).
     const misdeed = misbehave(s, p);
     if (misdeed) {
