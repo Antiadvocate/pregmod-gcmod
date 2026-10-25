@@ -596,7 +596,7 @@ ${HOUSE_STYLE}
 Output JSON only: {"says":"the scene"}`,
     user: [
       `HER: ${p.name}, ${p.age}. ${p.persona.speech_pattern}`,
-      p.persona.voice?.example_lines?.length ? `SOUNDS LIKE: "${p.persona.voice.example_lines[0]}"` : "",
+      p.persona.exchanges?.length ? `HOW SHE TALKS (an ordinary exchange; don't reuse it): You: "${p.persona.exchanges[0].you}" / ${p.name}: "${p.persona.exchanges[0].her}"` : p.persona.voice?.example_lines?.length ? `SOUNDS LIKE: "${p.persona.voice.example_lines[0]}"` : "",
       p.persona.voice?.never_says?.length ? `NEVER SAYS: ${p.persona.voice.never_says.join("; ")}` : "",
       `TRAITS: ${p.persona.core_traits.join("; ")}`,
       p.persona.values?.length ? `WHAT SHE VALUES: ${p.persona.values.join("; ")}` : "",

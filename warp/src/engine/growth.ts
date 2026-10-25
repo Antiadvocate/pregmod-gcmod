@@ -30,6 +30,10 @@ import { coarsen } from "./register";
 
 /** Weeks between readings of the same woman. */
 const EVERY = 6;
+/** The version of the reading. A woman read by an older one is read again, whatever happened since:
+ *  version 1 wrote quirk lists the narrator caricatured; 2 writes a grounded person and short
+ *  ordinary exchanges instead. */
+export const GROW_V = 2;
 
 function lastRead(p: Person): number { return p.persona.grown_week ?? p.origin.acquired_week ?? 0; }
 
@@ -46,24 +50,31 @@ function since(s: SaveState, p: Person): number {
 /** Who's due to be read again, most changed first. */
 export function dueToGrow(s: SaveState): Person[] {
   const week = s.arcology.week;
+  const stale = (p: Person) => p.persona.grown_week !== undefined && (p.persona.grown_v ?? 1) < GROW_V;
   return Object.values(s.people)
     .filter((p) => (inHousehold(s, p) || isPartner(s, p)) && p.age >= 18 && p.persona.voice && p.economics.weeks_owned >= 4)
-    .filter((p) => week - lastRead(p) >= EVERY && since(s, p) >= 2)
-    .sort((a, b) => since(s, b) - since(s, a));
+    .filter((p) => stale(p) || (week - lastRead(p) >= EVERY && since(s, p) >= 2))
+    .sort((a, b) => Number(stale(b)) - Number(stale(a)) || since(s, b) - since(s, a));
 }
 
 const GROW_SYSTEM = `You re-read a woman in Free Cities, an adult text game about owning an arcology, after weeks in the owner's house, and write who she is NOW, as one strict JSON object.
 
-Her first card was written the week she arrived. A lot has happened since, and the old voice is out of date: don't keep its fillers or its nerves unless she's still like that. What has happened to her, the orders she lives under, where she stands with the owner and how she is with people now are the truth about her; write the person all of that has made.
+Her first card was written the week she arrived; a lot has happened since. What has happened to her, the orders she lives under, where she stands with the owner and how she is with people now are the truth about her: write the real, grounded person all of that has made. A person, not a bundle of quirks.
 
-Write her so that no other woman in any game could be mistaken for her:
-- "core_traits": 3 to 5, concrete and specific to her now, the way the game lists them ("calls the owner's cock 'the little thing' to his face and means it", "fixes anything that rattles, and lectures you about the tolerance while she does it").
-- "voice": how she talks now. "tics" are 2 or 3 SIGNATURE habits of speech only she has: a phrase she always reaches for, a word from her own language and when it comes out, what she calls the owner or things, a sound she makes, how she laughs. Never generic fillers ("like", "just", "honestly", "okay", "I mean", "you know", "whatever") unless one of them truly is the most characteristic thing about her. "example_lines": 5 things she would say TO THE OWNER now, in the relationship they actually have (THE POWER BETWEEN THEM and her STANDING ORDERS decide how she addresses him), one each: when she's pleased, when she's displeased, when she wants something, in bed, and when something catches her off guard. Each one something only she would say.
+Rules that matter most:
+- She talks like a real person: mostly plain, ordinary sentences. Describe her voice the way you'd describe someone you know (blunt, quiet, quick, warm, dry), not as a list of gimmicks.
+- Don't turn a one-off joke, image or number from a scene into who she is. If a scene had her call herself bread, or count to eighty-nine, that was one moment; leave it there.
+- "tics": at most two small, believable habits real people have (a word from her own language when she swears, what she calls the owner, a way she laughs), each something she does only now and then. Leave it empty if nothing fits. Never generic fillers ("like", "just", "honestly", "okay", "I mean").
+- "exchanges": three short, ordinary exchanges with the owner, the kind that happen every day, in the relationship they actually have (THE POWER BETWEEN THEM and her STANDING ORDERS decide how she speaks to him). The owner says something ordinary ("How are you?", "Come here.", "What do you think of the new room?") and she answers in one to three plain sentences, as herself. These set the length and plainness of how she talks, so keep them short and natural.
+
+Also:
+- "core_traits": 3 to 5, concrete and specific to her now, the way the game lists them ("fixes anything that rattles", "fucks the owner's throat the moment she sees him").
+- "voice": diction, syntax, rhythm (a sentence each, plain), never_says, agenda.
 - "life_history": 4 to 6 plain sentences: who she has become here and the turning points that made her, with the weeks.
-- "signature": one sentence, the thing about her nobody else in the house has, shown as something she does.
+- "signature": one sentence, the one thing about her nobody else in the house has, shown as something she does.
 Plain words, nothing literary. Keep everything true to the facts given; invent nothing that contradicts them.
 
-{"core_traits":["..."],"speech_pattern":"a few words","voice":{"diction":"...","syntax":"...","rhythm":"...","tics":["..."],"never_says":["..."],"agenda":"what she wants out of a conversation now","example_lines":["..."]},"life_history":"...","signature":"..."}`;
+{"core_traits":["..."],"speech_pattern":"a few words","voice":{"diction":"...","syntax":"...","rhythm":"...","tics":["..."],"never_says":["..."],"agenda":"..."},"exchanges":[{"you":"...","her":"..."}],"life_history":"...","signature":"..."}`;
 
 function brief(s: SaveState, p: Person): string {
   const r = read(p, s.memory[p.id]);
@@ -91,6 +102,7 @@ function brief(s: SaveState, p: Person): string {
 }
 
 interface GrowOut {
+  exchanges?: { you?: string; her?: string }[];
   core_traits?: string[];
   speech_pattern?: string;
   voice?: Person["persona"]["voice"];
@@ -125,13 +137,20 @@ export async function growPersona(s: SaveState, p: Person, signal?: AbortSignal)
     diction: clip(out.voice.diction, 300) || live.persona.voice?.diction,
     syntax: clip(out.voice.syntax, 300) || live.persona.voice?.syntax,
     rhythm: clip(out.voice.rhythm, 300) || live.persona.voice?.rhythm,
-    tics: list(out.voice.tics, 3, 160),
+    tics: list(out.voice.tics, 2, 160),
     never_says: list(out.voice.never_says, 4, 80),
     agenda: clip(out.voice.agenda, 200) || live.persona.voice?.agenda,
-    example_lines: list(out.voice.example_lines, 5, 240),
+    // The old example lines go: the exchanges below show her voice at the length it should run.
+    example_lines: list(out.voice.example_lines, 3, 240),
   };
+  const talk = (Array.isArray(out.exchanges) ? out.exchanges : [])
+    .map((x) => ({ you: clip(x?.you, 120), her: clip(x?.her, 240) }))
+    .filter((x) => x.you && x.her)
+    .slice(0, 3);
+  if (talk.length) live.persona.exchanges = talk;
   live.persona.life_history = clip(out.life_history, 1200);
   if (out.signature) live.persona.signature = clip(out.signature, 240);
   live.persona.grown_week = s.arcology.week;
+  live.persona.grown_v = GROW_V;
   return true;
 }

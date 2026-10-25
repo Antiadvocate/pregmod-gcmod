@@ -22,6 +22,7 @@
  *
  * Without a model, each of these returns nothing and the game's own text stands.
  */
+import { waiting, writeNext } from "./saga";
 import { dueToGrow, growPersona } from "./growth";
 import { pickOption, type Order } from "./ownwords";
 import { regionOf, regionNews, knownWord, bring } from "./region";
@@ -415,9 +416,21 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
   // Nobody in a scene should sound like everybody else. Two a week get a voice of their own, the
   // ones you see most first.
   for (const p of voiceless(s).slice(0, 2)) { step(`${p.name}'s voice`); await enrichPerson(s, p, p.economics.weeks_owned > 2); }
-  // And nobody stays who she was the week she arrived: one woman a week who has lived through
-  // something big since she was last read is written again as who she's become (engine/growth).
-  for (const p of dueToGrow(s).slice(0, 1)) { step(`who ${p.name} has become`); await growPersona(s, p); }
+  // And nobody stays who she was the week she arrived: up to two women a week who have lived
+  // through something big since they were last read, or were read by an older version of the
+  // reading, are written again as who they've become (engine/growth).
+  for (const p of dueToGrow(s).slice(0, 2)) { step(`who ${p.name} has become`); await growPersona(s, p); }
+  // The long stories write themselves now: one waiting chapter a week is written in the background
+  // and waits on the Penthouse like any event. They used to sit unwritten until someone found the
+  // button on the Story screen, and while two sat there no new one could start.
+  const saga = waiting(s).find((x) => !x.chapter);
+  if (saga) {
+    step(saga.title || "a new story");
+    await writeNext(s, saga.id, async (system, user) => {
+      const r = await call({ system, user, model: s.models.narrator_model, fallback: s.models.fallback_model, json: true, maxTokens: 4000, temperature: 0.85 });
+      return { ok: r.ok, text: r.text, error: r.error };
+    });
+  }
   // Once she holds your collar, she decides her own week before anything is written about it.
   if (s.player.owned_by && s.reign && !s.reign.ended) {
     step(s.people[s.player.owned_by]?.name ?? "her");

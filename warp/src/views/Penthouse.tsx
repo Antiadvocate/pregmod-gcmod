@@ -28,7 +28,8 @@ import { governedPlaces } from "../engine/governor";
 import { AskList } from "./AskCard";
 import StoryCard from "./StoryCard";
 import { pendingBeat } from "../engine/story";
-import { SagaNotice } from "./Sagas";
+import { SagaCard, SagaNotice } from "./Sagas";
+import { waiting as sagasWaiting } from "../engine/saga";
 import { AnswerOwn } from "./AnswerOwn";
 import Cuckold, { CuckoldNotice } from "./Cuckold";
 import { ready as cuckReady } from "../engine/cuckold";
@@ -93,7 +94,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
 
   const asks = save.asks ?? [];
   const storyDue = !!pendingBeat(save);
-  const waitingCount = (cuckReady(save) ? 1 : 0) + (storyDue ? 1 : 0) + waiting.length + (chain ? 1 : 0) + asks.length + save.events.length;
+  const sagasReady = sagasWaiting(save).filter((x) => !!x.chapter && x.status === "running");
+  const waitingCount = sagasReady.length + (cuckReady(save) ? 1 : 0) + (storyDue ? 1 : 0) + waiting.length + (chain ? 1 : 0) + asks.length + save.events.length;
   const unread = save.notifications.filter((n) => !n.seen);
   const running = threads.filter((t) => t.pending === undefined && t.heat > 18);
   const delta = lastReport ? lastReport.cash_end - lastReport.cash_start : 0;
@@ -172,7 +174,9 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
       </div>
 
       <StoryCard />
-      <SagaNotice onOpen={() => go("story")} />
+      {/* A story chapter that's been written waits here like any event; one still being written is a line. */}
+      {sagasReady.map((x) => <div key={x.id} className="mb-4"><SagaCard id={x.id} /></div>)}
+      {sagasReady.length ? null : <SagaNotice onOpen={() => go("story")} />}
       <CuckoldNotice onOpen={() => setCuckOpen(true)} />
       {cuckOpen && save.cuckold && save.people[save.cuckold.her] ? <Cuckold id={save.cuckold.her} onClose={() => setCuckOpen(false)} /> : null}
 

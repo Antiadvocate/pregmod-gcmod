@@ -74,7 +74,7 @@ export function SagaNotice({ onOpen }: { onOpen: () => void }) {
   );
 }
 
-function SagaCard({ id }: { id: string }) {
+export function SagaCard({ id }: { id: string }) {
   const { save, mutate } = useGame();
   const x = sagasOf(save).list.find((q) => q.id === id)!;
   const [busy, setBusy] = useState(false);
