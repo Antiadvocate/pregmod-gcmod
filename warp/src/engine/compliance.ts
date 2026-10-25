@@ -79,6 +79,7 @@ export function obeys(s: SaveState, p: Person): Obeys {
     && (assertive || p.persona.conscience < 0.45 || lat !== "slave" || p.bond.resentment > 25);
   const parts = [LINE[stance]];
   if (flaw && stance !== "hollow") parts.push(`Her flaw: ${flaw.friction}.`);
+  else if (p.persona.behavior?.flaw && stance !== "hollow") parts.push(`Her flaw (${p.persona.behavior.flaw}) gets in the way of doing what she's told.`);
   if (pushes) parts.push("She's been indulged for weeks and never disciplined, and she's started pushing her luck: she bargains, sulks, drags her feet and ignores small orders to see what she can get away with.");
   if (!["hollow", "eager", "free"].includes(stance)) parts.push("Kindness, gifts or a nice word in the scene don't change this; she doesn't come round on her own, and she doesn't enjoy or thank the owner for what she didn't want. The owner decides whether to force it, call the guards, or punish her.");
   return { stance, pushes, line: parts.join(" "), label: pushes ? `${LABEL[stance]}, pushing her luck` : LABEL[stance] };

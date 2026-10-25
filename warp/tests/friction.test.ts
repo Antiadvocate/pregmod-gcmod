@@ -98,3 +98,21 @@ function slave(s: SaveState, b: Partial<Person["bond"]>, extra: (p: Person) => v
   check("an old save's women get behaviour and talents on load", back.persona.behavior !== undefined && Array.isArray(back.persona.talents));
   check("without anyone's traits being rewritten", back.persona.core_traits.join("|") === "written by the model|also written|and this one");
 }
+
+// Her card is about her, in the save she's in: no invented people, her own flaw, the whole household.
+{
+  const { personCard, digest, householdLine } = await import("../src/engine/prompts.ts");
+  const { herFitLine } = await import("../src/engine/fit.ts");
+  const { dueToGrow } = await import("../src/engine/growth.ts");
+  const s = newGame({ seed: "card-real", starting_slaves: 1, plot: false } as never) as SaveState;
+  const p = Object.values(s.people).find((x) => x.status === "owned")!;
+  p.manner = [{ toward: "Halyna", how: "easy and teasing with her" } as never];
+  check("someone a scene made up isn't kept on her card", !/Halyna/.test(personCard(s, p)));
+  p.persona.behavior = { flaw: "Thinks her feet are God", worn: 0 };
+  check("a flaw written in by hand reaches the narrator", /HER FLAW: Thinks her feet are God/.test(personCard(s, p)));
+  check("the narrator knows the whole household, and that there's nobody else", /THE HOUSEHOLD[^\n]*is the only slave/.test(householdLine(s)) && /THE HOUSEHOLD/.test(digest(s, "x", p.id)));
+  p.body.dick = 20;
+  check("an impossible past is called impossible", /was impossible/.test(herFitLine(s, p)));
+  p.persona.voice = { diction: "plain" }; p.persona.exchanges = undefined; p.economics.weeks_owned = 3; p.age = 20;
+  check("a woman with no ordinary exchanges is read early", dueToGrow(s).includes(p));
+}

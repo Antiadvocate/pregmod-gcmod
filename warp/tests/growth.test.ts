@@ -34,6 +34,7 @@ s.models.forge_model = "test/model";
 const p = Object.values(s.people).find((x) => x.status === "owned")!;
 p.persona.voice = { diction: "says 'like' a lot", tics: ["says 'honestly'"], example_lines: ["I mean, it's just..."] };
 p.economics.weeks_owned = 20;
+p.persona.exchanges = [{ you: "How are you?", her: "Fine." }];
 s.arcology.week = 30;
 check("nobody is read again for nothing", !dueToGrow(s).includes(p));
 remember(s.memory[p.id], { content: "courted in front of the whole arcology", week: 25, importance: 10, core: true });

@@ -24,6 +24,7 @@ interface ForgeOut {
   texture?: string[];
   interests?: string[];
   goals?: string[];
+  exchanges?: { you?: string; her?: string }[];
   background?: string;
   defining_memory?: { content: string; charge?: string; importance?: number };
 }
@@ -68,6 +69,10 @@ export async function enrichPerson(s: SaveState, p: Person, voiceOnly = false): 
   if (does.length) p.persona.interests = does;
   if (wants.length) p.persona.goals = wants;
   if (does.length && wants.length) p.persona.own_v = OWN_V;
+  // Three ordinary exchanges, so her voice has a length and a plainness to hold to from the first
+  // scene, not only once she's re-read weeks later (engine/growth rewrites them as she changes).
+  const talk = (Array.isArray(out.exchanges) ? out.exchanges : []).map((x) => ({ you: String(x?.you ?? "").trim().slice(0, 120), her: String(x?.her ?? "").trim().slice(0, 240) })).filter((x) => x.you && x.her).slice(0, 3);
+  if (talk.length && !p.persona.exchanges?.length) p.persona.exchanges = talk;
   if (voiceOnly) return !!out.voice;
   if (out.core_traits?.length) p.persona.core_traits = out.core_traits.slice(0, 4).map((t) => String(t).slice(0, 160));
   if (out.texture?.length) p.persona.texture = out.texture.slice(0, 3).map((t) => String(t).slice(0, 100));

@@ -108,6 +108,14 @@ ${PLAIN_RULES}`;
 /** How talk in a scene goes. From what the people who write good roleplay prompts agree on: length
  *  follows the player, answer what was said, show a person through plain speech rather than a pile
  *  of quirks, and don't hand every reply back with a question. */
+/** Who lives in the house: so nobody invents a slave the owner never bought. */
+export function householdLine(s: SaveState): string {
+  const mine = Object.values(s.people).filter((x) => x.status === "owned" || x.status === "indentured");
+  if (!mine.length) return "";
+  const names = mine.map((x) => `${x.name.split(" ")[0]} (${x.assignment})`).join(", ");
+  return `THE HOUSEHOLD (everyone the owner owns; there are no other slaves, and you never invent one): ${names}.${mine.length === 1 ? ` ${mine[0].name.split(" ")[0]} is the only slave: "the other girls" are nobody, and if the player mentions other slaves, they mean the staff, the guards or the citizens.` : " If the player mentions other slaves, they mean these, or the staff, the guards and the citizens."}`;
+}
+
 /** For anything written about one of your women: her events, her wants, what goes on between people. */
 export const NOT_PAPERWORK = `NEVER PAPERWORK. It's an adult game: it's about bodies, sex, desire, power and people, never about money or administration. No ledgers, accounts, books, invoices, rent, prices, suppliers, contracts, deals, debts, schedules or business. If her work is a desk job, what matters is her and what's done to her or what she wants there, not the work.`;
 
@@ -313,6 +321,8 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   const rules = houseRules(s);
   if (rules.length) out.push(`STANDING ORDERS TO THE WHOLE HOUSEHOLD (every slave keeps these without being reminded): ${rules.map((r) => r.rule).join("; ")}.`);
   out.push(rulesLine(s));
+  const house = householdLine(s);
+  if (house) out.push(house);
   if (s.scene.arrivals_pending.length) out.push(`ARRIVING — write them coming in: ${s.scene.arrivals_pending.map((id) => s.people[id]?.name).filter(Boolean).join(", ")}`);
   if (s.scene.departures_pending.length) out.push(`LEAVING — write them going: ${s.scene.departures_pending.map((d) => `${d.name} (${d.why})`).join(", ")}`);
 
@@ -387,10 +397,11 @@ export const FORGE_SYSTEM = `You are fleshing out a slave for Free Cities, an ad
  "voice": {"diction":"...","syntax":"...","rhythm":"...","tics":["verbal habits only, e.g. 'trails off when she's unsure', 'counts things on her fingers'"],"never_says":["..."],"agenda":"what she usually wants out of a conversation","example_lines":["5 things she would actually say TO HER OWNER, as a slave, one each: nervous, upset, happy, turned on, and caught out or embarrassed. With her real stumbles and fillers, and her owner's title in them, the way the original game's slaves talk: \\"P-please, Master, I didn't mean to\\", \\"Thank you, Master\\". Upset comes out as pleading or a flat \\"Yes, Master\\", never back-talk"]},
  "core_traits": ["3 short plain personality traits, the way the game lists them: e.g. 'mouthy and quick to argue', 'lazy unless someone is watching', 'fiercely proud of her cooking'"],
  "texture": ["2 things she likes or can't stand"],
+ "exchanges": [{"you":"something ordinary her new owner says, like \"How are you?\" or \"Come here.\"","her":"what she answers, one to three plain sentences, as herself, as a slave to her owner"}],
  "interests": ["${OWN_LIFE_ASK.interests}"],
  "goals": ["${OWN_LIFE_ASK.goals}"],
  "background": "3-4 plain sentences about her life before she was enslaved",
  "defining_memory": {"content":"one thing that happened to her, in her own words","charge":"warm|cold|sharp|bright","importance":8}
 }
 
-Write a specific, ordinary person from the place she actually comes from: a Ukrainian bookkeeper had a Ukrainian bookkeeper's life. Give her some grain: contradictions (kind to animals and a good liar; brave in a crisis and a coward about small things), a few things she's petty or proud about, and the friction her flaw makes (if she's arrogant she talks back; if she's devout she calls it sin). Not every slave is sweet: some are cold, some are sly, some are hard work. Give her a sense of humour or the lack of one, things she's petty about, how she gets things wrong, and how she sounds out loud: the particular words and habits that make her sound like her and nobody else (a phrase she reaches for, a word from her own language, how she names things), not generic fillers like "like", "honestly" or "I mean". She's a slave and she knows it: with her owner she speaks as one (by title, deferential, refusals as pleas); her swearing, her jokes and her temper are for the other girls and for herself. The words the way she'd say them, nothing literary or pretty (the narrator copies whatever wording it's given). No tragic boilerplate, no lines that sound like sayings.`;
+Write a specific, ordinary person from the place she actually comes from: a Ukrainian bookkeeper had a Ukrainian bookkeeper's life. Give her some grain: contradictions (kind to animals and a good liar; brave in a crisis and a coward about small things), a few things she's petty or proud about, and the friction her flaw makes (if she's arrogant she talks back; if she's devout she calls it sin). Not every slave is sweet: some are cold, some are sly, some are hard work. The three "exchanges" are ordinary moments with her new owner (he says something everyday, she answers in one to three plain sentences): they set how she sounds day to day, so make them hers and nobody else's. Give her a sense of humour or the lack of one, things she's petty about, how she gets things wrong, and how she sounds out loud: the particular words and habits that make her sound like her and nobody else (a phrase she reaches for, a word from her own language, how she names things), not generic fillers like "like", "honestly" or "I mean". She's a slave and she knows it: with her owner she speaks as one (by title, deferential, refusals as pleas); her swearing, her jokes and her temper are for the other girls and for herself. The words the way she'd say them, nothing literary or pretty (the narrator copies whatever wording it's given). No tragic boilerplate, no lines that sound like sayings.`;

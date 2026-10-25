@@ -11,6 +11,7 @@
  * from state — who is there, what their bodies are doing, what the action was — and the rest of the
  * pipeline runs identically. You lose the paragraph. You do not lose the game.
  */
+import { meet as meetFace } from "./faces";
 import { fitOf, ownerSize } from "./fit";
 import { applyMarks, marksForAct } from "./marks";
 import { walkIn, walkInLine, misreads, misreadLine } from "./alive";
@@ -469,7 +470,12 @@ export function applyDiff(s: SaveState, d: Diff, prose: string, said?: string): 
   // How she is with a particular person, kept for every scene after this one.
   for (const m of (d.manner ?? []).slice(0, 4)) {
     const p = m?.id ? s.people[m.id] : undefined;
-    if (p && m.toward && m.how) setManner(s, p, String(m.toward), String(m.how), "scene");
+    if (!p || !m.toward || !m.how) continue;
+    setManner(s, p, String(m.toward), String(m.how), "scene");
+    // Someone she's settled how she is with is someone: put them on file, so her card keeps them
+    // (it drops names nobody in the save has; engine/manner).
+    const first = String(m.toward).trim().split(/\s+/)[0].toLowerCase();
+    if (!Object.values(s.people).some((x) => x.name.split(" ")[0].toLowerCase() === first)) meetFace(s, { name: String(m.toward).trim() });
   }
 
   // Canon is a constraint on what may exist, so it is the one field a single turn cannot spray.
