@@ -32,6 +32,7 @@
  */
 import type { Person, PersonMemory } from "./types";
 import { clamp, wear } from "./psyche";
+import { BEHAVIOR_FLAW_BY_ID } from "../data/behavior";
 
 export interface Reading {
   devotion: number;   // −100 … +100
@@ -194,6 +195,18 @@ export function applyTreatment(p: Person, t: Treatment, week: number): string {
       b.bond = clamp(b.bond - s * 0.3, -100, 100);
       b.hope = clamp(b.hope - s * 0.4, 0, 100);
       break;
+  }
+  // SPOILING. Indulgence with nothing asked back builds up; discipline takes it down, and aimed
+  // punishment is what wears a behavioural flaw into its quirk (engine/compliance, data/behavior).
+  if (t.kind === "kindness" || t.kind === "recognition" || t.kind === "promise_kept") b.indulged = clamp((b.indulged ?? 0) + s * 0.9, 0, 100);
+  if (t.kind === "coercion" || t.kind === "cruelty") {
+    b.indulged = clamp((b.indulged ?? 0) - s * 5, 0, 100);
+    const bh = p.persona.behavior;
+    if (bh?.flaw) {
+      bh.worn = (bh.worn ?? 0) + s * (t.kind === "coercion" ? 3 : 1.5);
+      const def = BEHAVIOR_FLAW_BY_ID[bh.flaw];
+      if (def && bh.worn >= 60) p.persona.behavior = { quirk: def.softens_to };
+    }
   }
   p.bond.read = readCached(p);
   return `${t.kind.replace("_", " ")}: ${t.why}`;

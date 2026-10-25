@@ -204,6 +204,7 @@ import { weekSnapshot } from "../src/engine/snapshot.ts";
   empireOf(s).powers[place.id].status = "vassal";
   const her = cands(s)[0];
   her.persona.intelligence = "slow"; her.persona.education = 10; her.persona.conscience = 0.2;
+  her.persona.core_traits = ["quiet", "careful", "keeps to herself"];
   check("a slow, cold woman runs it hard and badly", styleOf(her).map((x) => x.id).join() === "iron,lost", styleOf(her).map((x) => x.id));
   install(s, place.id, her.id);
   const g = govOf(s, place.id)!;

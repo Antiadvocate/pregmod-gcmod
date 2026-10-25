@@ -81,6 +81,23 @@ const BY_CAREER: Record<string, Life> = {
   model: { does: ["spends hours on her hair, skin and nails, practising looking fuckable"], wants: ["to be on posters men touch themselves to"] },
   gamer: { does: ["plays anything with a screen, and strip versions of everything else"], wants: ["to stream herself again, to a lot more watchers"] },
   nun: { does: ["prays at set hours and confesses things that make the guards blush"], wants: ["to keep her faith whatever is done to her, and stop enjoying it"] },
+  lawyer: { does: ["argues the house rules with the other girls like a case, and wins"], wants: ["to talk her way into the owner's bed and out of her collar"] },
+  doctor: { does: ["examines the other girls after rough nights, clinically, and takes notes"], wants: ["to run the clinic, and decide what's done to bodies there"] },
+  stripper: { does: ["practises her routine on any pole she can find"], wants: ["to headline the club, with the owner watching"] },
+  "porn actress": { does: ["rates the house's men on technique, out loud"], wants: ["to be filmed again, properly, and be famous for it"] },
+  camgirl: { does: ["poses for any camera that points her way"], wants: ["an audience again, a big one"] },
+  maid: { does: ["cleans the owner's rooms in a uniform that gets shorter every week"], wants: ["to be the maid who serves the owner in every way"] },
+  cook: { does: ["feeds the other girls off her fingers"], wants: ["to cook for the owner every night and be dessert"] },
+  librarian: { does: ["reads the filthiest books in the house and keeps them in order"], wants: ["to live out one of her books, all the way through"] },
+  programmer: { does: ["hacks the house's toys to do things they weren't built for"], wants: ["to get into the arcology's cameras and see everything"] },
+  mercenary: { does: ["spars with the guards and doesn't always let them win"], wants: ["to be the owner's bodyguard, at his side and in his bed"] },
+  dominatrix: { does: ["trains the newer girls to kneel properly, whether they asked or not"], wants: ["to have the owner on his knees, just once"] },
+  heiress: { does: ["has the other girls do her nails and calls them her staff"], wants: ["to be kept like a princess, in silk and diamonds"] },
+  bartender: { does: ["mixes the girls drinks with dirty names"], wants: ["to run the club's bar and pick who goes home with whom"] },
+  masseuse: { does: ["gives the other girls massages that don't stay on their shoulders"], wants: ["to have the owner under her hands every night"] },
+  influencer: { does: ["practises her angles in every mirror"], wants: ["to be the most watched slave in the arcology"] },
+  cheerleader: { does: ["does splits and high kicks wherever someone might look up her skirt"], wants: ["to be the owner's favourite toy"] },
+  hairdresser: { does: ["does the other girls' hair and gossips about who's been in whose bed"], wants: ["to run the salon where the owner's girls are made pretty"] },
 };
 
 const DOES = [

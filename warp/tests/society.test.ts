@@ -145,6 +145,8 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   // A long run: laws arrive by themselves and nothing breaks.
   const s = game("soc-run");
   s.arcology.doctrines["paternalist"] = { adoption: 90, decoration: 0, research: false, policies: {} } as never;
+  // A content household: slaves who resist get forced every week (engine/compliance), and the city hears it as cruelty.
+  for (const p of Object.values(s.people)) if (p.status === "owned") Object.assign(p.bond, { bond: 70, fear: 0, resentment: 0, hope: 60 });
   for (let w = 0; w < 60; w++) {
     endWeek(s);
     for (const e of s.events.filter((x) => x.kind.startsWith("court_"))) resolveEvent(s, e, "court");

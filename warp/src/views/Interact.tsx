@@ -29,6 +29,7 @@ import { concludeMoment } from "../engine/deeds";
 import { DeedCard } from "./MomentCard";
 import SlaveArt, { SlaveHead } from "./SlaveArt";
 import { useVisibleViewport } from "../lib/viewport";
+import { obeys } from "../engine/compliance";
 import type { Moment } from "../lib/expression";
 import { RoomBackdrop } from "../lib/rooms";
 
@@ -235,6 +236,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
 
   if (!p) return null;
   const reg = registerOf(p);
+  const stand = obeys(save, p);
   const place = PLACE_BY_NAME[sceneAt] ?? PLACE_BY_ID[sceneAt] ?? PLACE_BY_ID.penthouse;
   const pub = place.privacy === "public";
 
@@ -337,7 +339,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
         </button>
         <div className="min-w-0 flex-1">
           <div className="text-[15px] leading-tight truncate">{p.name}</div>
-          <div className="text-[11px] dim truncate">{REGISTER_LABEL[reg]} · {band(p.psyche)} · {place.name}{pub ? " · in public" : ""}</div>
+          <div className="text-[11px] dim truncate"><span className={cx(["resists", "fights"].includes(stand.stance) && "bad", stand.pushes && "warn")}>{stand.label}</span> · {REGISTER_LABEL[reg]} · {place.name}{pub ? " · in public" : ""}</div>
         </div>
         <div className="w-20 shrink-0">
           <div className="text-[10px] dim text-right mb-0.5">aroused</div>
