@@ -122,7 +122,7 @@ export const RARITY_WORD = ["", "", "uncommon", "rare", "very rare"] as const;
 /** For her card: the facts, in words. */
 export function featuresLine(p: Person): string {
   const fs = featuresOf(p);
-  return fs.length ? `DISTINCTIVE (real and permanent; part of how she looks in every scene): ${fs.map((f) => FEATURES[f.id].words(f)).join("; ")}.` : "";
+  return fs.length ? `DISTINCTIVE (real and permanent; bring one up only when it matters to the moment, not every scene): ${fs.map((f) => FEATURES[f.id].words(f)).join("; ")}.` : "";
 }
 
 const SHORT: Partial<Record<FeatureId, (f: Feature) => string>> = {

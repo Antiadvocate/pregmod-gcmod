@@ -18,8 +18,7 @@ import { modelsAvailable } from "../config";
 import { castBrief, facesIn, keyOf, meet, parseCast } from "./faces";
 import { settledBrief, weightBrief } from "./fates";
 import { ownedBrief } from "./share";
-import { walkIn, walkInLine, misreads, misreadLine } from "./alive";
-import { HOUSE_STYLE, personCard, BOOKKEEPER_SYSTEM, bookkeeperContext } from "./prompts";
+import { CONVERSATION, HOUSE_STYLE, personCard, BOOKKEEPER_SYSTEM, bookkeeperContext } from "./prompts";
 import { worldBrief } from "./world";
 import { applyDiff, salvage, noteStock, stockLine, type Diff } from "./turn";
 import { say } from "./voice";
@@ -64,7 +63,9 @@ export const MOMENT_SYSTEM = `You continue a scene in Free Cities, an adult text
 
 ${HOUSE_STYLE}
 
-You are given the slave's card (fact), the world, and the scene so far. Write what happens next, in response to the player's last line. If the last thing in the scene is a short summary of something that just happened, write that moment out in full first: what she does, what she says, how she takes it. Two to four paragraphs, with her talking in her own voice. Follow the player's reply exactly; if they do something, write it happening. Write the owner as WHO THE OWNER IS describes them, in their manner and their words, never a stock cold slave-owner; don't write their inner feelings. Everyone treats the owner as their place really allows (THE POWER BETWEEN YOU on each card): an owned slave doesn't talk back or tell the owner off unless her card says she's openly defiant. Do not end the scene; stop at a point where the player can answer. Each turn of the game is a week. What the cards list as past (between you, remembers, what you have done) happened in earlier weeks and is over: it shapes how people act now, but this scene is its own, set where the scene so far puts it. Don't carry on an earlier scene or move this one back into its place.
+You are given the slave's card (fact), the world, and the scene so far. Write what happens next, in response to the player's last line. If the last thing in the scene is a short summary of something that just happened, write that moment out in full first: what she does, what she says, how she takes it. How long, and how she talks: HOW A CONVERSATION GOES, below. Follow the player's reply exactly; if they do something, write it happening. Write the owner as WHO THE OWNER IS describes them, in their manner and their words, never a stock cold slave-owner; don't write their inner feelings. Everyone treats the owner as their place really allows (THE POWER BETWEEN YOU on each card): an owned slave doesn't talk back or tell the owner off unless her card says she's openly defiant. Do not end the scene; stop at a point where the player can answer. Each turn of the game is a week. What the cards list as past (between you, remembers, what you have done) happened in earlier weeks and is over: it shapes how people act now, but this scene is its own, set where the scene so far puts it. Don't carry on an earlier scene or move this one back into its place.
+
+${CONVERSATION}
 
 Then, on its own line, write OPTIONS: and under it exactly four lines, each starting with "- ", giving four clearly different things the player could say or do next, in the player's voice and under twelve words each: one kind, one harsh, one sexual, and one that moves things along or leaves.`;
 
@@ -73,9 +74,74 @@ export const CITY_SCENE_SYSTEM = `You continue a scene in Free Cities, an adult 
 
 ${HOUSE_STYLE}
 
-Write what happens next, in response to the player's last line. If the last thing in the scene is a short summary of something that just happened, write that moment out in full first. Give the people in it names if they have none, and their own voices; they know who the player is and act on it, by what the ARCOLOGY section says about the city, its laws and what people know the player did. Two to four paragraphs. Follow the player's reply exactly; if they do something, write it happening and how people react. Write the owner as WHO THE OWNER IS describes them, in their manner and their words, never a stock cold slave-owner; don't write their inner feelings. Everyone treats the owner as their place really allows (THE POWER BETWEEN YOU on each card): an owned slave doesn't talk back or tell the owner off unless her card says she's openly defiant. Do not end the scene; stop at a point where the player can answer. Each turn of the game is a week. What the cards list as past (between you, remembers, what you have done) happened in earlier weeks and is over: it shapes how people act now, but this scene is its own, set where the scene so far puts it. Don't carry on an earlier scene or move this one back into its place.
+Write what happens next, in response to the player's last line. If the last thing in the scene is a short summary of something that just happened, write that moment out in full first. Give the people in it names if they have none, and their own voices; they know who the player is and act on it, by what the ARCOLOGY section says about the city, its laws and what people know the player did. How long, and how they talk: HOW A CONVERSATION GOES, below. Follow the player's reply exactly; if they do something, write it happening and how people react. Write the owner as WHO THE OWNER IS describes them, in their manner and their words, never a stock cold slave-owner; don't write their inner feelings. Everyone treats the owner as their place really allows (THE POWER BETWEEN YOU on each card): an owned slave doesn't talk back or tell the owner off unless her card says she's openly defiant. Do not end the scene; stop at a point where the player can answer. Each turn of the game is a week. What the cards list as past (between you, remembers, what you have done) happened in earlier weeks and is over: it shapes how people act now, but this scene is its own, set where the scene so far puts it. Don't carry on an earlier scene or move this one back into its place.
+
+${CONVERSATION}
 
 Then, on its own line, write OPTIONS: and under it exactly four lines, each starting with "- ", giving four clearly different things the player could say or do next, in the player's voice and under twelve words each: one generous, one hard, one that uses the moment for the player's gain or pleasure, and one that ends it or moves on.`;
+
+/* ── what she's been saying too much ─────────────────────────────────────────────────────────
+ * A model given a character with habits uses every habit in every reply, and the next reply copies
+ * the last. Telling it "not so often" does little; telling it what she has actually said, how many
+ * times, in the last few scenes, does a lot. Counted over this scene and her last few, and named in
+ * the prompt for this one reply. */
+
+/** Gestures and turns models repeat until they're a tic of their own. */
+const STOCK_BEATS = ["hand over her mouth", "hands over her mouth", "presses her lips", "checks your face", "checking your face", "catches herself", "clears her throat", "on her fingers", "her thumb", "ears go pink", "red to the ears", "dimple", "may i say", "may i ask", "if it pleases you", "okay, okay", "honestly", "i mean", "you know"];
+
+const STOP = new Set(("a an the and or but to of in on at for with is it it's i i'm you you're your me my she her he his we us they them this that so as be was are am were " +
+  "not no yes do did don't just like have has had want wants going go get got can will would could should tell told say said know think see look " +
+  "one all what when how there here now then if up out about too very more some any again still back down over off into from by been thought whole make made thank thanks please").split(" "));
+
+/** Two- and three-word phrases said over and over in the quoted speech: a pet name, a stock line. */
+function repeatedPhrases(text: string): string[] {
+  const said = [...text.matchAll(/["“]([^"”]{3,400})["”]/g)].map((x) => x[1].toLowerCase());
+  const count = new Map<string, number>();
+  for (const line of said) {
+    const w = line.replace(/[^a-zà-ÿ' -]+/g, " ").split(/\s+/).filter(Boolean);
+    const seen = new Set<string>();
+    for (const n of [3, 2]) for (let i = 0; i + n <= w.length; i++) {
+      const g = w.slice(i, i + n);
+      if (!g.some((x) => !STOP.has(x) && x.length >= 4) || g.includes("master")) continue;
+      const k = g.join(" ");
+      if (!seen.has(k)) { seen.add(k); count.set(k, (count.get(k) ?? 0) + 1); }
+    }
+  }
+  // "the little thing" and "little thing" are one habit: the fuller phrase is the one to name.
+  // A word thrown in on its own over and over: "Bon." "Blyat!" "Okay, okay."
+  for (const line of said) for (const x of line.matchAll(/(?:^|[.!?,;—-]\s*)([a-zà-ÿ']{2,14})(?=[.!?,;—-]|$)/g)) {
+    const w = x[1];
+    if (STOP.has(w) || w === "master" || w === "mistress") continue;
+    count.set(w, (count.get(w) ?? 0) + 1);
+  }
+  const hot = [...count].filter(([, n]) => n >= 4).sort((a, b) => b[0].split(" ").length - a[0].split(" ").length || b[1] - a[1]);
+  // Overlaps ("little thing" in "the little thing") are settled by the caller, on the full counts.
+  return hot.slice(0, 8).map(([k]) => k);
+}
+
+export function overused(s: SaveState, p: Person, m: Moment): string {
+  // Her own scenes: in one she only walked into, most of the talk is someone else's.
+  const recent = momentsOf(s).filter((x) => x.person === p.id && x !== m).slice(-3);
+  const text = [...recent.flatMap((x) => x.log.filter((l) => l.role === "scene").slice(-4).map((l) => l.text)), ...(m.log.filter((l) => l.role === "scene").map((l) => l.text))].join("\n").toLowerCase();
+  if (text.length < 400) return "";
+  // Her own habits, by the words quoted in them ("'Bon.', said under her breath" counts "bon").
+  const own = (p.persona.voice?.tics ?? []).flatMap((t) => [...t.matchAll(/['‘"“]([^'’"”]{2,24})['’"”]/g)].map((x) => x[1].toLowerCase().replace(/[.!?,]+$/, "")));
+  // Counted on the words alone, so "Bon. Fine" and "bon fine" are the same thing.
+  const flat = ` ${text.replace(/[^a-zà-ÿ' ]+/g, " ").replace(/\s+/g, " ")} `;
+  const count = (w: string) => {
+    const k = w.replace(/[^a-zà-ÿ' ]+/g, " ").replace(/\s+/g, " ").trim();
+    return k ? flat.split(` ${k}`).length - 1 : 0;
+  };
+  const norm = (w: string) => w.replace(/[^a-zà-ÿ' ]+/g, " ").replace(/\s+/g, " ").trim();
+  const hits = [...new Map([...own, ...STOCK_BEATS, ...repeatedPhrases(text)].map((w) => [norm(w), w])).values()]
+    .map((w) => ({ w, n: count(w) }))
+    .filter((x) => x.n >= 3)
+    .sort((a, b) => b.n - a.n || b.w.length - a.w.length);
+  // One habit, named once: "if it pleases" goes when "if it pleases you" is there.
+  // (Unless the shorter is said at least twice as often on its own: then it's a habit of its own.)
+  const named = hits.filter((x, i) => !hits.some((o, j) => j !== i && o.w.length > x.w.length && norm(o.w).includes(norm(x.w)) && o.n * 2 > x.n)).slice(0, 7);
+  return named.length ? `## SHE'S BEEN DOING THESE TOO MUCH LATELY (leave every one of them out of this reply)\n${named.map((x) => `"${x.w}" (${x.n} times in her last few scenes)`).join("; ")}` : "";
+}
 
 const DEFAULT_OPTIONS = [
   "Ask her what she's thinking",
@@ -186,16 +252,10 @@ export async function playMoment(
     return { ok: true, prose };
   }
 
-  // The house goes on around the scene: now and then someone walks in, and now and then she hears
-  // you wrong. Decided here, from what's going on, and handed to the writer as one line each.
-  const yourLines = m.log.filter((l) => l.role === "you").length;
+  // A private scene stays private: nobody walks in and she doesn't mishear on a dice roll. Both used
+  // to be thrown in from here to make the house feel alive, and read as the writer losing the plot.
   const beats: string[] = [];
-  if (reply && !walking && !m.walked && yourLines >= 2) {
-    const inn = walkIn(s, [m.person, ...(m.others ?? [])].filter((x): x is string => !!x), `${m.id}:${m.log.length}`);
-    if (inn) { m.walked = true; (m.others ??= []).push(inn.person.id); beats.push(walkInLine(inn)); }
-  }
-  if (reply && p && misreads(s, p, reply, `${m.id}:${m.log.length}`, m.misread_at !== undefined && m.log.length - m.misread_at <= 2)) { m.misread_at = m.log.length; beats.push(misreadLine(p)); }
-
+  const worn = p ? overused(s, p, m) : "";
   const card = p ? personCard(s, p, reply ?? m.title) : "";
   const city = !p && !walking;
   const others = (m.others ?? []).map((id) => s.people[id]).filter(Boolean) as Person[];
@@ -216,6 +276,7 @@ export async function playMoment(
     `## THE SCENE SO FAR (${m.title})\n${coarsen(transcript(m))}`,
     reply ? `## THE PLAYER'S REPLY\n${reply}` : `## WRITE THIS MOMENT OUT IN FULL, then offer the options.`,
     beats.length ? `## THIS TIME\n${beats.join("\n")}` : "",
+    worn,
     stockLine(s),
     REGISTER_TAIL,
   ].filter(Boolean).join("\n\n");
@@ -224,7 +285,7 @@ export async function playMoment(
   const res = await call({
     system: walking ? WALK_SYSTEM : city ? CITY_SCENE_SYSTEM : MOMENT_SYSTEM, user,
     model: s.models.narrator_model, fallback: s.models.fallback_model,
-    maxTokens: 1100, temperature: 0.95, signal: opts?.signal,
+    maxTokens: 1600, temperature: 0.8, presence: 0.3, signal: opts?.signal,
     onDelta: opts?.onDelta ? (c) => {
       shown += c;
       // Stream the prose only; the options list is not for reading as it arrives.

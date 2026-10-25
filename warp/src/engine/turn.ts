@@ -219,8 +219,9 @@ export async function runActTurn(
       onDelta: opts?.onDelta,
       onReset: opts?.onReset,
       signal: opts?.signal,
-      maxTokens: 1100,
-      temperature: 0.95,
+      maxTokens: 1500,
+      temperature: 0.8,
+      presence: 0.3,
     });
     if (res.ok) {
       prose = salvage(res.text);
@@ -493,16 +494,10 @@ export function showsDeparture(prose: string, name: string): boolean {
 }
 
 /** Someone walks in, or she hears you wrong: decided from the house, not asked of the model. */
-function aliveBeats(s: SaveState, action: string, mode: ActionMode): string {
-  const out: string[] = [];
-  const here = present(s);
-  if (s.turn % 3 === 0) {
-    const inn = walkIn(s, here.map((p) => p.id), `turn:${s.id}:${s.turn}`, 0.25);
-    if (inn) { s.scene.present.push(inn.person.id); out.push(walkInLine(inn)); }
-  }
-  const her = here.find((p) => p.status !== "free" || s.player.owned_by === p.id);
-  if (her && (mode === "say" || mode === "do") && misreads(s, her, action, `turn:${s.id}:${s.turn}`)) out.push(misreadLine(her));
-  return out.length ? `\n\n## THIS TIME\n${out.join("\n")}` : "";
+/** Nobody walks in on a scene on a dice roll and she doesn't mishear one: both used to be thrown in
+ *  here every few turns and read as the writer losing the plot. Kept as a hook, empty. */
+function aliveBeats(_s: SaveState, _action: string, _mode: ActionMode): string {
+  return "";
 }
 
 /* ── DETECTORS ─────────────────────────────────────────────────────────────────────────────── */

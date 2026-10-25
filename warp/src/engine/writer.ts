@@ -86,19 +86,19 @@ const LEAD: Record<Register, string[]> = {
     "{name} reaches for your hand before you've even sat down.",
   ],
   eager: [
-    "{name} is on you before the door has closed, mouth on your neck.",
-    "{name} has been waiting for you, flushed and horny, already half out of her clothes.",
-    "{name} crosses the room fast and presses {tits} against you.",
+    "{name} looks up when you come in and smiles, and puts down what she was doing.",
+    "{name} is sitting on the bed, and she's on her feet the moment she sees it's you.",
+    "{name} has been waiting for you; she comes over and stands close.",
   ],
   bratty: [
-    "{name} is sprawled across your side of the bed and doesn't move.",
-    "{name} raises an eyebrow at you and doesn't get up.",
-    "{name} looks you up and down, slowly, like she's deciding whether you'll do.",
+    "{name} is sprawled across the bed and only lifts her head when you come in.",
+    "{name} raises an eyebrow at you and takes her time getting up.",
+    "{name} glances over from the window and goes back to looking out of it for a moment.",
   ],
   crude: [
-    "{name} is eating something off a plate with her fingers. She licks them clean and looks you over.",
-    "{name} whistles when you come in.",
-    "{name} kicks the door shut behind you with one bare foot.",
+    "{name} is eating something off a plate with her fingers and licks them clean when she sees you.",
+    "{name} looks up from the bed and gives you a lazy grin.",
+    "{name} is half-dressed and doesn't bother finishing when you come in.",
   ],
   commanding: [
     "{name} is sitting in your chair, and she doesn't get up.",

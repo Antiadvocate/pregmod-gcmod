@@ -76,6 +76,8 @@ export interface CallOptions {
   onWait?: (ms: number, status: number) => void;
   /** Someone is sitting watching for this one: it goes ahead of background writing in the line. */
   urgent?: boolean;
+  /** A mild penalty on repeating what's already been said (OpenRouter's presence_penalty). */
+  presence?: number;
 }
 
 /** Anyone can listen for rate-limit waits (the shell shows a notice), without every caller
@@ -230,6 +232,7 @@ async function onceWith(opts: CallOptions, alive: () => void): Promise<LLMResult
     stream: !!opts.onDelta,
   };
   if (opts.json) body.response_format = { type: "json_object" };
+  if (opts.presence) body.presence_penalty = opts.presence;
   if (!t.local) body.usage = { include: true };
   // Thinking: OpenRouter takes a unified `reasoning` field; local servers (llama.cpp, KoboldCpp,
   // LM Studio) take the chat template's enable_thinking switch for Qwen-style models.

@@ -225,7 +225,7 @@ const LINES: Record<Register, Pool> = {
     talk_open: ["Yeah? What's up?", "Sit with me.", "What do you want to talk about?"],
   },
   eager: {
-    open: ["Finally.", "I've been thinking about you all day.", "Please. Whatever you want. Please."],
+    open: ["Hi, {you}. I was hoping you'd come.", "There you are, {you}.", "Hi. I missed you today, {you}."],
     wanted: ["Yes. Yes. More of that.", "Don't stop— don't you dare stop.", "Oh fuck, yes."],
     willing: ["Mm. Good.", "More?", "I love it when you do that."],
     endured: ["Not my favourite. But for you.", "Next time, could you do the other thing, {you}? If it pleases you.", "Okay. I'm still here."],

@@ -189,6 +189,11 @@ export interface Persona {
   signature?: string;
   /** The week her personality and voice were last rewritten from what has happened to her. */
   grown_week?: number;
+  /** Which version of the reading wrote her; an older one is read again. See engine/growth. */
+  grown_v?: number;
+  /** Two or three short ordinary exchanges with the owner, in her voice, at the length real talk
+   *  runs. Shown to the narrator instead of a list of quirks. */
+  exchanges?: { you: string; her: string }[];
   core_traits: string[];          // things their hands do, written so a scene could show it
   values: string[];
   speech_pattern: string;
