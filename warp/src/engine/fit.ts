@@ -187,7 +187,8 @@ export function herFitLine(s: SaveState, p: Person): string {
   const caps: [string, number][] = [["your ass", [1.5, 2.5, 4, 5.5, 7][clamp(you.anus ?? 0, 0, 4)]], ["your throat", 3], ...(you.vagina !== null && you.vagina !== undefined ? [["your pussy", (you.vagina ?? 0) + 2] as [string, number]] : [])];
   const word = (where: string, over: number) => (over <= 0 ? "fits" : over <= 1.5 ? "a tight fit that aches" : over <= 3 ? "too big: it takes time and lube, it hurts, and you can't take all of it"
     : where === "your throat" ? "far too big: you choke and retch on the head and the first few inches, and the rest of it stays outside you" : "it doesn't fit: only the head and a little more go in, and forcing more would tear you");
-  return `HER COCK IN YOU (fact; her ${dickWord(d)} cock, about ${inches(dickCM(d))}; write what this size actually allows, never the whole length going in): ${caps.map(([w, c]) => `${w}: ${word(w, d - c)}`).join("; ")}.`;
+  const huge = caps.some(([, c]) => d - c > 3);
+  return `HER COCK IN YOU (fact; her ${dickWord(d)} cock, about ${inches(dickCM(d))}; write what this size actually allows, never the whole length going in): ${caps.map(([w, c]) => `${w}: ${word(w, d - c)}`).join("; ")}.${huge ? " Anything on this card from earlier that says more of it went in (all of it, balls on your chin) was impossible: it went as far as this allows and no further, and that's how it's remembered and done now." : ""}`;
 }
 
 /** One of your women's cock in another's holes, for a scene with both of them in it. */

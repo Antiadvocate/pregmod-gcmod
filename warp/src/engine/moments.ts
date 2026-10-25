@@ -18,7 +18,7 @@ import { modelsAvailable } from "../config";
 import { castBrief, facesIn, keyOf, meet, parseCast } from "./faces";
 import { settledBrief, weightBrief } from "./fates";
 import { ownedBrief } from "./share";
-import { CONVERSATION, HOUSE_STYLE, personCard, BOOKKEEPER_SYSTEM, bookkeeperContext } from "./prompts";
+import { CONVERSATION, HOUSE_STYLE, personCard, BOOKKEEPER_SYSTEM, bookkeeperContext, householdLine } from "./prompts";
 import { worldBrief } from "./world";
 import { applyDiff, salvage, noteStock, stockLine, type Diff } from "./turn";
 import { say } from "./voice";
@@ -275,6 +275,7 @@ export async function playMoment(
     s.world ? `## THE WORLD\n${worldBrief(s)}` : "",
     walking ? "" : lawsLine(s),
     walking || city ? "" : rulesLine(s),
+    walking || city ? "" : householdLine(s),
     walking || city ? "" : sentinelsLine(s),
     castBrief(s, `${m.title}\n${transcript(m)}\n${reply ?? ""}`),
     settledBrief(s, 8),

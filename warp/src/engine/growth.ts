@@ -55,9 +55,12 @@ function since(s: SaveState, p: Person): number {
 export function dueToGrow(s: SaveState): Person[] {
   const week = s.arcology.week;
   const stale = (p: Person) => p.persona.grown_week !== undefined && (p.persona.grown_v ?? 1) < GROW_V;
+  // No ordinary exchanges yet: her voice has nothing at the length real talk runs to hold it, so
+  // she's read as soon as there's a little to read (her third week), not at her sixth.
+  const untalked = (p: Person) => !p.persona.exchanges?.length && p.economics.weeks_owned >= 3 && (p.persona.grown_week === undefined || week - p.persona.grown_week >= EVERY);
   return Object.values(s.people)
-    .filter((p) => (inHousehold(s, p) || isPartner(s, p)) && p.age >= 18 && p.persona.voice && p.economics.weeks_owned >= 4)
-    .filter((p) => stale(p) || (week - lastRead(p) >= EVERY && since(s, p) >= 2))
+    .filter((p) => (inHousehold(s, p) || isPartner(s, p)) && p.age >= 18 && p.persona.voice && (p.economics.weeks_owned >= 4 || untalked(p)))
+    .filter((p) => stale(p) || untalked(p) || (week - lastRead(p) >= EVERY && since(s, p) >= 2))
     .sort((a, b) => Number(stale(b)) - Number(stale(a)) || since(s, b) - since(s, a));
 }
 
@@ -69,6 +72,7 @@ Rules that matter most:
 - She talks like a real person: mostly plain, ordinary sentences. Describe her voice the way you'd describe someone you know (blunt, quiet, quick, warm, dry), not as a list of gimmicks.
 - Don't turn a one-off joke, image or number from a scene into who she is. If a scene had her call herself bread, or count to eighty-nine, that was one moment; leave it there.
 - "tics": at most two small, believable habits real people have (a word from her own language when she swears, what she calls the owner, a way she laughs), each something she does only now and then. Leave it empty if nothing fits. Never generic fillers ("like", "just", "honestly", "okay", "I mean").
+- Her body is fact. Where a memory says something her body couldn't have done (a cock far too big for a throat taken all the way down, say), the body wins: it went as far as it physically could, and that's who she is and what she remembers.
 - What's done is done. An operation, a punishment, a promise or a scene that already happened is in her past: it can have changed her, but she doesn't count the days since it, wait for it, or bring it up every time she talks. DONE TO HER BODY and the weeks on everything tell you what's over.
 - She has a life of her own besides the owner and what's been done to her. This is a porn game, so it has a sexual edge, and it grows out of her personality traits first, then her fetishes, then the job she had. "interests": ${OWN_LIFE_ASK.interests}. "goals": ${OWN_LIFE_ASK.goals}. Keep the ones on her card that still fit, and change what her weeks here would have changed.
 - "exchanges": three short, ordinary exchanges with the owner, the kind that happen every day, in the relationship they actually have (THE POWER BETWEEN THEM and her STANDING ORDERS decide how she speaks to him). The owner says something ordinary ("How are you?", "Come here.", "What do you think of the new room?") and she answers in one to three plain sentences, as herself. These set the length and plainness of how she talks, so keep them short and natural.

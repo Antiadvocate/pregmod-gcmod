@@ -66,7 +66,11 @@ export function mannerLines(p: Person): string[] {
 /** For her card: how she is with particular people, and how others of yours are with her. */
 export function mannerBrief(s: SaveState, p: Person): string {
   const out: string[] = [];
-  const hers = mannerLines(p);
+  // Only people who exist: a scene can invent a name ("Halyna calls me the morning appointment")
+  // that nobody in the save has, and kept on her card it turns into a slave who was never bought.
+  const first = (n: string) => n.trim().split(/\s+/)[0].toLowerCase();
+  const known = new Set([...Object.values(s.people).map((x) => first(x.name)), ...Object.values(s.faces ?? {}).map((f) => first(f.name))]);
+  const hers = mannerOf(p).filter((m) => (m.id && s.people[m.id]) || known.has(first(m.toward))).map((m) => `${m.toward}: ${m.how}`);
   if (hers.length) out.push(`HOW SHE IS WITH PARTICULAR PEOPLE (settled; whenever one of them is in the scene or comes up, she is like this with them, until a scene changes it): ${hers.join("; ")}.`);
   const theirs = Object.values(s.people)
     .filter((x) => x.id !== p.id && (x.status === "owned" || x.status === "indentured"))
