@@ -28,6 +28,7 @@
  */
 import { rng } from "../engine/rng";
 import { hasFeature } from "../engine/features";
+import { drawnHard } from "../engine/genitals";
 import type { Person } from "../engine/types";
 import { restingPose, type ArmPos, type Pose } from "./rig";
 import { garment } from "../data/wardrobe";
@@ -308,9 +309,7 @@ function cockLayers(p: Person): Layer[] {
   const out: Layer[] = [];
   // Balls sit behind the shaft, and only when there is something there to draw.
   if (p.body.balls !== null && p.body.balls > 0) out.push({ id: "Balls" });
-  // Hard when she is somewhere near comfortable and not locked up; soft otherwise. The old game
-  // keyed this off drugs and chastity; relaxation is the equivalent here and reads on the figure.
-  const hard = !p.chastity.penis && p.psyche.relaxation > -2;
+  const hard = drawnHard(p);
   out.push({ id: `${hard ? "Penis" : "Flaccid"}${circ}_${size}` });
   return out;
 }

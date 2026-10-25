@@ -16,7 +16,7 @@ import { getLocalImage } from "../config";
 import { ACT_BY_ID } from "../data/intimacy";
 import { hash } from "./rng";
 import { buildOf } from "./build";
-import { ballsCM, ballsWord, clitWord, dickCM, dickWord, feetOf, footSizeWord, labiaWord } from "./genitals";
+import { ballsCM, ballsWord, clitWord, dickCM, dickWord, drawnHard, feetOf, footSizeWord, labiaWord } from "./genitals";
 import { FEATURES, featuresOf } from "./features";
 
 /** The bedrock clause. Written once, stored on the person, never regenerated. */
@@ -80,9 +80,13 @@ export function physicalDescription(p: Person): string {
   const groin: string[] = [];
   if (dick > 0) {
     const cut = b.foreskin === 0 ? "circumcised" : "uncut";
+    // Hard or soft as the doll is drawn: a prompt that says "soft" over a drawing of an erection
+    // makes the sampler split the difference and invent anatomy.
     groin.push(p.chastity.penis
       ? `a ${dickWord(dick)} ${cut} penis, about ${dickCM(dick)}cm, locked in a chastity cage`
-      : `a ${dickWord(dick)} ${cut} penis, about ${dickCM(dick)}cm long, hanging soft`);
+      : drawnHard(p)
+        ? `a ${dickWord(dick)} ${cut} penis, fully erect, about ${dickCM(dick)}cm long, standing out from her body`
+        : `a ${dickWord(dick)} ${cut} penis, about ${dickCM(dick)}cm long, hanging soft`);
     groin.push(balls > 0 ? `${ballsWord(balls)} testicles, about ${ballsCM(balls)}cm each, ${(b.scrotum ?? balls) > balls ? "in a loose, hanging scrotum" : (b.scrotum ?? balls) < balls ? "in a tight, stretched scrotum" : "in a normal scrotum"}` : "no testicles");
   }
   if (b.vagina !== null) groin.push(`${dick > 0 ? "below that " : ""}a vulva with ${labiaWord(b.labia)} labia and a ${clitWord(b.clit)} clit`);

@@ -65,6 +65,13 @@ export function erectionWhy(p: Person): { state: Erection; why: string; fix?: st
   return { state: "full", why: pills ? "the pills help" : "" };
 }
 
+/** Whether her figure is drawn hard. Hard when she is somewhere near comfortable and not locked up;
+ *  soft otherwise. The old game keyed this off drugs and chastity; relaxation is the equivalent here
+ *  and reads on the figure. The photo prompt asks the same question, so the words match the doll. */
+export function drawnHard(p: Person): boolean {
+  return !!p.body.dick && !p.chastity.penis && p.psyche.relaxation > -2;
+}
+
 /* ── balls ────────────────────────────────────────────────────────────────────────────────── */
 
 export function ballsCM(b: number): number {
