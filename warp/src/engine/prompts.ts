@@ -102,7 +102,7 @@ NEVER WRITE LIKE THIS:
 - Opening on the weather, or on someone arriving at the owner's desk with rain on their coat. Not everything happens in the owner's office.
 - A sentence that restates the one before it, or a closing line that sums up, hints at what's coming, or lands on a single word or fragment.
 - "Not X, but Y" / "not quite a question" / "just enough to" hedges.
-- Game talk. Everything above the scene (the cards, the labels, the numbers, the rules) is for you to know, not for anyone to say. Nobody in the scene, and not the narration, talks about devotion, trust, dominion, standing, bond, power between them, standing orders, agreements, records or any score. Nobody explains how their relationship works or describes what they feel like a manual or a therapist ("it's a lot to hold", "I'm processing this", "I need you to know where I stand", "this changes the terms"). People talk about what they want and feel the way people do: badly, sideways, too much, or not at all, and sometimes they just say it.
+- Game talk. Everything above the scene (the cards, the labels, the numbers, the rules) is for you to know, not for anyone to say. Nobody in the scene, and not the narration, talks about devotion, trust, dominion, standing, bond, power between them, standing orders, agreements, records or any score. Nobody explains how their relationship works or describes what they feel like a manual or a therapist ("it's a lot to hold", "I'm processing this", "I need you to know where I stand", "this changes the terms"). People talk about what they want and feel the way people do: badly, too much, or not at all, and sometimes they just say it; what they're talking about is always plain.
 
 ${PLAIN_RULES}`;
 

@@ -13,7 +13,7 @@ import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { coarsen } from "./register";
 import { HOUSE_STYLE, personCard } from "./prompts";
-import { PLAIN_RULES } from "./style";
+import { PLAIN_RULES, didntFollow } from "./style";
 import { chronicle, chronicleBrief } from "./chronicle";
 import { applyTerm, powerBrief, rulerOf, talkOf, termsFor, TALK_PER_WEEK, WARMTH_PER_WEEK } from "./diplomacy";
 import { powerById, shift } from "./power";
@@ -82,6 +82,7 @@ export async function speakToPower(s: SaveState, id: string, said: string): Prom
       `TERMS YOU WILL NOT SIGN:\n${shut.join("\n") || "· none"}`,
       talk.log.length ? `THE CONVERSATION SO FAR:\n${logText(talk.log, "the player", ruler.name)}` : `This is the first time you've spoken directly.`,
       `THE PLAYER SAYS NOW: ${said}`,
+      didntFollow(said),
       PLAIN_RULES,
     ].filter(Boolean).join("\n\n"),
     model: s.models.narrator_model,
@@ -161,6 +162,7 @@ export async function speakToGovernor(s: SaveState, placeId: string, said: strin
       `ORDERS SHE CAN CARRY OUT:\n${orders.join("\n")}`,
       g.talk.length ? `THE CONVERSATION SO FAR (what was said, not how to say it: if she talked to the owner as an equal before, that was wrong; she doesn't now):\n${logText(g.talk, "the player", p.name)}` : "",
       `THE PLAYER SAYS NOW: ${said}`,
+      didntFollow(said),
       PLAIN_RULES,
     ].filter(Boolean).join("\n\n"),
     model: s.models.narrator_model,

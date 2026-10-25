@@ -31,7 +31,7 @@ import { getEdge } from "./social";
 import { latitudeOf } from "./voice";
 import { romanceOf } from "./romance";
 import { workplaceOf, inPlace } from "./whereabouts";
-import { tiedTo, file, tie, note } from "./others";
+import { tiedTo, file, tie, note, partIn } from "./others";
 import { castBrief } from "./faces";
 import { rng } from "./rng";
 import { betweenEvents, forcedAllowed, rulesLine, sexBetween } from "./houserules";
@@ -217,7 +217,7 @@ export async function generateGoing(s: SaveState, g: Going, snapshot = ""): Prom
     if (!name || people.some((p) => p.name.split(" ")[0] === name.split(" ")[0])) continue;
     const f = file(s, name.slice(0, 48), String(c.what ?? "").slice(0, 80) || "someone she knows", c.pronoun === "he" ? "he" : "she");
     if (c.to_her) tie(f, String(c.to_her), g.main.id);
-    note(s, f, `week ${week}: ${situation.split(/\n/)[0].slice(0, 200)}`);
+    note(s, f, partIn(situation, name));
   }
   (s.event_log ??= {})[`going:${g.key}`] = week;
   return {

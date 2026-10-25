@@ -30,9 +30,31 @@ export function known(f: Face): boolean {
   return !!(f.kept || f.fate || f.role || (f.ties ?? []).length || (f.notes ?? []).length >= 2 || f.seen >= 3);
 }
 
+/** Whole sentences, never a fragment: cut at the last sentence end that fits, or at a word with an
+ *  ellipsis. A record that stops at "his mates at the next" is a riddle the narrator fills in. */
+export function whole(text: string, max: number): string {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  let end = -1;
+  for (const m of t.matchAll(/[.!?]["'”’]?(?=\s|$)/g)) { const e = m.index! + m[0].length; if (e <= max) end = e; else break; }
+  return end > max / 3 ? t.slice(0, end) : `${t.slice(0, max).replace(/\s+\S*$/, "")}…`;
+}
+
+/** Their part in something written about someone else: the sentences that name them and the one
+ *  after each (what they said usually runs on), else how it started. */
+export function partIn(text: string, name: string, max = 240): string {
+  const first = name.trim().split(/\s+/)[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const sentences = text.replace(/\s+/g, " ").match(/[^.!?]+[.!?]+["'”’]?/g) ?? [text];
+  const named = new RegExp(`\\b${first}\\b`);
+  const keep = new Set<number>();
+  sentences.forEach((x, i) => { if (named.test(x)) { keep.add(i); if (i + 1 < sentences.length) keep.add(i + 1); } });
+  const picked = keep.size ? [...keep].sort((a, b) => a - b).map((i) => sentences[i]) : sentences.slice(0, 2);
+  return whole(picked.join(" "), max);
+}
+
 /** What happened, from their side, kept on their record. */
 export function note(s: SaveState, f: Face, text: string): void {
-  const t = text.replace(/\s+/g, " ").trim().slice(0, 240);
+  const t = whole(text.replace(/^week \d+:\s*/i, ""), 240);
   if (!t) return;
   f.notes ??= [];
   if (f.notes.some((n) => n.text === t)) return;
@@ -66,6 +88,6 @@ export function record(s: SaveState, f: Face): string {
     f.likes ? `likes ${f.likes}` : "",
     f.dislikes ? `can't stand ${f.dislikes}` : "",
   ].filter(Boolean);
-  const mem = (f.notes ?? []).slice(-3).map((n) => `week ${n.week}: ${n.text}`);
+  const mem = (f.notes ?? []).slice(-3).map((n) => `week ${n.week}: ${n.text.replace(/^week \d+:\s*/i, "")}`);
   return `${bits.length ? `. ${bits.join("; ")}` : ""}${mem.length ? `. Remembers: ${mem.join(" | ")}` : ""}`;
 }
