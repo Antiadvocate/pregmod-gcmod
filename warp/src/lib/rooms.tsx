@@ -15,6 +15,7 @@ const THEME: Record<string, Theme> = {
   concourse: "concourse", promenade: "concourse", brothel_floor: "brothel", club_floor: "club",
   arcade_hall: "arcade", cellblock_floor: "cells", spa_floor: "spa", clinic_floor: "clinic",
   dairy_floor: "works", farmyard_floor: "works", pit_floor: "pit", nursery_floor: "room", dressing: "dressing",
+  office: "penthouse", classroom: "room", schoolroom_floor: "room", barracks_floor: "cells", stage: "club", storeroom: "cells", town_clinic: "clinic",
 };
 
 function Frame({ children, sky }: { children: ReactNode; sky: [string, string] }) {

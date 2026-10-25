@@ -7,12 +7,13 @@
  * is a crash somewhere far away with no clue in it. Everything it fills is a default that a
  * running game would have produced anyway.
  */
+import { seedOwnLife } from "./ownlife";
 import { repairCuckold } from "./cuckold";
 import { compactMemory, similar } from "./memory";
 import { hasWomb } from "./pregnancy";
 import { reconcileAnatomy } from "./genitals";
 import { assWord } from "./generate";
-import { sane } from "./health";
+import { sane, settleOldSurgery } from "./health";
 import { feetOf } from "./genitals";
 import { newWorld } from "./world";
 import type { Arcology, Facility, Person, Pronouns, SaveState, Sector, StandingOrder } from "./types";
@@ -278,7 +279,10 @@ export function sanitize(raw: SaveState): SaveState {
     p.skills.management = p.skills.management ?? {};
     p.persona.fetishes = p.persona.fetishes ?? [];
     p.persona.texture = p.persona.texture ?? [];
+    seedOwnLife(p);
     if (!s.memory[p.id]) s.memory[p.id] = newMemory();
+    s.memory[p.id].facts = s.memory[p.id].facts ?? [];
+    settleOldSurgery(s, p);
     // Facility membership: the facility is authoritative, so a person pointing at a facility that
     // does not hold them is corrected rather than trusted.
     if (p.facility && !s.arcology?.facilities[p.facility]?.workers.includes(p.id)) {

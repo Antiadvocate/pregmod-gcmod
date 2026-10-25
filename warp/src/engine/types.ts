@@ -194,6 +194,11 @@ export interface Persona {
   /** Two or three short ordinary exchanges with the owner, in her voice, at the length real talk
    *  runs. Shown to the narrator instead of a list of quirks. */
   exchanges?: { you: string; her: string }[];
+  /** What she does with her own time, when she has any: things she does, not things she likes.
+   *  See engine/ownlife. */
+  interests?: string[];
+  /** What she wants for herself in the long run, past this week and this scene. See engine/ownlife. */
+  goals?: string[];
   core_traits: string[];          // things their hands do, written so a scene could show it
   values: string[];
   speech_pattern: string;

@@ -6,12 +6,14 @@
  * That third one is why a woman who spent two years in the arcade is not restored by a month in
  * the spa, and why the arcade is a decision rather than a rotation.
  */
-import type { Person, SaveState } from "./types";
+import type { Person, PersonMemory, SaveState } from "./types";
 import { clamp } from "./psyche";
 import { rng } from "./rng";
 import { kgFor } from "./build";
 import { DRUG_BY_ID } from "../data/drugs";
 import { mobility } from "./genitals";
+import { learn } from "./memory";
+import { PROCEDURES as THEATRE } from "../data/surgery";
 
 /** A recovery count that is missing, negative or not a number (old saves) reads as none. */
 export function sane(n: unknown): number {
@@ -30,6 +32,71 @@ export function recoveryNote(state: SaveState, p: Person): string {
   return `recovering from surgery: ${left} more week${left === 1 ? "" : "s"} at this pace`;
 }
 
+/**
+ * DONE IS DONE.
+ *
+ * What she kept of the run-up to an operation ("the owner wants to pay for surgery to make her
+ * pussy tighter", "he means to give her improvements within a week") stayed in what she knows, in
+ * the future tense, after the operation; the operation itself went in as a bare line, and the next
+ * reading of her (engine/growth) made a woman who counted the days to a surgery she'd already had
+ * and brought it up in every scene. Now the plan goes, a promise she remembers is marked kept, and
+ * what she knows says it happened, and when.
+ */
+const PLANNED = /\b(wants? to|wanted to|means to|meant to|will|would|going to|plans?|planned|promis\w*|intends?|offer\w*|soon|within a week|next week|about to)\b/i;
+const SURGICAL = /\b(surg\w*|operat\w*|procedures?|improvements?|the knife)\b/i;
+
+export function surgeryDone(mem: PersonMemory, name: string, what: string, week: number): void {
+  const about = (t: string) => SURGICAL.test(t) || t.toLowerCase().includes(name);
+  mem.facts = mem.facts.filter((f) => !(f.week <= week && about(f.text) && PLANNED.test(f.text)));
+  for (const m of mem.episodic) {
+    if (m.week <= week && about(m.content) && PLANNED.test(m.content) && !/\bdone in week\b/.test(m.content)) m.content = `${m.content} (it was done in week ${week})`;
+  }
+  learn(mem, `In week ${week} she had surgery: ${what}. It's done.`, week);
+}
+
+/** Waiting for an operation, written into who she is while she waited ("keeps a running count of
+ *  the days since her surgery", "wants the surgery to be over"): gone once she's healed. */
+const WAITING = /\b(count\w*|days?|since|until|wait\w*|over|soon|reports?)\b/i;
+export function scrubTheWait(p: Person): void {
+  const surg = /\bsurg\w*|\boperation\b/i;
+  p.persona.core_traits = p.persona.core_traits.filter((t) => !(surg.test(t) && WAITING.test(t)));
+  const v = p.persona.voice;
+  if (v?.agenda) v.agenda = (v.agenda.match(/[^.!?]+[.!?]*/g) ?? []).map((x) => x.trim()).filter((x) => x && !(surg.test(x) && WAITING.test(x))).join(" ");
+  if (p.persona.signature && surg.test(p.persona.signature) && WAITING.test(p.persona.signature)) p.persona.signature = undefined;
+}
+
+/** An older save: surgery done before any of the above, with the plan still in what she knows. */
+export function settleOldSurgery(state: SaveState, p: Person): void {
+  const last = [...p.body.marks].reverse().find((m) => m.kind === "implant" && m.week > 0);
+  if (!last) return;
+  if (!sane(p.health.recovery_weeks)) scrubTheWait(p);
+  const mem = state.memory[p.id];
+  if (!mem || mem.facts.some((f) => /\bhad surgery\b|\bhealed from her surgery\b/.test(f.text))) return;
+  surgeryDone(mem, last.what, opWords(last.what), last.week);
+  if (!sane(p.health.recovery_weeks)) healed(state, p);
+}
+
+/** What was done, in words: "her vagina is tightened back to how it was when she was eighteen", not "tighten her". */
+function opWords(what: string): string {
+  return THEATRE.find((x) => x.name.toLowerCase() === what)?.what ?? `the ${what}`;
+}
+
+/** Out of recovery: what she knows says so, so the operation stops being something coming. */
+export function healed(state: SaveState, p: Person): void {
+  const mem = state.memory[p.id];
+  const last = [...p.body.marks].reverse().find((m) => m.kind === "implant" && m.week > 0);
+  if (mem && last) learn(mem, `By week ${state.arcology.week} she had healed from her surgery in week ${last.week}; it's behind her.`, state.arcology.week);
+  scrubTheWait(p);
+}
+
+/** What's been done to her on the table lately, as past: for her card and her re-reading. */
+export function surgeryPast(state: SaveState, p: Person, weeks = 20): string {
+  const ops = p.body.marks.filter((m) => m.kind === "implant" && m.week > 0 && state.arcology.week - m.week <= weeks);
+  if (!ops.length) return "";
+  const left = sane(p.health.recovery_weeks);
+  return `${ops.map((m) => `${opWords(m.what)} (week ${m.week})`).join("; ")}; ${left ? `still recovering, ${left} more week${left === 1 ? "" : "s"}` : "all healed"}`;
+}
+
 /** Intensive care: pay to have her back on her feet now. Cheaper in your own clinic. */
 export function rushCost(state: SaveState, p: Person): number {
   const w = sane(p.health.recovery_weeks);
@@ -42,6 +109,7 @@ export function rushRecovery(state: SaveState, p: Person): string | null {
   if (state.arcology.cash < cost) return `costs ¤${cost.toLocaleString()}, which you don't have`;
   state.arcology.cash -= cost;
   p.health.recovery_weeks = 0;
+  healed(state, p);
   p.health.health = clamp(p.health.health + 5, -100, 100);
   return null;
 }
@@ -83,7 +151,7 @@ export function tickHealth(state: SaveState, p: Person, load: { health: number; 
     if (state.arcology.facilities["clinic"]?.manager && inClinic(p)) off++;
     if (h.curatives >= 2) off++;
     h.recovery_weeks = Math.max(0, h.recovery_weeks - off);
-    if (h.recovery_weeks === 0) notes.push("out of recovery and back on her feet");
+    if (h.recovery_weeks === 0) { notes.push("out of recovery and back on her feet"); healed(state, p); }
   }
 
   // Illness runs its course or gets worse, depending on whether anyone is looking after her.

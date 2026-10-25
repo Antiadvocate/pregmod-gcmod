@@ -16,11 +16,14 @@ import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { FORGE_SYSTEM, WEEK_SYSTEM } from "./prompts";
 import { remember } from "./memory";
+import { cleanList } from "./ownlife";
 
 interface ForgeOut {
   voice?: Person["persona"]["voice"];
   core_traits?: string[];
   texture?: string[];
+  interests?: string[];
+  goals?: string[];
   background?: string;
   defining_memory?: { content: string; charge?: string; importance?: number };
 }
@@ -58,6 +61,10 @@ export async function enrichPerson(s: SaveState, p: Person, voiceOnly = false): 
   if (!out) return false;
 
   if (out.voice) p.persona.voice = { ...p.persona.voice, ...out.voice };
+  // Her own time and what she wants contradict nothing she's lived, so they're kept either way.
+  const does = cleanList(out.interests, 3), wants = cleanList(out.goals, 2);
+  if (does.length) p.persona.interests = does;
+  if (wants.length) p.persona.goals = wants;
   if (voiceOnly) return !!out.voice;
   if (out.core_traits?.length) p.persona.core_traits = out.core_traits.slice(0, 4).map((t) => String(t).slice(0, 160));
   if (out.texture?.length) p.persona.texture = out.texture.slice(0, 3).map((t) => String(t).slice(0, 100));

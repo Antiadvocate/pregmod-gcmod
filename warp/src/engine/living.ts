@@ -48,6 +48,7 @@ import { worldBrief } from "./world";
 import { activeGovernors, governorBrief, governorshipOf, GOV_ORDERS } from "./governor";
 import { grantAsk, refuseAsk, voiceAsk } from "./asks";
 import { generateWant, pickWants } from "./wants";
+import { generateGoing, pickGoings } from "./goings";
 import { weekSnapshot } from "./snapshot";
 import { GOV_VOICE } from "./talk";
 import { writeWeekProse, enrichPerson } from "./forge";
@@ -444,6 +445,12 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
   for (const w of pickWants(s)) {
     step(w.p.name);
     const e = await generateWant(s, w.p, w.reasons, snap);
+    if (e) s.events.push(e);
+  }
+  // And what's going on between people this week, that you can walk into (engine/goings).
+  for (const g of pickGoings(s)) {
+    step(g.other ? `${g.main.name} and ${g.other.name}` : g.main.name);
+    const e = await generateGoing(s, g, snap);
     if (e) s.events.push(e);
   }
   // Any request still waiting (a model failed, or it came from her page) is written as a moment too.

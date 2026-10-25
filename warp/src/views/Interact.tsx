@@ -16,11 +16,12 @@ import { ACTS, ACT_BY_ID, FETISH_BY_ID } from "../data/intimacy";
 import { affinity, canDo, type ActOutcome } from "../engine/intimacy";
 import { runActTurn } from "../engine/turn";
 import { followupsFor, runFollowup, talk, TOPICS, type Followup } from "../engine/encounter";
-import { isPublic, placeOf } from "../engine/places";
+import { PLACE_BY_ID, PLACE_BY_NAME } from "../data/places";
+import { inPlace, whereabouts } from "../engine/whereabouts";
 import { registerOf, REGISTER_LABEL, say } from "../engine/voice";
 import { band } from "../engine/psyche";
 import { rng } from "../engine/rng";
-import { writeLead } from "../engine/writer";
+import { arrivalLead } from "../engine/writer";
 import { POSE_BY_ID, poseForAct, restingPose, type Pose } from "../lib/rig";
 import { modelsAvailable } from "../config";
 import { closeMoment, momentsOf, noteMoment, openMoment, playMoment, type MomentLine } from "../engine/moments";
@@ -72,11 +73,18 @@ function poseAfter(o: ActOutcome, fallback: Pose): Pose {
 export default function Interact({ id, onClose }: { id: string; onClose: () => void }) {
   const { save, mutate, replace } = useGame();
   const p = save.people[id];
-  const [log, setLog] = useState<Entry[]>(() => {
-    if (!p) return [];
+  // Where she is when you come looking (at work, or on her own time), and where you were. You go
+  // to her and it happens there, or you send for her and she comes to you (engine/whereabouts).
+  const [spot] = useState(() => (p ? whereabouts(save, p) : undefined));
+  const [home] = useState(() => ({ location: save.scene.location, present: [...save.scene.present] }));
+  const [summoned, setSummoned] = useState(false);
+  const opening = (sent: boolean): Entry[] => {
+    if (!p || !spot) return [];
     const r = rng(`open:${id}:${save.turn}`);
-    return [{ k: "prose", text: writeLead(save, p, r) }, { k: "said", text: say(save, p, "open", r) }];
-  });
+    return [{ k: "prose", text: arrivalLead(p, spot, sent, r) }, { k: "said", text: say(save, p, "open", r) }];
+  };
+  const asLines = (es: Entry[]): MomentLine[] => [{ role: "scene", text: es.map((e) => (e.k === "said" ? `"${e.text.replace(/^"|"$/g, "")}"` : "text" in e ? e.text : "")).filter(Boolean).join(" ") }];
+  const [log, setLog] = useState<Entry[]>(() => opening(false));
   // When she owns you, you serve; the owner's moves are hers now, not yours.
   const hers = !!p && isKeeper(save, p);
   const groups = hers ? [...GROUPS.filter((g) => g.id === "hers"), ...GROUPS.filter((g) => ["tenderness", "feet", "play", "talk"].includes(g.id))] : GROUPS;
@@ -98,7 +106,18 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
   const [said, setSaid] = useState("");
   const engaged = useRef(false);
   const midRef = useRef<string | null>(null);
-  const history = useRef<MomentLine[]>([]);
+  const history = useRef<MomentLine[]>(asLines(log));
+  const sceneAt = !spot || summoned ? home.location : (PLACE_BY_ID[spot.place]?.name ?? home.location);
+  // For the length of the visit the room is wherever it's happening, with just the two of you in it,
+  // so what you do there is done there (in public, if that's where she works); put back on the way out.
+  useEffect(() => { mutate((s) => { s.scene.location = sceneAt; s.scene.present = [id]; }); }, [sceneAt]);
+  useEffect(() => () => { mutate((s) => { s.scene.location = home.location; s.scene.present = home.present; }); }, []);
+  const sendFor = (sent: boolean) => {
+    setSummoned(sent);
+    const o = opening(sent);
+    setLog(o);
+    history.current = asLines(o);
+  };
 
   const record = (lines: MomentLine[]) => {
     history.current.push(...lines);
@@ -108,7 +127,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     if (midRef.current) return midRef.current;
     let made = "";
     mutate((s) => {
-      made = openMoment(s, { person: id, title: `With ${s.people[id]?.name ?? "her"}, week ${s.arcology.week}`, source: "encounter", happened: "" });
+      made = openMoment(s, { person: id, title: `With ${s.people[id]?.name ?? "her"}, week ${s.arcology.week}`, source: "encounter", happened: "", where: spot ? { ...spot, summoned } : undefined });
       noteMoment(s, made, history.current.slice(-12));
     });
     midRef.current = made;
@@ -207,8 +226,8 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
 
   if (!p) return null;
   const reg = registerOf(p);
-  const place = placeOf(save);
-  const pub = isPublic(save);
+  const place = PLACE_BY_NAME[sceneAt] ?? PLACE_BY_ID[sceneAt] ?? PLACE_BY_ID.penthouse;
+  const pub = place.privacy === "public";
 
   function play(r: string) {
     setRx("");
@@ -331,6 +350,11 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
       {/* what happened */}
       <div ref={logRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
         {log.map((e, i) => <LogEntry key={i} e={e} />)}
+        {spot && !spot.withYou && !mid && !busy && log.length <= 2 ? (
+          <div className="flex justify-center">
+            <button className="chip !text-[12px]" onClick={() => sendFor(!summoned)}>{summoned ? `Go to her ${inPlace(spot.name)} instead` : "Send for her instead"}</button>
+          </div>
+        ) : null}
         {stream ? <p className="font-prose text-[15.5px] leading-relaxed mid">{stream}</p> : null}
         {busy ? <div className="flex items-center gap-2 dim text-[12px]"><Loader2 size={13} className="animate-spin" /> …</div> : null}
       </div>

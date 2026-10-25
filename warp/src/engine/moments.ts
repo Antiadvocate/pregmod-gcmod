@@ -28,6 +28,7 @@ import { shove } from "./psyche";
 import { concludeMoment } from "./deeds";
 import { captureInstructions } from "./agreements";
 import { WALK_OPTIONS, WALK_SYSTEM, walkContext, walkOffline } from "./walk";
+import { whereLine, type Whereabouts } from "./whereabouts";
 
 export interface MomentLine { role: "you" | "scene"; text: string }
 
@@ -57,6 +58,8 @@ export interface Moment {
   walked?: boolean;
   /** The log length when she last misheard you, so it's never twice running. */
   misread_at?: number;
+  /** Where it happens: where you found her and what she was doing, or that you sent for her. See engine/whereabouts. */
+  where?: Whereabouts & { summoned?: boolean };
 }
 
 export const MOMENT_SYSTEM = `You continue a scene in Free Cities, an adult text game about owning an arcology where slavery is legal. The player owns the slave in the scene.
@@ -159,7 +162,7 @@ export function openMoments(s: SaveState, personId?: string): Moment[] {
 }
 
 /** Start a moment from something that just happened. Returns its id. */
-export function openMoment(s: SaveState, o: { person?: string; others?: string[]; title: string; source: string; setup?: string; you?: string; happened: string }): string {
+export function openMoment(s: SaveState, o: { person?: string; others?: string[]; title: string; source: string; setup?: string; you?: string; happened: string; where?: Moment["where"] }): string {
   const list = momentsOf(s);
   const id = `mo-${s.arcology.week}-${s.turn}-${list.length}`;
   const log: MomentLine[] = [];
@@ -167,7 +170,7 @@ export function openMoment(s: SaveState, o: { person?: string; others?: string[]
   if (o.setup?.trim()) log.push({ role: "scene", text: o.setup.trim() });
   if (o.you) log.push({ role: "you", text: o.you });
   if (o.happened) log.push({ role: "scene", text: o.happened });
-  list.push({ id, person: o.person, others: o.others?.filter((x) => x && x !== o.person), title: o.title, source: o.source, week: s.arcology.week, updated: s.arcology.week, log, options: DEFAULT_OPTIONS, open: true, unexpanded: modelsAvailable(), seeded: log.length });
+  list.push({ id, person: o.person, others: o.others?.filter((x) => x && x !== o.person), title: o.title, source: o.source, week: s.arcology.week, updated: s.arcology.week, log, options: DEFAULT_OPTIONS, open: true, unexpanded: modelsAvailable(), seeded: log.length, ...(o.where ? { where: o.where } : {}) });
   // Keep the list from growing without end: close the oldest finished ones.
   if (list.length > 60) s.moments = list.slice(-60);
   return id;
@@ -264,6 +267,7 @@ export async function playMoment(
     walking ? walkContext(s, m.walk) : "",
     city ? cityContext(s) : "",
     card ? `## ${walking ? "WITH THE PLAYER" : "THE SLAVE"}\n${card}` : "",
+    m.where ? whereLine(m.where, m.where.summoned) : "",
     ...others.map((o) => `## ALSO IN THE SCENE\n${personCard(s, o, m.title)}`),
     p && others.length ? `## BETWEEN THEM\n${others.flatMap((o) => [bond(p, o), bond(o, p)]).filter(Boolean).join("\n")}\nBoth of them talk and act in the scene, each in her own voice.` : "",
     s.world ? `## THE WORLD\n${worldBrief(s)}` : "",

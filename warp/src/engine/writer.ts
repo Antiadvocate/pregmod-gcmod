@@ -17,6 +17,7 @@ import { rng, type Rng } from "./rng";
 import { registerOf, say, fill, type Register } from "./voice";
 import { buildOf } from "./build";
 import { hasCock } from "./you";
+import { inPlace, type Whereabouts } from "./whereabouts";
 
 /* ── her body, in words ─────────────────────────────────────────────────────────────────────── */
 
@@ -110,6 +111,31 @@ const LEAD: Record<Register, string[]> = {
 /** How she is when you walk in, in one line. */
 export function writeLead(_s: SaveState, p: Person, r: Rng): string {
   return fill(r.pick(LEAD[registerOf(p)]), bodyWords(p));
+}
+
+/** How she takes seeing you, wherever she is: nothing here assumes a bed or a door. */
+const GREET: Record<Register, string[]> = {
+  hollow: ["She stops when she sees you and waits to be told.", "She stands with her hands at her sides and waits."],
+  timid: ["She goes still when she sees you, hands knotted in front of her.", "She sees you and flinches, then tries to look as if she didn't."],
+  resentful: ["She sees you and lowers her eyes, slowly.", "She stops what she's doing because she has to."],
+  devoted: ["She sees you and smiles before she can help it.", "She stops what she's doing the moment she sees you."],
+  sullen: ["She sees you and doesn't hurry.", "She glances up and makes you wait a beat."],
+  proper: ["She straightens when she sees you and nods.", "She sets things down neatly and turns to face you."],
+  warm: ["She lights up when she sees it's you.", "She smiles and waves you over."],
+  eager: ["She looks up, smiles, and puts down what she was doing.", "She's on her feet as soon as she sees you."],
+  bratty: ["She sees you, raises an eyebrow, and takes her time.", "She finishes what she's doing before she looks at you."],
+  crude: ["She sees you and grins.", "She looks you up and down and grins."],
+  commanding: ["She sees you and doesn't stop what she's doing.", "She glances at you as if you're late."],
+};
+
+/** The opening line of a visit: where you find her and what she's in the middle of, or her
+ *  coming to you when you've sent for her (engine/whereabouts). */
+export function arrivalLead(p: Person, w: Whereabouts, summoned: boolean, r: Rng): string {
+  const first = p.name.split(" ")[0];
+  const greet = r.pick(GREET[registerOf(p)]);
+  if (summoned) return `${first} comes when she's sent for, from ${w.name}, where she was ${w.doing}. ${greet}`;
+  if (w.withYou) return `${first} is ${inPlace(w.name)}, ${w.doing}. ${greet}`;
+  return `You find ${first} ${inPlace(w.name)}, ${w.doing}. ${greet}`;
 }
 
 /* ── the act itself ─────────────────────────────────────────────────────────────────────────── */
