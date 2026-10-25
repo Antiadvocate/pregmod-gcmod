@@ -209,7 +209,8 @@ export function tickHealth(state: SaveState, p: Person, load: { health: number; 
   for (const inj of h.injuries) {
     if (inj.healed_week) continue;
     const weeks = state.arcology.week - inj.week;
-    const need = inj.severity === "minor" ? 2 : inj.severity === "notable" ? 6 : 16;
+    // The clinic heals in half the time: what it's for.
+    const need = (inj.severity === "minor" ? 2 : inj.severity === "notable" ? 6 : 16) * (inClinic(p) ? 0.5 : 1);
     if (weeks >= need && h.health > 0) { inj.healed_week = state.arcology.week; notes.push(`healed: ${inj.what}`); }
     else h.health = clamp(h.health - (inj.severity === "grave" ? 3 : 1), -100, ceiling);
   }

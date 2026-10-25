@@ -779,11 +779,20 @@ export function writeAct(s: SaveState, p: Person, o: ActOutcome, opts?: { lead?:
     : r.pick(LANDED[o.landing]);
   // Scenes that already carry her reaction to the end of the night do not get a second one.
   const selfContained = o.act === "sleeping together";
-  paras.push(selfContained ? fill(core, w) : `${fill(core, w)} ${fill(react, w)}`);
+  // Forced on her, it's written as forced (engine/compliance); terrified, she shakes through it.
+  const hole = o.strain?.fit.hole;
+  const made = (o.stance === "resists" || o.stance === "fights") && !tender && !served;
+  const body = made ? r.pick(FORCED[hole ?? "other"]) : core;
+  const fear = o.stance === "terrified" && !tender ? r.pick(TERRIFIED) : "";
+  paras.push(selfContained ? fill(body, w) : [fear, fill(body, w), fill(made ? r.pick(FORCED_LANDED) : react, w)].filter(Boolean).join(" "));
+  // How it fit, and what it did to her (engine/fit).
+  const fitWord = o.strain && !(o.strain.fit.hole === "throat" && o.strain.fit.word === "loose") ? FIT_LINE[o.strain.fit.word] : "";
+  const fit = o.strain ? [fitWord, o.strain.after ? `${cap(o.strain.after)}.` : ""].filter(Boolean).join(" ") : "";
+  if (fit) paras.push(fit);
 
   // The end of it.
   const end: string[] = [];
-  if (o.first) { end.push(r.pick(tender || served ? FIRST_TENDER : FIRST)); tags.push("first time"); }
+  if (o.first) { end.push(made ? "It's her first time, and this is how she'll remember it." : r.pick(tender || served ? FIRST_TENDER : FIRST)); tags.push("first time"); }
   if (o.finished) { end.push(comeLine(p, o, r)); tags.push("she came"); }
   else if (p.psyche.arousal >= 70 && act.base.arousal > 0) { end.push(leftLine(p, r)); tags.push("left wanting"); }
   if (act.base.release >= 5 && text?.yours) {
@@ -798,7 +807,9 @@ export function writeAct(s: SaveState, p: Person, o: ActOutcome, opts?: { lead?:
 
   // What she says. Tenderness and pain get their own lines; otherwise it is how it landed.
   let said: string;
-  if (o.finished && o.landing !== "hated") said = say(s, p, "came", r);
+  // Forced, she doesn't thank you for it.
+  if (made) said = say(s, p, "pain", r);
+  else if (o.finished && o.landing !== "hated") said = say(s, p, "came", r);
   else if (tender) said = say(s, p, o.act === "talk" ? "talk_open" : "tender", r);
   else if (act.tags.includes("pain") && o.landing !== "wanted") said = say(s, p, "pain", r);
   else if (!o.finished && p.psyche.arousal >= 70 && act.base.arousal > 0) said = say(s, p, "left", r);
@@ -807,6 +818,22 @@ export function writeAct(s: SaveState, p: Person, o: ActOutcome, opts?: { lead?:
 
   return { paragraphs: paras.filter(Boolean), said, tags };
 }
+
+const FORCED: Record<"vagina" | "anus" | "throat" | "other", string[]> = {
+  vagina: ["You push her down and force her legs apart. She fights you the whole way in, then goes still.", "She tries to close her legs; you hold them open and force yourself into her."],
+  anus: ["You bend her over and hold her there by the back of the neck while you force yourself into her ass. She screams into the cushion.", "She claws at the sheets and begs you to stop as you force your way into her ass."],
+  throat: ["She keeps her mouth shut until you pinch her nose; then you force yourself down her throat while she chokes and slaps at your thighs."],
+  other: ["She doesn't want it and fights you, and you make her anyway."],
+};
+const FORCED_LANDED = ["She hates every second of it, and hates you for it.", "She cries the whole time, and doesn't stop when you're done."];
+const TERRIFIED = ["She's shaking before you touch her, and she doesn't say no.", "She does exactly what she's told, fast, with her eyes squeezed shut."];
+const FIT_LINE: Record<string, string> = {
+  loose: "She's loose around you and barely feels it.",
+  fits: "",
+  snug: "It's a tight fit, and she feels every inch of it.",
+  struggle: "It's too big for her: it takes a long time and a lot of lube to get it in at all, and it hurts her the whole way.",
+  damage: "It doesn't fit, and forcing it in tears her.",
+};
 
 /** The one-line version, for the log and the report. */
 export function summarise(p: Person, o: ActOutcome): string {

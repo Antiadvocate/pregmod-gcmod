@@ -21,6 +21,8 @@
  *
  * Nothing here writes prose. It writes the facts the prose has to honour.
  */
+import { fcVoice } from "../data/fcvoice";
+import { fitWords, holeFor, ownerSize, penetrate, type Strain } from "./fit";
 import { forced, obeys, type Stance } from "./compliance";
 import { footAct } from "./podolatry";
 import { sane, recoveryNote } from "./health";
@@ -60,6 +62,8 @@ export interface ActOutcome {
   memory?: string;
   /** How she took being told (engine/compliance); "resists" and "fights" mean it was forced on her. */
   stance?: Stance;
+  /** What went into her, how it fit, and what it did to her body (engine/fit). */
+  strain?: Strain;
 }
 
 /** Can this even be done to this body? Returns the reason it cannot, or null. */
@@ -153,6 +157,9 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
   // takes that is the game's call, not the narrator's.
   const stance = act.group === "hers" ? undefined : obeys(s, p).stance;
   const made = !!stance && forced(stance) && !act.receives;
+  // What goes in her, and what it does to her body: sizes are real (engine/fit).
+  const hole = act.receives ? undefined : holeFor(p, actId);
+  const strain = hole ? penetrate(s, p, hole, ownerSize(s).size, { forced: made }) : undefined;
   const willing = act.wants_devotion === undefined || r.devotion >= act.wants_devotion;
 
   // AROUSAL. Wanting it is most of it; a body that is already wound up needs less.
@@ -283,7 +290,7 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
   if (opts?.withId) moveEdge(s.edges, p.id, opts.withId, { warmth: landing === "hated" ? -3 : 1 });
 
   return {
-    act: actId, arousal: arousalDelta, relaxation, finished, landing, stance,
+    act: actId, arousal: arousalDelta, relaxation, finished, landing, stance, strain,
     because: aff.why || "it doesn't match anything she's into",
     bond: +bond.toFixed(2), resentment: +resent.toFixed(2),
     discovered, converted, first, trained, memory: memoryLine, believers,
@@ -310,7 +317,11 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
   lines.push(`Write this act happening with ${p.name}, from start to finish. It is the whole scene. Do not write a scene about something else.`);
   lines.push(``);
   lines.push(`## HOW SHE TAKES IT (decided by the game; write it this way)`);
-  if (out.stance) lines.push(OBEY_ACT[out.stance]);
+  if (out.stance) lines.push(OBEY_ACT[out.stance], fcVoice(out.stance, out.strain?.fit.hole));
+  if (out.strain) {
+    lines.push(`HOW IT FITS (fact): ${fitWords(out.strain.fit, ownerSize(s).what, p)}`);
+    if (out.strain.after) lines.push(`WHAT IT DOES TO HER (fact; show it, and show it afterwards): ${out.strain.after}.`);
+  }
   switch (out.landing) {
     case "wanted": lines.push(`She loves it. ${out.because}. Say so, and show her enjoying it.`); break;
     case "willing": lines.push(`She's happy enough to go along with it.`); break;

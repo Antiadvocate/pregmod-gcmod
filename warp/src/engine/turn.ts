@@ -11,6 +11,7 @@
  * from state — who is there, what their bodies are doing, what the action was — and the rest of the
  * pipeline runs identically. You lose the paragraph. You do not lose the game.
  */
+import { fitOf, ownerSize } from "./fit";
 import { applyMarks, marksForAct } from "./marks";
 import { walkIn, walkInLine, misreads, misreadLine } from "./alive";
 import { coarsen, REGISTER_TAIL } from "./register";
@@ -57,6 +58,8 @@ export interface Diff {
   marks?: { on?: string; what?: string; where?: string; text?: string }[];
   washed?: string[];
   beat?: { on?: string; what?: string }[];
+  /** What the prose did to her holes: sore, stretched or torn. Checked against how she fits (engine/fit). */
+  strain?: { id: string; hole?: string; what?: string; by?: string }[];
 }
 
 export interface TurnResult {
@@ -410,6 +413,26 @@ export function applyDiff(s: SaveState, d: Diff, prose: string, said?: string): 
       attraction: clamp(e.attraction_delta ?? 0, -15, 15),
     });
     for (const role of e.roles_add ?? []) addRole(s.edges, e.from, e.to, role.slice(0, 30));
+  }
+
+  // Bodies are real: what the prose did to her holes stays done, as far as the sizes allow.
+  for (const x of d.strain ?? []) {
+    const p = s.people[x.id];
+    const hole = x.hole === "vagina" || x.hole === "anus" || x.hole === "throat" ? x.hole : undefined;
+    if (!p || !hole || (hole === "vagina" && p.body.vagina === null)) continue;
+    // Whose it was: one of yours with a cock, or the owner.
+    const by = x.by && x.by !== "owner" ? s.people[x.by] : undefined;
+    const f = fitOf(p, hole, by?.body.dick ? by.body.dick : ownerSize(s).size, s);
+    const week = s.arcology.week;
+    if (x.what === "sore" || f.over > 0) (p.health.sore ??= {})[hole] = Math.max(p.health.sore?.[hole] ?? -1, week + (f.word === "damage" ? 2 : 1));
+    if (x.what === "stretched" && f.over > 0 && hole !== "throat") {
+      if (hole === "vagina") { p.body.vagina = Math.min(10, (p.body.vagina ?? 0) + 1); p.body.hymen = false; }
+      else p.body.anus = Math.min(4, (p.body.anus ?? 0) + 1);
+    }
+    if (x.what === "torn" && (f.word === "struggle" || f.word === "damage") && hole !== "throat" && !p.health.injuries.some((i) => !i.healed_week && i.what === `torn ${hole === "vagina" ? "pussy" : "ass"}`)) {
+      p.health.injuries.push({ what: `torn ${hole === "vagina" ? "pussy" : "ass"}`, severity: f.over > 5 ? "grave" : "notable", week });
+      p.health.health = Math.max(-100, p.health.health - (f.over > 5 ? 18 : 8));
+    }
   }
 
   for (const f of d.facts_learned ?? []) {

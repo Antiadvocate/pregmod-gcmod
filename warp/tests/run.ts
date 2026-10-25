@@ -34,6 +34,7 @@ import "./conversation.test.ts";
 import "./ownlife.test.ts";
 import "./paperwork.test.ts";
 import "./friction.test.ts";
+import "./fit.test.ts";
 import "./plot.test.ts";
 import "./deeds.test.ts";
 import "./fates.test.ts";

@@ -289,6 +289,8 @@ export interface Health {
   /** Chemical dependence, 0–100, earned by weeks on aphrodisiacs or worse. */
   addiction: number;
   injuries: Injury[];
+  /** Sore from what was put in her, until this week, by hole. See engine/fit. */
+  sore?: Partial<Record<"vagina" | "anus" | "throat", number>>;
   /** Weeks left of surgical recovery; blocks assignments while it runs. */
   recovery_weeks: number;
   diet: "healthy" | "restricted" | "fattening" | "muscle building" | "slimming" | "cleansing" | "XX" | "XY" | "XXY";
