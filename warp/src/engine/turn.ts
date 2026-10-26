@@ -23,7 +23,7 @@ import type { ActionMode, Person, SaveState, TurnEntry } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { BOOKKEEPER_SYSTEM, NARRATOR_SYSTEM, bookkeeperContext, digest } from "./prompts";
-import { didntFollow } from "./style";
+import { didntFollow, finishLast } from "./style";
 import { applyTreatment, refresh, type Treatment } from "./obedience";
 import { clamp, shove, tickPsyche, addState, band, tensionCue } from "./psyche";
 import { remember, learn } from "./memory";
@@ -113,7 +113,7 @@ export async function runTurn(
       maxTokens: 1200,
     });
     if (res.ok) {
-      prose = coarsen(salvage(res.text));
+      prose = coarsen(finishLast(salvage(res.text)));
       tokensIn += res.usage.prompt_tokens; tokensOut += res.usage.completion_tokens; cost += res.usage.cost ?? 0;
     } else {
       notes.push(`the narrator did not answer (${res.error ?? "unknown"}) — the turn stands as a stage direction`);
@@ -229,7 +229,7 @@ export async function runActTurn(
       presence: 0.3,
     });
     if (res.ok) {
-      prose = salvage(res.text);
+      prose = finishLast(salvage(res.text));
       tokensIn = res.usage.prompt_tokens; tokensOut = res.usage.completion_tokens; cost = res.usage.cost ?? 0;
     } else notes.push(`the narrator did not answer (${res.error ?? "unknown"})`);
   }

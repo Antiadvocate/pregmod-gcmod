@@ -19,7 +19,7 @@ import { castBrief, facesIn, keyOf, meet, parseCast } from "./faces";
 import { settledBrief, weightBrief } from "./fates";
 import { ownedBrief } from "./share";
 import { CONVERSATION, HOUSE_STYLE, personCard, BOOKKEEPER_SYSTEM, bookkeeperContext, householdLine } from "./prompts";
-import { didntFollow } from "./style";
+import { didntFollow, finishLast } from "./style";
 import { worldBrief } from "./world";
 import { applyDiff, salvage, noteStock, stockLine, type Diff } from "./turn";
 import { say } from "./voice";
@@ -312,7 +312,7 @@ export async function playMoment(
   }
   const { prose: uncast, cast } = parseCast(salvage(res.text));
   const { prose: raw, options } = splitOptions(uncast);
-  const prose = coarsen(raw || uncast.trim());
+  const prose = coarsen(finishLast(raw || uncast.trim()));
   // Anyone new the model put in the scene goes on file with their face; anyone on file who turned up is seen again.
   const ours = new Set(Object.values(s.people).filter((x) => x.status === "owned" || x.status === "indentured").map((x) => keyOf(x.name)));
   for (const c of cast) if (!ours.has(keyOf(c.name))) meet(s, c);
