@@ -91,7 +91,7 @@ export function dominantInBed(p: Person): boolean {
 
 /** How a dominant streak sits with how she takes orders. */
 function withOrders(stance: Stance): string {
-  if (stance === "eager" || stance === "obedient") return "She obeys the owner and she wants control, both at once: with him she asks for it, angles for it, slips into it, and takes over the moment he gives her an inch; told to lie still and take it, she does, and it shows as frustration, not pleasure.";
+  if (stance === "eager" || stance === "obedient") return "She obeys the owner and she wants control, both at once: she asks him for it, hints, pushes a little, and takes charge only when he hands it to her. Until he does she gives him no orders; told to lie still and take it, she does, and it shows as frustration, not pleasure.";
   if (stance === "reluctant" || stance === "resists" || stance === "fights") return "With an owner she doesn't want, it comes out as fight: she shoves back, goes for the top, scratches and bites, and the struggle does more for her than she'd ever admit.";
   if (stance === "terrified") return "Fear holds it down with the owner; it comes out on anyone weaker than her.";
   if (stance === "free") return "She isn't bound to obey him, and in bed she takes charge as far as he lets her.";
@@ -101,7 +101,7 @@ function withOrders(stance: Stance): string {
 /** Who a need to use or hurt someone can land on, under the house rules. */
 function targets(s: SaveState, p: Person): string {
   const others = Object.values(s.people).filter((x) => x.id !== p.id && x.age >= 18 && (x.status === "owned" || x.status === "indentured"));
-  if (!others.length) return "There's no other slave in the house, so it has nowhere to go but the owner: she's rough with him whenever she's let, and the need shows when she isn't.";
+  if (!others.length) return "There's no other slave in the house, so it has nowhere to go but the owner: she's rough with him when he hands her control, and the rest of the time it shows as restlessness.";
   if (forcedAllowed(s)) return "The house rules let her take the other slaves whether they want it or not, and she does.";
   if (slaveSex(s)) return "The house rules let her have the other slaves only if they agree, and what she needs goes past what they'll agree to.";
   return "The house rules forbid her touching the other slaves, and it eats at her: she watches them, and the need comes out on the owner when he lets it.";
@@ -154,10 +154,13 @@ export function actDesireLine(s: SaveState, p: Person, actId: string): string {
   const hers = act.tags.some((t) => ["domination", "using another", "pain on another", "punishing another"].includes(t));
   const abusive = DOMINANT.has(p.persona.paraphilia ?? "");
   if (hers) return `SHE'S IN CHARGE HERE (fact): this is what she's made for. She takes control for real: sets the pace, holds you down, tells you what to do and how, and it gets her wetter than anything done to her.${abusive ? " She's rough, she pushes past what you asked if you let her, and she loves the moment it stops being comfortable for you." : ""}`;
-  if (act.receives) return "";
+  // Served, not used: a pedicure or her feet worshipped is you doing something for her, and a dom
+  // enjoys it; it isn't her cue to start giving orders.
+  const served = act.receives || act.group === "tenderness" || act.group === "hers" || act.tags.includes("worship");
+  if (served) return "SHE LIKES BEING SERVED (fact): you doing this for her suits her, and it shows in how she settles into it and enjoys it, not in giving you orders.";
   const stance = obeys(s, p).stance;
   if (stance === "terrified") return "SHE'D RATHER BE ON TOP (fact): being used isn't what she wants, but she's too afraid of you to show it; it leaves her cold.";
-  if (stance === "eager" || stance === "obedient") return "SHE'D RATHER BE ON TOP (fact): being used isn't what she wants. She tries to turn it: gets on top, sets the pace, grabs your hair, tells you how she wants it, as far as you let her. If you stop her she submits, and it shows as frustration, not pleasure.";
+  if (stance === "eager" || stance === "obedient") return "SHE'D RATHER BE ON TOP (fact): being used isn't what she wants. She may ask to be on top or push back a little; if you don't let her, she does what you want, and it shows as frustration, not pleasure. She gives you no orders.";
   return "SHE'D RATHER BE ON TOP (fact): she fights for control as much as against you: shoves back, goes for the top, bites and scratches.";
 }
 

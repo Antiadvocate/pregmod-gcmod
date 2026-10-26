@@ -62,6 +62,7 @@ check("fed by her work, she's happier and closer", /happier/.test(fedLine ?? "")
   check("her paraphilia says what the need is", /HER PARAPHILIA: abusive[^\n]*dominate and abuse/.test(card));
   check("and it wins over the quieter reading of her personality", /IN BED \(fact\)[^\n]*win over the quieter reading/.test(card));
   check("obeying and wanting control are both true", /IN BED[^\n]*obeys the owner and she wants control/.test(card), card.match(/IN BED[^\n]*/)?.[0]);
+  check("so she asks for control, and gives no orders until she's handed it", /IN BED[^\n]*takes charge only when he hands it to her[^\n]*no orders/.test(card));
   check("alone in the house, the need lands on the owner", /IN BED[^\n]*no other slave in the house/.test(card));
   const { generatePerson } = await import("../src/engine/generate.ts");
   const other = generatePerson({ seed: "sexlife-other", sex: "female" });
@@ -70,7 +71,12 @@ check("fed by her work, she's happier and closer", /happier/.test(fedLine ?? "")
   check("with others and the default rules, she may not touch them", /IN BED[^\n]*forbid her touching/.test(personCard(s, d)));
 
   const used = resolveAct(s, d, "vaginal");
-  if (!("error" in used)) check("used, she'd rather be on top, and tries to turn it", /SHE'D RATHER BE ON TOP[^\n]*tries to turn it/.test(actDirective(s, d, used)));
+  if (!("error" in used)) check("used, she'd rather be on top, and may ask, but gives no orders", /SHE'D RATHER BE ON TOP[^\n]*ask to be on top[^\n]*no orders/.test(actDirective(s, d, used)));
+  const pampered = resolveAct(s, d, "pedicure");
+  if (!("error" in pampered)) {
+    const dir = actDirective(s, d, pampered);
+    check("a pedicure is being served, not used: she enjoys it and doesn't start bossing you", /SHE LIKES BEING SERVED/.test(dir) && !/RATHER BE ON TOP/.test(dir), dir.match(/SHE[^\n]*/g));
+  }
   d.counters.fed = -99;
   const led = resolveAct(s, d, "take charge");
   check("you can let her take charge", !("error" in led), led);
