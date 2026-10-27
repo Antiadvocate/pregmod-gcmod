@@ -7,7 +7,9 @@
  * the story, and nothing ever navigates away from what you were reading.
  */
 import WarRoom from "./views/WarRoom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode, type WheelEvent } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useLayout, type Layout } from "./lib/layout";
 import {
   Building2, BedDouble, Users, Contact, Play, Landmark, ScrollText, ShoppingBag, ClipboardList, Settings as Cog, FileText, UserRound, Wand2, Globe2, BookOpen, Scale, GitCompareArrows, Earth, Dna, Newspaper, Swords } from "lucide-react";
 import type { SaveState } from "./engine/types";
@@ -117,6 +119,48 @@ const SHORT: Partial<Record<Route, string>> = { penthouse: "Today", report: "Wee
 const shown = (s: SaveState, r: Route) => r !== "yours" || (!!s.player.owned_by && !!s.reign && !s.reign.ended);
 const labelOf = (r: Route) => SHORT[r] ?? NAV.find((n) => n.id === r)!.label;
 
+/** Screens that lay out side by side. The scene is its own full-height thing; People and the City
+ *  are a list with a detail and a sticky map, which columns would cut in half. */
+const FLOWS = (r: Route) => !["scene", "people", "city"].includes(r);
+
+/**
+ * THE PAGE, LAID OUT. Columns let the cards flow side by side; the strip flows them into columns down
+ * the height of the window and scrolls sideways. In the strip the wheel moves it sideways, unless the
+ * pointer is over something that still has scrolling of its own to do, so a mouse with no sideways
+ * wheel still gets around.
+ */
+function Flow({ layout, children }: { layout: Layout; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [edge, setEdge] = useState({ left: false, right: false });
+  const measure = () => {
+    const el = ref.current;
+    if (!el || layout !== "strip") return;
+    const left = el.scrollLeft > 8, right = el.scrollLeft + el.clientWidth < el.scrollWidth - 8;
+    setEdge((e) => (e.left === left && e.right === right ? e : { left, right }));
+  };
+  useEffect(() => { measure(); const id = setInterval(measure, 800); return () => clearInterval(id); }, [layout]);
+  const onWheel = (e: WheelEvent<HTMLDivElement>) => {
+    const el = ref.current;
+    if (layout !== "strip" || !el || Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) return;
+    let n = e.target as HTMLElement | null;
+    while (n && n !== el) {
+      const canScroll = n.scrollHeight > n.clientHeight + 2 && /(auto|scroll)/.test(getComputedStyle(n).overflowY);
+      if (canScroll && ((e.deltaY > 0 && n.scrollTop + n.clientHeight < n.scrollHeight - 1) || (e.deltaY < 0 && n.scrollTop > 0))) return;
+      n = n.parentElement;
+    }
+    el.scrollLeft += e.deltaY;
+  };
+  const page = (dir: 1 | -1) => ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.8, behavior: "smooth" });
+  if (layout === "stack") return <>{children}</>;
+  return (
+    <div className="relative h-full">
+      <div ref={ref} className={cx("flow", `flow-${layout}`)} onWheel={onWheel} onScroll={measure}>{children}</div>
+      {layout === "strip" && edge.left ? <button className="strip-arrow left" aria-label="scroll left" onClick={() => page(-1)}><ChevronLeft size={18} /></button> : null}
+      {layout === "strip" && edge.right ? <button className="strip-arrow right" aria-label="scroll right" onClick={() => page(1)}><ChevronRight size={18} /></button> : null}
+    </div>
+  );
+}
+
 /** A line at the top while a rate-limited call waits to try again, so the screen isn't just stuck. */
 function RateNotice() {
   const [wait, setWait] = useState<{ until: number; status: number; model: string } | null>(null);
@@ -133,6 +177,7 @@ function RateNotice() {
 
 function Shell({ onSwitch }: { onSwitch: () => void }) {
   const { save, rev } = useGame();
+  const { layout, nav } = useLayout();
   const [route, setRouteState] = useState<Route>("penthouse");
   const [last, setLast] = useState<Record<string, Route>>({});
   const group = groupOf(route);
@@ -146,14 +191,27 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
   const unseen = save.notifications.filter((n) => !n.seen).length + save.events.length + (save.asks?.length ?? 0);
 
   return (
-    <div className="shell" key={rev === -1 ? 1 : undefined}>
+    <div className={cx("shell", `nav-${nav}`, `layout-${layout}`)} key={rev === -1 ? 1 : undefined}>
       <header className="topbar shrink-0">
         <div className="px-4 pt-2.5 pb-2 flex items-center gap-3">
-          <div className="min-w-0">
+          <div className="min-w-0 shrink-0">
             <div className="font-display text-[15px] leading-tight truncate">{save.arcology.name}</div>
             <div className="text-[11px] dim font-mono">week {save.arcology.week} · {save.scene.time.replace(/^Week \d+, /, "")}</div>
           </div>
-          <div className="ml-auto flex items-center gap-3 font-mono text-[13px]">
+          {/* The families, across the top on a desk: the rail's job, without the rail's width. */}
+          {nav === "top" ? (
+            <nav className="topnav hidden md:flex items-center gap-1 ml-4 min-w-0 overflow-x-auto no-scrollbar">
+              {[...GROUPS, SYSTEM].map((g) => (
+                <button key={g.id} className={cx("topnav-btn", group.id === g.id && "on")} onClick={() => openGroup(g)}>
+                  <g.icon size={15} strokeWidth={group.id === g.id ? 2.1 : 1.7} />
+                  <span>{g.label}</span>
+                  {g.id === "home" && unseen ? <span className="count">{unseen > 9 ? "9+" : unseen}</span> : null}
+                </button>
+              ))}
+              <button className="topnav-btn" onClick={onSwitch} title="new game, or load another save">saves</button>
+            </nav>
+          ) : null}
+          <div className="ml-auto flex items-center gap-3 font-mono text-[13px] shrink-0">
             <span style={{ color: save.arcology.cash < 0 ? "var(--danger)" : "var(--text-hi)" }}>
               ¤{Math.round(save.arcology.cash).toLocaleString()}
             </span>
@@ -177,7 +235,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
 
       <RateNotice />
       <div className="flex-1 flex min-h-0">
-        <nav className="rail hidden md:flex flex-col gap-0.5 p-2 w-[172px] shrink-0 overflow-y-auto">
+        <nav className={cx("rail hidden flex-col gap-0.5 p-2 w-[172px] shrink-0 overflow-y-auto", nav === "rail" && "md:flex")}>
           {[...GROUPS, SYSTEM].map((g) => (
             <div key={g.id} className="mb-2">
               <div className="text-[10px] uppercase tracking-[.12em] dim px-3 pt-1 pb-1">{g.label}</div>
@@ -196,8 +254,9 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
           <button className="railbtn mt-auto" onClick={onSwitch} title="new game, or load another save">new game / saves</button>
         </nav>
 
-        <main className="flex-1 min-w-0 overflow-y-auto">
-          <div className={cx("mx-auto w-full", route === "scene" ? "max-w-3xl h-full" : "max-w-5xl p-4 sm:p-6")}>
+        <main className={cx("flex-1 min-w-0", layout === "strip" && FLOWS(route) ? "overflow-hidden" : "overflow-y-auto")}>
+          <div className={cx("mx-auto w-full page", route === "scene" ? "max-w-3xl h-full" : layout === "stack" || !FLOWS(route) ? "max-w-5xl p-4 sm:p-6" : layout === "strip" ? "h-full px-4 sm:px-6 pt-4" : "max-w-[1680px] p-4 sm:p-6")}>
+          <Flow layout={FLOWS(route) ? layout : "stack"}>
             {route === "penthouse" && <Penthouse go={setRoute} />}
             {route === "yours" && <YourRoomView />}
             {route === "feed" && <Feed />}
@@ -219,6 +278,7 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
             {route === "you" && <You />}
             {route === "cheats" && <Cheats />}
             {route === "settings" && <SettingsView onSwitch={onSwitch} />}
+          </Flow>
           </div>
         </main>
       </div>

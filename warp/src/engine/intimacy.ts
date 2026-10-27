@@ -33,7 +33,11 @@ import { clamp, shove, addState } from "./psyche";
 import { applyTreatment, read } from "./obedience";
 import { remember } from "./memory";
 import { moveEdge } from "./social";
-import { canSire, hasCock } from "./you";
+import { canSire, hasCock, playerBody } from "./you";
+import { skill, practise } from "./player";
+
+/** What "pay her tribute" costs you. */
+export const TRIBUTE = 1500;
 
 export interface ActOutcome {
   act: string;
@@ -93,6 +97,7 @@ export function canDo(p: Person, act: ActDef, s?: SaveState): string | null {
   if (sane(p.health.recovery_weeks) > 0 && act.group !== "tenderness") return s ? `she is ${recoveryNote(s, p)}` : "she is recovering from surgery";
   if (s && act.you === "cock" && !hasCock(s)) return "you have no cock";
   if (s && act.you === "sire" && !canSire(s)) return hasCock(s) ? "you can't get anyone pregnant" : "you have no cock";
+  if (s && act.id === "tribute" && s.arcology.cash < TRIBUTE) return `you don't have ¤${TRIBUTE.toLocaleString()} to give her`;
   return null;
 }
 
@@ -153,6 +158,16 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
 
   const aff = affinity(p, act);
   const r = read(p, s.memory[p.id]);
+  // Laughing at a cock only works on a cock worth laughing at: a big one leaves a size humiliatrix
+  // with nothing to say, and a small one is exactly what she was hoping for.
+  if (act.tags.includes("sph")) {
+    const d = playerBody(s).dick ?? 0;
+    if (d >= 5) { aff.score = Math.min(aff.score, 0.1); aff.why = "there's nothing small about it for her to laugh at"; }
+    else if (d <= 2) { aff.score = clamp(aff.score + 0.35, -1.5, 1.5); aff.why = aff.why || "it really is that small"; }
+  }
+  // Knowing what you're doing with a body is worth something on any act that isn't meant to hurt.
+  const sed = skill.seduction(s);
+  if (sed > 0 && act.group !== "discipline" && act.group !== "display") aff.score = clamp(aff.score + sed * 0.25, -1.5, 1.5);
   // Something she's into, given to her: it counts as fed this week (engine/sexlife).
   if (p.persona.fetishes.some((f) => f.strength >= 30 && FETISH_BY_ID[f.name] && (act.tags.some((t) => FETISH_BY_ID[f.name].acts.includes(t)) || FETISH_BY_ID[f.name].acts.includes(act.id)))) fed(p, s.arcology.week);
   // Her own moves when she holds your collar are hers; everything else she's told to do, and how she
@@ -185,7 +200,9 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
 
   // WHAT SHE CARRIES. Bond and resentment move in opposite directions depending on the same score.
   const bond = act.base.bond + aff.score * 3 + (willing ? 0 : -1.5);
-  const resent = Math.max(0, act.base.resentment * (aff.score < 0 ? 3 : aff.score > 0.5 ? 0 : 1) + (willing ? 0 : 2) + (opts?.public ? 2 : 0));
+  // An owner people are properly afraid of gets the obedience without quite so much of the hate.
+  const cowed = act.base.resentment > 0 ? 1 - skill.intimidation(s) * 0.35 : 1;
+  const resent = Math.max(0, (act.base.resentment * (aff.score < 0 ? 3 : aff.score > 0.5 ? 0 : 1) + (willing ? 0 : 2) + (opts?.public ? 2 : 0)) * cowed);
   p.bond.bond = clamp(p.bond.bond + bond * 0.6, -100, 100);
   p.bond.resentment = clamp(p.bond.resentment + resent * 0.7, 0, 100);
   if (bond > 1.5) { p.bond.weeks_since_kindness = 0; p.bond.hope = clamp(p.bond.hope + bond * 0.4, 0, 100); }
@@ -208,7 +225,7 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
   for (const f of p.persona.fetishes) {
     const def = FETISH_BY_ID[f.name];
     if (!def || f.known) continue;
-    if (act.tags.some((t) => def.acts.includes(t)) && f.strength >= 40) {
+    if (act.tags.some((t) => def.acts.includes(t)) && f.strength >= 40 - 25 * Math.max(sed, skill.insight(s))) {
       f.known = true;
       discovered = `she's a ${def.name}`;
     }
@@ -220,7 +237,7 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
       discovered = `she is a ${p.persona.quirk.id}`;
     }
   }
-  if (!discovered && p.persona.flaw && !p.persona.flaw.known && aff.score < -0.3) {
+  if (!discovered && p.persona.flaw && !p.persona.flaw.known && aff.score < -0.3 + skill.insight(s) * 0.3) {
     p.persona.flaw.known = true;
     discovered = `she ${p.persona.flaw.id}`;
   }
@@ -284,6 +301,12 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
     feetOf(p).toenails = colours[(p.acts[actId] + p.id.length) % colours.length];
     feetOf(p).soles = "soft";
   }
+  if (actId === "tribute") s.arcology.cash -= TRIBUTE;
+  // You get better at what you do: at bed by it landing, at fear by using it, at reading her by
+  // finding something out.
+  if (landing === "wanted" || landing === "willing") practise(s, "seduction", landing === "wanted" ? 0.4 : 0.15);
+  if (act.group === "discipline" && !act.receives) practise(s, "intimidation", 0.3);
+  if (discovered) practise(s, "insight", 0.8);
   if (actId === "bastinado") p.health.health = clamp(p.health.health - 3, -100, 100);
   if (actId === "cbt") p.health.health = clamp(p.health.health - 2, -100, 100);
   const believers = act.tags.includes("feet") ? footAct(s, p, actId, !!opts?.public) : undefined;

@@ -14,6 +14,9 @@
  * draws on. A post that names none, or names ones that don't exist, is thrown away. The laws are
  * binding: people in a post keep them, or break them and it matters.
  */
+import { sizeSource } from "./endowment";
+import { fewSource } from "./fewslaves";
+import { marriageSource } from "./marriage";
 import { freedInCity, freeLine } from "./freed";
 import { mannerLines } from "./manner";
 import type { SaveState } from "./types";
@@ -124,6 +127,8 @@ export function sources(s: SaveState): Source[] {
   // What happened last week, for posters to react to.
   const week = s.reports.at(-1)?.lines.filter((l) => !/^(The city: ¤|Weather: |News: )|wants something\.$/.test(l.text)).sort((x, y) => y.weight - x.weight).slice(0, 5) ?? [];
   if (week.length) out.push({ id: "week", label: "last week", text: `Last week in the arcology: ${week.map((l) => ownerSide(l.text, s.player.pronouns)).join(" ")}` });
+  // What the city says about the owner personally: the size of it, the size of the household, the marriage.
+  for (const x of [sizeSource(s), fewSource(s), marriageSource(s)]) if (x) out.push(x);
   out.push({ id: "prosperity", label: "the economy", text: `THE ARCOLOGY: ${a.name}, week ${a.week}. ${a.population.toLocaleString()} citizens, prosperity ${Math.round(a.prosperity)}, crime ${Math.round(a.crime)}, security ${Math.round(a.security)}.` });
   return out;
 }

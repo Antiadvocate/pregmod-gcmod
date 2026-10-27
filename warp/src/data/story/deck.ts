@@ -20,7 +20,7 @@ const secure = (n: number) => (c: Ctx) => (c.s.arcology.security >= n ? null : `
 function goodPiece(c: Ctx): boolean {
   const house = ownedAdults(c.s);
   const avg = house.length ? house.reduce((n, p) => n + read(p).devotion, 0) / house.length : 0;
-  return c.flag("jour_curated") ? avg > -10 : avg > 20;
+  return c.flag("jour_charmed") ? avg > -25 : c.flag("jour_curated") ? avg > -10 : avg > 20;
 }
 
 /* ── the journalist ─────────────────────────────────────────────────────────────────────────── */
@@ -43,6 +43,9 @@ ${c.He("journalist")}'s last piece was about an arcology in the Sahel. Its owner
         { id: "curated", label: "Give them a tour you've arranged", need: skill("slaving", 25),
           run: (c) => { c.set("jour_curated", true); c.cash(-3000);
             return { text: `You pick the rooms, the women, the hours. The dormitories get new sheets. The arcade is closed for maintenance. ${c.n("journalist")} obviously notices, but doesn't say anything.`, next: "piece", after: 2 }; } },
+        { id: "charm", label: (c) => `Have ${c.him("journalist")} to dinner first, and win ${c.him("journalist")} over`, need: skill("charisma", 35),
+          run: (c) => { c.set("jour_open", true); c.set("jour_charmed", true); c.like("journalist", 25);
+            return { text: `You give ${c.n("journalist")} dinner on the penthouse terrace before the tour, and you're very good company. By the second bottle ${c.he("journalist")}'s laughing at your stories, and by the end of the week ${c.he("journalist")} has stopped asking the questions that end careers and started asking the ones that make profiles.`, next: "piece", after: 2 }; } },
         { id: "refuse", label: "Decline",
           run: (c) => { c.like("journalist", -10);
             return { text: `You decline politely. ${c.n("journalist")} writes the piece anyway, from the outside, using your delivery records and three former citizens. It's unflattering and not very accurate.`, end: "you kept the journalist out" }; } },
@@ -174,6 +177,9 @@ ${c.sn} is in the room. She heard the number.`,
         { id: "no", label: "\"She's not for sale.\"",
           run: (c) => { c.like("collector", -15); c.treat(c.subj, "recognition", 7, "you refused three times her price for her");
             return { text: `"Everything is," ${c.n("collector")} says, and puts the card back in ${c.his("collector")} pocket. ${c.sn} is grateful that you kept her, and that night she comes to your room without being told to.`, next: "theft", after: 5 }; } },
+        { id: "read", label: (c) => `Read ${c.n("collector")}, and name a price ${c.he("collector")} won't pay`, need: skill("insight", 35),
+          run: (c) => { c.like("collector", -5); c.treat(c.subj, "recognition", 6, "you saw the collector off without selling her"); c.set("coll_read", true);
+            return { text: `You've watched ${c.n("collector")} for ten minutes and you know what ${c.he("collector")} is: a man who wants things because other people won't let him have them. You name a number ten times hers, smiling, and ${c.he("collector")} hears it for what it is. "Another time," ${c.he("collector")} says. ${c.He("collector")} doesn't come back. ${c.sn} watched the whole thing, and she's looking at you differently.`, end: "you saw the collector off" }; } },
         { id: "ask", label: "Ask her whether she wants to go",
           run: (c) => { const wants = c.subj ? read(c.subj).devotion < 10 : false; c.set("coll_asked", true);
             if (wants && c.subj) { const v = Math.round(valuePerson(c.s, c.subj) * 3); c.remove(c.subj, "sold", `chose to go to ${c.full("collector")}`, v); c.like("collector", 10);
@@ -191,6 +197,9 @@ Security found a professional's tools on the floor and a cleaning cart with a fa
         { id: "confront", label: "Confront the collector", need: skill("trading", 30),
           run: (c) => { c.like("collector", -10); c.cash(20000);
             return { text: `You send the tools to ${c.n("collector")} in a gift box. ${c.He("collector")} sends back a cheque for twenty thousand with a note: *For the door.* Neither of you mentions it again.`, end: "the collector paid for the door" }; } },
+        { id: "scare", label: (c) => `Make sure ${c.n("collector")} never tries again`, need: skill("intimidation", 35),
+          run: (c) => { c.like("collector", -25); c.treat(c.subj, "recognition", 4, "you frightened off the man who tried to take her");
+            return { text: `You go to see ${c.n("collector")} yourself, with two guards and the contractor's tools. You don't say much. You don't need to. When you leave, ${c.he("collector")} is sitting very still, and the contractor has left the Free Cities.`, end: "you frightened the collector off" }; } },
         { id: "guard", label: "Double the guard on her", note: "¤4,000", need: cash(4000),
           run: (c) => { c.cash(-4000); c.security(4); c.treat(c.subj, "kindness", 3, "you put guards on her door");
             return { text: `There's a guard on her door now. She complains about it, but she's glad of it.`, end: "you kept her from the collector" }; } },
@@ -392,6 +401,9 @@ On the radio: "Movement on the service stairs. One person. Heading down." Then, 
         { id: "let", label: "Step aside",
           run: (c) => { if (c.subj) c.remove(c.subj, "gone", "you let her go in the blackout"); c.hope(10); c.rumor("the owner let one of them walk out in the blackout", 1);
             return { text: `She doesn't believe you at first. Then she runs down the stairs and you hear the fire door at the bottom bang open. You never see her again. Your slaves talk about it for months.`, end: "you let her go" }; } },
+        { id: "talk", label: "Talk her round, there on the stairs", need: skill("charisma", 40),
+          run: (c) => { c.treat(c.subj, "promise_kept", 6, "talked round on the stairs in the blackout"); if (c.subj) c.subj.bond.hope = clamp(c.subj.bond.hope + 10, 0, 100);
+            return { text: `You sit down on the step below her in the dark and talk. Not threats: what she'd be running to, and what you'd change if she stayed. It takes an hour. At the end of it she walks back up beside you, and she isn't afraid of you any more, which you didn't expect.`, end: "you talked her round on the stairs" }; } },
         { id: "back", label: "Take her back upstairs without a word",
           run: (c) => { c.treat(c.subj, "kindness", 3, "brought back without punishment");
             return { text: `You walk her back up fourteen floors in the dark. Neither of you says anything. She's at work the next morning as if nothing happened, and neither of you ever brings it up.`, end: "you brought her back and said nothing" }; } },

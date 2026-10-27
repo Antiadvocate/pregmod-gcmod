@@ -11,6 +11,7 @@
  * from state — who is there, what their bodies are doing, what the action was — and the rest of the
  * pipeline runs identically. You lose the paragraph. You do not lose the game.
  */
+import { practiseFrom } from "./player";
 import { meet as meetFace } from "./faces";
 import { fitOf, ownerSize } from "./fit";
 import { applyMarks, marksForAct } from "./marks";
@@ -94,6 +95,7 @@ export async function runTurn(
 
   // Anything you just told them about how to treat you is kept, whatever the narrator does with it.
   if (mode === "say" || mode === "do") notes.push(...captureInstructions(s, action, present(s).filter((p) => p.status !== "free" || s.player.owned_by !== p.id)));
+  if (mode === "say" || mode === "do") practiseFrom(s, action);
 
   let prose = "";
   let tokensIn = 0, tokensOut = 0, cost = 0;

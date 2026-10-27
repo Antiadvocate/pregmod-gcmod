@@ -74,7 +74,7 @@ export function obeys(s: SaveState, p: Person): Obeys {
     else stance = "resists";
   }
   const flaw = p.persona.behavior?.flaw ? BEHAVIOR_FLAW_BY_ID[p.persona.behavior.flaw] : undefined;
-  const assertive = !!flaw && ["arrogant", "bitchy", "liberated"].includes(flaw.id);
+  const assertive = !!flaw && ["arrogant", "bitchy", "liberated", "bossy", "spiteful"].includes(flaw.id);
   const pushes = ["eager", "obedient", "reluctant", "free"].includes(stance) && (p.bond.indulged ?? 0) >= 45 && p.bond.weeks_since_cruelty >= 6
     && (assertive || p.persona.conscience < 0.45 || lat !== "slave" || p.bond.resentment > 25);
   const parts = [LINE[stance]];

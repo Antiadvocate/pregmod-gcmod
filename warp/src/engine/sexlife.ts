@@ -67,6 +67,23 @@ const FETISH_SHOWS: Record<string, string> = {
   buttslut: "she wants it in her ass: she pushes back onto it, asks for it there, and comes hardest from anal",
   boobs: "her breasts are everything: having them played with, sucked, squeezed or fucked gets her off faster than anything else, and she offers them first",
   pregnancy: "she wants to be bred: she begs to be filled, wants it inside her and not pulled out, and being pregnant, or the thought of it, makes her desperate",
+  armpits: "she wants her armpits worshipped: she lifts an arm and puts a face in it, has stopped shaving them, and a tongue there gets her wetter than one between her legs",
+  musk: "she wants her smell wanted: she comes to bed unwashed on purpose, pushes a face into her armpit, her neck, under her arch, and watches it breathe her in",
+  facesitting: "she wants to sit on a face: she climbs up, settles her whole weight, closes her thighs and grinds, and lifts off when she decides, not when she's asked",
+  assworship: "she wants her ass worshipped: she presents it, reaches back to spread herself, tells the tongue where to go and how long to stay",
+  goddess: "she wants to be worshipped, not fucked: knelt to, praised out loud, her body kissed like it's holy; being treated as something to use leaves her cold",
+  pegging: "she wants to fuck her partner with a strap-on: she talks about it, buckles it on given half a chance, and the sound a man makes taking it is what she's after",
+  keyholder: "she wants her partner locked: the cage, the key on her neck, the begging; she edges and denies and decides, and letting him come is a gift she rarely gives",
+  spit: "she wants to spit: in an open mouth, on a face, and watch it get swallowed; it's a small thing and it gets her wetter than it should",
+  ballbusting: "she gets off on hurting balls: a knee, a slap, a slow squeeze, and the face someone makes; she watches for it",
+  findom: "money spent on her because she said so is what gets her wet: she asks, names a number, and the handing over is the sex for her",
+  sph: "she gets off laughing at a cock: she measures it with her fingers, compares it to her toys and to men she's had, and says exactly how little it does for her; a small one delights her",
+  cuckoldress: "she wants her partner to watch her with someone bigger and better, and to hear about it afterwards in detail; his face while it happens is the point",
+  petplay: "she wants to be a pet: ears, a collar and leash, on all fours, praised and petted, a bowl on the floor; she stays in it for hours",
+  breathplay: "a hand on a throat is her thing: hers on a partner's, or one on hers, the edge of air is where she comes",
+  voyeur: "she gets off watching: other people fucking, her owner with someone else, anyone who doesn't know she's there; she'd rather watch than join in",
+  tickling: "being tickled until she can't breathe gets her off, and she begs for it to stop and for it to go on in the same breath",
+  furniture: "she wants a person for furniture: a footstool under her feet, a seat, a table for her drink, and to forget they're there",
 };
 
 const PARAPHILIA_SHOWS: Record<string, string> = {
@@ -79,9 +96,21 @@ const PARAPHILIA_SHOWS: Record<string, string> = {
   "breast growth": "she's obsessed with her breasts getting bigger: she talks about it, touches them, and growth gets her off",
   breeder: "she's obsessed with being bred and pregnant: it's what she wants from every fuck, and not being pregnant torments her",
   neglectful: "she's given up having needs of her own: all that matters to her in bed is the other person's pleasure, and her own barely registers",
+  "scent obsessed": "she needs her smell worshipped: she won't wash before bed, she pushes faces into her armpits and under her feet, and nothing gets her off without someone breathing her in first",
+  "goddess complex": "she needs to be worshipped: she expects kneeling, praise and service as her due, and sex that isn't worship barely registers",
+  throne: "she needs to sit on faces: a partner under her is how she comes, and she stays down longer every time",
+  "keyholder for life": "she needs someone locked: she thinks about the cage and the key all day, and an unlocked man in her bed bores her",
+  humiliatrix: "she needs to humiliate her partner: laughing at him, spitting, pegging him, telling him what he is; it's the only thing that finishes her",
+  cuckqueen: "she needs her partner to watch her with someone else, and to know he isn't enough",
+  "pet for life": "she needs to be a pet: on a leash, praised and petted, out of words; being a person in bed doesn't do anything for her any more",
+  "breath addict": "she needs the edge of air: a hand on a throat, a face under her thighs; without it she can't come",
+  "tribute junkie": "she needs to be paid: tribute, gifts, money handed over because she said so; it's what she thinks about and what she comes from",
 };
 
-const DOMINANT = new Set(["dom", "sadist", "abusive", "malicious"]);
+const DOMINANT = new Set(["dom", "sadist", "abusive", "malicious", "facesitting", "pegging", "keyholder", "ballbusting", "sph", "cuckoldress", "goddess", "furniture", "spit", "findom",
+  "throne", "humiliatrix", "keyholder for life", "cuckqueen", "goddess complex", "tribute junkie"]);
+/** The paraphilias that need a victim rather than a partner. */
+const ABUSIVE = new Set(["abusive", "malicious"]);
 
 /** Whether she's the kind who takes charge in bed: a dom or sadist fetish that's real, or the
  *  paraphilia either becomes. */
@@ -129,7 +158,7 @@ export function desireLines(p: Person, s?: SaveState): string[] {
     if (s && dominantInBed(p)) {
       const how = withOrders(obeys(s, p).stance);
       if (how) parts.push(how);
-      if (DOMINANT.has(para ?? "")) parts.push(targets(s, p));
+      if (ABUSIVE.has(para ?? "")) parts.push(targets(s, p));
     }
     out.push(parts.join(" "));
   }
@@ -151,8 +180,8 @@ export function inBed(p: Person): string {
 export function actDesireLine(s: SaveState, p: Person, actId: string): string {
   const act = ACT_BY_ID[actId];
   if (!act || p.psyche.state === "broken" || !dominantInBed(p)) return "";
-  const hers = act.tags.some((t) => ["domination", "using another", "pain on another", "punishing another"].includes(t));
-  const abusive = DOMINANT.has(p.persona.paraphilia ?? "");
+  const hers = act.tags.some((t) => ["domination", "using another", "pain on another", "punishing another", "femdom"].includes(t));
+  const abusive = ABUSIVE.has(p.persona.paraphilia ?? "");
   if (hers) return `SHE'S IN CHARGE HERE (fact): this is what she's made for. She takes control for real: sets the pace, holds you down, tells you what to do and how, and it gets her wetter than anything done to her.${abusive ? " She's rough, she pushes past what you asked if you let her, and she loves the moment it stops being comfortable for you." : ""}`;
   // Served, not used: a pedicure or her feet worshipped is you doing something for her, and a dom
   // enjoys it; it isn't her cue to start giving orders.

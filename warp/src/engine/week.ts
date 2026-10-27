@@ -62,6 +62,9 @@ import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf, inHousehold } fro
 import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
 import { tickStory } from "./story";
+import { tickEndowment } from "./endowment";
+import { tickFew } from "./fewslaves";
+import { tickMarriage } from "./marriage";
 import { ageMoments } from "./moments";
 import { tickDeeds } from "./deeds";
 import { tickCulture } from "./culture";
@@ -334,6 +337,10 @@ export function endWeek(s: SaveState): WeekReport {
   // The plot chain, which is a society pass of its own: it moves your standing with the trade, it
   // moves the arcology's adoption, and it is where the service fees come from once they are open.
   lines.push(...tickReversal(s));
+  // What the city says about you, and what a small household does to the women in it.
+  for (const l of tickEndowment(s)) push(l.text, l.tone, l.weight);
+  for (const l of tickFew(s)) push(l.text, l.tone, l.weight, l.person);
+  for (const l of tickMarriage(s)) push(l.text, l.tone, l.weight, l.person);
   for (const l of tickStory(s)) push(l.text, l.tone, l.weight);
   lines.push(...tickRun(s));
 

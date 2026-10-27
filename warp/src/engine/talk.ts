@@ -26,6 +26,7 @@ import { remember } from "./memory";
 import { clamp } from "./psyche";
 import { worldBrief } from "./world";
 import { weekSnapshot } from "./snapshot";
+import { skill, practise } from "./player";
 
 export interface TalkResult { ok: boolean; says: string; deals: string[]; error?: string }
 
@@ -99,8 +100,12 @@ export async function speakToPower(s: SaveState, id: string, said: string): Prom
   talk.log.push({ role: "you", text: said.slice(0, 600), week }, { role: "them", text: says, week });
   if (talk.log.length > 60) talk.log.splice(0, talk.log.length - 60);
 
-  const warmth = clamp(Math.round(Number(out.warmth) || 0), -5, 5);
-  const room = WARMTH_PER_WEEK - Math.abs(talk.used.warmth);
+  // A persuasive owner gets a little more out of every call, and loses a little less on a bad one.
+  const charm = skill.charisma(s);
+  const raw = Math.round(Number(out.warmth) || 0);
+  const warmth = clamp(raw > 0 ? raw + Math.round(charm * 2) : raw < 0 ? Math.min(0, raw + Math.round(charm * 1.5)) : 0, -5, 5);
+  practise(s, "charisma", 0.4);
+  const room = WARMTH_PER_WEEK + Math.round(charm * 4) - Math.abs(talk.used.warmth);
   const by = Math.sign(warmth) * Math.min(Math.abs(warmth), Math.max(0, room));
   if (by) { shift(s, id, by); talk.used.warmth += by; }
   const deals: string[] = [];

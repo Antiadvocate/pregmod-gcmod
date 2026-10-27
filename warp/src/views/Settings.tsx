@@ -1,7 +1,8 @@
 /** SETTINGS — models, saves, and the two dials that change how the world behaves. */
+import { setLayout, setNav, useLayout } from "../lib/layout";
 import { useEffect, useState } from "react";
 import { useGame } from "../lib/game";
-import { Button, Card, Chip, Field, Section } from "../lib/ui";
+import { Button, Card, Chip, Field, Section, cx } from "../lib/ui";
 import { getThinking, setThinking, type Thinking, getApiKey, setApiKey, getLocalEndpoint, setLocalEndpoint, modelsAvailable, getLocalImage, setLocalImage, LOCAL_IMAGE_DEFAULTS, type LocalImageEndpoint } from "../config";
 import { generateLocalImage, KONTEXT_WORKFLOW, listLocalCheckpoints, WORKFLOW_TOKENS } from "../lib/diffusion";
 import { dynamicReadiness } from "../engine/dynamic";
@@ -31,6 +32,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
   useEffect(() => { void loadModels(); }, []);
   const [local, setLocal] = useState(getLocalEndpoint()?.url ?? "");
   const [theme, setTheme] = useState(document.documentElement.dataset.theme ?? "brass");
+  const { layout, nav } = useLayout();
   const [img, setImg] = useState<LocalImageEndpoint>(getLocalImage() ?? { url: "", backend: "comfy" });
   const [testing, setTesting] = useState("");
   const [testImg, setTestImg] = useState<string | null>(null);
@@ -224,6 +226,25 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
           <Field label={`Scene history kept in context — ${save.models.history_window} turns`} hint="How many recent turns the narrator sees for continuity. Lower is cheaper.">
             <input type="range" min={2} max={12} value={save.models.history_window} onChange={(e) => mutate((s) => { s.models.history_window = Number(e.target.value); })} />
           </Field>
+        </Card>
+      </Section>
+
+      <Section title="Layout">
+        <Card>
+          <div className="text-[12px] mid mb-1.5">How screens are laid out</div>
+          <div className="segmented mb-1.5">
+            {([["columns", "Side by side"], ["strip", "Scroll sideways"], ["stack", "One column"]] as const).map(([k, label]) => (
+              <button key={k} className={cx("seg", layout === k && "on")} onClick={() => setLayout(k)}>{label}</button>
+            ))}
+          </div>
+          <div className="text-[11px] dim mb-3">{layout === "columns" ? "Cards flow into as many columns as the window has room for." : layout === "strip" ? "The screen flows into columns down the height of the window and scrolls sideways, like a broadsheet. The mouse wheel scrolls it, and there are arrows at the edges." : "The old single column, scrolling down."}</div>
+          <div className="text-[12px] mid mb-1.5">Getting around, on a wider screen</div>
+          <div className="segmented mb-1.5">
+            {([["top", "Across the top"], ["rail", "Down the side"]] as const).map(([k, label]) => (
+              <button key={k} className={cx("seg", nav === k && "on")} onClick={() => setNav(k)}>{label}</button>
+            ))}
+          </div>
+          <div className="text-[11px] dim">On a phone the tab bar stays at the bottom either way.</div>
         </Card>
       </Section>
 

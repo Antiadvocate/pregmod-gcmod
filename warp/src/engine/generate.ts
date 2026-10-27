@@ -31,6 +31,11 @@ const FETISH_POOL = [
   { id: "submissive", w: 5 }, { id: "cumslut", w: 4 }, { id: "buttslut", w: 3 },
   { id: "boobs", w: 3 }, { id: "humiliation", w: 2.5 }, { id: "masochist", w: 2 },
   { id: "pregnancy", w: 1.5 }, { id: "dom", w: 1.2 }, { id: "sadist", w: 0.8 },
+  // The wider list: none of them common, together about a third of everyone who has a kink.
+  { id: "armpits", w: 0.7 }, { id: "musk", w: 0.6 }, { id: "facesitting", w: 0.8 }, { id: "assworship", w: 0.6 },
+  { id: "goddess", w: 0.7 }, { id: "pegging", w: 0.6 }, { id: "keyholder", w: 0.6 }, { id: "spit", w: 0.4 },
+  { id: "ballbusting", w: 0.35 }, { id: "findom", w: 0.4 }, { id: "sph", w: 0.5 }, { id: "cuckoldress", w: 0.5 },
+  { id: "petplay", w: 0.6 }, { id: "breathplay", w: 0.5 }, { id: "voyeur", w: 0.6 }, { id: "tickling", w: 0.5 }, { id: "furniture", w: 0.4 },
 ];
 
 /**

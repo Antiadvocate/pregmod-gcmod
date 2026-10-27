@@ -8,6 +8,7 @@
  * on the Penthouse, and picks up where it left off. With no model, the written game answers in her
  * voice and still offers you the next thing to say.
  */
+import { practiseFrom } from "./player";
 import { coarsen, REGISTER_TAIL } from "./register";
 import { sentinelsLine } from "./battles";
 import { cultureBrief } from "./culture";
@@ -244,6 +245,7 @@ export async function playMoment(
   if (reply) m.log.push({ role: "you", text: reply });
   // What you tell her about how to treat you outlasts the scene.
   if (reply) captureInstructions(s, reply, [p, ...(m.others ?? []).map((x) => s.people[x])].filter((x): x is Person => !!x));
+  if (reply) practiseFrom(s, reply);
   m.updated = s.arcology.week;
   m.open = true;
 

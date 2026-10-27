@@ -39,7 +39,7 @@ export const ORIGINS: Origin[] = [
     setup: (s) => {
       s.arcology.cash = 55000;
       s.arcology.rep = 900;
-      s.player.skills = { trading: 30, hacking: 15, slaving: 20, engineering: 20, medicine: 10 };
+      s.player.skills = { trading: 30, hacking: 15, slaving: 20, engineering: 20, medicine: 10, charisma: 30, seduction: 20, intimidation: 20, insight: 20 };
     },
   },
   {
@@ -52,7 +52,7 @@ export const ORIGINS: Origin[] = [
       s.arcology.rep = 300;
       s.arcology.security = 72;
       s.arcology.mercenaries = { hired: true, strength: 40, loyalty: 55, upkeep: 2200 };
-      s.player.skills = { trading: 15, hacking: 20, slaving: 30, engineering: 15, medicine: 20 };
+      s.player.skills = { trading: 15, hacking: 20, slaving: 30, engineering: 15, medicine: 20, charisma: 15, seduction: 15, intimidation: 45, insight: 20 };
       for (const p of ownedAdults(s)) { p.bond.resentment = Math.max(p.bond.resentment, 45); p.bond.fear = Math.max(p.bond.fear, 35); p.origin.acquired_how = "came with the building when you took it"; }
     },
   },
@@ -64,7 +64,7 @@ export const ORIGINS: Origin[] = [
     setup: (s) => {
       s.arcology.cash = 45000;
       s.arcology.rep = 150;
-      s.player.skills = { trading: 30, hacking: 20, slaving: 45, engineering: 10, medicine: 15 };
+      s.player.skills = { trading: 30, hacking: 20, slaving: 45, engineering: 10, medicine: 15, charisma: 20, seduction: 35, intimidation: 15, insight: 40 };
       for (const p of ownedAdults(s)) { p.bond.hope += 15; p.bond.bond += 10; }
     },
   },
@@ -76,7 +76,7 @@ export const ORIGINS: Origin[] = [
     setup: (s) => {
       s.arcology.cash = 40000;
       s.arcology.rep = 500;
-      s.player.skills = { trading: 55, hacking: 10, slaving: 40, engineering: 10, medicine: 10 };
+      s.player.skills = { trading: 55, hacking: 10, slaving: 40, engineering: 10, medicine: 10, charisma: 35, seduction: 20, intimidation: 25, insight: 30 };
       // Stock you didn't sell before you stopped: two more, cheaper, wearier.
       for (let i = 0; i < 2; i++) {
         const p = generatePerson({ seed: `broker-stock:${s.id}:${i}`, week: 1, quality: -0.3, central: true });
@@ -94,7 +94,7 @@ export const ORIGINS: Origin[] = [
     setup: (s) => {
       s.arcology.cash = 150000;
       s.arcology.rep = 100;
-      s.player.skills = { trading: 40, hacking: 30, slaving: 10, engineering: 25, medicine: 5 };
+      s.player.skills = { trading: 40, hacking: 30, slaving: 10, engineering: 25, medicine: 5, charisma: 30, seduction: 15, intimidation: 20, insight: 25 };
     },
   },
   {
@@ -106,7 +106,7 @@ export const ORIGINS: Origin[] = [
       s.arcology.cash = 95000;
       s.arcology.rep = 1600;
       s.arcology.public_standing = 2;
-      s.player.skills = { trading: 20, hacking: 10, slaving: 15, engineering: 15, medicine: 10 };
+      s.player.skills = { trading: 20, hacking: 10, slaving: 15, engineering: 15, medicine: 10, charisma: 40, seduction: 30, intimidation: 10, insight: 15 };
     },
   },
 ];

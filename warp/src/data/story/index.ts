@@ -7,7 +7,8 @@ import { WORLD_ARCS } from "./world";
 import { FEET_ARCS } from "./feet";
 import { PLOT_ARCS } from "./plot";
 import { DEED_ARCS } from "./deeds";
+import { OWNER_ARCS } from "./owner";
 
-registerArcs([...ORIGIN_ARCS, ...DECK_ARCS, ...DECK2_ARCS, ...WORLD_ARCS, ...FEET_ARCS, ...PLOT_ARCS, ...DEED_ARCS]);
+registerArcs([...ORIGIN_ARCS, ...DECK_ARCS, ...DECK2_ARCS, ...WORLD_ARCS, ...FEET_ARCS, ...PLOT_ARCS, ...DEED_ARCS, ...OWNER_ARCS]);
 
 export { ORIGINS, ORIGIN_BY_ID } from "./origins";

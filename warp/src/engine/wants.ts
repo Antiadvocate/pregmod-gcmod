@@ -14,6 +14,7 @@
  * snapshot) and to who she was before. The engine supplies what the answers DO: granting the
  * request it found for her (if any), refusing it, and the closed effect table.
  */
+import { keepingFew, theFew } from "./fewslaves";
 import type { PendingEvent, Person, SaveState } from "./types";
 import { read } from "./obedience";
 import { romanceOf } from "./romance";
@@ -87,6 +88,10 @@ export function reasonsOf(s: SaveState, p: Person): Reason[] {
   if (p.bond.hope < 15 && r.trust > -20) add("hope", "She's lost hope that anything here will get better.", 2);
   if (rom.since_week >= week && rom.standing !== "property") add("standing", `She just became your ${rom.standing}.`, 3);
   if (rom.dominion >= 40) add("standing", "She has real say over you now and uses it.", 1.5, false);
+  // One of the only ones: the owner's weight on her, and it wants out. Fresh the week it crosses a line.
+  const few = s.player.few;
+  const felt = few && keepingFew(s) ? few.power[p.id] ?? 0 : 0;
+  if (felt >= 30) add("only", `She's one of only ${theFew(s).length === 1 ? "one" : "two"} women the owner keeps, and she feels it (${Math.round(felt)}/100): bolder, prouder, more in love, and starting to act in the owner's name.`, 1.5 + felt / 30, few!.leaked?.[p.id] === s.arcology.week - 1);
   const refused = Object.entries(p.counters).filter(([k, v]) => k.startsWith("ask_refused:") && week - v <= 2);
   if (refused.length) add("refused", "You refused her something in the last two weeks.", 1.8);
 

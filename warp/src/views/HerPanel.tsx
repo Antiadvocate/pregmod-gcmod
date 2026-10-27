@@ -23,6 +23,7 @@ import RoomCard from "./RoomCard";
 import { governorshipOf, lockUp } from "../engine/governor";
 import { speakToGovernor } from "../engine/talk";
 import Talk from "./Talk";
+import MarriageCard from "./MarriageCard";
 
 export default function HerPanel({ id }: { id: string }) {
   const { save } = useGame();
@@ -103,6 +104,8 @@ export default function HerPanel({ id }: { id: string }) {
           <div className="text-[11px] dim mt-2">You've given her what she asked for {rom.granted} time{rom.granted === 1 ? "" : "s"} and said no {rom.refused} time{rom.refused === 1 ? "" : "s"}.</div>
         </div>
       </Card>
+
+      <MarriageCard id={id} />
 
       <AskList asks={(save.asks ?? []).filter((a) => a.person === id)} />
       {ask ? null : (

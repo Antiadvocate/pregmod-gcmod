@@ -48,6 +48,7 @@ import { resolveAct } from "./intimacy";
 import { isOwnerName } from "./you";
 import { ACTS, ACT_BY_ID, FETISHES, FLAW_BY_ID, fetishBand } from "../data/intimacy";
 import { household, societies } from "./compare";
+import { allSkills, PLAYER_SKILLS } from "./player";
 
 /* ── what a saga is ─────────────────────────────────────────────────────────────────────────── */
 
@@ -90,7 +91,9 @@ export interface SagaPath { id: string; label: string; state: "open" | "closed" 
 export type Need =
   | { cash: number } | { rep: number } | { standing: number } | { security: number }
   | { toward: { name: string; at: number } } | { fact: string }
-  | { fetish: { name: string; fetish: string; at: number } } | { norm: { norm: Norm; at: number } };
+  | { fetish: { name: string; fetish: string; at: number } } | { norm: { norm: Norm; at: number } }
+  /** One of the owner's skills, built-in or their own, at least this good. */
+  | { skill: { id: string; at: number } };
 
 export type Effect =
   | { cash: number } | { rep: number } | { standing: number } | { prosperity: number } | { security: number } | { crime: number }
@@ -360,6 +363,11 @@ export function locked(s: SaveState, x: Saga, o: SagaOption): string | null {
       const have = p?.persona.fetishes.find((f) => f.name === n.fetish.fetish)?.strength ?? 0;
       if (p && have < n.fetish.at) return `${p.name.split(" ")[0]} would have to want it more (${FETISH_NAME(n.fetish.fetish)} ${Math.round(have)}/${n.fetish.at})`;
     }
+    if ("skill" in n) {
+      const have = s.player.skills[n.skill.id] ?? 0;
+      const name = allSkills(s).find((k) => k.id === n.skill.id)?.name ?? n.skill.id;
+      if (have < n.skill.at) return `needs ${name.toLowerCase()} ${n.skill.at} (you have ${Math.round(have)})`;
+    }
     if ("norm" in n) {
       const v = cultureOf(s).norms[n.norm.norm];
       if (n.norm.at >= 0 ? v < n.norm.at : v > n.norm.at) return `the city isn't there yet (${NORMS[n.norm.norm].name.toLowerCase()} ${Math.round(v)}, needs ${n.norm.at})`;
@@ -403,6 +411,11 @@ export function cleanOption(s: SaveState, raw: Record<string, unknown>): SagaOpt
       const t = o.norm as Record<string, unknown>;
       const norm = NORM_IDS.find((k) => k === t.norm), at = num(t.at, -100, 100);
       if (norm && at !== undefined) needs.push({ norm: { norm, at } });
+    } else if (o.skill && typeof o.skill === "object") {
+      const t = o.skill as Record<string, unknown>;
+      const want = String(t.id ?? "").toLowerCase().trim(), at = num(t.at, 1, 100);
+      const id = allSkills(s).find((k) => k.id === want || k.name.toLowerCase() === want || k.id === `custom:${want}`)?.id;
+      if (id && at !== undefined) needs.push({ skill: { id, at } });
     }
   }
   const effects: Effect[] = [];
@@ -640,9 +653,9 @@ Choices matter, and most of them are about sex: what the player does to who, wha
 
 Everyone is an adult, eighteen or older. Reply with JSON only.`;
 
-const VOCAB = () => `FETISH is one of: ${FETISHES.filter((f) => f.id !== "none").map((f) => f.id).join(", ")}. ACT is one of: ${ACTS.map((a) => a.id).join(", ")}. NORM is one of: ${NORM_IDS.join(", ")}. Use "act" whenever a slave of the player's has sex in the outcome, so it counts.`;
+const VOCAB = (s?: SaveState) => `FETISH is one of: ${FETISHES.filter((f) => f.id !== "none").map((f) => f.id).join(", ")}. ACT is one of: ${ACTS.map((a) => a.id).join(", ")}. NORM is one of: ${NORM_IDS.join(", ")}. SKILL is one of the owner's skills: ${s ? allSkills(s).map((k) => `${k.id} (${k.name}, the owner has ${Math.round(s.player.skills[k.id] ?? 0)})`).join(", ") : PLAYER_SKILLS.map((k) => k.id).join(", ")}. Use "act" whenever a slave of the player's has sex in the outcome, so it counts. Give at least one option in most chapters that only a skilled owner can take ({"skill":{"id":"SKILL","at":N}}): talking someone round, frightening them off, seeing through a lie, or the owner's own skill.`;
 
-const OPTION_SCHEMA = `{"label":"what the player does, 4-14 words","note":"cost or risk, a few words","needs":[{"cash":N}|{"rep":N}|{"standing":N}|{"security":N}|{"fact":"a fact from FACTS"}|{"toward":{"name":"cast name","at":N}}|{"fetish":{"name":"player's slave","fetish":"FETISH","at":N}}|{"norm":{"norm":"NORM","at":±N}}],"outcome":"what happens, 2-5 sentences of prose","effects":[{"cash":±N}|{"rep":±N}|{"standing":±1..3}|{"prosperity":±N}|{"security":±N}|{"crime":±N}|{"toward":{"name":"cast name","by":±N}}|{"treat":{"name":"one of the player's slaves in the cast","kind":"kindness|cruelty|coercion|promise_kept|promise_broken","size":1-10}}|{"rumor":"what people say"}|{"act":{"name":"player's slave","act":"ACT","public":true|false}}|{"arousal":{"name":"player's slave","by":±N}}|{"libido":{"name":"player's slave","by":±N}}|{"fetish":{"name":"player's slave","fetish":"FETISH","by":±N}}|{"norm":{"norm":"NORM","by":±1..6}}],"develops":[{"name":"cast name","now":"where they are now, a few words","turn":"how this changed them, one sentence","desire":"what they want in bed now, if it changed","limit":"what they still won't do, if it changed","secret_revealed":true|false}],"facts":["something now true that later chapters should remember"],"opens":[{"id":"short_id","label":"a new way this could end"}],"closes":["path id this rules out"],"advance":true|false,"ends":"path id, only in the last act"}`;
+const OPTION_SCHEMA = `{"label":"what the player does, 4-14 words","note":"cost or risk, a few words","needs":[{"cash":N}|{"rep":N}|{"standing":N}|{"security":N}|{"fact":"a fact from FACTS"}|{"toward":{"name":"cast name","at":N}}|{"fetish":{"name":"player's slave","fetish":"FETISH","at":N}}|{"norm":{"norm":"NORM","at":±N}}|{"skill":{"id":"SKILL","at":N}}],"outcome":"what happens, 2-5 sentences of prose","effects":[{"cash":±N}|{"rep":±N}|{"standing":±1..3}|{"prosperity":±N}|{"security":±N}|{"crime":±N}|{"toward":{"name":"cast name","by":±N}}|{"treat":{"name":"one of the player's slaves in the cast","kind":"kindness|cruelty|coercion|promise_kept|promise_broken","size":1-10}}|{"rumor":"what people say"}|{"act":{"name":"player's slave","act":"ACT","public":true|false}}|{"arousal":{"name":"player's slave","by":±N}}|{"libido":{"name":"player's slave","by":±N}}|{"fetish":{"name":"player's slave","fetish":"FETISH","by":±N}}|{"norm":{"norm":"NORM","by":±1..6}}],"develops":[{"name":"cast name","now":"where they are now, a few words","turn":"how this changed them, one sentence","desire":"what they want in bed now, if it changed","limit":"what they still won't do, if it changed","secret_revealed":true|false}],"facts":["something now true that later chapters should remember"],"opens":[{"id":"short_id","label":"a new way this could end"}],"closes":["path id this rules out"],"advance":true|false,"ends":"path id, only in the last act"}`;
 
 /** Write the bible: who, what's at stake, the acts, the ways it can end. */
 export function biblePrompt(s: SaveState, x: Saga): string {
@@ -680,11 +693,11 @@ export function chapterPrompt(s: SaveState, x: Saga, own?: string): string {
     past ? `## EARLIER\n${past}` : "",
     recent ? `## THE LAST CHAPTERS\n${recent}` : "## THIS IS THE FIRST CHAPTER",
     own
-      ? `## THE PLAYER'S OWN ANSWER to "${x.chapter?.title}"\n${own}\n\n${VOCAB()}
+      ? `## THE PLAYER'S OWN ANSWER to "${x.chapter?.title}"\n${own}\n\n${VOCAB(s)}
 Resolve it as ONE option in the same JSON shape (the label is what they did, in a few words; the outcome is what happens). Be fair: what they tried may work, half-work, or cost them. JSON: {"option": ${OPTION_SCHEMA}}`
       : `## WRITE THE NEXT CHAPTER${last ? "\nThis is the last act. Every option ends the saga by one of the open paths (set \"ends\"), and the outcome is its epilogue: what became of each person." : `\nAct ${x.act + 1} of ${x.acts.length}. Set "advance": true on an option only when it completes this act's aim.`}
 Four to eight paragraphs, in the present tense, second person for the player. The player is "you" and only "you": never the player's name in the third person, never "the owner" as someone else in the room. Something happens, sex is on the page, and somebody changes. Then three or four options, most of them sexual choices with sexual consequences. Every option is something YOU do, written as an order to yourself ("Bend her over the desk", "Refuse the offer"), never a question about what someone should do.
-${VOCAB()}
+${VOCAB(s)}
 
 JSON: {"title":"chapter title","text":"the chapter; paragraphs separated by blank lines","options":[${OPTION_SCHEMA}]}`,
     REGISTER_TAIL,
