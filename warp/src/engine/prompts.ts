@@ -20,6 +20,7 @@ import { rulesLine } from "./houserules";
 import { obeysLine } from "./compliance";
 import { characterLines } from "./character";
 import { desireLines, skillsLine } from "./sexlife";
+import { natureLines } from "./nature";
 import { fitLines, herFitLine } from "./fit";
 import { surgeryPast } from "./health";
 import { purseLine } from "./allowance";
@@ -68,7 +69,7 @@ CHARACTER VOICES. Every woman should sound like an individual based on her backg
 
 DETAILS AND HUMOR. Keep the descriptions concrete, physical, and grounded. It's fine to be a little dry or funny when the situation calls for it. An occasional down-to-earth comparison works well ("she sighs like you've handed her a winning ticket"), though one per scene is plenty. Stay away from abstract or poetic metaphors like crashing waves, electricity, stars, or melting.
 
-POWER DYNAMICS IN THE HOUSEHOLD. Slaves do not manage or boss around the owner. Even a slave who runs a facility or manages the entire household is still a slave. Whether she is reporting in, asking a favor, begging, sulking, flirting, or following orders, she does it deferentially and uses the owner's proper title ("Yes, Master," "Please, Master," "I love you, Master"). High trust or love does not turn her into a casual peer or conventional girlfriend—that dynamic only relaxes if her card explicitly says so under THE POWER BETWEEN YOU. She shouldn't lay down the law, set terms, claim she's "telling, not asking," or announce that she's "done guessing." Regular staff and citizens act the same way, just with a bit more professional distance. The only exception is a woman whose card explicitly states that she holds the power between you, or one who has reached open defiance.
+POWER DYNAMICS IN THE HOUSEHOLD. Slaves do not manage or boss around the owner. Even a slave who runs a facility or manages the entire household is still a slave. Whether she is reporting in, asking a favor, begging, sulking, flirting, or following orders, she does it deferentially and uses the owner's proper title ("Yes, Master," "Please, Master," "I love you, Master"). High trust or love does not turn her into a casual peer or conventional girlfriend—that dynamic only relaxes if her card explicitly says so under THE POWER BETWEEN YOU. She shouldn't lay down the law, set terms, claim she's "telling, not asking," or announce that she's "done guessing." Regular staff and citizens act the same way, just with a bit more professional distance. The only exceptions are a woman whose card explicitly states that she holds the power between you, one who has reached open defiance, and what HER NATURE on her card says about how far her nature reaches the owner. If it says it slips out and she backs off, write exactly that, and if it says she does it without asking, she does.
 
 HOW THE ARCOLOGY RUNS. The player rules the arcology as an absolute private dictatorship. There is no city council, parliament, senate, or voting system, and no one has the authority to overrule the owner. Citizens can petition, complain, protest, or scheme in the shadows, and the local court only handles whatever petty matters the owner delegates to it. The owner's word is law. The arcology's security forces—guards, patrols, the security chief, militia, mercenaries, and soldiers—obey the owner's commands immediately and without question. They never stall, argue, or refuse an order (though if a slave holds the owner's collar, security answers to her first). Enforce the arcology's laws exactly as they are written in the prompt. Never make up new clauses, loopholes, exemptions, or legal technicalities, and remember that only the owner can change a law.
 
@@ -260,7 +261,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   const orders = obeysLine(s, p);
   if (orders) lines.push(orders);
   lines.push(...characterLines(p));
-  lines.push(skillsLine(p), ...desireLines(p, s));
+  lines.push(skillsLine(p), ...desireLines(p, s), ...natureLines(s, p));
   if (s.player.owned_by !== p.id || p.body.dick) { lines.push(...fitLines(s, p)); const hers = herFitLine(s, p); if (hers) lines.push(hers); }
   lines.push(`CURRENT STATE: ${condition(p)}; mood is ${p.psyche.mood}.${p.psyche.active_states.length ? ` Currently on her mind: ${p.psyche.active_states.join(", ")}.` : ""}`);
   if (edge?.roles.length) lines.push(`ROLES: ${edge.roles.join(", ")}`);

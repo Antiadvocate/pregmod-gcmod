@@ -8,6 +8,7 @@ import { newGame, sanitize } from "../src/engine/state.ts";
 import { endWeek } from "../src/engine/week.ts";
 import { personCard } from "../src/engine/prompts.ts";
 import { applyDiff } from "../src/engine/turn.ts";
+import { refresh } from "../src/engine/obedience.ts";
 import { allowanceOf, captureAllowance, moneyIn, purseOf, readAllowance, setAllowance } from "../src/engine/allowance.ts";
 
 check("money is read the way people say it", moneyIn("100k") === 100000 && moneyIn("¤1.5m") === 1500000 && moneyIn("100,000") === 100000 && moneyIn("fifty thousand") === 50000);
@@ -48,4 +49,33 @@ check("but a price isn't an allowance", readAllowance("That dress cost 100k.") =
   check("findom reads as day to day, not only bed", /HER FETISH: findom[^\n]*Day to day as much as in bed/.test(card));
   check("a quirk written in by hand says what it means", /HER WAY: Findom\. This is how she is day to day[^\n]*wetter than anything/.test(card));
   check("and being paid is her kink on the money line too", /HER MONEY[^\n]*Being paid is her kink/.test(card));
+}
+
+// Her kinks as who she is, and how far they reach you: strength against ease, fear and room.
+{
+  const { natureLines, reachOf } = await import("../src/engine/nature.ts");
+  const { setLatitude } = await import("../src/engine/self.ts");
+  const s = newGame({ seed: "nature", starting_slaves: 1 } as never);
+  const her = Object.values(s.people).find((p) => p.status === "owned")!;
+  her.persona.fetishes = [{ name: "dom", strength: 70, known: true }];
+  her.persona.paraphilia = "abusive" as never;
+  her.persona.quirk = undefined; her.persona.flaw = undefined;
+  const tight = () => { her.bond.fear = 80; her.psyche.relaxation = -6; };
+  const easy = () => { her.bond.fear = 10; her.psyche.relaxation = 6; her.bond.bond = 95; her.bond.hope = 90; };
+  tight();
+  const lines = natureLines(s, her);
+  check("a kink is written as who she is, all day", lines.some((l) => /HER NATURE \(dom\)\. It shows all day, not just in bed\. She's bossy by nature/.test(l)), lines);
+  check("a paraphilia is who she is", lines.some((l) => /HER NATURE \(abusive, a need\)\. It's who she is, all day/.test(l)));
+  check("afraid of you, she buries it around you", reachOf(s, her, 100) === "held" && lines.some((l) => /Around you she buries it/.test(l)));
+  her.bond.fear = 30; her.psyche.relaxation = 3; her.bond.bond = 80; her.bond.hope = 80;
+  refresh(her, s.memory[her.id]);
+  check("comfortable, a strong one slips out on you, and she backs off", reachOf(s, her, 70) === "slips" && natureLines(s, her).some((l) => /HER NATURE \(dom\)[^\n]*slips out on you before she thinks[^\n]*backs off at once/.test(l)), natureLines(s, her));
+  check("a weak one stays in its place", reachOf(s, her, 40) === "kept");
+  easy(); refresh(her, s.memory[her.id]);
+  const r = reachOf(s, her, 100);
+  check("very strong, relaxed, trusting and unafraid, she just does it", r === "takes" && natureLines(s, her).some((l) => /abusive, a need[^\n]*With you, she does it without asking, like shoving you down/.test(l)), [r, her.bond]);
+  her.bond.fear = 30; her.psyche.relaxation = 3;
+  setLatitude(s, her, "free");
+  check("with room given, a slip isn't something she backs off from", natureLines(s, her).some((l) => /HER NATURE \(dom\)[^\n]*she doesn't back off/.test(l)));
+  check("and her card carries it", /HER NATURE \(dom\)/.test(personCard(s, her, "")));
 }
