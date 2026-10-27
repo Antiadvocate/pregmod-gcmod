@@ -36,12 +36,12 @@ export function portraitPrompt(s: SaveState, p: Person, mode: "face" | "body"): 
   const who = `a ${p.age}-year-old ${p.origin.nationality} woman`;
   // Her own marks, which the drawing shows small and a photograph should show clearly.
   const marks = featuresOf(p).map((f) => FEATURES[f.id].words(f));
-  const looks = `${p.body.appearance_facts}${marks.length ? ` Distinctive, and must be visible: ${marks.join("; ")}.` : ""}`;
+  const looks = `${p.body.appearance_facts}${marks.length ? ` Distinctive, and must be visible: ${marks.join(", ")}.` : ""}`;
   const collar = p.collar && p.collar !== "none" ? ` She wears ${p.collar} around her neck.` : "";
   if (mode === "face") {
     return `This image is a stylised illustration of a character from a video game. Redraw it as a single photorealistic head-and-shoulders portrait photograph of the same character as a real person: ${who}. Keep her face shape, age, skin tone, hair colour and style, and eye colour exactly as in the illustration. What is known about her: ${looks}.${collar}
 Her expression: ${expressionFor(s, p)}.
-Framed from the collarbones up, bare shoulders or a plain dark top; real skin texture, natural soft light, shallow depth of field, a plain dark background. No text.`;
+Framed from the collarbones up, with bare shoulders or a plain dark top, real skin texture, natural soft light, shallow depth of field, a plain dark background. No text.`;
   }
   return `This image is a stylised, non-photographic 3D-style character model from an adult video game. Redraw it as a single photorealistic full-length photograph of the same character as a real adult woman: ${who}. Keep the pose, the body shape and proportions, age, skin tone, hair, and anything she is wearing exactly as in the illustration. What is known about her: ${looks}.${collar}
 Her expression: ${expressionFor(s, p)}.

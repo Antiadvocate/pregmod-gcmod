@@ -78,7 +78,7 @@ function enactEvent(l: LawDef): EventDef {
   return {
     id: `court_enact_${l.id}`, severity: "notable", endogenous: true,
     candidates: () => [], weight: () => 0,
-    seed: (s) => `The court has a case before it. ${cap(l.petitioners)} have drafted the ${l.name}: "${l.text}"\n\nThey say the city already lives this way. ${normLine(l.norm, cultureOf(s).norms[l.norm])}${citation(s, l)}\n\nNothing happens without your word. The court only advises; the decision is yours.`,
+    seed: (s) => `The court has a case before it. ${cap(l.petitioners)} have drafted the ${l.name}: "${l.text}"\n\nThey say the city already lives this way. ${normLine(l.norm, cultureOf(s).norms[l.norm])}${citation(s, l)}\n\nNothing happens without your word. The court only advises, and the decision is yours.`,
     options: [
       { id: "sign", label: "Sign it into law",
         resolve: (s) => { const extra = enact(s, l, "you"); std(s, 1); s.arcology.rep += 120; record(s, l, "enact", "you signed it"); return `You sign the ${l.name}. It is read out in the civic hall the same afternoon and posted at every lift.${extra}\n\nThe petitioners are in the plaza by evening, drinking to you.`; } },
@@ -114,7 +114,7 @@ function repealEvent(l: LawDef): EventDef {
   return {
     id: `court_repeal_${l.id}`, severity: "notable", endogenous: true,
     candidates: () => [], weight: () => 0,
-    seed: (s) => `A petition to repeal the ${l.name} is before the court. The city doesn't live by it any more: ${normLine(l.norm, cultureOf(s).norms[l.norm]).replace(/^./, (x) => x.toLowerCase())}\n\nThe law stands unless you strike it.`,
+    seed: (s) => `A petition to repeal the ${l.name} is before the court. The city doesn't live by it any more. ${normLine(l.norm, cultureOf(s).norms[l.norm]).replace(/^./, (x) => x.toLowerCase())}\n\nThe law stands unless you strike it.`,
     options: [
       { id: "repeal", label: "Strike it from the books",
         resolve: (s) => { s.laws = lawsOf(s).filter((x) => x.id !== l.id); std(s, 0.5); record(s, l, "repeal", "you struck it"); return `You strike the ${l.name}. The notices come down from the lifts the same night, and by the end of the week people have stopped mentioning it.`; } },
@@ -243,7 +243,7 @@ export function writeLaw(s: SaveState, draft: { name: string; text: string; push
   if (!name || !text) return { ok: false, line: "A law needs a name and something it says." };
   if (!draft.push.length && !draft.effects.length) return { ok: false, line: "Choose at least one thing it does." };
   const need = customLawRep(s);
-  if (s.arcology.rep < need) return { ok: false, line: `You need ${need.toLocaleString()} reputation to write a law; you have ${Math.round(s.arcology.rep).toLocaleString()}.` };
+  if (s.arcology.rep < need) return { ok: false, line: `You need ${need.toLocaleString()} reputation to write a law, and you have ${Math.round(s.arcology.rep).toLocaleString()}.` };
   const cost = customLawCost(s, draft.push);
   const c: CustomLaw = { id: `custom_${s.arcology.week}_${(s.custom_laws ?? []).length}_${Date.now().toString(36)}`, name, text, push: draft.push.slice(0, 2), effects: draft.effects.filter((e) => CUSTOM_EFFECTS[e]).slice(0, 2), week: s.arcology.week };
   (s.custom_laws ??= []).push(c);
@@ -255,5 +255,5 @@ export function writeLaw(s: SaveState, draft: { name: string; text: string; push
   for (const p of c.push) pushNorm(s, p.norm, p.dir * 6, `you wrote the ${name}`);
   record(s, def, "enact", "you wrote it");
   lawPassed(s, def);
-  return { ok: true, line: `The ${name} is law from Monday: "${text}" It's posted at every lift by the evening.${cost.standing ? " The city didn't ask for it, and it lets you know." : ""}` };
+  return { ok: true, line: `The ${name} is law from Monday. It says "${text}" It's posted at every lift by the evening.${cost.standing ? " The city didn't ask for it, and it lets you know." : ""}` };
 }

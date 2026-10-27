@@ -37,14 +37,14 @@ export interface Obeys {
 }
 
 const LINE: Record<Stance, string> = {
-  hollow: "She's mindbroken: she does whatever she's told, and nobody is behind it.",
-  eager: "She wants to please: she does what she's told quickly, and likes being told.",
-  obedient: "She obeys: she does what she's told, properly, without needing it twice. What she doesn't like still shows on her face.",
-  reluctant: "She obeys slowly and grudgingly: she stalls, needs it said twice, does it badly or with a sullen face, and tries to get out of what she hates.",
-  terrified: "She obeys because she's terrified of the owner: she does it at once, shaking, sometimes crying, apologising and begging not to be hurt. Fear, not willingness.",
-  resists: "She doesn't want to obey and it shows: she stalls, makes excuses, begs to be let off, pulls away, and does what she hates only when she's made to (held, threatened, or punished into it).",
-  fights: "She refuses. She says no, argues, pulls away, may try to run or hit out. It only happens if the owner forces it (his own hands, restraints, the guards) or punishes her into it, and she hates him for it.",
-  free: "She isn't bound to obey: she does what the owner asks if she wants to, and says no if she doesn't.",
+  hollow: "She's mindbroken. She does whatever she's told, and there's nobody behind it.",
+  eager: "She wants to please. She does what she's told quickly, and she likes being told.",
+  obedient: "She obeys. She does what she's told properly, without needing to be told twice, but what she doesn't like still shows on her face.",
+  reluctant: "She obeys slowly and grudgingly. She stalls, needs to be told twice, does it badly or with a sullen face, and tries to get out of what she hates.",
+  terrified: "She obeys because she's terrified of the owner. She does it at once, shaking, sometimes crying, apologising and begging not to be hurt. It's fear rather than willingness.",
+  resists: "She doesn't want to obey, and it shows. She stalls, makes excuses, begs to be let off and pulls away, and she does what she hates only when she's made to, by being held, threatened or punished into it.",
+  fights: "She refuses. She says no, argues, pulls away, and may try to run or hit out. It only happens if the owner forces it, with his own hands, restraints or the guards, or punishes her into it, and she hates him for it.",
+  free: "She isn't bound to obey. She does what the owner asks if she wants to, and says no if she doesn't.",
 };
 
 const LABEL: Record<Stance, string> = {
@@ -78,17 +78,17 @@ export function obeys(s: SaveState, p: Person): Obeys {
   const pushes = ["eager", "obedient", "reluctant", "free"].includes(stance) && (p.bond.indulged ?? 0) >= 45 && p.bond.weeks_since_cruelty >= 6
     && (assertive || p.persona.conscience < 0.45 || lat !== "slave" || p.bond.resentment > 25);
   const parts = [LINE[stance]];
-  if (flaw && stance !== "hollow") parts.push(`Her flaw: ${flaw.friction}.`);
+  if (flaw && stance !== "hollow") parts.push(`Because of her flaw, ${flaw.friction}.`);
   else if (p.persona.behavior?.flaw && stance !== "hollow") parts.push(`Her flaw (${p.persona.behavior.flaw}) gets in the way of doing what she's told.`);
-  if (pushes) parts.push("She's been indulged for weeks and never disciplined, and she's started pushing her luck: she bargains, sulks, drags her feet and ignores small orders to see what she can get away with.");
-  if (!["hollow", "eager", "free"].includes(stance)) parts.push("Kindness, gifts or a nice word in the scene don't change this; she doesn't come round on her own, and she doesn't enjoy or thank the owner for what she didn't want. The owner decides whether to force it, call the guards, or punish her.");
+  if (pushes) parts.push("She's been indulged for weeks and never disciplined, and she's started pushing her luck. She bargains, sulks, drags her feet and ignores small orders to see what she can get away with.");
+  if (!["hollow", "eager", "free"].includes(stance)) parts.push("Kindness, gifts or a nice word in the scene don't change this. She doesn't come round on her own, and she doesn't enjoy what she didn't want or thank the owner for it. The owner decides whether to force it, call the guards or punish her.");
   return { stance, pushes, line: parts.join(" "), label: pushes ? `${LABEL[stance]}, pushing her luck` : LABEL[stance] };
 }
 
 /** For her card. */
 export function obeysLine(s: SaveState, p: Person): string {
   if (s.player.owned_by === p.id) return "";
-  return `HOW SHE TAKES ORDERS (decided by the game; write her this way): ${obeys(s, p).line} Whether she obeys is decided here; how it sounds is hers: her own words, voice and habits from the rest of her card, never a stock slave's lines. Two slaves who both resist don't sound alike.`;
+  return `HOW SHE TAKES ORDERS. The game decides this, so write her this way. ${obeys(s, p).line} Whether she obeys is decided here, but how it sounds is up to her, in her own words, voice and habits from the rest of her card, and never in a stock slave's lines. Two slaves who both resist don't sound alike.`;
 }
 
 /** Whether an act she's made to do is forced on her. */

@@ -544,7 +544,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
         p.bond.resentment = clamp(p.bond.resentment - 14, 0, 100);
       }
       cool(60); closes = true;
-      line = `You pull out a chair and sit down with ${nm("a")} and ${nm("b")}. It takes them a while to believe you actually want to hear it, and then it all comes out: the long shifts, the cold dormitory, the way one of the guards treats the new girls.\n\nSome of it is fair. They go back to work feeling like someone listened.`;
+      line = `You pull out a chair and sit down with ${nm("a")} and ${nm("b")}. It takes them a while to believe you actually want to hear it, and then it all comes out, about the long shifts, the cold dormitory, and the way one of the guards treats the new girls.\n\nSome of it is fair. They go back to work feeling like someone listened.`;
       break;
     }
     case "talkers:buy": {
@@ -552,7 +552,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       if (a) applyTreatment(a, { kind: "kindness", size: 8, why: "given something, in front of the other one" }, week);
       if (b) { b.bond.resentment = clamp(b.bond.resentment + 12, 0, 100); shove(b.psyche, -0.7, { hard: true }); }
       cool(30);
-      line = `You give ${nm("a")} a room of her own with a real bed. ${nm("b")} gets nothing.\n\nIt works: ${nm("a")} is suddenly much less interested in plotting, and ${nm("b")} is jealous of her friend instead of angry at you.`;
+      line = `You give ${nm("a")} a room of her own with a real bed. ${nm("b")} gets nothing.\n\nIt works. ${nm("a")} is suddenly much less interested in plotting, and ${nm("b")} is jealous of her friend instead of angry at you.`;
       break;
     }
     case "talkers:leave":
@@ -566,7 +566,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       if (q) { applyTreatment(q, { kind: "recognition", size: 12, why: "raised as well, and not quietly" }, week); q.bond.hope = clamp(q.bond.hope + 22, 0, 100); }
       s.arcology.cash -= 6000;
       cool(70); closes = true;
-      line = `You give ${nm("passed")} a promotion too: a better room, a new title, and ¤6,000 of new clothes. She stops leaving the figures upside down.\n\nShe and ${nm("risen")} are polite to each other now, and the house runs better for it.`;
+      line = `You give ${nm("passed")} a promotion too, with a better room, a new title, and ¤6,000 of new clothes. She stops leaving the figures upside down.\n\nShe and ${nm("risen")} are polite to each other now, and the house runs better for it.`;
       break;
     }
     case "favourite:explain": {
@@ -668,7 +668,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
       if (one) applyTreatment(one, { kind: "recognition", size: 8, why: "backed openly" }, week);
       if (other) { applyTreatment(other, { kind: "cruelty", size: 8, why: "lost the owner's support in front of everyone" }, week); }
       cool(65); closes = true;
-      line = `You carry your plate down to the servants\' hall and sit at ${nm("one")}\'s table. The room goes silent.\n\n${nm("other")}\'s table finishes eating without a word. The factions are over: one side won, and the other knows it was you who decided.`;
+      line = `You carry your plate down to the servants\' hall and sit at ${nm("one")}\'s table. The room goes silent.\n\n${nm("other")}\'s table finishes eating without a word. The factions are over. One side won, and the other knows it was you who decided.`;
       break;
     }
     case "fracture:mix": {
@@ -697,7 +697,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
         shove(her.psyche, 1.5);
       }
       cool(70); closes = true;
-      line = `You take ${nm("her")} off everything for a month: no work, no duties, nothing asked of her. For two weeks she mostly sleeps.\n\nIn the third week she asks for a book. It\'s the first thing she\'s wanted in months.`;
+      line = `You take ${nm("her")} off everything for a month, with no work, no duties and nothing asked of her. For two weeks she mostly sleeps.\n\nIn the third week she asks for a book. It\'s the first thing she\'s wanted in months.`;
       break;
     }
     case "gone_quiet:reach": {
@@ -748,7 +748,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
         her.bond.fear = clamp(her.bond.fear - 20, 0, 100);
       }
       cool(75); closes = true;
-      line = `You take the pressure off ${nm("her")}: no punishments, no surprises, and a quiet word when she gets something right. It takes months.\n\nIn the sixth week you reach past her for a pen, and she just hands it to you instead of flinching.`;
+      line = `You take the pressure off ${nm("her")}, with no punishments, no surprises, and a quiet word when she gets something right. It takes months.\n\nIn the sixth week you reach past her for a pen, and she just hands it to you instead of flinching.`;
       break;
     }
     case "watcher:predictable": {
@@ -759,7 +759,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
         her.bond.fear = clamp(her.bond.fear - 9, 0, 100);
       }
       cool(35);
-      line = `You treat ${nm("her")} exactly the same every day: same orders, same tone, same time. At first she keeps testing it, waiting for it to break.\n\nIt doesn\'t. She\'s slowly starting to trust it.`;
+      line = `You treat ${nm("her")} exactly the same every day, with the same orders, the same tone and the same time. At first she keeps testing it, waiting for it to break.\n\nIt doesn\'t. She\'s slowly starting to trust it.`;
       break;
     }
     case "watcher:confirm": {
@@ -847,7 +847,7 @@ export function answerThread(s: SaveState, threadId: string, optionId: string): 
 export function threadBrief(s: SaveState): string {
   const live = liveThreads(s).filter((t) => t.heat > 25);
   if (!live.length) return "";
-  const out: string[] = ["ONGOING SITUATIONS IN THE HOUSEHOLD (background; bring them in only if the action touches them):"];
+  const out: string[] = ["ONGOING SITUATIONS IN THE HOUSEHOLD. This is background, so only bring them in if the action touches them:"];
   for (const t of live) {
     const def = THREAD_BY_KIND[t.kind];
     if (!def) continue;

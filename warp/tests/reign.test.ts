@@ -31,7 +31,7 @@ const adults = (s: SaveState) => Object.values(s.people).filter((p) => p.status 
   const [a, b] = adults(s);
   captureInstructions(s, "Call me Rabi from now on.", [a]);
   check("she keeps what you told her", calledBy(s, a) === "Rabi" && calledBy(s, b) !== "Rabi");
-  check("her card carries it", /STANDING ORDERS[^\n]*calls you "Rabi"/.test(personCard(s, a)) && /SHE CALLS YOU: Rabi/.test(personCard(s, a)), personCard(s, a).split("\n").filter((l) => /STANDING|CALLS/.test(l)));
+  check("her card carries it", /STANDING ORDERS[^\n]*She calls you "Rabi"/.test(personCard(s, a)) && /SHE CALLS YOU: Rabi/.test(personCard(s, a)), personCard(s, a).split("\n").filter((l) => /STANDING|CALLS/.test(l)));
   check("and her own voice uses it, in every register", (["proper", "commanding", "bratty", "crude"] as const).every((reg) => addressFor(s, reg as never, a) === "Rabi") && addressFor(s, "proper" as never, b) !== "Rabi");
   captureInstructions(s, "Everyone, from now on you kneel when I come in.", [a, b]);
   check("an order to everyone is a house rule", houseRules(s).some((r) => /kneel/.test(r.rule)) && /STANDING ORDERS TO THE WHOLE HOUSEHOLD/.test(digest(s)));

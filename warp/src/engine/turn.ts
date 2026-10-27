@@ -74,8 +74,8 @@ export interface TurnResult {
 const MODE_FRAME: Record<ActionMode, (a: string) => string> = {
   do: (a) => `## THE PLAYER'S ACTION\n${a}\nWrite this happening, all the way through, and how the people it involves react.`,
   say: (a) => `## THE PLAYER SAYS\n"${a}"\nWrite how the people it's said to answer and what they do about it. Don't repeat the line back.${didntFollow(a) ? `\n${didntFollow(a)}` : ""}`,
-  think: (a) => `## THE PLAYER IS THINKING (silent; nobody hears it)\n${a}\nUse it to decide what the scene pays attention to. Nobody reacts to it.`,
-  story: (a) => `## DIRECTION FOR THE WRITER (not something that happens in the scene; never quote it)\n${a}`,
+  think: (a) => `## THE PLAYER IS THINKING\nThis is silent, and nobody hears it.\n${a}\nUse it to decide what the scene pays attention to. Nobody reacts to it.`,
+  story: (a) => `## DIRECTION FOR THE WRITER\nThis isn't something that happens in the scene, so never quote it.\n${a}`,
 };
 
 export async function runTurn(
@@ -118,7 +118,7 @@ export async function runTurn(
       prose = coarsen(finishLast(salvage(res.text)));
       tokensIn += res.usage.prompt_tokens; tokensOut += res.usage.completion_tokens; cost += res.usage.cost ?? 0;
     } else {
-      notes.push(`the narrator did not answer (${res.error ?? "unknown"}) — the turn stands as a stage direction`);
+      notes.push(`the narrator did not answer (${res.error ?? "unknown"}), so the turn stands as a stage direction`);
     }
   }
   if (!prose) prose = offlineBeat(s, action, mode);
@@ -128,7 +128,7 @@ export async function runTurn(
   if (modelsAvailable()) {
     const res = await call({
       system: BOOKKEEPER_SYSTEM,
-      user: `${bookkeeperContext(s)}\n\n## THE TURN\nWHAT THE OWNER DID OR SAID (${mode}; "I" here is the owner): ${action}\n\nTHE PROSE ("you" is the owner):\n${prose}`,
+      user: `${bookkeeperContext(s)}\n\n## THE TURN\nWHAT THE OWNER DID OR SAID, as a ${mode} action. Here "I" is the owner.\n${action}\n\nTHE PROSE, where "you" is the owner:\n${prose}`,
       model: s.models.bookkeeper_model,
       fallback: s.models.fallback_model,
       json: true,
@@ -138,7 +138,7 @@ export async function runTurn(
       diff = parseJson<Diff>(res.text);
       tokensIn += res.usage.prompt_tokens; tokensOut += res.usage.completion_tokens; cost += res.usage.cost ?? 0;
       bookkeeping = diff ? (isThin(diff, prose) ? "thin" : "ok") : "failed";
-      if (!diff) notes.push("the bookkeeper returned nothing usable — nobody remembers this turn until it is re-run");
+      if (!diff) notes.push("the bookkeeper returned nothing usable, so nobody remembers this turn until it is re-run");
       if (bookkeeping === "thin") notes.push("the bookkeeper recorded almost nothing despite a substantial turn");
     } else {
       bookkeeping = "failed";
@@ -357,7 +357,7 @@ export function applyDiff(s: SaveState, d: Diff, prose: string, said?: string): 
     const p = s.people[id];
     if (!p) continue;
     if (!showsDeparture(prose, p.name)) {
-      notes.push(`bookkeeping correction: ${p.name} stays — the prose never showed her leave`);
+      notes.push(`bookkeeping correction: ${p.name} stays, because the prose never showed her leave`);
       continue;
     }
     s.scene.present = s.scene.present.filter((x) => x !== id);
@@ -568,7 +568,7 @@ export function noteStock(s: SaveState, prose: string): void {
 
 /** For any writer's prompt: what the last one did that it shouldn't have. */
 export function stockLine(s: SaveState): string {
-  return s.corrections.stock ? `## DON'T WRITE THIS AGAIN\nLast time the writer put this in: "${s.corrections.stock}". It's a stock line; nobody in this game talks like that. Give people something of their own to say, or nothing.` : "";
+  return s.corrections.stock ? `## DON'T WRITE THIS AGAIN\nLast time the writer put this in: "${s.corrections.stock}". It's a stock line, and nobody in this game talks like that. Give people something of their own to say, or nothing.` : "";
 }
 
 /** A sentence of filler body language standing in for the action. Quoted back next turn. */

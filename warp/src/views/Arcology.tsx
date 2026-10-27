@@ -30,7 +30,7 @@ export default function ArcologyView() {
         <Stat label="prosperity" value={Math.round(arc.prosperity)} sub={`population ${arc.population.toLocaleString()}`} />
         <Stat label="security" value={Math.round(arc.security)} sub={`crime ${Math.round(arc.crime)}`} tone={arc.crime > 60 ? "bad" : undefined} />
         <Stat label="ownership" value={`${Math.round(arc.ownership)}%`} sub={`${arc.sectors.filter((s) => s.owner === "you").length} of ${arc.sectors.length} sectors`} />
-        <Stat label="food" value={Math.round(arc.food.stores)} sub={bought ? `eats ${foodEats(save).toLocaleString()}/wk; buying ${Math.round(bought / 8).toLocaleString()} (¤${bought.toLocaleString()}/wk)` : `eats ${foodEats(save).toLocaleString()}/wk${save.menials?.owned ? `, ${(save.menials.owned * 2).toLocaleString()} of it menials` : ""}`} tone={arc.food.stores < 200 ? "warn" : undefined} />
+        <Stat label="food" value={Math.round(arc.food.stores)} sub={bought ? `eats ${foodEats(save).toLocaleString()}/wk, buying ${Math.round(bought / 8).toLocaleString()} (¤${bought.toLocaleString()}/wk)` : `eats ${foodEats(save).toLocaleString()}/wk${save.menials?.owned ? `, ${(save.menials.owned * 2).toLocaleString()} of it menials` : ""}`} tone={arc.food.stores < 200 ? "warn" : undefined} />
       </div>
 
       <SubTabs id="arcology" tabs={[
@@ -199,7 +199,7 @@ export default function ArcologyView() {
                 }} />
             ))}
           </div>
-          <div className="text-[11.5px] dim">Click a sector you do not own to buy it. Cost depends on condition; owning more raises your income and control.</div>
+          <div className="text-[11.5px] dim">Click a sector you do not own to buy it. Cost depends on condition, and owning more raises your income and control.</div>
         </Card>
       </Section>
 

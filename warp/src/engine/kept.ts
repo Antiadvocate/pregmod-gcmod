@@ -105,7 +105,7 @@ export function roomBrief(s: SaveState): string {
   const items = room.items.map((id) => YOUR_ITEM[id]?.name).filter(Boolean);
   const missing = YOUR_ITEMS.filter((x) => x.lets && !room.items.includes(x.id)).map((x) => x.name);
   const last = room.log.slice(-2).map((l) => `week ${l.week}, she ${l.gave ? "gave you" : "took"} ${l.text}`);
-  return `YOUR ROOM, AS SHE KEEPS IT: ${axes.join(", ")}${items.length ? `; you have ${items.join(", ")}` : ""}.${missing.length ? ` You don't have ${missing.join(" or ")}.` : ""}${last.length ? ` Lately: ${last.join("; ")}.` : ""}`;
+  return `YOUR ROOM, AS SHE KEEPS IT: ${axes.join(", ")}${items.length ? `, and you have ${items.join(", ")}` : ""}.${missing.length ? ` You don't have ${missing.join(" or ")}.` : ""}${last.length ? ` Lately: ${last.join("; ")}.` : ""}`;
 }
 
 const AXIS_ORDER: RoomAxis[] = ["bed", "climate", "space", "view", "bath"];

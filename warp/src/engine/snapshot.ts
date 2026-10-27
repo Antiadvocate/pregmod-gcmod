@@ -25,9 +25,9 @@ export function weekSnapshot(s: SaveState, report?: WeekReport | null): string {
   if (lines.length) out.push(`WHAT HAPPENED IN THE ARCOLOGY:\n${lines.join("\n")}`);
 
   const came = Object.values(s.people).filter((p) => p.origin.acquired_week >= week && p.status === "owned");
-  if (came.length) out.push(`NEW IN THE HOUSE: ${came.map((p) => `${p.name} (${p.origin.nationality}, was a ${p.origin.career}; ${p.origin.acquired_how})`).join("; ")}.`);
+  if (came.length) out.push(`NEW IN THE HOUSE: ${came.map((p) => `${p.name} (${p.origin.nationality}, was a ${p.origin.career}, ${p.origin.acquired_how})`).join(", ")}.`);
   const gone = Object.values(s.people).filter((p) => p.exit_week !== undefined && p.exit_week >= week);
-  if (gone.length) out.push(`GONE FROM THE HOUSE: ${gone.map((p) => `${p.name}, ${p.status}${p.exit_note ? ` (${p.exit_note})` : ""}`).join("; ")}.`);
+  if (gone.length) out.push(`GONE FROM THE HOUSE: ${gone.map((p) => `${p.name}, ${p.status}${p.exit_note ? ` (${p.exit_note})` : ""}`).join(", ")}.`);
 
   const laws = lawsOf(s).filter((x) => x.week >= week - 1).map((x) => LAW_BY_ID[x.id]).filter(Boolean);
   if (laws.length) out.push(`NEW LAWS: ${laws.map((l) => `the ${l.name}: "${l.text}"`).join(" | ")}`);
@@ -36,10 +36,10 @@ export function weekSnapshot(s: SaveState, report?: WeekReport | null): string {
   if (talk.length) out.push(`WHAT PEOPLE ARE SAYING: ${talk.map((r) => r.content).join(" | ")}`);
 
   const wars = activeWars(s);
-  if (wars.length) out.push(`AT WAR WITH: ${wars.map((w) => `${w.name} (${w.weeks} weeks, ${w.front > 20 ? "winning" : w.front < -20 ? "losing" : "stalemate"})`).join("; ")}.`);
+  if (wars.length) out.push(`AT WAR WITH: ${wars.map((w) => `${w.name} (${w.weeks} weeks, ${w.front > 20 ? "winning" : w.front < -20 ? "losing" : "stalemate"})`).join(", ")}.`);
 
   const govs = activeGovernors(s);
-  if (govs.length) out.push(`CITIES YOUR WOMEN RUN: ${govs.map((g) => `${g.name}, run by ${s.people[g.person]?.name}${g.problems?.length ? ` (trouble: ${g.problems.map((x) => x.text).join("; ")})` : ""}`).join(" | ")}`);
+  if (govs.length) out.push(`CITIES YOUR WOMEN RUN: ${govs.map((g) => `${g.name}, run by ${s.people[g.person]?.name}${g.problems?.length ? ` (trouble with ${g.problems.map((x) => x.text).join(", ")})` : ""}`).join(" | ")}`);
 
   const done = (s.chronicle ?? []).filter((e) => e.week >= week).slice(-8);
   if (done.length) out.push(`WHAT THE OWNER DID THIS WEEK: ${done.map((e) => e.text.slice(0, 180)).join(" | ")}`);

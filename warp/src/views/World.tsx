@@ -229,7 +229,7 @@ export default function World() {
         </>) },
         { id: "research", label: "Research", render: () => (<>
       <Section title="Research">
-        <p className="text-[12.5px] dim mb-2.5">Paid up front; each runs for some weeks and then works every week after. Some fix what the world is doing to itself. {home.name} reaches {areaLabel(home.radiusKm)}.</p>
+        <p className="text-[12.5px] dim mb-2.5">Paid up front. Each runs for some weeks and then works every week after. Some fix what the world is doing to itself. {home.name} reaches {areaLabel(home.radiusKm)}.</p>
         <ResearchGrid />
       </Section>
         </>) },

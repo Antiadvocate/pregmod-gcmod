@@ -231,15 +231,15 @@ export function dominion(s: SaveState): { share: number; title: string; yours: n
 export type Move = "envoy" | "gift" | "pact" | "alliance" | "tribute" | "ultimatum" | "spy" | "coup" | "debt";
 
 export const MOVES: Record<Move, { label: string; note: string }> = {
-  envoy: { label: "Send an envoy", note: "warms them; better with Diplomacy" },
+  envoy: { label: "Send an envoy", note: "warms them, and works better with Diplomacy" },
   gift: { label: "Send a lavish gift", note: "warms them a lot" },
-  pact: { label: "Offer a trade pact", note: "needs them friendly; money both ways, every week" },
-  alliance: { label: "Propose an alliance", note: "needs them close and a pact; they fight beside you" },
-  tribute: { label: "Demand tribute", note: "needs twice their strength; they pay, or they hate you for asking" },
-  ultimatum: { label: "Ultimatum: submit or else", note: "needs three times their strength; they kneel, or it's war" },
-  spy: { label: "Run an operation against them", note: "needs your intelligence service; weakens them" },
-  coup: { label: "Back a coup", note: "needs intelligence and special forces; a puppet, or a scandal" },
-  debt: { label: "Buy up their debt", note: "Old World states only; needs your debt desk" },
+  pact: { label: "Offer a trade pact", note: "needs them friendly, and brings money both ways every week" },
+  alliance: { label: "Propose an alliance", note: "needs them close and a pact, and then they fight beside you" },
+  tribute: { label: "Demand tribute", note: "needs twice their strength, and they pay, or hate you for asking" },
+  ultimatum: { label: "Ultimatum: submit or else", note: "needs three times their strength, and they kneel, or it's war" },
+  spy: { label: "Run an operation against them", note: "needs your intelligence service, and weakens them" },
+  coup: { label: "Back a coup", note: "needs intelligence and special forces, and gets you a puppet, or a scandal" },
+  debt: { label: "Buy up their debt", note: "only for Old World states, and needs your debt desk" },
 };
 
 export function moveCost(s: SaveState, p: PowerView, m: Move): number {
@@ -257,15 +257,15 @@ export function moveCost(s: SaveState, p: PowerView, m: Move): number {
 export function canMove(s: SaveState, p: PowerView, m: Move): string | null {
   if (p.rec.status === "conquered") return "it's yours";
   if (p.atWar && m !== "envoy") return "you're at war with them";
-  if (p.rec.last_you !== undefined && s.arcology.week - p.rec.last_you < 3) return "you've sent them something recently; wait a few weeks";
+  if (p.rec.last_you !== undefined && s.arcology.week - p.rec.last_you < 3) return "you've sent them something recently, so wait a few weeks";
   const mine = forces(s).total;
   const cost = moveCost(s, p, m);
   if (cost && s.arcology.cash < cost) return `costs ¤${cost.toLocaleString()}`;
   switch (m) {
     case "pact": return p.rec.pact ? "you have one" : p.attitude < 25 ? "they need to be friendly first (25+)" : null;
     case "alliance": return p.rec.status === "allied" ? "already allied" : !p.rec.pact ? "needs a trade pact first" : p.attitude < 55 ? "they need to be close (55+)" : null;
-    case "tribute": return p.rec.status === "vassal" ? "they already pay" : mine < p.strength * 2 ? `needs twice their strength (${p.strength * 2}; you have ${mine})` : null;
-    case "ultimatum": return p.rec.status === "vassal" ? "they already answer to you" : mine < p.strength * 3 ? `needs three times their strength (${p.strength * 3}; you have ${mine})` : null;
+    case "tribute": return p.rec.status === "vassal" ? "they already pay" : mine < p.strength * 2 ? `needs twice their strength (${p.strength * 2}, and you have ${mine})` : null;
+    case "ultimatum": return p.rec.status === "vassal" ? "they already answer to you" : mine < p.strength * 3 ? `needs three times their strength (${p.strength * 3}, and you have ${mine})` : null;
     case "spy": return has(s, "intel") ? null : "needs a private intelligence service";
     case "coup": return !has(s, "intel") || !has(s, "special") ? "needs intelligence and special forces" : p.rec.status === "vassal" ? "they already answer to you" : null;
     case "debt": return p.kind !== "region" ? "only Old World states sell their debt" : !has(s, "bank") ? "needs a sovereign debt desk" : p.rec.status === "vassal" ? "you already own them" : null;
@@ -421,7 +421,7 @@ export const POWER_EVENTS: EventDef[] = [
     id: "assassins", severity: "major", endogenous: false, candidates: () => [], weight: () => 0,
     seed: (s) => `Your security chief wakes you at four in the morning. Two men were caught in the service shafts under the penthouse with rifles and floor plans, and one of them has talked: ${aboutOf(s, "assassins").name} sent them. They wanted you dead before the end of the month.\n\nThe second man hasn't said anything yet.`,
     options: [
-      { id: "public", label: "Parade them on every feed, and name who sent them", resolve: (s) => { const p = aboutOf(s, "assassins"); s.arcology.rep += 400; shift(s, p.id, -10); for (const o of powers(s)) if (o.id !== p.id) shift(s, o.id, -3 * (o.attitude < 0 ? 0 : 1)); return `The confessions run on every feed in the Free Cities. ${p.name} denies all of it and nobody believes them. Your own people rally to you; the world gets a little more nervous.`; } },
+      { id: "public", label: "Parade them on every feed, and name who sent them", resolve: (s) => { const p = aboutOf(s, "assassins"); s.arcology.rep += 400; shift(s, p.id, -10); for (const o of powers(s)) if (o.id !== p.id) shift(s, o.id, -3 * (o.attitude < 0 ? 0 : 1)); return `The confessions run on every feed in the Free Cities. ${p.name} denies all of it and nobody believes them. Your own people rally to you, and the world gets a little more nervous.`; } },
       { id: "return", label: "Send them back where they came from, in pieces", resolve: (s) => { const p = aboutOf(s, "assassins"); p.rec.grudge = clamp(p.rec.grudge + 20, 0, 100); s.arcology.security = clamp(s.arcology.security + 6, 0, 100); return `You send the bodies back to ${p.name} in a refrigerated container, with your compliments. They understand the message. So does everyone who hears about it.`; } },
       { id: "turn", label: "Turn the quiet one, and send him home", resolve: (s) => { const p = aboutOf(s, "assassins"); p.rec.hurt += Math.round(p.strength * 0.1); return `The quiet one goes home a rich man and your agent. For months you know what ${p.name} is planning before its own ministers do.`; } },
     ],
@@ -430,14 +430,14 @@ export const POWER_EVENTS: EventDef[] = [
     id: "terror", severity: "major", endogenous: false, candidates: () => [], weight: () => 0,
     seed: (s) => `A bomb went off on the concourse at the evening rush. Eleven dead, forty wounded, and the fountain is a crater. The group that claimed it is a front, and your analysts are certain who pays for it: ${aboutOf(s, "terror").name}.\n\nThe city is waiting to see what you do.`,
     options: [
-      { id: "lockdown", label: "Lock the city down and hunt the cell", resolve: (s) => { s.arcology.security = clamp(s.arcology.security + 10, 0, 100); s.arcology.prosperity = clamp(s.arcology.prosperity - 6, 0, 200); s.arcology.crime = clamp(s.arcology.crime - 8, 0, 100); return `Checkpoints on every level for two weeks. Your people find the cell in a flat in the residential block and none of them are taken alive. Trade suffers; nobody complains out loud.`; } },
-      { id: "strike", label: "Hit back at them, today", note: "missiles or drones, if you have them", resolve: (s) => { const p = aboutOf(s, "terror"); const f = forces(s); const hit = f.by.missile + f.by.air; p.rec.hurt += Math.round(Math.min(p.strength * 0.3, hit * 0.5 + 5)); shift(s, p.id, -15); s.arcology.rep += hit > 20 ? 300 : -100; return hit > 20 ? `Your answer lands on ${p.name} before the funerals are over: their intelligence headquarters, flattened on live television. Your citizens cheer it.` : `You don't have the reach to hit them properly. What you can send does little, and everyone sees how little.`; } },
+      { id: "lockdown", label: "Lock the city down and hunt the cell", resolve: (s) => { s.arcology.security = clamp(s.arcology.security + 10, 0, 100); s.arcology.prosperity = clamp(s.arcology.prosperity - 6, 0, 200); s.arcology.crime = clamp(s.arcology.crime - 8, 0, 100); return `Checkpoints on every level for two weeks. Your people find the cell in a flat in the residential block and none of them are taken alive. Trade suffers, but nobody complains out loud.`; } },
+      { id: "strike", label: "Hit back at them, today", note: "missiles or drones, if you have them", resolve: (s) => { const p = aboutOf(s, "terror"); const f = forces(s); const hit = f.by.missile + f.by.air; p.rec.hurt += Math.round(Math.min(p.strength * 0.3, hit * 0.5 + 5)); shift(s, p.id, -15); s.arcology.rep += hit > 20 ? 300 : -100; return hit > 20 ? `Your answer lands on ${p.name} before the funerals are over, when their intelligence headquarters is flattened on live television. Your citizens cheer it.` : `You don't have the reach to hit them properly. What you can send does little, and everyone sees how little.`; } },
       { id: "mourn", label: "Mourn them in public, and say nothing about who", resolve: (s) => { s.arcology.public_standing = clamp(s.arcology.public_standing + 2, -10, 10); s.arcology.prosperity = clamp(s.arcology.prosperity - 3, 0, 200); return `You stand at the crater in front of the cameras and read every name. The city loves you for it. ${aboutOf(s, "terror").name} decides you're soft.`; } },
     ],
   },
   {
     id: "sabotage", severity: "notable", endogenous: false, candidates: () => [], weight: () => 0,
-    seed: (s) => `A fire in the power plant's control room, and another, the same night, in the water works. Not accidents: the same accelerant in both, and a trail that leads to agents of ${aboutOf(s, "sabotage").name}. Half the arcology was dark for six hours.`,
+    seed: (s) => `There was a fire in the power plant's control room, and another the same night in the water works. They weren't accidents. The same accelerant was used in both, and there's a trail that leads to agents of ${aboutOf(s, "sabotage").name}. Half the arcology was dark for six hours.`,
     options: [
       { id: "repair", label: "Pay for the repairs and harden everything", note: "¤40,000", resolve: (s) => { s.arcology.cash -= 40_000; s.arcology.security = clamp(s.arcology.security + 5, 0, 100); return `Repairs, new locks, new guards, new background checks on everyone who works on the plant. It costs a fortune and it will not happen again in the same way.`; } },
       { id: "expel", label: "Expel every citizen of theirs from the arcology", resolve: (s) => { const p = aboutOf(s, "sabotage"); shift(s, p.id, -15); s.arcology.population = Math.max(200, Math.round(s.arcology.population * 0.98)); s.arcology.security = clamp(s.arcology.security + 4, 0, 100); return `Everyone holding ${p.name}'s papers is put on buses to the border within the week. Some of them had lived here for years.`; } },
@@ -445,7 +445,7 @@ export const POWER_EVENTS: EventDef[] = [
   },
   {
     id: "envoy_demand", severity: "notable", endogenous: false, candidates: () => [], weight: () => 0,
-    seed: (s) => { const p = aboutOf(s, "envoy_demand"); return `${p.name} has sent an envoy: it wants ¤${Math.round(15_000 + p.strength * 150).toLocaleString()} for shipping lanes it says are its own, and an answer today.`; },
+    seed: (s) => { const p = aboutOf(s, "envoy_demand"); return `${p.name} has sent an envoy. It wants ¤${Math.round(15_000 + p.strength * 150).toLocaleString()} for shipping lanes it says are its own, and an answer today.`; },
     options: [
       { id: "pay", label: "Pay it", resolve: (s) => { const p = aboutOf(s, "envoy_demand"); s.arcology.cash -= Math.round(15_000 + p.strength * 150); shift(s, p.id, 12); p.rec.no_fee_until = s.arcology.week + 20; return `You pay. The envoy thanks you, and ${p.name} treats you a little better for a while. Others will have heard you pay.`; } },
       { id: "counter", label: "Talk her down", note: "Diplomacy", resolve: (s) => { const p = aboutOf(s, "envoy_demand"); const good = (s.player.skills.diplomacy ?? 0) > 40; if (good) { shift(s, p.id, 10); return `By dinner she's agreed it was a misunderstanding, and by midnight you've agreed to a joint patrol of the lanes instead. She leaves impressed.`; } shift(s, p.id, -8); return `You try to talk her round and it goes badly. She leaves early, and ${p.name} remembers the tone.`; } },
@@ -462,7 +462,7 @@ export const POWER_EVENTS: EventDef[] = [
   },
   {
     id: "first_contact", severity: "minor", endogenous: false, candidates: () => [], weight: () => 0,
-    seed: (s) => { const p = aboutOf(s, "first_contact"); return `${p.name} has noticed you. A letter comes from its government, polite and careful and saying very little: they'd like to know what kind of neighbour you mean to be.`; },
+    seed: (s) => { const p = aboutOf(s, "first_contact"); return `${p.name} has noticed you. A letter comes from its government, polite and careful and saying very little. They'd like to know what kind of neighbour you mean to be.`; },
     options: [
       { id: "warm", label: "Answer warmly, and invite them", resolve: (s) => { const p = aboutOf(s, "first_contact"); shift(s, p.id, 12); p.rec.known = clamp((p.rec.known ?? 0) + 15, 0, 100); return `You write back yourself, and ask them to visit. ${p.name} reads it as a good sign, and starts paying attention to you.`; } },
       { id: "cool", label: "Answer coolly, and let them wonder", resolve: (s) => { const p = aboutOf(s, "first_contact"); p.rec.known = clamp((p.rec.known ?? 0) + 10, 0, 100); p.rec.grudge = Math.max(0, p.rec.grudge - 2); return `Two lines, correct and nothing more. ${p.name} files you as someone to be careful with.`; } },
@@ -471,7 +471,7 @@ export const POWER_EVENTS: EventDef[] = [
   },
   {
     id: "aid_ask", severity: "notable", endogenous: false, candidates: () => [], weight: () => 0,
-    seed: (s) => { const p = aboutOf(s, "aid_ask"); const n = p.rec.need; return `${p.name} is asking for help: it needs ${n?.what ?? "money"}. ${n?.why ?? ""} ${(p.rec.known ?? 0) < 40 ? "They don't know you, and the request is careful, almost apologetic." : "They know who they're asking."}`.trim(); },
+    seed: (s) => { const p = aboutOf(s, "aid_ask"); const n = p.rec.need; return `${p.name} is asking for help, because it needs ${n?.what ?? "money"}. ${n?.why ?? ""} ${(p.rec.known ?? 0) < 40 ? "They don't know you, and the request is careful, almost apologetic." : "They know who they're asking."}`.trim(); },
     options: [
       { id: "give", label: "Send what they need", note: "it costs you", resolve: (s) => {
         const p = aboutOf(s, "aid_ask"); const n = p.rec.need; const cost = Math.round(6_000 + p.strength * 150);
@@ -485,7 +485,7 @@ export const POWER_EVENTS: EventDef[] = [
   },
   {
     id: "protection_ask", severity: "notable", endogenous: false, candidates: () => [], weight: () => 0,
-    seed: (s) => { const p = aboutOf(s, "protection_ask"); return `${p.name}'s envoy asks to see you, and doesn't sit until you tell her to. Her city is small and its neighbours aren't, and she's here to ask for your protection: your name over theirs, your ships in their harbour once in a while. They'll pay ¤${Math.round(p.strength * 90).toLocaleString()} a week for it, and answer to you.`; },
+    seed: (s) => { const p = aboutOf(s, "protection_ask"); return `${p.name}'s envoy asks to see you, and doesn't sit until you tell her to. Her city is small and its neighbours aren't, and she's here to ask for your protection, meaning your name over theirs and your ships in their harbour once in a while. They'll pay ¤${Math.round(p.strength * 90).toLocaleString()} a week for it, and answer to you.`; },
     options: [
       { id: "take", label: "Take them under your wing, and their money", resolve: (s) => { const p = aboutOf(s, "protection_ask"); p.rec.status = "vassal"; p.rec.since = s.arcology.week; p.rec.pays = Math.round(p.strength * 90); shift(s, p.id, 20); s.arcology.rep += 150; return `${p.name} is yours now, in all but the flag. The first payment arrives before the envoy is home.`; } },
       { id: "name", label: "Lend them your name, for nothing", resolve: (s) => { const p = aboutOf(s, "protection_ask"); p.rec.pact = true; shift(s, p.id, 30); return `You tell her to keep the money. ${p.name} will remember this for a generation, and its neighbours already know.`; } },
@@ -494,7 +494,7 @@ export const POWER_EVENTS: EventDef[] = [
   },
   {
     id: "trade_offer", severity: "minor", endogenous: false, candidates: () => [], weight: () => 0,
-    seed: (s) => `${aboutOf(s, "trade_offer").name} proposes a trade pact: tariffs dropped on both sides, a joint shipping office, and a regular summit. Their trade minister is in the lobby with the papers ready to sign.`,
+    seed: (s) => `${aboutOf(s, "trade_offer").name} proposes a trade pact, with tariffs dropped on both sides, a joint shipping office, and a regular summit. Their trade minister is in the lobby with the papers ready to sign.`,
     options: [
       { id: "sign", label: "Sign it", resolve: (s) => { const p = aboutOf(s, "trade_offer"); p.rec.pact = true; shift(s, p.id, 8); return `You sign. Within a month their cargo is on your docks every day, and your goods are in their shops. Both sides are richer for it.`; } },
       { id: "decline", label: "Decline, politely", resolve: (s) => { const p = aboutOf(s, "trade_offer"); shift(s, p.id, -4); return `You decline, with a dinner and a gift to soften it. ${p.name} takes it well enough, and keeps the offer open.`; } },
@@ -502,7 +502,7 @@ export const POWER_EVENTS: EventDef[] = [
   },
   {
     id: "summit", severity: "minor", endogenous: false, candidates: () => [], weight: () => 0,
-    seed: (s) => `${aboutOf(s, "summit").name} invites you to a summit: three days, its leader and yours, an island resort with no press. Everyone will want something; nobody will say so on the first day.`,
+    seed: (s) => `${aboutOf(s, "summit").name} invites you to a summit, three days at an island resort with no press, just its leader and you. Everyone will want something, but nobody will say so on the first day.`,
     options: [
       { id: "go", label: "Go yourself", resolve: (s) => { const p = aboutOf(s, "summit"); shift(s, p.id, 12); const now = s.player.skills.diplomacy ?? 0; s.player.skills.diplomacy = clamp(now + 3 * (1 - now / 130), 0, 100); return `Three days of long dinners and short meetings. You come back with an understanding, a better sense of how these people think, and a friend in ${p.name}'s cabinet.`; } },
       { id: "send", label: "Send someone in your place", resolve: (s) => { const p = aboutOf(s, "summit"); shift(s, p.id, 3); return `Your deputy goes in your place. It's fine. ${p.name} notices that it isn't you.`; } },
@@ -510,7 +510,7 @@ export const POWER_EVENTS: EventDef[] = [
   },
   {
     id: "alliance_offer", severity: "notable", endogenous: false, candidates: () => [], weight: () => 0,
-    seed: (s) => `${aboutOf(s, "alliance_offer").name} wants more than trade. Its leader proposes an alliance: mutual defence, shared intelligence, and their forces beside yours in any war you fight. To seal it, they're sending a gift that's customary between powers here: two of the best slaves in their city.`,
+    seed: (s) => `${aboutOf(s, "alliance_offer").name} wants more than trade. Its leader proposes an alliance, with mutual defence, shared intelligence, and their forces beside yours in any war you fight. To seal it, they're sending a gift that's customary between powers here, which is two of the best slaves in their city.`,
     options: [
       { id: "accept", label: "Accept the alliance, and the gift", resolve: (s) => { const p = aboutOf(s, "alliance_offer"); p.rec.status = "allied"; p.rec.pact = true; p.rec.since = s.arcology.week; const who = gift(s, 2, `a gift from ${p.name} to seal your alliance`); return `You accept. ${p.name} is your ally now, and ${who.join(" and ")} arrive the next day with the treaty papers, kneeling in the lobby.`; } },
       { id: "gift_only", label: "Take the gift, not the alliance", resolve: (s) => { const p = aboutOf(s, "alliance_offer"); shift(s, p.id, -15); const who = gift(s, 2, `a gift from ${p.name}`); return `You keep ${who.join(" and ")} and send the treaty back unsigned. ${p.name} won't make the offer again soon.`; } },
@@ -519,7 +519,7 @@ export const POWER_EVENTS: EventDef[] = [
   },
   {
     id: "ally_gift", severity: "minor", endogenous: false, candidates: () => [], weight: () => 0,
-    seed: (s) => `${aboutOf(s, "ally_gift").name}, your ally, asks for your help: a rival is massing on its border and it wants your forces seen standing beside it. In return, its leader offers a share of the reconstruction contracts when it's over.`,
+    seed: (s) => `${aboutOf(s, "ally_gift").name}, your ally, asks for your help, because a rival is massing on its border and it wants your forces seen standing beside it. In return, its leader offers a share of the reconstruction contracts when it's over.`,
     options: [
       { id: "help", label: "Send forces", resolve: (s) => { const p = aboutOf(s, "ally_gift"); const e = empireOf(s); e.readiness = clamp(e.readiness - 15, 0, 100); shift(s, p.id, 12); s.arcology.cash += Math.round(20_000 + p.strength * 200); return `Your forces stand on their border for a month. The rival thinks better of it. The contracts come through, and ${p.name} won't forget who turned up.`; } },
       { id: "refuse", label: "Stay out of it", resolve: (s) => { const p = aboutOf(s, "ally_gift"); shift(s, p.id, -20); return `You stay out. ${p.name} handles it alone, barely, and asks itself what the alliance is for.`; } },

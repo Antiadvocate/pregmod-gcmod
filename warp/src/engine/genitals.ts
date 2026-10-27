@@ -106,10 +106,10 @@ function scrotumLine(p: Person): string {
   const b = p.body.balls ?? 0;
   const sc = p.body.scrotum ?? b;
   if (!b) return "";
-  if (sc === 0) return "Her testicles are internal; there is no scrotum.";
+  if (sc === 0) return "Her testicles are internal, so there is no scrotum.";
   const fit = sc - b;
   if (b >= 20) {
-    if (fit < -1) return "Her scrotum is agonizingly overfilled and stretched taut; she must be in constant pain.";
+    if (fit < -1) return "Her scrotum is agonizingly overfilled and stretched taut, and she must be in constant pain.";
     if (fit < 0) return "Her scrotum is so overfilled that every vein shows.";
     return "Her scrotum has stretched to hold them, and they hang heavily, brushing her knees.";
   }
@@ -147,10 +147,10 @@ export function mobility(p: Person): { level: 0 | 1 | 2 | 3; note: string } {
   const worst = Math.max(b >= 50 ? 3 : b >= 37 ? 2 : b >= 20 ? 1 : 0, d >= 30 ? 3 : d >= 20 ? 2 : d >= 15 ? 1 : 0);
   const clipped = p.body.feet?.heels_clipped ? 1 : 0;
   const level = Math.min(3, Math.max(worst, clipped)) as 0 | 1 | 2 | 3;
-  const note = level === 3 ? "she can't walk at all; she has to be carried or wheeled around"
+  const note = level === 3 ? "she can't walk at all, and has to be carried or wheeled around"
     : level === 2 ? "she can barely walk and waddles slowly"
     : worst === 1 ? "her size makes walking awkward"
-    : clipped ? "her tendons are clipped; she walks only in heels, or crawls"
+    : clipped ? "her tendons are clipped, so she walks only in heels, or crawls"
     : "";
   return { level, note };
 }
@@ -173,17 +173,17 @@ export function describeGenitals(p: Person): string {
     out.push(`${has(b.dick) ? "Under it hang" : "She has"} ${ballsWord(b.balls)} balls, each about ${ballsCM(b.balls)}cm across. ${scrotumLine(p)}`.trim());
     out.push(`When she cums it's ${cumWord(p)}.`);
   } else if (has(b.dick)) {
-    out.push(b.prostate ? "She has no balls; when she cums she dribbles prostate fluid." : "She has no balls, and cums nothing.");
+    out.push(b.prostate ? "She has no balls, so when she cums she dribbles prostate fluid." : "She has no balls, and cums nothing.");
   }
   if (b.vagina !== null) {
     out.push(`${has(b.dick) ? "Below that she has" : "She has"} a ${vaginaWord(b.vagina, b.hymen)} pussy with ${labiaWord(b.labia)} labia and a ${clitWord(b.clit)} clit${b.vagina_lube >= 2 ? "; she gets very wet" : b.vagina_lube === 0 ? "; she gets dry" : ""}.`);
   }
-  if (!has(b.dick) && b.vagina === null) out.push("She is a null: smooth and featureless between the legs, with only a urethra.");
+  if (!has(b.dick) && b.vagina === null) out.push("She is a null, smooth and featureless between the legs, with only a urethra.");
   out.push(`Her asshole is ${anusWord(b.anus)}.`);
   // Where she can carry, so nobody writes a pregnancy she can't have.
   const u = p.womb.uterus ?? (b.vagina !== null ? "natal" : "none");
-  if (u === "anal") out.push("She has an implanted womb that opens into her rectum: she can be bred through her ass.");
-  else if (u === "none" && b.vagina !== null) out.push("Her pussy was built by a surgeon; there is no womb behind it and she cannot get pregnant.");
+  if (u === "anal") out.push("She has an implanted womb that opens into her rectum, so she can be bred through her ass.");
+  else if (u === "none" && b.vagina !== null) out.push("Her pussy was built by a surgeon. There is no womb behind it, and she cannot get pregnant.");
   else if (u === "none") out.push("She has no womb and cannot get pregnant.");
   const locked = [p.chastity.penis ? "cock" : "", p.chastity.vagina ? "pussy" : "", p.chastity.anus ? "ass" : ""].filter(Boolean);
   if (locked.length) out.push(`Her ${locked.join(" and ")} ${locked.length > 1 ? "are" : "is"} locked in chastity.`);
@@ -265,8 +265,8 @@ export function describeFeet(p: Person): string {
   out.push(`${shape} Her feet are ${f.width === "narrow" ? "narrow" : f.width === "wide" ? "wide across the toes" : "of average width"}.`);
   out.push(f.toenails === "bare" ? "Her toenails are unpainted." : `Her toenails are painted ${f.toenails}.`);
   if (f.jewelry.length) out.push(`She wears ${f.jewelry.join(" and ")}.`);
-  out.push(["She isn't ticklish.", "She's a little ticklish.", "She's very ticklish.", "She's hopelessly ticklish; touching her soles reduces her to squealing."][f.ticklish]);
-  if (f.heels_clipped) out.push("Her Achilles tendons have been clipped: she can't stand flat, and walks only in heels or crawls on all fours.");
+  out.push(["She isn't ticklish.", "She's a little ticklish.", "She's very ticklish.", "She's hopelessly ticklish, and touching her soles reduces her to squealing."][f.ticklish]);
+  if (f.heels_clipped) out.push("Her Achilles tendons have been clipped, so she can't stand flat and walks only in heels or crawls on all fours.");
   out.push(dirtWords(soleDirt(p)));
   return out.join(" ");
 }
@@ -319,13 +319,13 @@ export function anatomyLock(p: Person): string {
   const b = p.body;
   const hasCock = has(b.dick), hasPussy = b.vagina !== null;
   const out: string[] = [];
-  out.push(`She has: ${[hasCock ? "a cock" : "", has(b.balls) ? "balls" : "", hasPussy ? "a pussy" : "", "an ass", b.boobs > 150 ? "breasts" : "a flat chest"].filter(Boolean).join(", ")}.`);
+  out.push(`She has ${[hasCock ? "a cock" : "", has(b.balls) ? "balls" : "", hasPussy ? "a pussy" : "", "an ass", b.boobs > 150 ? "breasts" : "a flat chest"].filter(Boolean).join(", ")}.`);
   const not: string[] = [];
-  if (!hasPussy) not.push("a pussy, cunt, clit, labia or vagina (never write one; she doesn't get wet, she " + (hasCock ? "gets hard and leaks precum" : "flushes and trembles") + ")");
+  if (!hasPussy) not.push("a pussy, cunt, clit, labia or vagina, so never write one. She doesn't get wet. She " + (hasCock ? "gets hard and leaks precum instead" : "flushes and trembles instead"));
   if (!hasCock) not.push("a cock");
   if (!has(b.balls) && hasCock) not.push("balls");
-  if (not.length) out.push(`She does NOT have ${not.join("; ")}.`);
-  if (hasCock) { const e = erectionWhy(p); if (e.state !== "full") out.push(`Her cock ${e.state === "partial" ? "only gets half-hard" : "stays soft"}: ${e.why}.`); }
+  if (not.length) out.push(`She does NOT have ${not.join(". She does NOT have ")}.`);
+  if (hasCock) { const e = erectionWhy(p); if (e.state !== "full") out.push(`Her cock ${e.state === "partial" ? "only gets half-hard" : "stays soft"}, because ${e.why}.`); }
   return out.join(" ");
 }
 

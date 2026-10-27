@@ -91,7 +91,7 @@ export function canDo(p: Person, act: ActDef, s?: SaveState): string | null {
       case "clit": if (p.body.vagina === null || p.body.clit < 3) return "her clit isn't big enough"; if (p.chastity.vagina) return "she is locked"; break;
       case "caged": if (!p.body.dick || !p.chastity.penis) return "her cock isn't caged"; break;
       case "ticklish": if (feetOf(p).ticklish === 0) return "she isn't ticklish"; break;
-      case "standing": if (feetOf(p).heels_clipped) return "her tendons are clipped; she can't stand flat"; if (mobility(p).level >= 2) return "she can't stand under her own weight"; break;
+      case "standing": if (feetOf(p).heels_clipped) return "her tendons are clipped, so she can't stand flat"; if (mobility(p).level >= 2) return "she can't stand under her own weight"; break;
     }
   }
   if (sane(p.health.recovery_weeks) > 0 && act.group !== "tenderness") return s ? `she is ${recoveryNote(s, p)}` : "she is recovering from surgery";
@@ -114,13 +114,13 @@ export function affinity(p: Person, act: ActDef): { score: number; why: string }
     // has been made to do it twice, and that is the road to converting it.
     const worn = clamp((p.persona.flaw?.worn ?? 0) / 120, 0, 0.75);
     score -= 1 - worn;
-    why = `${flaw.id} — ${flaw.note}`;
+    why = `it's her flaw (${flaw.id}). ${flaw.note}`;
   }
 
   const quirk = p.persona.quirk ? QUIRK_BY_ID[p.persona.quirk.id] : undefined;
   if (quirk && (quirk.acts.includes("anything") || act.tags.some((t) => quirk.acts.includes(t)))) {
     score += 0.5;
-    why = why || `${quirk.id} — ${quirk.note}`;
+    why = why || `it's her quirk (${quirk.id}). ${quirk.note}`;
   }
 
   for (const f of p.persona.fetishes) {
@@ -128,7 +128,7 @@ export function affinity(p: Person, act: ActDef): { score: number; why: string }
     if (!def) continue;
     if (act.tags.some((t) => def.acts.includes(t)) || def.acts.includes(act.id)) {
       score += (f.strength / 100) * (p.persona.paraphilia === def.becomes ? 1.4 : 1);
-      why = `${def.name} — ${def.note}`;
+      why = `it's her ${def.name} fetish. ${def.note}`;
     }
   }
 
@@ -281,7 +281,7 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
   const mem = s.memory[p.id];
   if (mem) {
     if (first) {
-      memoryLine = `the first time — ${act.what}`;
+      memoryLine = `the first time, ${act.what}`;
       remember(mem, { content: memoryLine, week, importance: landing === "hated" ? 9 : 6, charge: landing === "hated" ? "sharp" : landing === "wanted" ? "bright" : "dull", core: landing === "hated" || landing === "wanted", where: s.scene.location });
     } else if (landing === "hated" || landing === "wanted" || act.group === "tenderness") {
       memoryLine = `${act.what}${landing === "hated" ? ", and she hasn't forgiven it" : ""}`;
@@ -329,29 +329,29 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
   const times = p.acts?.[out.act] ?? 1;
   const lines: string[] = [];
   lines.push(`## THE PLAYER'S ACTION: ${act.name.toUpperCase()} (${p.name})`);
-  lines.push(`What that means: ${act.what}.`);
+  lines.push(`This means ${act.what}.`);
   if (out.believers) lines.push(`The arcology holds slaves' feet sacred. ${out.believers} She knows it too, and it shows in how she takes it.`);
   lines.push(out.first ? `This is the first time you have done this with her.` : `You have done this with her ${times} time${times === 1 ? "" : "s"} before.`);
   lines.push(act.receives
-    ? `WHO DOES WHAT: you do this TO ${p.name}. She is on the receiving end and you are serving her. She does not do it to you.`
+    ? `WHO DOES WHAT. You do this TO ${p.name}. She is on the receiving end and you are serving her. She does not do it to you.`
     : act.group === "hers" || act.tags.includes("domination")
-      ? `WHO DOES WHAT: ${p.name} is the active one here; she does this to you.`
-      : `WHO DOES WHAT: you do this to ${p.name}, or have her do it for you, exactly as described above.`);
+      ? `WHO DOES WHAT. ${p.name} is the active one here, and she does this to you.`
+      : `WHO DOES WHAT. You do this to ${p.name}, or have her do it for you, exactly as described above.`);
   lines.push(`Her genitals and feet are on her card under BETWEEN HER LEGS and FEET. Use exactly what is there.`);
-  lines.push(`Write the owner doing it in their own manner (WHO THE OWNER IS), and her as the power between you really stands (THE POWER BETWEEN YOU on her card): however she takes it based on her character, age, personality, an owned slave shows it the way a slave would, not by telling her owner off.`);
+  lines.push(`Write the owner doing it in their own manner (see WHO THE OWNER IS), and write her as the power between you really stands (see THE POWER BETWEEN YOU on her card). However she takes it, given her character, age and personality, an owned slave shows it the way a slave would, and not by telling her owner off.`);
   lines.push(`Write this act happening with ${p.name}, from start to finish. It is the whole scene. Do not write a scene about something else.`);
   lines.push(``);
-  lines.push(`## HOW SHE TAKES IT (decided by the game; write it this way)`);
-  if (out.stance) lines.push(`${OBEY_ACT[out.stance]} How that comes out is hers: in her own voice, words and habits from her card, not a stock slave's.`);
+  lines.push(`## HOW SHE TAKES IT\nThe game decides this, so write it this way.`);
+  if (out.stance) lines.push(`${OBEY_ACT[out.stance]} How that comes out is up to her, in her own voice, words and habits from her card, and not in a stock slave's.`);
   const skill = actSkillLine(p, out.act);
   if (skill) lines.push(skill);
   const want = actDesireLine(s, p, out.act);
   if (want) lines.push(want);
   if (out.strain) {
-    lines.push(`HOW IT FITS (fact): ${fitWords(out.strain.fit, ownerSize(s).what, p)}`);
-    if (out.strain.after) lines.push(`WHAT IT DOES TO HER (fact; show it, and show it afterwards): ${out.strain.after}.`);
+    lines.push(`HOW IT FITS, which is a fact: ${fitWords(out.strain.fit, ownerSize(s).what, p)}`);
+    if (out.strain.after) lines.push(`WHAT IT DOES TO HER: ${out.strain.after}. This is a fact, so show it, and show it afterwards too.`);
   }
-  const because = out.because.replace(/[.\s]+$/, "");
+  const because = out.because.replace(/[.\s]+$/, "").replace(/^./, (c) => c.toUpperCase());
   switch (out.landing) {
     case "wanted": lines.push(`She loves it. ${because}. Say so, and show her enjoying it.`); break;
     case "willing": lines.push(`She's happy enough to go along with it.`); break;
@@ -360,26 +360,26 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
     default: lines.push(`It does nothing for her either way.`); break;
   }
   const sexual = act.group !== "tenderness" || act.base.release > 0 || out.finished;
-  if (sexual) lines.push(`Arousal: ${p.psyche.arousal >= 70 ? "she's very turned on" : p.psyche.arousal >= 35 ? "she's getting turned on" : "she isn't turned on"}. ${out.finished ? "She orgasms." : "She doesn't orgasm."}`);
+  if (sexual) lines.push(`${p.psyche.arousal >= 70 ? "She's very turned on" : p.psyche.arousal >= 35 ? "She's getting turned on" : "She isn't turned on"}. ${out.finished ? "She orgasms." : "She doesn't orgasm."}`);
   if (out.discovered) lines.push(`You find out that ${out.discovered}. Write the moment it becomes obvious.`);
-  if (out.converted) lines.push(`This changes her for good: ${out.converted}.`);
+  if (out.converted) lines.push(`This changes her for good (${out.converted}).`);
   lines.push(``);
   lines.push(sexual
-    ? `Write it explicitly, in the game's own words. No fade to black, no cutting away, no moralizing.`
-    : `Write it concretely: what you do, what she does, what she says and how she says it.`);
+    ? `Write it explicitly, in the game's own words. Don't fade to black, cut away or moralize.`
+    : `Write it concretely, saying what you do, what she does, what she says and how she says it.`);
   return lines.join("\n");
 }
 
 /** How the act goes, by how she takes being told (engine/compliance). */
 const OBEY_ACT: Record<Stance, string> = {
-  hollow: "She's mindbroken: she lets it happen and nobody is behind her eyes.",
+  hollow: "She's mindbroken. She lets it happen, and there's nobody behind her eyes.",
   eager: "She does what she's told gladly.",
   obedient: "She does what she's told, properly.",
   reluctant: "She does it slowly and grudgingly, and has to be told twice.",
-  terrified: "She submits because she's terrified of you: shaking, maybe crying, apologising, doing exactly what she's told so it'll be over.",
-  resists: "She doesn't want to: she pulls away, begs, makes excuses, and you have to make her (hold her, threaten her, or call the guards to hold her). Write her resisting and you forcing it; she doesn't come round.",
-  fights: "She fights it: she says no, struggles, tries to get away, maybe hits out. It happens because you force it (your hands, restraints, or the guards holding her down). Write the struggle; she doesn't give in or enjoy it, whatever her body does.",
-  free: "She isn't bound to obey: she's going along with this because she chose to, and how she takes it is below.",
+  terrified: "She submits because she's terrified of you. She's shaking, maybe crying and apologising, and she does exactly what she's told so it'll be over.",
+  resists: "She doesn't want to. She pulls away, begs and makes excuses, and you have to make her, by holding her, threatening her or calling the guards to hold her. Write her resisting and you forcing it, and don't let her come round.",
+  fights: "She fights it. She says no, struggles, tries to get away and may hit out. It happens because you force it, with your hands, restraints or the guards holding her down. Write the struggle, and don't let her give in or enjoy it, whatever her body does.",
+  free: "She isn't bound to obey. She's going along with this because she chose to, and how she takes it is described below.",
 };
 
 /** Everything you could do to her right now, with the reason each blocked one is blocked. */

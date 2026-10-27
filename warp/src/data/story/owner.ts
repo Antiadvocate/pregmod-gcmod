@@ -50,9 +50,9 @@ const few: ArcDef = {
       title: (c) => (alone(c) ? "The only one" : "The only two"),
       text: (c) => `${c.sn} brings you your coffee in the morning, the way she does every morning now, and doesn't leave. She stands by the window a while. Then she asks, carefully, why you haven't bought anyone else.
 
-${alone(c) ? `She's the only woman you keep. Every other owner in the Free Cities has dozens. She's worked out what that means, or thinks she has: every meal, every bed, every time you want something, it's her.` : `There are two of them, ${pair(c)}, in a building made for a hundred. They've talked about it at night. She's worked out what that means, or thinks she has.`}
+${alone(c) ? `She's the only woman you keep. Every other owner in the Free Cities has dozens. She's worked out what that means, or thinks she has. Every meal, every bed, every time you want something, it's her.` : `There are two of them, ${pair(c)}, in a building made for a hundred. They've talked about it at night. She's worked out what that means, or thinks she has.`}
 
-She isn't complaining. You can see it in how she's standing: straighter than a slave stands. Something of yours has settled on her, and she likes the weight of it.`,
+She isn't complaining. You can see it in how she's standing, straighter than a slave stands. Something of yours has settled on her, and she likes the weight of it.`,
       options: [
         { id: "enough", label: (c) => `Tell her ${alone(c) ? "she's" : "they're"} all you need`,
           run: (c) => {
@@ -94,7 +94,7 @@ You don't say anything. She takes that as an answer, and you can see which one.`
 She told him you weren't buying. When he said he'd wait, she told him the guards would see him down, and they did, without calling to check with you. The trader has filed a complaint with your office. The guards want to know if they did wrong.
 
 "She sounded like you," your security chief says. He isn't sure if it's a compliment.`
-        : `There are other women in the house now. ${c.sn} hasn't said anything about it. She doesn't need to: she's stopped giving the staff orders, and the staff have noticed.`,
+        : `There are other women in the house now. ${c.sn} hasn't said anything about it. She doesn't need to. She's stopped giving the staff orders, and the staff have noticed.`,
       options: [
         { id: "back", label: "Back her, and tell the guards to listen to her", show: (c) => keepingFew(c.s),
           run: (c) => {
@@ -126,7 +126,7 @@ She told him you weren't buying. When he said he'd wait, she told him the guards
       title: "The talk of the Free Cities",
       text: (c) => {
         const f = fewOf(c.s);
-        return `A gossip channel out of the arcology across the strait runs ten minutes on you. The headline is "${alone(c) ? "The Owner and the One" : "The Owner's Two"}". They have footage of ${pair(c)} on the concourse; they have three experts guessing whether you're broke, impotent or in love; they have ${c.full("rival_owner")} laughing about it at a party.
+        return `A gossip channel out of the arcology across the strait runs ten minutes on you. The headline is "${alone(c) ? "The Owner and the One" : "The Owner's Two"}". They have footage of ${pair(c)} on the concourse, three experts guessing whether you're broke, impotent or in love, and ${c.full("rival_owner")} laughing about it at a party.
 
 ${f.heard >= 50 ? "It's not the first piece. It's the first one everyone's watched." : "It's the first time anyone's put it on a screen."} ${c.sn} watched it in the kitchen with the staff, and the staff watched her watching it.`;
       },
@@ -136,7 +136,7 @@ ${f.heard >= 50 ? "It's not the first piece. It's the first one everyone's watch
             c.rep(500); c.standing(1);
             c.treat(c.subj, "recognition", 6, "the owner talked about her on the feeds");
             c.like("rival_owner", -5);
-            return { text: `You do twenty minutes with the channel's best interviewer and you're good: funny, unhurried, and the line that gets clipped and replayed is "Why would I want forty when I've got ${alone(c) ? "her" : "them"}?" ${c.n("rival_owner")} stops telling the joke at parties. ${c.sn} watches the clip eleven times.`, next: "love", after: 4 };
+            return { text: `You do twenty minutes with the channel's best interviewer and you're good. You're funny and unhurried, and the line that gets clipped and replayed is "Why would I want forty when I've got ${alone(c) ? "her" : "them"}?" ${c.n("rival_owner")} stops telling the joke at parties. ${c.sn} watches the clip eleven times.`, next: "love", after: 4 };
           } },
         { id: "own", label: (c) => `Say it plainly: ${alone(c) ? "she's" : "they're"} all you want`,
           run: (c) => {
@@ -227,10 +227,10 @@ const size: ArcDef = {
         const m = menace(c.s);
         const d = endowment(c.s).dick ?? 1;
         return m >= 0.55
-          ? `${c.sn} asks to speak to you alone, and when she has you alone she can't get the words out. In the end she tells you with her eyes on the floor: there's a joke going round the arcology. About you. About your cock, which is ${dickWord(d)}, and which everyone below the penthouse now seems to know is ${dickWord(d)}.
+          ? `${c.sn} asks to speak to you alone, and when she has you alone she can't get the words out. In the end, with her eyes on the floor, she tells you there's a joke going round the arcology about you, and about your cock, which is ${dickWord(d)}, and which everyone below the penthouse now seems to know is ${dickWord(d)}.
 
 Nobody says it where you could hear. You're the one person in ${c.arcology} who'd have people flogged for it, so it's a little finger held up behind your back, a word that stops when you walk in, a citizen at dinner who suddenly can't look at your lap. ${c.sn} is shaking. She thinks you might punish the messenger.`
-          : `It reaches you the way these things do: the last. A comedian on the promenade has a bit about the top floor. There's a measurement written next to your name in the concourse toilets. The boards have a nickname for you, and it isn't a compliment.
+          : `It reaches you the way these things always do, with you the last to know. A comedian on the promenade has a bit about the top floor. There's a measurement written next to your name in the concourse toilets. The boards have a nickname for you, and it isn't a compliment.
 
 Your cock is ${dickWord(d)}, everyone who's been in your bed knows it, and now so does everyone else. ${c.sn} tells you because she thinks you should hear it from someone who's on your side. She's trying very hard not to look at your lap.`;
       },
@@ -256,20 +256,20 @@ Your cock is ${dickWord(d)}, everyone who's been in your bed knows it, and now s
             c.crime(-3); c.standing(-1);
             c.household("coercion", 3, "the owner made an example of someone over the joke");
             if (c.s.story) c.s.story.flags["size_talk"] = Math.max(0, talkOfIt(c.s) - 15);
-            return { text: `Your security finds a citizen telling it in a bar on the promenade and drags him out by the collar in front of the whole room. You don't even need to say what it's for. The joke goes underground that night. It doesn't go away; it just goes very, very quiet, which is its own kind of joke.`, next: "rival", after: 3 };
+            return { text: `Your security finds a citizen telling it in a bar on the promenade and drags him out by the collar in front of the whole room. You don't even need to say what it's for. The joke goes underground that night. It doesn't go away. It just goes very, very quiet, which is its own kind of joke.`, next: "rival", after: 3 };
           } },
         { id: "surgery", label: "Book the surgery", note: (c) => money(enlargeCost(c.s)), need: (c) => cash(enlargeCost(c.s))(c),
           run: (c) => {
             const r = enlarge(c.s);
             c.out.push(r.line);
-            return { text: `You book the best surgeon in the Free Cities for the next morning. It's done in a day. ${r.ok ? "It's bigger. The jokes change overnight: they're about the surgery now, and what it cost, and what it was like before. Nobody can say the old one about you any more, and some of them miss it." : r.line}`, end: "you had it made bigger" };
+            return { text: `You book the best surgeon in the Free Cities for the next morning. It's done in a day. ${r.ok ? "It's bigger. The jokes change overnight, and now they're about the surgery now, and what it cost, and what it was like before. Nobody can say the old one about you any more, and some of them miss it." : r.line}`, end: "you had it made bigger" };
           } },
         { id: "own", label: "Lean into it", note: "it's what you like",
           run: (c) => {
             pushNorm(c.s, "reversal", 4, "the owner made a joke of their own cock");
             for (const p of c.owned().filter((x) => x.persona.fetishes.some((f) => f.name === "sph" && f.strength >= 30))) c.treat(p, "recognition", 5, "the owner let everyone laugh at it, and she loves it");
             c.rep(-300);
-            return { text: `You let it be true, out loud. You don't deny it; you let your slaves joke about it at dinner, in front of guests. The city doesn't know what to make of an owner who isn't ashamed of the thing they're laughing at. Some of your women know exactly what to make of it.`, next: "rival", after: 3 };
+            return { text: `You let it be true, out loud. You don't deny it, and you let your slaves joke about it at dinner, in front of guests. The city doesn't know what to make of an owner who isn't ashamed of the thing they're laughing at. Some of your women know exactly what to make of it.`, next: "rival", after: 3 };
           } },
       ],
     },
@@ -277,7 +277,7 @@ Your cock is ${dickWord(d)}, everyone who's been in your bed knows it, and now s
       title: (c) => `${source(c)?.name ?? "She"} told them`,
       text: (c) => {
         const src = source(c);
-        return `${src?.name ?? "She"} is brought up to you. She knows why. ${src && src.bond.resentment > 45 ? "She doesn't apologise, and she doesn't look away. She wanted to hurt you and she found the place." : "She's pale and talking fast: it was one story, to one friend, and she never thought it would go anywhere."}`;
+        return `${src?.name ?? "She"} is brought up to you. She knows why. ${src && src.bond.resentment > 45 ? "She doesn't apologise, and she doesn't look away. She wanted to hurt you and she found the place." : "She's pale and talking fast. It was one story, she says,, to one friend, and she never thought it would go anywhere."}`;
       },
       options: [
         { id: "punish", label: "Punish her for it",
@@ -329,9 +329,9 @@ const married: ArcDef = {
       wait: (c) => !!wife(c),
       text: (c) => {
         const m = wife(c)!;
-        return `${m.public ? `The whole of ${c.arcology} saw you marry ${c.sn}, and a week later it's still the only thing anyone talks about.` : `Nobody saw you marry ${c.sn}. A week later, everybody knows anyway; the registry clerk has a sister.`} ${m.seen}
+        return `${m.public ? `The whole of ${c.arcology} saw you marry ${c.sn}, and a week later it's still the only thing anyone talks about.` : `Nobody saw you marry ${c.sn}. A week later, everybody knows anyway, because the registry clerk has a sister.`} ${m.seen}
 
-${m.status === "slave wife" ? `She still wears your collar. Some citizens think that's the point; others think it's a joke at marriage's expense, and they're saying so.` : m.status === "free wife" ? `She walks the concourse a free woman with your name. Citizens who used to look through her now don't know where to look.` : `She's off the slave registry and on the marriage one, which nobody in the city quite has a word for.`} ${m.power === "her" ? `Word has got out about who leads in your house. People are watching you to see if it's true.` : m.power === "equal" ? `People are watching to see if you really meant "equals".` : `People are watching to see what a wife is, here, when the owner still runs everything.`}`;
+${m.status === "slave wife" ? `She still wears your collar. Some citizens think that's the point, and others think it's a joke at marriage's expense, and they're saying so.` : m.status === "free wife" ? `She walks the concourse a free woman with your name. Citizens who used to look through her now don't know where to look.` : `She's off the slave registry and on the marriage one, which nobody in the city quite has a word for.`} ${m.power === "her" ? `Word has got out about who leads in your house. People are watching you to see if it's true.` : m.power === "equal" ? `People are watching to see if you really meant "equals".` : `People are watching to see what a wife is, here, when the owner still runs everything.`}`;
       },
       options: [
         { id: "show", label: "Walk her through the concourse as your wife",
@@ -341,7 +341,7 @@ ${m.status === "slave wife" ? `She still wears your collar. Some citizens think 
         { id: "private", label: "Keep it between the two of you",
           run: (c) => { c.treat(c.subj, "kindness", 5, "the owner kept the marriage between the two of them"); return { text: `You don't go out, and you don't comment. You stay in with her. The city fills the silence with its own version, which is wilder than the truth and does you no harm at all.`, next: "powers", after: 4 }; } },
         { id: "hers", label: "Let her answer for the two of you", show: (c) => wife(c)?.power !== "you",
-          run: (c) => { const smart = ["sharp", "brilliant"].includes(c.subj?.persona.intelligence ?? ""); if (c.subj) shiftDominion(c.s, c.subj, 6, "she spoke for the marriage"); if (smart) { c.rep(300); c.standing(1); } else c.rep(-100); return { text: smart ? `She gives one interview and owns it. The clip that goes round is her, not you, and it's better than anything you'd have said.` : `She gives one interview and it goes badly; she's not made for it. She comes home mortified, and you tell her it doesn't matter, and it mostly doesn't.`, next: "powers", after: 4 }; } },
+          run: (c) => { const smart = ["sharp", "brilliant"].includes(c.subj?.persona.intelligence ?? ""); if (c.subj) shiftDominion(c.s, c.subj, 6, "she spoke for the marriage"); if (smart) { c.rep(300); c.standing(1); } else c.rep(-100); return { text: smart ? `She gives one interview and owns it. The clip that goes round is her, not you, and it's better than anything you'd have said.` : `She gives one interview and it goes badly, because she's not made for it. She comes home mortified, and you tell her it doesn't matter, and it mostly doesn't.`, next: "powers", after: 4 }; } },
       ],
     },
     powers: {
@@ -368,9 +368,9 @@ ${c.sn} has seen all of it. She's waiting to see what you do.`;
       wait: (c) => !!wife(c),
       text: (c) => {
         const m = wife(c)!;
-        if (m.power === "her") return `You come down to the office and find a decision already made. ${c.sn} has signed something in your name: a new rule for the household, a contract renewed, a slave moved to a different job. It's a good decision. It's not one you'd have made. Your staff carried it out without checking with you, because by the terms you set, they didn't have to.`;
+        if (m.power === "her") return `You come down to the office and find a decision already made. ${c.sn} has signed something in your name. It's a new rule for the household, or a contract renewed, or a slave moved to a different job. It's a good decision. It's not one you'd have made. Your staff carried it out without checking with you, because by the terms you set, they didn't have to.`;
         if (m.power === "equal") return `In front of the senior staff, ${c.sn} disagrees with you. Openly, reasonably, and she's right. The room goes very still. Everyone in it is waiting to see what "equals" means when it costs you something.`;
-        return `${c.sn} asks for something the terms didn't give her. ${m.status === "slave wife" ? "Her freedom: not now, she says, but someday, and she wants you to say it'll be someday." : "A say in something: the household, the doctrine, one decision a month that's hers."} She asks properly, the way you'd want her to. She's clearly been working up to it for weeks.`;
+        return `${c.sn} asks for something the terms didn't give her. ${m.status === "slave wife" ? "She wants her freedom. Not now, she says, but someday, and she wants you to say it'll be someday." : "She wants a say in something, whether it's the household, the doctrine, or one decision a month that's hers."} She asks properly, the way you'd want her to. She's clearly been working up to it for weeks.`;
       },
       options: [
         { id: "grant", label: (c) => (wife(c)?.power === "you" ? "Give her what she asks" : wife(c)?.power === "equal" ? "Back her, in front of them" : "Let her decision stand"),
@@ -379,7 +379,7 @@ ${c.sn} has seen all of it. She's waiting to see what you do.`;
             if (m.power === "you") { if (m.status === "slave wife") { m.status = "wife"; if (c.subj) c.subj.status = "indentured"; } else m.power = "equal"; }
             if (c.subj) shiftDominion(c.s, c.subj, 10, "the owner gave her more than the terms did");
             c.treat(c.subj, "promise_kept", 8, "the owner gave her more than the terms did");
-            c.out.push(`the terms change: she's your ${m.status}, ${m.power === "her" ? "and she leads" : m.power === "equal" ? "and you're equals" : "and you lead"}`);
+            c.out.push(`the terms change, so she's your ${m.status}, ${m.power === "her" ? "and she leads" : m.power === "equal" ? "and you're equals" : "and you lead"}`);
             return { text: `You give it to her. ${c.sn} goes very quiet, the way she does when something matters too much to say anything about. The marriage is a little different after this, and both of you know whose choice that was.`, next: "year", after: 8 };
           } },
         { id: "gentle", label: "Say no, gently, and make her understand", need: skill("charisma", 35),
@@ -400,7 +400,7 @@ ${c.sn} has seen all of it. She's waiting to see what you do.`;
       wait: (c) => !!wife(c),
       text: (c) => {
         const m = wife(c)!;
-        return `It's been ${c.week - m.week} weeks. ${c.sn} brings it up over breakfast: not an anniversary, she says, just a day. She wants to know how you'd like the marriage to go on.${m.hooks.length ? `\n\nSome things are still open: ${m.hooks.join(" ")}` : ""}`;
+        return `It's been ${c.week - m.week} weeks. ${c.sn} brings it up over breakfast. It's not an anniversary, she says, just a day. She wants to know how you'd like the marriage to go on.${m.hooks.length ? `\n\nSome things are still open: ${m.hooks.join(" ")}` : ""}`;
       },
       options: [
         { id: "renew", label: "Renew the vows, bigger", note: money(15000), need: cash(15000),

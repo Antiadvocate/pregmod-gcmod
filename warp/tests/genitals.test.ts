@@ -110,7 +110,7 @@ function world(seed: string, sex: "female" | "male" | "futa" = "futa") {
   if ("error" in o) check("suck her resolves", false, o.error);
   else {
     const d = actDirective(s, p, o);
-    check("the directive says who is doing it to whom", /you do this TO/.test(d), d);
+    check("the directive says who is doing it to whom", /[Yy]ou do this TO/.test(d), d);
   }
   p.health.recovery_weeks = 0;
   const pedi = resolveAct(s, p, "pedicure");

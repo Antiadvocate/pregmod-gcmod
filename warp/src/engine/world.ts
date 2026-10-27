@@ -315,7 +315,7 @@ export function worldBrief(s: SaveState): string {
   const troubled = Object.entries(w.regions).filter(([, r]) => r.state !== "calm").map(([id, r]) => `${REGION_BY_ID[id]?.name ?? id} ${REGION_STATE_WORD[r.state]}`);
   return [
     `Season: ${seasonOf(s.arcology.week)}. Weather this week: ${WEATHER[w.weather.kind].line}`,
-    `Economy: ${w.economy.phase}.${troubled.length ? ` Abroad: ${troubled.join("; ")}.` : ""}`,
+    `Economy: ${w.economy.phase}.${troubled.length ? ` Abroad: ${troubled.join(", ")}.` : ""}`,
     w.headlines.filter((h) => h.week >= s.arcology.week - 2).slice(-3).map((h) => `News: ${h.text}`).join(" "),
   ].filter(Boolean).join("\n");
 }

@@ -223,8 +223,8 @@ export function castBrief(s: SaveState, text: string): string {
   const fate = (f: Face) => (f.fate ? ` [${f.fate.fate === "dead" ? "DEAD" : f.fate.fate === "bought" ? "BOUGHT OFF" : f.fate.fate === "exiled" ? "DRIVEN OUT" : f.fate.fate.toUpperCase()} since week ${f.fate.week}: ${f.fate.how}]` : "");
   const line = (f: Face) => `· ${f.name}${fate(f)} — ${f.pronoun}, about ${f.age}${f.nation ? `, ${f.nation}` : ""}${f.skin ? `, ${f.skin} skin` : ""}${f.hair ? `, ${f.hair} hair${f.hair_style ? ` (${f.hair_style})` : ""}` : ""}${f.eyes ? `, ${f.eyes} eyes` : ""}${f.detail ? `; ${f.detail}` : ""}${record(s, f)}`;
   return [
-    list.length ? `## PEOPLE THE PLAYER HAS MET (not theirs; if one appears, use this name and look)\n${list.map(line).join("\n")}` : "",
-    `## CAST LINES\nAfter the options, add one line for each person in the scene who is not the player and not one of the player's slaves, and who speaks or acts: CAST: full name | she or he | age | nationality | skin | hair colour, style | eye colour | one visible detail. Give anyone new a full name. Leave out crowds nobody would name.`,
+    list.length ? `## PEOPLE THE PLAYER HAS MET\nThey aren't the player's people. If one of them appears, use this name and look.\n${list.map(line).join("\n")}` : "",
+    `## CAST LINES\nAfter the options, add one line for each person in the scene who is not the player and not one of the player's slaves, and who speaks or acts, in this form. CAST: full name | she or he | age | nationality | skin | hair colour, style | eye colour | one visible detail. Give anyone new a full name. Leave out crowds nobody would name.`,
   ].filter(Boolean).join("\n\n");
 }
 

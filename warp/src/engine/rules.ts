@@ -319,7 +319,7 @@ export function defaultOrders(): StandingOrder[] {
     {
       id: "o-break", name: "Send slaves close to breaking to the spa", enabled: true, priority: 20,
       conditions: [{ field: "state", op: "eq", value: "fracturing" }],
-      effects: [{ field: "facility", value: "spa" }, { field: "flag_review", value: "close to breaking; moved to the spa" }],
+      effects: [{ field: "facility", value: "spa" }, { field: "flag_review", value: "close to breaking, so she was moved to the spa" }],
     },
     {
       // The counterpart to the two rules above. Without it they are a one-way door and the

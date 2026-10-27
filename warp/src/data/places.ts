@@ -33,29 +33,29 @@ export const PLACES: PlaceDef[] = [
   { id: "servants_hall", name: "the servants' hall", look: "the slave dormitory and laundry", privacy: "household", facility: "servants", needs_facility: true },
   { id: "concourse", name: "the concourse", look: "the main concourse, busy with citizens", privacy: "public", tags: ["public use", "exposure"] },
   { id: "promenade", name: "the promenade", look: "the red-light strip where whores stand and wait for customers", privacy: "public", tags: ["public use", "exposure"] },
-  { id: "brothel_floor", name: "the brothel floor", look: "the brothel: a bar downstairs and bedrooms upstairs", privacy: "public", facility: "brothel", needs_facility: true, tags: ["public use"] },
-  { id: "club_floor", name: "the club", look: "the club: a dance floor, low tables and a DJ booth", privacy: "public", facility: "club", needs_facility: true, tags: ["exposure"] },
-  { id: "dairy_floor", name: "the dairy", look: "the dairy: tiled stalls and loud milking machines", privacy: "household", facility: "dairy", needs_facility: true, tags: ["milking"] },
-  { id: "arcade_hall", name: "the arcade", look: "the arcade: a dim corridor of glory-hole booths", privacy: "public", facility: "arcade", needs_facility: true, tags: ["public use", "degradation"] },
-  { id: "cellblock_floor", name: "the cellblock", look: "the cellblock: a row of cells and a punishment room", privacy: "household", facility: "cellblock", needs_facility: true, tags: ["punishment", "restraint"] },
-  { id: "spa_floor", name: "the spa", look: "the spa: steam rooms, pools and massage tables", privacy: "household", facility: "spa", needs_facility: true, tags: ["aftercare", "slow"] },
-  { id: "clinic_floor", name: "the clinic", look: "the clinic: a clean white medical ward", privacy: "household", facility: "clinic", needs_facility: true },
-  { id: "pit_floor", name: "the pit", look: "the pit: a sand arena with a crowd rail", privacy: "public", facility: "pit", needs_facility: true, tags: ["exposure"] },
-  { id: "farmyard_floor", name: "the farmyard", look: "the farmyard: grow lights, soil beds and animal pens", privacy: "household", facility: "farmyard", needs_facility: true },
-  { id: "nursery_floor", name: "the nursery", look: "the nursery: cribs and a play area", privacy: "household", facility: "nursery", needs_facility: true },
+  { id: "brothel_floor", name: "the brothel floor", look: "the brothel, with a bar downstairs and bedrooms upstairs", privacy: "public", facility: "brothel", needs_facility: true, tags: ["public use"] },
+  { id: "club_floor", name: "the club", look: "the club, with a dance floor, low tables and a DJ booth", privacy: "public", facility: "club", needs_facility: true, tags: ["exposure"] },
+  { id: "dairy_floor", name: "the dairy", look: "the dairy, with tiled stalls and loud milking machines", privacy: "household", facility: "dairy", needs_facility: true, tags: ["milking"] },
+  { id: "arcade_hall", name: "the arcade", look: "the arcade, a dim corridor of glory-hole booths", privacy: "public", facility: "arcade", needs_facility: true, tags: ["public use", "degradation"] },
+  { id: "cellblock_floor", name: "the cellblock", look: "the cellblock, with a row of cells and a punishment room", privacy: "household", facility: "cellblock", needs_facility: true, tags: ["punishment", "restraint"] },
+  { id: "spa_floor", name: "the spa", look: "the spa, with steam rooms, pools and massage tables", privacy: "household", facility: "spa", needs_facility: true, tags: ["aftercare", "slow"] },
+  { id: "clinic_floor", name: "the clinic", look: "the clinic, a clean white medical ward", privacy: "household", facility: "clinic", needs_facility: true },
+  { id: "pit_floor", name: "the pit", look: "the pit, a sand arena with a crowd rail", privacy: "public", facility: "pit", needs_facility: true, tags: ["exposure"] },
+  { id: "farmyard_floor", name: "the farmyard", look: "the farmyard, with grow lights, soil beds and animal pens", privacy: "household", facility: "farmyard", needs_facility: true },
+  { id: "nursery_floor", name: "the nursery", look: "the nursery, with cribs and a play area", privacy: "household", facility: "nursery", needs_facility: true },
 ];
 
 /** Where your women work that isn't a room you walk around in: an office in somebody else's
  *  business, a classroom, a stage. Somewhere you can go to find her (engine/whereabouts), not a
  *  stop on your own rounds, so not in PLACES. */
 export const ELSEWHERE: PlaceDef[] = [
-  { id: "office", name: "an office on the commercial levels", look: "a citizen's office: desks, files, screens, a coffee machine, other people working", privacy: "public" },
-  { id: "classroom", name: "a classroom downtown", look: "a classroom: rows of desks, a board, other students", privacy: "public" },
-  { id: "schoolroom_floor", name: "the schoolroom", look: "the schoolroom: desks, a board, slaves at lessons", privacy: "household", facility: "schoolroom" },
-  { id: "barracks_floor", name: "the barracks", look: "the barracks: bunks, a weapons rack, a training mat", privacy: "household", facility: "barracks" },
-  { id: "stage", name: "a stage on the concourse", look: "a small stage on the concourse, lights, a crowd of fans and passers-by", privacy: "public", tags: ["exposure"] },
-  { id: "storeroom", name: "the storeroom under the penthouse", look: "a locked storeroom under the penthouse: a cot, a bucket, one bulb", privacy: "private", tags: ["restraint"] },
-  { id: "town_clinic", name: "a clinic downtown", look: "a clinic downtown: a ward, nurses, the smell of disinfectant", privacy: "public" },
+  { id: "office", name: "an office on the commercial levels", look: "a citizen's office with desks, files, screens, a coffee machine and other people working", privacy: "public" },
+  { id: "classroom", name: "a classroom downtown", look: "a classroom with rows of desks, a board and other students", privacy: "public" },
+  { id: "schoolroom_floor", name: "the schoolroom", look: "the schoolroom, with desks, a board and slaves at lessons", privacy: "household", facility: "schoolroom" },
+  { id: "barracks_floor", name: "the barracks", look: "the barracks, with bunks, a weapons rack and a training mat", privacy: "household", facility: "barracks" },
+  { id: "stage", name: "a stage on the concourse", look: "a small stage on the concourse, with lights and a crowd of fans and passers-by", privacy: "public", tags: ["exposure"] },
+  { id: "storeroom", name: "the storeroom under the penthouse", look: "a locked storeroom under the penthouse with a cot, a bucket and one bulb", privacy: "private", tags: ["restraint"] },
+  { id: "town_clinic", name: "a clinic downtown", look: "a clinic downtown, with a ward, nurses and the smell of disinfectant", privacy: "public" },
 ];
 
 export const PLACE_BY_ID: Record<string, PlaceDef> = Object.fromEntries([...PLACES, ...ELSEWHERE].map((p) => [p.id, p]));

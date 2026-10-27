@@ -138,7 +138,7 @@ export function nextRung(s: SaveState, p: Person): { rung: Rung; ready: boolean;
   if (g.dominion !== undefined && rom.dominion < g.dominion) blocked.push(`she decides ${Math.round(rom.dominion)} of ${g.dominion}`);
   if (g.tilt !== undefined && tilt < g.tilt) {
     blocked.push(tilt < 0
-      ? `her memories of this place are mostly bad (${tilt.toFixed(2)}); it'll take a long run of good weeks to change that`
+      ? `her memories of this place are mostly bad (${tilt.toFixed(2)}), and it'll take a long run of good weeks to change that`
       : `her memories of this place are only ${tilt.toFixed(2)} good, and this needs ${g.tilt}`);
   }
   if (g.fragility !== undefined && r.fragility > g.fragility) {
@@ -233,7 +233,7 @@ export const RITES: Record<string, Rite> = {
       shove(p.psyche, 3, { hard: true });
       p.psyche.capacity_born = +clamp(p.psyche.capacity_born + 0.4, -6, 6).toFixed(2);
       const mem = s.memory[p.id];
-      if (mem) remember(mem, { content: "the wedding — the concourse full, and the registry changed afterwards", week: s.arcology.week, importance: 10, charge: "bright", core: true });
+      if (mem) remember(mem, { content: "the wedding, with the concourse full, and the registry changed afterwards", week: s.arcology.week, importance: 10, charge: "bright", core: true });
       startRumor(s, `the owner married ${p.name}`, { about: p.id, salience: 10 });
       s.canon.push(`${p.name} is married to the owner of ${s.arcology.name}, witnessed, on the registry.`);
       // The rest of the household is not neutral about this.
@@ -328,7 +328,7 @@ export function renounce(s: SaveState, p: Person, why: string): ReportLine[] {
   const size = idx >= 4 ? 10 : idx >= 3 ? 7 : 4;
   applyTreatment(p, { kind: "promise_broken", size, why }, s.arcology.week);
   const mem = s.memory[p.id];
-  if (mem) remember(mem, { content: `you took it back — ${why}`, week: s.arcology.week, importance: 10, charge: "sharp", core: true });
+  if (mem) remember(mem, { content: `you took it back, because ${why}`, week: s.arcology.week, importance: 10, charge: "sharp", core: true });
   addState(p.psyche, "what he took back", s.arcology.week);
   shove(p.psyche, -3, { hard: true });
   rom.standing = "property";

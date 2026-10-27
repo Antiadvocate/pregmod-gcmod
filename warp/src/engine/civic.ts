@@ -52,7 +52,7 @@ export const CIVIC_EVENTS: EventDef[] = [
       { id: "nothing", label: "Stay out of it", resolve: () => "You say it isn't your business. Both sides take that as a win, and nothing changes for anyone." },
     ]),
   civic("civic_parade", (s) => n(s, "exposure") > 25, (s) => 1 + n(s, "exposure") / 30,
-    () => "The pleasure quarter wants to hold a parade for the season: floats, music, and every slave in the quarter marching naked down the main concourse. They want your permission, and they'd love your money.", [
+    () => "The pleasure quarter wants to hold a parade for the season, with floats, music, and every slave in the quarter marching naked down the main concourse. They want your permission, and they'd love your money.", [
       { id: "fund", label: "Fund it", note: "¤5,000", resolve: (s) => { s.arcology.cash -= 5000; s.arcology.rep += 400; s.arcology.prosperity = clamp(s.arcology.prosperity + 3, 5, 200); pushNorm(s, "exposure", 10, "you funded the naked parade"); return "The parade runs down the main concourse on Saturday, with your name on the lead float. Visitors come in from three cities to see it. The concourse smells of oil and confetti for a week."; } },
       { id: "allow", label: "Allow it, but don't pay", resolve: (s) => { pushNorm(s, "exposure", 5, "you allowed the naked parade"); s.arcology.rep += 100; return "It goes ahead, smaller than it might have been, and mostly the pleasure quarter's own. It's still the loudest Saturday of the year."; } },
       { id: "forbid", label: "Forbid it", resolve: (s) => { pushNorm(s, "exposure", -8, "you forbade the naked parade"); std(s, n(s, "exposure") > 50 ? -1 : 0); return "You forbid it. The pleasure quarter holds a smaller one indoors and makes sure everyone knows why."; } },
@@ -87,7 +87,7 @@ export const CIVIC_EVENTS: EventDef[] = [
       { id: "ignore", label: "Ignore it", resolve: (s) => { pushNorm(s, "reversal", -2, "the show that mocks your collar"); return "You ignore it. It runs for another two months, and the comic adds a bit about you pretending not to have seen it."; } },
     ]),
   civic("civic_washing", (s) => n(s, "feet") > 20, (s) => 1 + n(s, "feet") / 25,
-    () => "The fountain washers want to hold a public washing on the first of the month: citizens kneeling in rows in the plaza to wash the feet of any slave who sits down. They'd like the arcology's owner to do the first one.", [
+    () => "The fountain washers want to hold a public washing on the first of the month, with citizens kneeling in rows in the plaza to wash the feet of any slave who sits down. They'd like the arcology's owner to do the first one.", [
       { id: "kneel", label: "Kneel and wash the first pair yourself", resolve: (s) => { pushNorm(s, "feet", 10, "you knelt at the fountain washing"); pushNorm(s, "reversal", 4, "you knelt at the fountain washing"); return "You kneel on the wet stone and wash a slave girl's feet in front of two thousand people. She's shaking. Afterwards the queue of citizens waiting to kneel goes right across the plaza."; } },
       { id: "allow", label: "Allow it, but don't take part", resolve: (s) => { pushNorm(s, "feet", 4, "you allowed the fountain washing"); return "It goes ahead without you. It's smaller, and quieter, and there are still a few hundred people there."; } },
       { id: "forbid", label: "Forbid it", resolve: (s) => { pushNorm(s, "feet", -8, "you forbade the fountain washing"); return "You forbid it. The washers do it anyway, a few at a time, before the patrols come round."; } },
@@ -98,7 +98,7 @@ export const CIVIC_EVENTS: EventDef[] = [
       { id: "deny", label: "Deny it", resolve: (s) => { pushNorm(s, "manumission", -6, "you denied a freedwoman a shop licence"); return "You deny it. She takes a job cleaning the shop she wanted to open."; } },
     ]),
   civic("civic_clinic", (s) => n(s, "modification") > 25, (s) => 1 + n(s, "modification") / 25,
-    () => "A back-alley clinic in the verge has been putting in cheap implants, and three slaves have died of infections this month. The licensed clinics want it shut; the verge says it's the only place they can afford.", [
+    () => "A back-alley clinic in the verge has been putting in cheap implants, and three slaves have died of infections this month. The licensed clinics want it shut, but the verge says it's the only place they can afford.", [
       { id: "shut", label: "Shut it down", resolve: (s) => { pushNorm(s, "order", 4, "you shut the back-alley clinic"); pushNorm(s, "modification", -3, "you shut the back-alley clinic"); return "Security shuts it down and arrests the surgeon. The verge is angry for a week and then goes back to the licensed clinics, on credit."; } },
       { id: "fund", label: "Fund a cheap licensed clinic in the verge", note: "¤8,000", resolve: (s) => { s.arcology.cash -= 8000; pushNorm(s, "modification", 8, "you funded a cheap clinic in the verge"); std(s, 1); return "You fund a clinic in the verge, with real surgeons and real prices. It's booked solid for six months."; } },
       { id: "nothing", label: "Leave it alone", resolve: (s) => { pushNorm(s, "modification", 2, "the back-alley clinic"); s.arcology.crime = clamp(s.arcology.crime + 1, 0, 100); return "You leave it. Two more slaves die before it closes on its own."; } },
@@ -136,20 +136,20 @@ export interface Campaign { id: string; since: number }
 export const CAMPAIGNS: CampaignDef[] = [
   { id: "floggings", norm: "cruelty", dir: 1, name: "Public floggings at the fountain", what: "Punishments held in public, every week, on a stage.", cost: 1500 },
   { id: "kind_hand", norm: "cruelty", dir: -1, name: "The Kind Hand", what: "Posters, prizes and free clinics for owners who don't beat their slaves.", cost: 2000 },
-  { id: "clothing_tax", norm: "exposure", dir: 1, name: "A tax on slave clothing", what: "Clothes for slaves cost more; nakedness costs nothing.", cost: 800 },
+  { id: "clothing_tax", norm: "exposure", dir: 1, name: "A tax on slave clothing", what: "Clothes for slaves cost more, and nakedness costs nothing.", cost: 800 },
   { id: "uniforms", norm: "exposure", dir: -1, name: "Uniform grants", what: "Free uniforms for every slave in public.", cost: 2000 },
   { id: "schools", norm: "personhood", dir: 1, name: "Slave schools, open to all", what: "Evening classes for any slave whose owner will send her.", cost: 2500 },
   { id: "numbers", norm: "personhood", dir: -1, name: "Registry numbers for names", what: "Slaves are addressed by registry number in every public office.", cost: 700 },
   { id: "covenants", norm: "reversal", dir: 1, name: "Covenant ceremonies", what: "The arcology pays for public ceremonies where owners bind themselves to slaves.", cost: 1800 },
   { id: "decorum", norm: "reversal", dir: -1, name: "The decorum pledge", what: "Owners sign a public pledge to keep their slaves in their place.", cost: 900 },
   { id: "washings", norm: "feet", dir: 1, name: "Fountain washings, funded", what: "Weekly public washings in the plaza, towels and basins provided.", cost: 1200 },
-  { id: "shoes", norm: "feet", dir: -1, name: "Shoe subsidies", what: "Cheap shoes for every slave; bare feet look poor.", cost: 1200 },
+  { id: "shoes", norm: "feet", dir: -1, name: "Shoe subsidies", what: "Cheap shoes for every slave, because bare feet look poor.", cost: 1200 },
   { id: "freedom_fund", norm: "manumission", dir: 1, name: "Freedom fund", what: "The arcology matches what slaves save toward their freedom.", cost: 3000 },
   { id: "manumission_tax", norm: "manumission", dir: -1, name: "Manumission tax", what: "A heavy fee on freeing a slave.", cost: 500 },
   { id: "clinics", norm: "modification", dir: 1, name: "Clinic subsidies", what: "Implants and surgery at half price.", cost: 2500 },
   { id: "natural", norm: "modification", dir: -1, name: "Natural beauty prizes", what: "Prizes and screens celebrating unaltered bodies.", cost: 1000 },
   { id: "patrols", norm: "order", dir: 1, name: "More patrols", what: "Patrols on every floor, papers checked at the lifts.", cost: 2500 },
-  { id: "open_city", norm: "order", dir: -1, name: "Pull the patrols", what: "Security pulled back to the spire; the streets run themselves.", cost: 0 },
+  { id: "open_city", norm: "order", dir: -1, name: "Pull the patrols", what: "Security pulled back to the spire, and the streets run themselves.", cost: 0 },
 ];
 export const CAMPAIGN_BY_ID: Record<string, CampaignDef> = Object.fromEntries(CAMPAIGNS.map((c) => [c.id, c]));
 export const MAX_CAMPAIGNS = 2;
@@ -200,7 +200,7 @@ export function speech(s: SaveState, norm: Norm, dir: 1 | -1): string {
   s.last_speech = s.arcology.week;
   const d = NORMS[norm];
   const against = (n(s, norm) * dir) < -30;
-  pushNorm(s, norm, dir * 5, `your speech: slaves' lives should be more ${dir > 0 ? d.high : d.low}`);
+  pushNorm(s, norm, dir * 5, `your speech saying slaves' lives should be more ${dir > 0 ? d.high : d.low}`);
   if (against) std(s, -0.5);
   else s.arcology.rep += 100;
   return `You speak from the balcony over the plaza about ${d.name.toLowerCase()}, and say the city should be more ${dir > 0 ? d.high : d.low}. ${against ? "Half the plaza boos. The other half remembers it." : "The plaza is with you, and it's all anyone talks about for days."}`;

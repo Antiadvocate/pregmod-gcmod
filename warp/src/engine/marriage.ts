@@ -83,9 +83,9 @@ export function readTerms(terms: string): { public: boolean; status: WifeStatus;
   return { public: pub, status, power };
 }
 
-const SYSTEM = `You write one scene in an explicit adult game about owning an arcology where slavery is legal: the owner's wedding to a woman of their household, exactly as the owner has asked for it. The owner wrote how the marriage plays out; you write it out and say what it established.
+const SYSTEM = `You write one scene in an explicit adult game about owning an arcology where slavery is legal. It's the owner's wedding to a woman of their household, exactly as the owner has asked for it. The owner wrote how the marriage plays out, and you write it out and say what it established.
 
-Write the wedding from the owner's words: keep every detail they name (who's there or not, where, what she wears, what is said and done, what she becomes, who leads afterwards). Don't add conditions they didn't ask for, and don't soften or moralise what they did ask for. She reacts as her card says she would: her voice, how devoted or afraid she is, her tastes. If her card and the terms pull against each other, show both. Sex is on the page if the owner's terms put it there.
+Write the wedding from the owner's words, and keep every detail they name, including who's there and who isn't, where it happens, what she wears, what is said and done, what she becomes, and who leads afterwards. Don't add conditions they didn't ask for, and don't soften or moralise what they did ask for. She reacts as her card says she would, in her voice, with her tastes, and as devoted or afraid as she is. If her card and the terms pull against each other, show both. Sex is on the page if the owner's terms put it there.
 
 ${HOUSE_STYLE}
 
@@ -98,10 +98,10 @@ export function marriagePrompt(s: SaveState, p: Person, terms: string): { system
     user: [
       personCard(s, p),
       `THE ARCOLOGY: ${s.arcology.name}, week ${s.arcology.week}, ${s.arcology.population.toLocaleString()} citizens, reputation ${Math.round(s.arcology.rep)}.${doctrines ? ` Its doctrines: ${doctrines}.` : ""}`,
-      `HOW THE OWNER WANTS THE MARRIAGE TO GO, in their own words (this is the premise; build on it exactly):\n${terms}`,
-      `Write the wedding: four to eight paragraphs, present tense, second person for the owner. Then say what it established.
-JSON: {"title":"2-6 words","scene":"the wedding; paragraphs separated by blank lines","public":true|false,"status":"slave wife|wife|free wife","power":"you|equal|her","vows":["each vow said, short"],"seen":"how the arcology takes it, 1-2 sentences","rep":-1500..1500,"standing":-3..3,"doctrines":[{"id":"one of the doctrine ids above","by":-10..10}],"norms":[{"norm":"${NORM_IDS.join("|")}","by":-6..6}],"hooks":["something this marriage leaves open that will come back, one sentence each, two or three"]}
-"status": "slave wife" if she stays the owner's property, "free wife" if she's freed, "wife" otherwise. "power": who leads between them afterwards, by the terms.`,
+      `HOW THE OWNER WANTS THE MARRIAGE TO GO, in their own words. This is the premise, so build on it exactly:\n${terms}`,
+      `Write the wedding in four to eight paragraphs, in the present tense, with the owner in the second person. Then say what it established.
+JSON: {"title":"2-6 words","scene":"the wedding, with paragraphs separated by blank lines","public":true|false,"status":"slave wife|wife|free wife","power":"you|equal|her","vows":["each vow said, short"],"seen":"how the arcology takes it, 1-2 sentences","rep":-1500..1500,"standing":-3..3,"doctrines":[{"id":"one of the doctrine ids above","by":-10..10}],"norms":[{"norm":"${NORM_IDS.join("|")}","by":-6..6}],"hooks":["something this marriage leaves open that will come back, one sentence each, two or three"]}
+"status" is "slave wife" if she stays the owner's property, "free wife" if she's freed, and "wife" otherwise. "power" is who leads between them afterwards, by the terms.`,
     ].join("\n\n"),
   };
 }
@@ -198,7 +198,7 @@ export function marry(s: SaveState, id: string, terms: string, w: Written): { ok
   for (const n of w.norms) if (n.by) pushNorm(s, n.norm, n.by, `the owner's wedding to ${p.name}`);
 
   startRumor(s, w.public ? `the owner married ${p.name} in front of everyone` : `the owner married ${p.name} in secret`, { about: p.id, salience: w.public ? 10 : 8 });
-  s.canon.push(`${p.name} is married to the owner of ${s.arcology.name} (week ${week}), on the owner's own terms: ${w.status}, ${w.power === "her" ? "she leads between them" : w.power === "equal" ? "as equals" : "the owner leads"}${w.public ? ", in public" : ", in private"}.`);
+  s.canon.push(`${p.name} has been married to the owner of ${s.arcology.name} since week ${week}, on the owner's own terms. She is the owner's ${w.status}, ${w.power === "her" ? "she leads between them" : w.power === "equal" ? "they're equals" : "the owner leads"}, and the wedding was ${w.public ? "public" : "private"}.`);
   (s.deeds ??= []).push({ id: `deed_marriage_${week}`, week, person: p.id, summary: `You married ${p.name}: ${w.title}.`, tags: ["married_her"], public: w.public, witnesses: [], effects, source: "marriage" });
 
   // The rest of the household: hope for some, jealousy for the ones who wanted it themselves.
@@ -225,7 +225,7 @@ export function marry(s: SaveState, id: string, terms: string, w: Written): { ok
     const sg = sagasOf(s);
     sg.list.push({
       id: `saga_${week}_marriage`, status: "unwritten", title: "", premise: "", stakes: "", acts: [], act: 0, cast: [], facts: [], paths: [], history: [], due: week + 2, started: week,
-      seed: { id: `marriage:${p.id}:${week}`, kind: "own", people: [p.id], text: `The owner married ${p.name}, on terms the owner wrote: "${terms.trim().slice(0, 600)}". She is a ${w.status}; ${w.power === "her" ? "she leads between them" : w.power === "equal" ? "they're equals" : "the owner leads"}; it was ${w.public ? "public" : "private"}. ${w.seen}${w.hooks.length ? ` What it leaves open: ${w.hooks.join(" ")}` : ""} The story is what this marriage becomes, in bed and out of it, and what it does to the arcology, ${p.name}, and everyone who wanted to be her.` },
+      seed: { id: `marriage:${p.id}:${week}`, kind: "own", people: [p.id], text: `The owner married ${p.name}, on terms the owner wrote: "${terms.trim().slice(0, 600)}". She is a ${w.status}, ${w.power === "her" ? "she leads between them" : w.power === "equal" ? "they're equals" : "the owner leads"}, and it was ${w.public ? "public" : "private"}. ${w.seen}${w.hooks.length ? ` What it leaves open: ${w.hooks.join(" ")}` : ""} The story is what this marriage becomes, in bed and out of it, and what it does to the arcology, ${p.name}, and everyone who wanted to be her.` },
     });
     line(`A story about your marriage could start in a couple of weeks (on the Story screen).`, "neutral", 5);
   }
@@ -276,7 +276,7 @@ export function marriageBrief(s: SaveState): string {
   const m = marriageOf(s);
   const p = m ? s.people[m.person] : undefined;
   if (!m || !p) return "";
-  return `THE OWNER'S MARRIAGE (on terms the owner wrote; true in every scene, for everyone): the owner married ${p.name} in week ${m.week}${m.public ? ", in public" : ", in private"}. She is the owner's ${m.status}; ${m.power === "her" ? "between the two of them she leads and the owner follows, by the owner's own choice" : m.power === "equal" ? "they're equals between themselves" : "the owner leads, and she's glad to follow"}. The owner's terms: "${m.terms.slice(0, 500)}".${m.vows.length ? ` The vows: ${m.vows.map((v) => `"${v}"`).join("; ")}.` : ""} How the city took it: ${m.seen}`;
+  return `THE OWNER'S MARRIAGE. The owner wrote its terms, and it holds in every scene, for everyone. The owner married ${p.name} in week ${m.week}${m.public ? ", in public" : ", in private"}. She is the owner's ${m.status}, and ${m.power === "her" ? "between the two of them she leads and the owner follows, by the owner's own choice" : m.power === "equal" ? "they're equals between themselves" : "the owner leads, and she's glad to follow"}. The owner's terms were "${m.terms.slice(0, 500)}".${m.vows.length ? ` The vows were ${m.vows.map((v) => `"${v}"`).join(", ")}.` : ""} This is how the city took it: ${m.seen}`;
 }
 
 /** For the city's boards. */
@@ -284,5 +284,5 @@ export function marriageSource(s: SaveState): { id: string; label: string; text:
   const m = marriageOf(s);
   const p = m ? s.people[m.person] : undefined;
   if (!m || !p || s.arcology.week - m.week > 30) return null;
-  return { id: "owner:marriage", label: "the owner's marriage", text: `The owner married ${p.name}, week ${m.week}${m.public ? ", in front of everyone" : ", privately (but everyone's heard)"}. She's the owner's ${m.status}; ${m.power === "her" ? "word is she wears the trousers" : m.power === "equal" ? "they act like equals" : "the owner still runs everything"}. ${m.seen}` };
+  return { id: "owner:marriage", label: "the owner's marriage", text: `The owner married ${p.name} in week ${m.week}${m.public ? ", in front of everyone" : ", privately, though everyone's heard"}. She's the owner's ${m.status}, and ${m.power === "her" ? "word is she wears the trousers" : m.power === "equal" ? "they act like equals" : "the owner still runs everything"}. ${m.seen}` };
 }

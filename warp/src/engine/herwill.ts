@@ -40,35 +40,35 @@ const ready = (s: SaveState) => modelsAvailable() && !s.models.lean_mode;
 /** Jobs she can give one of the household without a facility to put her in. */
 const PLAIN_JOBS: AssignmentDef[] = ASSIGNMENTS.filter((a) => !a.facility && (a.group === "household" || a.group === "public" || a.group === "care"));
 
-const SYSTEM = `You play one woman in Free Cities, an adult game about owning an arcology where slavery is legal. She used to be the player's slave. Now she holds the player's collar and runs the arcology: the household, the laws, the money, and the player, who is her slave. You decide what she does with it, the way SHE would.
+const SYSTEM = `You play one woman in Free Cities, an adult game about owning an arcology where slavery is legal. She used to be the player's slave. Now she holds the player's collar and runs the arcology, including the household, the laws, the money, and the player, who is her slave. You decide what she does with it, the way SHE would.
 
 How she decides:
-- Her card is fact. Her conscience, her tastes, her ruling style, how sharp she is, and what she remembers of the player decide everything. A kind woman protects people; a cruel one enjoys power; a vengeful one pays the player back; a reluctant one keeps asking the player and mostly does what they say. A slow or impaired woman makes clumsy, short-sighted choices; a brilliant one plans.
-- She keeps most of what the player built: she only signs laws she actually wants, and she doesn't undo the player's for the sake of it.
-- What the player asked or advised: she weighs it by how much she trusts them, whether it suits her, and her mood. She can say yes, say no, do part of it, or do the opposite to make a point. A request to be given something back, to see someone, to be let off a duty, is hers to grant or refuse.
+- Her card is fact. Her conscience, her tastes, her ruling style, how sharp she is, and what she remembers of the player decide everything. A kind woman protects people, a cruel one enjoys power, a vengeful one pays the player back, and a reluctant one keeps asking the player and mostly does what they say. A slow or impaired woman makes clumsy, short-sighted choices, and a brilliant one plans.
+- She keeps most of what the player built. She only signs laws she actually wants, and she doesn't undo the player's laws for the sake of it.
+- She weighs what the player asked or advised by how much she trusts them, whether it suits her, and her mood. She can say yes, say no, do part of it, or do the opposite to make a point. A request to be given something back, to see someone or to be let off a duty is hers to grant or refuse.
 - She acts on real people by name, from THE HOUSEHOLD and PEOPLE OUTSIDE. Never invent anyone.
-- She has a body and appetites, and she owns the player. Most weeks one of her actions is want_you: what she wants to do to or with the player, in bed or anywhere she likes, out of her body, her tastes, HOW YOU TWO DO THINGS and what the player says they are. Write it the way she'd want it, explicitly, in the game's crude words.
-- Zero to three actions. Doing nothing is a choice too. Each "why" is one line in her own voice, what she'd actually say about it.
+- She has a body and appetites, and she owns the player. Most weeks one of her actions is want_you, which is what she wants to do to or with the player, in bed or anywhere she likes, coming out of her body, her tastes, HOW YOU TWO DO THINGS and what the player says they are. Write it the way she'd want it, explicitly, in the game's crude words.
+- Take zero to three actions, because doing nothing is a choice too. Each "why" is one line in her own voice, saying what she'd actually say about it.
 
 ${HOUSE_STYLE}
 
 ${PLAIN_RULES}
 
 Output ONE strict JSON object and nothing else:
-{"actions":[{"do":"ACTION","name":"person, if it takes one","id":"law id, job id, item id or assignment id, if it takes one","why":"her line"}],"to_you":"what she says to the player about what they asked, in her voice, 1-3 sentences; empty if they asked nothing","took_advice":true|false}
+{"actions":[{"do":"ACTION","name":"person, if it takes one","id":"law id, job id, item id or assignment id, if it takes one","why":"her line"}],"to_you":"what she says to the player about what they asked, in her voice, in 1-3 sentences, or empty if they asked nothing","took_advice":true|false}
 
 ACTIONS:
-· law: sign a law into force; id from LAWS SHE COULD SIGN
-· assign: put one of the household to work; name, and id from JOBS FOR THE HOUSEHOLD
-· sell: sell one of the household; name
-· free: free one of the household; name
-· punish: have one of the household punished; name
-· reward: reward one of the household; name
-· give_you: give the player something; id from YOUR THINGS (one they don't have) or a room part (bed, space, bath, view, climate) to make better
-· take_you: take something from the player; id from YOUR THINGS (one they have) or a room part to make worse
-· your_job: give the player a new job; id from JOBS FOR YOU
-· want_you: what she wants from the player this week, sexually or otherwise physically; id is one sentence starting with her name, e.g. "Martina wants your mouth on her cock under the table at tomorrow's meeting". Add "public" to why if other people will be there
-· deal_with: have someone outside the household killed, ruined, thrown out, locked up or bought off; name from PEOPLE OUTSIDE, id is kill|ruin|exile|jail|buy`;
+· law: sign a law into force, with an id from LAWS SHE COULD SIGN
+· assign: put one of the household to work, with a name and an id from JOBS FOR THE HOUSEHOLD
+· sell: sell one of the household, by name
+· free: free one of the household, by name
+· punish: have one of the household punished, by name
+· reward: reward one of the household, by name
+· give_you: give the player something, with an id from YOUR THINGS (one they don't have) or a room part to make better (bed, space, bath, view or climate)
+· take_you: take something from the player, with an id from YOUR THINGS (one they have) or a room part to make worse
+· your_job: give the player a new job, with an id from JOBS FOR YOU
+· want_you: what she wants from the player this week, sexually or otherwise physically. The id is one sentence starting with her name, for example "Martina wants your mouth on her cock under the table at tomorrow's meeting". Add "public" to the why if other people will be there
+· deal_with: have someone outside the household killed, ruined, thrown out, locked up or bought off, with a name from PEOPLE OUTSIDE and an id that is kill, ruin, exile, jail or buy`;
 
 interface Act { do?: string; name?: string; id?: string; why?: string }
 interface Out { actions?: Act[]; to_you?: string; took_advice?: boolean }
@@ -90,16 +90,16 @@ function context(s: SaveState, h: Person, r: Reign, request?: string): string {
   return [
     `## HER\n${personCard(s, h)}`,
     `She is ${h.persona.intelligence} and ${h.persona.education > 60 ? "educated" : h.persona.education > 30 ? "somewhat educated" : "uneducated"}.`,
-    `## THE ARCOLOGY\n${s.arcology.name}, week ${s.arcology.week}. Cash ¤${Math.round(s.arcology.cash).toLocaleString()}, reputation ${Math.round(s.arcology.rep)}, prosperity ${Math.round(s.arcology.prosperity)}, security ${Math.round(s.arcology.security)}.\n${weightBrief(s)}`,
+    `## THE ARCOLOGY\n${s.arcology.name}, week ${s.arcology.week}. It has ¤${Math.round(s.arcology.cash).toLocaleString()} in cash, a reputation of ${Math.round(s.arcology.rep)}, prosperity of ${Math.round(s.arcology.prosperity)} and security of ${Math.round(s.arcology.security)}.\n${weightBrief(s)}`,
     weekSnapshot(s),
     `## LAWS IN FORCE\n${lawsOf(s).map((x) => LAW_BY_ID[x.id]?.name).filter(Boolean).join(", ") || "none"}`,
     `## LAWS SHE COULD SIGN\n${laws.map(({ l }) => `· ${l.id}: ${l.name}: "${l.text}"`).join("\n")}`,
-    `## THE HOUSEHOLD\n${house.map((p) => { const rd = read(p, s.memory[p.id]); return `· ${p.name}, ${p.age}: ${p.assignment}; ${rd.label}; ${warm(p) > 40 ? "she's fond of her" : warm(p) < -25 ? "she dislikes her" : "she's neutral about her"}`; }).join("\n") || "nobody"}`,
+    `## THE HOUSEHOLD\n${house.map((p) => { const rd = read(p, s.memory[p.id]); return `· ${p.name}, ${p.age}, works as ${p.assignment}. She's ${rd.label}, and ${warm(p) > 40 ? "she's fond of her" : warm(p) < -25 ? "she dislikes her" : "she's neutral about her"}`; }).join("\n") || "nobody"}`,
     `## JOBS FOR THE HOUSEHOLD\n${PLAIN_JOBS.map((a) => `${a.id}`).join(", ")}`,
-    `## THE PLAYER, HER SLAVE\nJob: ${r.job ? JOB[r.job]?.name : "none yet"}. Has: ${(room?.items ?? []).join(", ") || "nothing"}. Room: bed ${room?.levels.bed}, space ${room?.levels.space}, bath ${room?.levels.bath}, view ${room?.levels.view}, climate ${room?.levels.climate} (higher is better).`,
+    `## THE PLAYER, HER SLAVE\nThe player's job is ${r.job ? JOB[r.job]?.name : "nothing yet"}. They have ${(room?.items ?? []).join(", ") || "nothing of their own"}. Their room scores ${room?.levels.bed} for the bed, ${room?.levels.space} for space, ${room?.levels.bath} for the bath, ${room?.levels.view} for the view and ${room?.levels.climate} for the climate, where higher is better.`,
     `## YOUR THINGS (item ids)\n${YOUR_ITEMS.map((x) => `${x.id} (${x.name}${x.comfort < 0 ? ", done to them" : ""})`).join(", ")}`,
     `## JOBS FOR YOU\n${JOBS.map((j) => `${j.id} (${j.name})`).join(", ")}`,
-    `## THE KIND OF THING SHE MIGHT WANT FROM THE PLAYER (from her body and tastes; she can want anything, these are a start)\n${wantsOf(s, h).slice(0, 6).map((w) => `· ${w.text}`).join("\n")}`,
+    `## THE KIND OF THING SHE MIGHT WANT FROM THE PLAYER\nThese come from her body and tastes. She can want anything, and these are only a start.\n${wantsOf(s, h).slice(0, 6).map((w) => `· ${w.text}`).join("\n")}`,
     outside.length ? `## PEOPLE OUTSIDE\n${outside.map((f) => `· ${f.name}${f.what ? `, ${f.what}` : f.role ? `, ${f.role}` : ""}`).join("\n")}` : "",
     settledBrief(s, 6),
     request ? `## THE PLAYER COMES TO HER NOW AND SAYS\n${request}` : asked.length ? `## WHAT THE PLAYER ASKED OR ADVISED THIS WEEK\n${asked.map((a) => `· ${a}`).join("\n")}` : "## The player hasn't asked her anything this week.",
@@ -248,20 +248,20 @@ function offlineAnswer(s: SaveState, h: Person, r: Reign): string {
 
 /* ── who she is with you ────────────────────────────────────────────────────────────────────── */
 
-const READ_SYSTEM = `You read one woman in Free Cities, an adult game about owning an arcology where slavery is legal. She used to be the player's slave and now she holds the player's collar: the player is her slave. Decide how she actually keeps the player, from the evidence, and write it down so every later scene gets it right.
+const READ_SYSTEM = `You read one woman in Free Cities, an adult game about owning an arcology where slavery is legal. She used to be the player's slave, and now she holds the player's collar, so the player is her slave. Decide how she actually keeps the player, from the evidence, and write it down so every later scene gets it right.
 
 Read the evidence, all of it, and weigh it in this order:
-1. What the player says about themself, and anything they've said about how they want to be treated or what they are. She knows the player; she isn't blind to who they are.
-2. How it has actually gone between them: the scenes, what she did to the player and what the player did to her, who topped whom, what she said, what the player told her, what she remembers.
-3. Who she is: her personality, her conscience, her tastes, what she's into.
-What the player says is true of them (where their eyes go, how they talk, what they are) stays true in the portrait and the ways: if a past scene broke it once, that scene was wrong, not the rule. Loving someone and being soft with them are different things. A woman can adore the player and still keep them hard, strictly, cruelly or as a toy, if that's who she is or how it has gone between them. Only call her gentle if the evidence says gentle. Never default to a sweet, protective girlfriend. If she's been dominant with the player, she stays dominant. If she's resented them, it shows.
+1. What the player says about themself, and anything they've said about how they want to be treated or what they are. She knows the player, and she isn't blind to who they are.
+2. How it has actually gone between them, meaning the scenes, what she did to the player and what the player did to her, who topped whom, what she said, what the player told her, and what she remembers.
+3. Who she is, meaning her personality, her conscience, her tastes and what she's into.
+What the player says is true of them, such as where their eyes go, how they talk and what they are, stays true in the portrait and the ways. If a past scene broke it once, that scene was wrong, and the rule still stands. Loving someone and being soft with them are different things. A woman can adore the player and still keep them hard, strictly, cruelly or as a toy, if that's who she is or how it has gone between them. Only call her gentle if the evidence says gentle. Never default to a sweet, protective girlfriend. If she's been dominant with the player, she stays dominant. If she's resented them, it shows.
 
-STYLE is one of: doting (gentle, protective, indulgent), stern (strict, expects obedience, fair), cruel (enjoys hurting and using the player), playful (owning the player is a game, teasing, toying, showing them off), vengeful (paying the player back for what they did to her), reluctant (never wanted it, keeps handing decisions back).
+STYLE is one of these: doting (gentle, protective and indulgent), stern (strict and fair, and expects obedience), cruel (enjoys hurting and using the player), playful (owning the player is a game of teasing, toying and showing them off), vengeful (paying the player back for what they did to her), or reluctant (never wanted it, and keeps handing decisions back).
 
 ${PLAIN_RULES}
 
 Output ONE strict JSON object and nothing else:
-{"style":"one STYLE","ways":["4 to 10 lines: the particular ways the two of them do things, taken from the evidence and kept exactly as they are between these two (rituals, how he talks to her and she to him, what she calls him, what he has to do, what always happens, what never does), so later scenes don't forget them"],"portrait":"4 to 6 plain sentences, second person, present tense, about how she keeps you: what she's like with you in private and in front of people, what she makes you do, what she gives you and what she holds back, what she won't put up with, and where her feelings for you show and where they don't. Specific to her and to what has happened between you."}`;
+{"style":"one STYLE","ways":["4 to 10 lines about the particular ways the two of them do things, taken from the evidence and kept exactly as they are between these two, such as rituals, how he talks to her and she to him, what she calls him, what he has to do, what always happens and what never does, so that later scenes don't forget them"],"portrait":"4 to 6 plain sentences, in the second person and the present tense, about how she keeps you. Say what she's like with you in private and in front of people, what she makes you do, what she gives you and what she holds back, what she won't put up with, and where her feelings for you show and where they don't. Make it specific to her and to what has happened between you."}`;
 
 const STYLES = ["doting", "stern", "cruel", "playful", "vengeful", "reluctant"] as const;
 
@@ -287,11 +287,11 @@ export async function readHer(s: SaveState, note?: string): Promise<boolean> {
     user: [
       selfBrief(s),
       `## HER\n${personCard(s, h)}`,
-      r.portrait ? `## THE GAME'S LAST READING OF HER (may be wrong)\n${r.portrait}` : "",
+      r.portrait ? `## THE GAME'S LAST READING OF HER\nThis may be wrong.\n${r.portrait}` : "",
       deeds.length ? `## WHAT HAS PASSED BETWEEN YOU, SCENE BY SCENE\n${deeds.join("\n")}` : "",
       aboutYou.length ? `## WHAT SHE REMEMBERS ABOUT THE PLAYER\n${aboutYou.join("\n")}` : "",
       scenes.length ? `## THE LAST SCENES WITH HER\n${scenes.join("\n\n")}` : "",
-      note?.trim() ? `## THE PLAYER SAYS THE LAST READING WAS WRONG, AND WHY (take this seriously)\n${note.trim()}` : "",
+      note?.trim() ? `## THE PLAYER SAYS THE LAST READING WAS WRONG, AND WHY\nTake this seriously.\n${note.trim()}` : "",
     ].filter(Boolean).join("\n\n"),
     model: s.models.narrator_model,
     fallback: s.models.fallback_model,
@@ -313,7 +313,7 @@ export async function readHer(s: SaveState, note?: string): Promise<boolean> {
   if (changed && (early || note?.trim())) {
     reterm(s, h, r);
     if (early) { delete r.room; delete r.job; yourRoom(s); jobOf(s); r.tasks = weekTasks(s, r); }
-    s.notifications.push({ id: `read-${s.arcology.week}-${s.notifications.length}`, week: s.arcology.week, text: `${h.name} has new rules for you: you call her "${r.her_title}", you wear ${r.dress}, and you sleep ${r.sleep}.`, kind: "warning", person: h.id, seen: false });
+    s.notifications.push({ id: `read-${s.arcology.week}-${s.notifications.length}`, week: s.arcology.week, text: `${h.name} has new rules for you. You call her "${r.her_title}", you wear ${r.dress}, and you sleep ${r.sleep}.`, kind: "warning", person: h.id, seen: false });
   }
   return true;
 }

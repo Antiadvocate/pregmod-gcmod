@@ -33,7 +33,7 @@ function setup(seed: string, dick: number): { s: SaveState; p: Person } {
   const out = resolveAct(s2, p2, "vaginal");
   check("taking her virginity is taken, not noted", !("error" in out) && p2.body.hymen === false && (p2.body.vagina ?? 0) >= 1);
   if (!("error" in out)) {
-    check("the narrator is told how it fit and what it did", /HOW IT FITS \(fact\)[^\n]*doesn't fit/.test(actDirective(s2, p2, out)) && /WHAT IT DOES TO HER/.test(actDirective(s2, p2, out)));
+    check("the narrator is told how it fit and what it did", /HOW IT FITS, which is a fact:[^\n]*doesn't fit/.test(actDirective(s2, p2, out)) && /WHAT IT DOES TO HER/.test(actDirective(s2, p2, out)));
     check("and the game's own text shows the difficulty", /doesn't fit|too big|tight fit/.test(writeAct(s2, p2, out).paragraphs.join(" ")));
   }
   check("she's sore afterwards, and sore takes a size off", (p2.health.sore?.vagina ?? -1) >= s2.arcology.week && capacity(p2, "vagina", s2) < (p2.body.vagina ?? 0) + 2);

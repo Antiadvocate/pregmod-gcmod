@@ -131,9 +131,9 @@ export function fortuneWord(f: number): string {
 /** One line, for prompts and the freed list. */
 export function freeLine(s: SaveState, p: Person): string {
   const l = p.free_life;
-  if (!l) return `${p.name}: free, whereabouts unknown.`;
+  if (!l) return `${p.name} is free, and nobody knows where she is.`;
   const where = l.district === "verge" ? "the verge" : `the ${(DISTRICTS.find((d) => d.kind === l.district)?.name ?? l.district).toLowerCase()}`;
-  return `${p.name}, freed in week ${p.exit_week}, lives in ${where} and ${l.job}; ${fortuneWord(l.fortune)}; toward the owner she is ${l.stance}.`;
+  return `${p.name} was freed in week ${p.exit_week}. She lives in ${where} and ${l.job}, she's ${fortuneWord(l.fortune)}, and toward the owner she is ${l.stance}.`;
 }
 
 /** Weekly: how she's doing out there. Returns lines for the report. */
@@ -152,7 +152,7 @@ export function tickFreed(s: SaveState): string[] {
     if (l.stance === "indifferent" && l.fortune > 50 && r.chance(0.05)) l.stance = "grateful";
     if (l.stance === "grateful" && l.fortune < -60 && r.chance(0.05)) l.stance = "bitter";
     if (before > -50 && l.fortune <= -50) out.push(`${p.name}, who you freed, has fallen on hard times in the ${l.district === "verge" ? "verge" : l.district}.`);
-    if (before < 50 && l.fortune >= 50) out.push(`${p.name}, who you freed, is doing well for herself: she ${l.job}.`);
+    if (before < 50 && l.fortune >= 50) out.push(`${p.name}, who you freed, is doing well for herself. She ${l.job}.`);
   }
   return out;
 }
@@ -161,7 +161,7 @@ export function tickFreed(s: SaveState): string[] {
 export function freedWalkLine(s: SaveState, placeId: string): string {
   const here = freedIn(s, placeId === "concourse" ? "commercial" : placeId);
   if (!here.length) return "";
-  return `## WOMEN YOU USED TO OWN, WHO LIVE HERE NOW (free; one may cross the owner's path, and she acts on how she feels about the owner)\n${here.slice(0, 3).map((p) => `· ${freeLine(s, p)}`).join("\n")}`;
+  return `## WOMEN YOU USED TO OWN, WHO LIVE HERE NOW\nThey're free now. One of them may cross the owner's path, and if she does, she acts on how she feels about the owner.\n${here.slice(0, 3).map((p) => `· ${freeLine(s, p)}`).join("\n")}`;
 }
 
 /* ── when she comes back into your life ───────────────────────────────────────────────────────── */
@@ -200,7 +200,7 @@ export const FREED_EVENTS: EventDef[] = [
     id: "freed_agitator", severity: "notable", endogenous: false,
     candidates: (s) => freed(s, (l) => l.stance === "bitter").map((person) => ({ person })),
     weight: (s) => 1.5 + s.arcology.crime / 30,
-    seed: (s, c) => `Your security chief has a file on ${c.person!.name}. Since you ${c.person!.free_life!.how === "cast_out" ? "turned her out" : "freed her"}, she's been talking: in the bars of the ${c.person!.free_life!.district === "verge" ? "verge" : c.person!.free_life!.district}, to your slaves on their errands, to anyone who'll listen. What she says about you is specific and mostly true, and people are starting to repeat it.`,
+    seed: (s, c) => `Your security chief has a file on ${c.person!.name}. Since you ${c.person!.free_life!.how === "cast_out" ? "turned her out" : "freed her"}, she's been talking in the bars of the ${c.person!.free_life!.district === "verge" ? "verge" : c.person!.free_life!.district}, to your slaves on their errands, to anyone who'll listen. What she says about you is specific and mostly true, and people are starting to repeat it.`,
     options: [
       { id: "buy", label: "Pay her to stop", note: "¤10,000", resolve: (s, _e, p) => { seen(s, p); s.arcology.cash -= 10000; const l = lifeOrNew(p); l.fortune = clamp(l.fortune + 40, -100, 100); l.stance = "indifferent"; return `She takes the money. She doesn't thank you, and she doesn't talk about you any more.`; } },
       { id: "exile", label: "Have her removed from the arcology", resolve: (s, _e, p) => { seen(s, p); s.arcology.rep -= 150; delete p!.free_life; p!.exit_note = "exiled from the arcology"; startRumor(s, `the owner had ${p!.name} thrown out of the city for talking`, { salience: 8 }); return `Security walks her to the border with a bag. The story of it goes round faster than anything she was saying.`; } },
@@ -211,7 +211,7 @@ export const FREED_EVENTS: EventDef[] = [
     id: "freed_informant", severity: "minor", endogenous: false,
     candidates: (s) => freed(s, (l) => l.stance === "devoted" && ["docks", "exchange", "pleasure", "civic", "commercial"].includes(l.district)).map((person) => ({ person })),
     weight: () => 2,
-    seed: (s, c) => `${c.person!.name} asks to see you, privately. Where she works now, people talk in front of her the way they never would in front of you, and she has heard something she thinks you should know: someone in the ${c.person!.free_life!.district} is skimming from you, and she knows who.`,
+    seed: (s, c) => `${c.person!.name} asks to see you, privately. Where she works now, people talk in front of her the way they never would in front of you, and she has heard something she thinks you should know. Someone in the ${c.person!.free_life!.district} is skimming from you, and she knows who.`,
     options: [
       { id: "act", label: "Act on it", resolve: (s, _e, p) => { seen(s, p); const n = 4000 + Math.round(s.arcology.prosperity * 40); s.arcology.cash += n; s.arcology.crime = clamp(s.arcology.crime - 3, 0, 100); return `She was right. You get back ¤${n.toLocaleString()}, and the people who took it are made an example of.`; } },
       { id: "keep", label: "Keep her on as your ears", note: "¤1,000 a month to her", resolve: (s, _e, p) => { seen(s, p); s.arcology.cash -= 1000; s.arcology.security = clamp(s.arcology.security + 4, 0, 100); return `She becomes one of the people who tell you things. It's worth more than you pay her.`; } },

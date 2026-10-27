@@ -7,7 +7,7 @@ import { Card, Chip, Section } from "../lib/ui";
 import { RULE_LABEL, rulesOf, type SlaveRules } from "../engine/houserules";
 
 const GROUPS: { key: keyof SlaveRules; title: string; note: string }[] = [
-  { key: "between", title: "Events between your slaves", note: "What goes on between them that you hear about: the household's week, the disputes they bring you, and the goings-on written each week. Off, nothing between them comes to you." },
+  { key: "between", title: "Events between your slaves", note: "What goes on between them that you hear about, like the household's week, the disputes they bring you, and the goings-on written each week. With this off, nothing between them comes to you." },
   { key: "release", title: "Release", note: "Who she may get off with. A slave allowed to see to herself, or to the other girls, isn't left wound up all week waiting on you." },
   { key: "consent", title: "Consent between slaves", note: "Whether one of your slaves may take another who doesn't want it. Only matters when they may fuck each other." },
   { key: "relationships", title: "Relationships between slaves", note: "What they may be to each other. Lovers need release with each other too." },

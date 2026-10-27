@@ -55,7 +55,7 @@ Eleven dancers are about to be out of work. Most of them have rent due on apartm
         { id: "hire", label: "Take them on as paid staff in your own businesses", note: "¤3,000 a week for a while",
           need: cash(6000),
           run: (c) => { c.cash(-6000); c.prosperity(2); c.standing(1); c.set("club_hired", true);
-            return { text: `You find places for them: waiting tables in the penthouse, hostessing at your events, three of them dancing in your own club alongside the slaves. They're paid, and they keep their apartments.
+            return { text: `You find places for them, waiting tables in the penthouse, hostessing at your events, three of them dancing in your own club alongside the slaves. They're paid, and they keep their apartments.
 
 The citizens on the promenade notice that you looked after them.`, next: "aftermath", after: 2 }; } },
         { id: "severance", label: "Pay each of them a severance out of your own pocket", note: "¤4,000",
@@ -65,15 +65,15 @@ The citizens on the promenade notice that you looked after them.`, next: "afterm
         { id: "own", label: "Lend them the money to set up on their own", note: "¤5,000, paid back later if it works",
           need: cash(5000),
           run: (c) => { c.cash(-5000); c.set("club_parlor", true); c.prosperity(1);
-            return { text: `You lend them enough to take over the lease themselves and turn the place into something they can run: a massage parlor, they decide, since that's what the customers were paying for half the time anyway.`, next: "aftermath", after: 2 }; } },
-        { id: "nothing", label: "It's the market; they'll find something",
+            return { text: `You lend them enough to take over the lease themselves and turn the place into something they can run. They decide on a massage parlor, since that's what the customers were paying for half the time anyway.`, next: "aftermath", after: 2 }; } },
+        { id: "nothing", label: "It's the market, and they'll find something",
           run: (c) => { c.set("club_nothing", true); c.standing(-1);
             return { text: `You tell them it's the market and it isn't your problem. They go back down in the elevator without saying anything else.`, next: "aftermath", after: 2 }; } },
       ],
     },
     aftermath: {
       title: "One of the dancers",
-      text: (c) => `${has(c, "club_parlor") ? "The massage parlor on the promenade is doing fine; the dancers who run it have already paid back a third of your loan." : has(c, "club_hired") ? "Most of the dancers you took on are still working for you." : "Most of the dancers have left the arcology."}
+      text: (c) => `${has(c, "club_parlor") ? "The massage parlor on the promenade is doing fine, and the dancers who run it have already paid back a third of your loan." : has(c, "club_hired") ? "Most of the dancers you took on are still working for you." : "Most of the dancers have left the arcology."}
 
 One of them hasn't. Her name is Kira. She was the youngest of them, and she comes up to the penthouse on her own, in her one good dress, and asks to see you.
 
@@ -132,11 +132,11 @@ const food: ArcDef = {
   beats: {
     study: {
       title: "What's in the slave food",
-      text: (c) => `Your head of nutrition brings you a report she wasn't supposed to see. The company that makes the liquid slave food half the Free Cities feed their slaves on, including you, did a long-term study on it. The results are bad: slaves raised on it become dependent on it, get sick when they're switched off it, and the effect gets worse the longer they're on it.
+      text: (c) => `Your head of nutrition brings you a report she wasn't supposed to see. The company that makes the liquid slave food half the Free Cities feed their slaves on, including you, did a long-term study on it. The results are bad. Slaves raised on it become dependent on it, get sick when they're switched off it, and the effect gets worse the longer they're on it.
 
 The company buried the study. Your nutritionist got a copy from a friend. You own a small stake in the company through a fund, and you're one of the few people outside it who knows.`,
       options: [
-        { id: "publish", label: "Publish it", note: "the right thing; costs you",
+        { id: "publish", label: "Publish it", note: "the right thing, but it costs you",
           run: (c) => { c.cash(-4000); c.rep(500); c.standing(2); c.set("plot_food_published", true);
             return { text: `You release the study on the regional feeds under your own name. The company's shares collapse overnight, your stake with them. Owners all over the Free Cities are furious, some at the company and some at you.
 
@@ -149,7 +149,7 @@ Your nutritionist knows. She hasn't said anything yet.`, end: "you buried the sl
         { id: "quiet", label: "Say nothing, but switch your own household onto real food", note: "¤3,000",
           need: cash(3000),
           run: (c) => { c.cash(-3000); for (const p of ownedAdults(c.s)) p.health.health = clamp(p.health.health + 4, -100, 100); c.hope(2);
-            return { text: `You don't publish it. But the next week your kitchens start cooking: real bread, eggs, fruit. Some of your slaves get sick for a few days coming off the liquid food, and then they get better.`, end: "you quietly switched your slaves off the slave food" }; } },
+            return { text: `You don't publish it. But the next week your kitchens start cooking real bread, eggs and fruit. Some of your slaves get sick for a few days coming off the liquid food, and then they get better.`, end: "you quietly switched your slaves off the slave food" }; } },
       ],
     },
   },
@@ -165,13 +165,13 @@ const militia: ArcDef = {
       title: "Every owner is arming",
       text: (c) => `A small arcology on the other side of the sea was taken last month by a gang of raiders who walked in through the service entrances. The owner's body was hung from the top of the spire. Since then, every owner in the Free Cities has been buying guns.
 
-Your security chief wants you to do something too. There are two ways to go about it: arm your citizens and train them as a militia, or buy a fleet of armed security drones that answer only to you.`,
+Your security chief wants you to do something too. There are two ways to go about it. You can arm your citizens and train them as a militia, or buy a fleet of armed security drones that answer only to you.`,
       options: [
-        { id: "militia", label: "Found a citizen militia", note: "¤8,000; the citizens will feel it's their arcology too",
+        { id: "militia", label: "Found a citizen militia", note: "costs ¤8,000, and the citizens will feel it's their arcology too",
           need: cash(8000),
           run: (c) => { c.cash(-8000); c.set("plot_militia", true); c.security(8); c.standing(1);
             return { text: `You open an armory in the lower levels and invite any citizen who wants to learn to shoot. Nine hundred sign up in the first week. On weekend mornings you can hear them drilling in the parking levels.`, end: "you founded a citizen militia" }; } },
-        { id: "drones", label: "Buy security drones", note: "¤12,000; loyal only to you",
+        { id: "drones", label: "Buy security drones", note: "costs ¤12,000, and they're loyal only to you",
           need: cash(12000),
           run: (c) => { c.cash(-12000); c.set("plot_drones", true); c.security(12);
             return { text: `The drones arrive in crates and your engineers spend a week installing their charging racks along the ceilings of the main concourses. Now wherever citizens look up there's one hanging there, watching.`, end: "you bought security drones" }; } },
@@ -193,7 +193,7 @@ const mercs: ArcDef = {
   beats: {
     offer: {
       title: "A Free City has been sacked",
-      text: (c) => `It's happened again, and this time to a real city: an Old World army crossed the border and sacked a Free City two hundred kilometers down the coast. The owners there are dead or fled, and the slaves have been taken away in trucks.
+      text: (c) => `It's happened again, and this time to a real city. An Old World army crossed the border and sacked a Free City two hundred kilometers down the coast. The owners there are dead or fled, and the slaves have been taken away in trucks.
 
 The mercenary company that was supposed to defend it didn't get paid in time, and left the day before. Its commander, ${c.full("captain")}, is in ${c.arcology} now, with three hundred soldiers and their gear, looking for a permanent contract. ${c.He("captain")} wants a barracks in your arcology and a monthly fee.`,
       options: [
@@ -242,7 +242,7 @@ ${c.sn} sees you come through the door and starts crying.`, end: `you rescued ${
             const p = c.subj; if (p) c.remove(p, "gone", "taken by kidnappers on the promenade");
             return { text: `You're too late. The loading bay is empty except for one of ${c.sn}'s shoes and the tire marks of the van. The boat left ten minutes ago.`, end: `${c.sn} was taken` }; } },
         { id: "refuse", label: "Refuse to pay",
-          run: (c) => { const p = c.subj; if (p) c.remove(p, "gone", "taken by kidnappers on the promenade; you refused the ransom"); c.hope(-4);
+          run: (c) => { const p = c.subj; if (p) c.remove(p, "gone", "taken by kidnappers on the promenade, and you refused the ransom"); c.hope(-4);
             return { text: `You don't answer the message. There isn't another one. ${c.sn} isn't seen again, and the rest of your household knows exactly what you decided.`, end: `you refused the ransom and lost ${c.sn}` }; } },
       ],
     },
@@ -257,7 +257,7 @@ const invasion: ArcDef = {
   beats: {
     attack: {
       title: "An army at the border",
-      text: (c) => `The failed state inland has been on the edge of collapse for years. Now its last general, ${c.full("general")}, has decided the Free City is worth more than what's left of the country, and ${c.he("general")} is coming for it: four thousand men, old tanks, and nothing to lose.
+      text: (c) => `The failed state inland has been on the edge of collapse for years. Now its last general, ${c.full("general")}, has decided the Free City is worth more than what's left of the country, and ${c.he("general")} is coming for it with four thousand men, old tanks, and nothing to lose.
 
 The Free City's owners meet in emergency session. Every arcology is expected to put up what it has. ${defenseScore(c) >= 3 ? `Between ${has(c, "plot_mercs") ? `${c.n("captain")}'s company` : "your security forces"}${has(c, "plot_militia") ? ", your militia" : ""}${has(c, "plot_drones") ? " and your drones" : ""}, you have more than most.` : "You don't have much to offer."}`,
       options: [
@@ -295,9 +295,9 @@ ${c.arcology}'s share is forty men and women, and ${c.n("general")} is on the ta
     },
     raid: {
       title: "An invitation to a raid",
-      text: (c) => `With ${c.n("general")}'s army gone, the city it came from is empty of soldiers. A group of owners is putting together a raid: in fast, take everyone who can be sold, out before anyone organizes. They want to know if ${c.arcology} is in.
+      text: (c) => `With ${c.n("general")}'s army gone, the city it came from is empty of soldiers. A group of owners is putting together a raid. The plan is to go in fast, take everyone who can be sold, and get out before anyone organizes. They want to know if ${c.arcology} is in.
 
-There are three groups worth taking: the soldiers who deserted before the battle and are hiding in the old barracks, the civilians sheltering in the cathedral, or the largest camp, on the river, which is a mix of everyone.`,
+There are three groups worth taking. One is the soldiers who deserted before the battle and are hiding in the old barracks, another is the civilians sheltering in the cathedral, and the third is the largest camp, on the river, which is a mix of everyone.`,
       options: [
         { id: "soldiers", label: "Take the deserters from the barracks",
           run: (c) => { for (let i = 0; i < 2; i++) { const p = c.addSlave({ seed: `raidsol${i}`, age: 22 + i * 5, quality: 0.2, how: "a deserter taken in the raid on the abandoned city", hostile: true }); p.skills.combat = Math.max(p.skills.combat, 50); }
@@ -326,7 +326,7 @@ const railroad: ArcDef = {
   beats: {
     message: {
       title: "A message from the Daughters",
-      text: (c) => `A slave in your arcology, not one of yours, a citizen's, was found this morning in a shipping container on the docks with twenty others, on her way out of the Free City. The smuggler got away. On the container wall someone had painted a woman's face with a broken chain across it: the Daughters of Liberty.
+      text: (c) => `A slave in your arcology, not one of yours, a citizen's, was found this morning in a shipping container on the docks with twenty others, on her way out of the Free City. The smuggler got away. On the container wall someone had painted a woman's face with a broken chain across it, the mark of the Daughters of Liberty.
 
 Your security chief traced how the container got past your checkpoints, and brings you the answer. Someone inside your own household has been passing on the checkpoint schedules. It's ${c.sn}.
 
@@ -335,7 +335,7 @@ She doesn't know you know. Tonight she has a message in her room from ${c.full("
         { id: "confront", label: "Confront her privately",
           run: (c) => { const p = c.subj; const d = p ? read(p).devotion : 0;
             if (p && d > 0) { c.treat(p, "kindness", 4, "you confronted her about the Daughters privately instead of punishing her"); c.set("plot_railroad_turned", true);
-              return { text: `You wait for her in her room and hold up the message when she comes in. ${c.sn} goes white, and then sits on the bed and tells you everything: who approached her, what she passed on, where the containers go.
+              return { text: `You wait for her in her room and hold up the message when she comes in. ${c.sn} goes white, and then sits on the bed and tells you everything, including who approached her, what she passed on, and where the containers go.
 
 "I thought they were going to help people," she says. "I didn't think about you."`, end: `${c.sn} told you everything about the Daughters` }; }
             c.treat(p, "coercion", 5, "confronted about helping the Daughters of Liberty");
@@ -408,7 +408,7 @@ They want soldiers quartered in the residential rings where people can see them.
         { id: "quarter", label: "Quarter soldiers in the residential rings", note: "¤6,000",
           need: cash(6000),
           run: (c) => { c.cash(-6000); c.set("plot_quartered", true); c.security(6); c.standing(1);
-            return { text: `You put soldiers in the residential rings: a squad in every block, sleeping in empty apartments. The citizens bring them food. Some of the soldiers start dating the citizens' daughters, and that turns out to be good for morale too.`, end: "you quartered soldiers among the citizens" }; } },
+            return { text: `You put soldiers in the residential rings, a squad in every block, sleeping in empty apartments. The citizens bring them food. Some of the soldiers start dating the citizens' daughters, and that turns out to be good for morale too.`, end: "you quartered soldiers among the citizens" }; } },
         { id: "militia", label: "Tell them to join the militia", show: (c) => has(c, "plot_militia"),
           run: (c) => { c.security(4); c.set("plot_militia_grown", true);
             return { text: `You tell the delegation that the militia's armory is open, and they should send anyone who wants to feel safer. Four hundred more citizens sign up.`, end: "you grew the militia" }; } },
@@ -429,7 +429,7 @@ const knights: ArcDef = {
   beats: {
     choose: {
       title: "What the mercenaries become",
-      text: (c) => `${c.n("captain")}'s soldiers have been in ${c.arcology} long enough that they're part of it. Some of them have married citizens. ${c.n("captain")} comes to you with a proposal: stop treating the company as hired guns and make it something permanent. ${c.He("captain")} has four ideas.`,
+      text: (c) => `${c.n("captain")}'s soldiers have been in ${c.arcology} long enough that they're part of it. Some of them have married citizens. ${c.n("captain")} comes to you with a proposal to stop treating the company as hired guns and make it something permanent. ${c.He("captain")} has four ideas.`,
       options: [
         { id: "knights", label: "Knights: give the officers land and titles in the arcology",
           run: (c) => { c.set("plot_knights", "knights"); c.rep(600); c.security(8); c.cash(-5000);
@@ -496,7 +496,7 @@ Your security chief looks at the message for a long time, then says the hacker i
             return { text: `You pay. Two days later another message arrives: "done. they had backdoors in ur doors, ur drones and ur elevators. theyre gone now. ur welcome." Your engineers confirm it.`, end: "you paid the hacker" }; } },
         { id: "own", label: "Have your own engineers find it", need: (c) => (c.skill("hacking") >= 30 ? null : "needs hacking 30"),
           run: (c) => { c.set("plot_hacker", true);
-            return { text: `You and your engineers spend three nights going through the network. The hacker was right: there are backdoors into the door controls, the drones and the elevators, planted by someone well funded. You close them all.`, end: "you found the backdoors yourself" }; } },
+            return { text: `You and your engineers spend three nights going through the network. The hacker was right. There are backdoors into the door controls, the drones and the elevators, planted by someone well funded. You close them all.`, end: "you found the backdoors yourself" }; } },
         { id: "ignore", label: "Ignore it",
           run: (c) => ({ text: `You delete the message. A week later there's another: "ok ur funeral."`, end: "you ignored the hacker" }) },
       ],
@@ -514,10 +514,10 @@ const coup: ArcDef = {
       title: "The night of the coup",
       text: (c) => {
         const d = defenseScore(c);
-        const warn = has(c, "plot_double") ? `${most(c)?.name ?? "Your spy"} brings you the date two days before: the Daughters, with hired soldiers behind them, are coming on the night of the new moon. You've had two days to get ready.` : "It comes without warning.";
+        const warn = has(c, "plot_double") ? `${most(c)?.name ?? "Your spy"} brings you the date two days before. The Daughters, with hired soldiers behind them, are coming on the night of the new moon. You've had two days to get ready.` : "It comes without warning.";
         return `${warn}
 
-At two in the morning the lights go out across ${c.arcology}. ${has(c, "plot_hacker") ? "The backup generators come on and the spire's doors stay locked; whoever planned this was counting on the backdoors that aren't there any more." : "The spire's inner doors open on their own. Someone has control of the network."} Armed men in grey come up through the service tunnels, with ${c.full("insurgent")}'s Daughters guiding them.
+At two in the morning the lights go out across ${c.arcology}. ${has(c, "plot_hacker") ? "The backup generators come on and the spire's doors stay locked, because whoever planned this was counting on the backdoors that aren't there any more." : "The spire's inner doors open on their own. Someone has control of the network."} Armed men in grey come up through the service tunnels, with ${c.full("insurgent")}'s Daughters guiding them.
 
 ${d >= 5 ? `${has(c, "plot_knights") ? "Your knights" : has(c, "plot_mercs") ? `${c.n("captain")}'s soldiers` : "Your security forces"} are already moving to meet them.` : d >= 3 ? "Your people are fighting, but they're spread thin." : "Your guards are outnumbered from the first minute."}`;
       },
@@ -557,7 +557,7 @@ ${c.He("rival_owner")} wanted ${c.arcology}, and funded the Daughters to take it
             return { text: `You call ${c.n("rival_owner")} and tell ${c.him("rival_owner")} what you have. There's a long silence on the line. By the end of the week, ${money(40000)} has arrived in your accounts from a company that doesn't exist, and you both pretend nothing happened.`, end: "you made your rival pay for the coup, quietly" }; } },
         { id: "public", label: "Reveal it to the whole Free City",
           run: (c) => { c.rep(1500); c.standing(3); const n = c.s.arcology.neighbours[0]; if (n) { n.attitude = -100; n.prosperity = clamp(n.prosperity - 30, 0, 200); } c.like("rival_owner", -60);
-            return { text: `You put everything on the regional feeds: the transfers, the orders, the prisoners' statements. The other owners cut ${c.n("rival_owner")} off within a day. ${c.His("rival_owner")} arcology's credit collapses, and ${c.his("rival_owner")} citizens start leaving.`, end: "you exposed your rival as the one behind the coup" }; } },
+            return { text: `You put everything on the regional feeds, including the transfers, the orders and the prisoners' statements. The other owners cut ${c.n("rival_owner")} off within a day. ${c.His("rival_owner")} arcology's credit collapses, and ${c.his("rival_owner")} citizens start leaving.`, end: "you exposed your rival as the one behind the coup" }; } },
         { id: "trace", label: "Follow the money, and take what it paid for",
           need: (c) => (c.skill("trading") >= 25 || has(c, "plot_hacker") ? null : "needs trading 25 or the hacker"),
           run: (c) => { const n = c.s.arcology.neighbours[0]; if (n) n.ownership = clamp(n.ownership + 25, 0, 100); c.cash(10000);

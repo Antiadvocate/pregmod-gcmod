@@ -89,7 +89,7 @@ const LEAD: Record<Register, string[]> = {
   eager: [
     "{name} looks up when you come in and smiles, and puts down what she was doing.",
     "{name} is sitting on the bed, and she's on her feet the moment she sees it's you.",
-    "{name} has been waiting for you; she comes over and stands close.",
+    "{name} has been waiting for you. She comes over and stands close.",
   ],
   bratty: [
     "{name} is sprawled across the bed and only lifts her head when you come in.",
@@ -307,7 +307,7 @@ const ACT_TEXT: Record<string, ActText> = {
   "public use": {
     core: [
       "You bend her over a rail on the concourse and fuck her in front of the evening crowd. Somebody films it. Somebody claps.",
-      "You take her against a pillar outside the shops. People slow down to watch; a few stop.",
+      "You take her against a pillar outside the shops. People slow down to watch, and a few stop.",
     ],
     yours: ["You finish inside her and leave her there, legs shaking, for whoever's still looking."],
     nocock: {
@@ -377,8 +377,8 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   "take charge": {
     core: [
-      "You lie back and tell her it's hers. She doesn't ask twice: she pins your wrists over your head, takes what she wants from you at her own pace, and tells you exactly what to do with your mouth.",
-      "You give her control and she takes it like it was always hers: she shoves you flat, climbs up and sits on your face, and rides you until she's done with you, not before.",
+      "You lie back and tell her it's hers. She doesn't ask twice. She pins your wrists over your head, takes what she wants from you at her own pace, and tells you exactly what to do with your mouth.",
+      "You give her control and she takes it like it was always hers. She shoves you flat, climbs up and sits on your face, and rides you until she's done with you, not before.",
     ],
   },
   "drain her": {
@@ -395,7 +395,7 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   "worship her": {
     core: [
-      "You spend an hour on her: hands, mouth, every inch, and you don't ask for anything back.",
+      "You spend an hour on her with your hands and mouth, every inch of her, and you don't ask for anything back.",
       "You kiss your way down her body and back up and down again, taking your time over every part of her.",
     ],
   },
@@ -571,12 +571,12 @@ const ACT_TEXT: Record<string, ActText> = {
   pedicure: {
     core: [
       "You soak her feet in warm water, scrub {soles} smooth, rub lotion into them, and paint her toenails while she watches.",
-      "You sit her down, put {feet} in your lap, and give her a full pedicure: filing, lotion, and fresh polish on every toenail.",
+      "You sit her down, put {feet} in your lap, and give her a full pedicure, with filing, lotion, and fresh polish on every toenail.",
     ],
   },
   "sleeping together": {
     core: [
-      "You tell her she's sleeping in your bed tonight. She strips and climbs in beside you, and you pull her against you under the covers. You don't fuck her; you just go to sleep with your arm around her. In the morning she's still there, warm and pressed against your side.",
+      "You tell her she's sleeping in your bed tonight. She strips and climbs in beside you, and you pull her against you under the covers. You don't fuck her. You just go to sleep with your arm around her. In the morning she's still there, warm and pressed against your side.",
       "At the end of the night you take her to your bed and tell her to get in. She lies down next to you stiffly, expecting to be used. When nothing happens she slowly relaxes, and falls asleep with her head on your shoulder. She wakes before you and stays where she is until you get up.",
       "You let her sleep in your bed tonight. She curls up against your back under the covers. You talk for a little while in the dark, and then you both fall asleep. You don't touch her except to hold her.",
     ],
@@ -589,7 +589,7 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   talk: {
     core: [
-      "You sit down with her and ask about her life before she was enslaved: her family, her job, what she misses. She talks for a while, and you listen.",
+      "You sit down with her and ask about her life before she was enslaved, about her family, her job, and what she misses. She talks for a while, and you listen.",
       "You pour two drinks and ask her how she's finding life in the arcology. It takes her a while to give you an honest answer.",
     ],
   },
@@ -601,7 +601,7 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   "smell her": {
     core: [
-      "She comes straight from her shift, sweaty, and you take your time: her neck, under her arms, the backs of her knees, her feet, and last between her legs. You tell her what you smell.",
+      "She comes straight from her shift, sweaty, and you take your time with her neck, under her arms, the backs of her knees, her feet, and last between her legs. You tell her what you smell.",
       "You make her stand still while you smell her all over. She goes red, and then she stops being embarrassed and starts pushing herself into your face.",
     ],
   },
@@ -834,7 +834,7 @@ function discoveryLine(p: Person, o: ActOutcome, r: Rng): string {
     return `From how she took that, it's clear she's a ${p.persona.quirk?.id}.`;
   }
   if (p.persona.flaw?.known && o.discovered?.includes(p.persona.flaw.id)) {
-    return `She ${p.persona.flaw.id}; it was obvious from her face.`;
+    return `She ${p.persona.flaw.id}, and it was obvious from her face.`;
   }
   return o.discovered ? cap(o.discovered) + "." : "";
 }
@@ -842,7 +842,7 @@ function discoveryLine(p: Person, o: ActOutcome, r: Rng): string {
 function convertedLine(p: Person, o: ActOutcome): string {
   if (!o.converted) return "";
   const [from, to] = o.converted.split(" → ");
-  if (p.persona.paraphilia === to) return `She doesn't just like it any more; she needs it. Her ${from} fetish has become ${to}.`;
+  if (p.persona.paraphilia === to) return `She doesn't just like it any more. She needs it. Her ${from} fetish has become ${to}.`;
   return `She used to be ${from}. Now she's a ${to}.`;
 }
 
@@ -933,9 +933,9 @@ export function writeAct(s: SaveState, p: Person, o: ActOutcome, opts?: { lead?:
 }
 
 const FORCED: Record<"vagina" | "anus" | "throat" | "other", string[]> = {
-  vagina: ["You push her down and force her legs apart. She fights you the whole way in, then goes still.", "She tries to close her legs; you hold them open and force yourself into her."],
+  vagina: ["You push her down and force her legs apart. She fights you the whole way in, then goes still.", "She tries to close her legs, but you hold them open and force yourself into her."],
   anus: ["You bend her over and hold her there by the back of the neck while you force yourself into her ass. She screams into the cushion.", "She claws at the sheets and begs you to stop as you force your way into her ass."],
-  throat: ["She keeps her mouth shut until you pinch her nose; then you force yourself down her throat while she chokes and slaps at your thighs."],
+  throat: ["She keeps her mouth shut until you pinch her nose, and then you force yourself down her throat while she chokes and slaps at your thighs."],
   other: ["She doesn't want it and fights you, and you make her anyway."],
 };
 const FORCED_LANDED = ["She hates every second of it, and hates you for it.", "She cries the whole time, and doesn't stop when you're done."];
@@ -944,7 +944,7 @@ const FIT_LINE: Record<string, string> = {
   loose: "She's loose around you and barely feels it.",
   fits: "",
   snug: "It's a tight fit, and she feels every inch of it.",
-  struggle: "It's too big for her: it takes a long time and a lot of lube to get it in at all, and it hurts her the whole way.",
+  struggle: "It's too big for her. It takes a long time and a lot of lube to get it in at all, and it hurts her the whole way.",
   damage: "It doesn't fit, and forcing it in tears her.",
 };
 

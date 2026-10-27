@@ -67,9 +67,9 @@ export const EVENTS: EventDef[] = [
     seed: (_s, c) => `Security caught ${c.person!.name} at a service door on the industrial level at four in the morning, with a bag of stolen food and a keycard she shouldn't have had. She was trying to escape.\n\nShe's sitting in your security office now, handcuffed to a chair. She won't look at anyone, and she's shaking.`,
     options: [
       { id: "cell", label: "The cellblock", note: "she'll obey out of fear, and never forget it",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "coercion", size: 7, why: "caught at the door" }, s.arcology.week); p!.psyche.relaxation = clamp(p!.psyche.relaxation - 3, -10, 10); startRumor(s, `${p!.name} tried to run and went to the cells`, { about: p!.id, salience: 7 }); return `You have ${p!.name} taken to the cellblock and locked in a bare cell for a week. The guards know what to do with runaways: she's kept awake, fed through the bars, and made to understand exactly what happens to slaves who run.\n\nWhen she comes out, she's very quiet and very obedient. She's also never going to trust you.`; } },
+        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "coercion", size: 7, why: "caught at the door" }, s.arcology.week); p!.psyche.relaxation = clamp(p!.psyche.relaxation - 3, -10, 10); startRumor(s, `${p!.name} tried to run and went to the cells`, { about: p!.id, salience: 7 }); return `You have ${p!.name} taken to the cellblock and locked in a bare cell for a week. The guards know what to do with runaways. She's kept awake, fed through the bars, and made to understand exactly what happens to slaves who run.\n\nWhen she comes out, she's very quiet and very obedient. She's also never going to trust you.`; } },
       { id: "ask", label: "Ask her what she was doing", note: "costs nothing but your time",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 4, why: "asked instead of punished" }, s.arcology.week); p!.bond.hope = clamp(p!.bond.hope + 10, 0, 100); return `You sit down across from ${p!.name} and ask her why. It takes a while, but she tells you: she's frightened, she misses home, and one of the kitchen staff told her there was a boat.\n\nYou believe about half of it. But she wasn't punished, and she noticed.`; } },
+        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 4, why: "asked instead of punished" }, s.arcology.week); p!.bond.hope = clamp(p!.bond.hope + 10, 0, 100); return `You sit down across from ${p!.name} and ask her why. It takes a while, but she tells you that she's frightened, she misses home, and one of the kitchen staff told her there was a boat.\n\nYou believe about half of it. But she wasn't punished, and she noticed.`; } },
       { id: "sell", label: "Sell her before she manages it",
         resolve: (s, _e, p) => { p!.status = "sold"; p!.exit_week = s.arcology.week; p!.exit_note = "sold after an escape attempt"; s.arcology.cash += 800; startRumor(s, `${p!.name} was sold the same week she tried to run`, { salience: 8 }); return `You don't want a runaway in the house. ${p!.name} is sold to a broker by Thursday, at a loss, with "escape risk" written on her papers.\n\nYour other slaves see her taken away, and draw their own conclusions.`; } },
       { id: "ignore", label: "Do nothing and see what she does next",
@@ -85,7 +85,7 @@ export const EVENTS: EventDef[] = [
       { id: "spa", label: "Spa, and take her off everything",
         resolve: (s, _e, p) => { p!.assignment = "rest in the spa"; p!.health.aphrodisiacs = 0; applyTreatment(p!, { kind: "kindness", size: 6, why: "pulled out before she broke" }, s.arcology.week); return `You take ${p!.name} off everything and send her to the spa with orders that nobody is to ask anything of her. For the first few days she just sits in the warm water, staring at the tiles.\n\nIt'll take weeks, but she's coming back.`; } },
       { id: "push", label: "Push her the rest of the way", note: "a broken slave is obedient and nothing else",
-        resolve: (s, _e, p) => { p!.psyche.relaxation = -9.5; p!.psyche.state = "broken"; p!.psyche.break_mode = "dissociative"; applyTreatment(p!, { kind: "cruelty", size: 9, why: "finished her" }, s.arcology.week); return `You keep the pressure on. ${p!.name} breaks on Tuesday, in the middle of her shift: she simply stops, and stands there until someone gives her the next order.\n\nShe's been perfectly obedient ever since. She'll do anything she's told, and there's nobody left behind her eyes to mind.`; } },
+        resolve: (s, _e, p) => { p!.psyche.relaxation = -9.5; p!.psyche.state = "broken"; p!.psyche.break_mode = "dissociative"; applyTreatment(p!, { kind: "cruelty", size: 9, why: "finished her" }, s.arcology.week); return `You keep the pressure on. ${p!.name} breaks on Tuesday, in the middle of her shift. She simply stops, and stands there until someone gives her the next order.\n\nShe's been perfectly obedient ever since. She'll do anything she's told, and there's nobody left behind her eyes to mind.`; } },
       { id: "ignore", label: "Leave her in place",
         resolve: (_s, _e, p) => `You leave ${p?.name ?? "her"} where she is. She keeps working, and keeps getting quieter.` },
     ],
@@ -94,7 +94,7 @@ export const EVENTS: EventDef[] = [
     id: "devoted_request", severity: "minor", endogenous: true,
     candidates: (s) => owned(s).filter((p) => read(p).devotion > 55 && p.bond.hope > 30).map((person) => ({ person })),
     weight: (_s, c) => 3 + c.person!.bond.hope / 25,
-    seed: (s, c) => `${c.person!.name} has asked to speak to you. She comes into your office twisting her hands together, clearly nervous.\n\nShe's been working up the courage for days. She wants something small: a warmer blanket, a book, an afternoon off to see a friend in the Club. It matters to her a lot more than it costs you.${(() => { const w = roomWish(s, c.person!); return w ? ` What she actually wants is ${w.name} for where she sleeps (about ¤${w.cost.toLocaleString()}).` : ""; })()}`,
+    seed: (s, c) => `${c.person!.name} has asked to speak to you. She comes into your office twisting her hands together, clearly nervous.\n\nShe's been working up the courage for days. She wants something small, like a warmer blanket, a book, or an afternoon off to see a friend in the Club. It matters to her a lot more than it costs you.${(() => { const w = roomWish(s, c.person!); return w ? ` What she actually wants is ${w.name} for where she sleeps (about ¤${w.cost.toLocaleString()}).` : ""; })()}`,
     options: [
       { id: "grant", label: "Give her what she asks for",
         resolve: (s, _e, p) => {
@@ -125,7 +125,7 @@ export const EVENTS: EventDef[] = [
     seed: (s, c) => {
       const enemy = s.edges.find((e) => e.from === c.person!.id && e.warmth < -35);
       const other = enemy ? s.people[enemy.to] : undefined;
-      return `${c.person!.name} and ${other?.name ?? "another of yours"} have been feuding for weeks, and last night it turned into a fight in front of the others: pulled hair, scratched faces, a broken lamp, and the whole dormitory screaming.\n\nThey're both waiting outside your office now, not looking at each other.`;
+      return `${c.person!.name} and ${other?.name ?? "another of yours"} have been feuding for weeks, and last night it turned into a fight in front of the others, with pulled hair, scratched faces, a broken lamp, and the whole dormitory screaming.\n\nThey're both waiting outside your office now, not looking at each other.`;
     },
     options: [
       { id: "separate", label: "Separate them", resolve: (_s, _e, p) => `You move ${p?.name ?? "one of them"} to a different floor and put them on opposite shifts. They don't have to see each other any more, and the dormitory calms down.\n\nNeither of them is happy about it, but they're not fighting.` },
@@ -167,14 +167,14 @@ export const EVENTS: EventDef[] = [
     id: "pregnancy_found", severity: "minor", endogenous: true,
     candidates: (s) => owned(s).filter((p) => p.womb.fetuses.length && p.womb.weeks >= 8 && p.womb.weeks <= 10).map((person) => ({ person })),
     weight: () => 6,
-    seed: (_s, c) => `${c.person!.name} is nine weeks pregnant. The clinic found out during a routine exam; she's known for at least two weeks and didn't tell anyone.\n\nShe's waiting in the clinic, one hand on her stomach, to find out what you're going to do.`,
+    seed: (_s, c) => `${c.person!.name} is nine weeks pregnant. The clinic found out during a routine exam. She's known for at least two weeks and didn't tell anyone.\n\nShe's waiting in the clinic, one hand on her stomach, to find out what you're going to do.`,
     options: [
       { id: "keep", label: "She carries it",
         resolve: (s, _e, p) => { applyTreatment(p!, { kind: "kindness", size: 3, why: "allowed to carry" }, s.arcology.week); return `You tell the clinic she'll carry it to term. ${p!.name} bursts into tears, and it's hard to tell whether she's relieved or terrified.\n\nShe'll start showing in a month or two.`; } },
       { id: "end", label: "End it",
         resolve: (s, _e, p) => { p!.womb.fetuses = []; p!.womb.abortions++; p!.womb.weeks = 0; applyTreatment(p!, { kind: "cruelty", size: 6, why: "the pregnancy ended without her say" }, s.arcology.week); const mem = s.memory[p!.id]; if (mem) remember(mem, { content: "the pregnancy was ended, and nobody asked her", week: s.arcology.week, importance: 9, charge: "sharp", core: true }); return `You tell the clinic to end it. It's done on Wednesday. ${p!.name} isn't asked, and isn't told until it's over.\n\nShe goes back to work the next week and doesn't talk about it.`; } },
       { id: "ask", label: "Ask her what she wants",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 7, why: "asked about her own body" }, s.arcology.week); return `You ask ${p!.name} what she wants. She has to think about it for a long time; nobody has ever asked her anything like that before.\n\nWhatever she decides, she'll remember that you asked.`; } },
+        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 7, why: "asked about her own body" }, s.arcology.week); return `You ask ${p!.name} what she wants. She has to think about it for a long time, because nobody has ever asked her anything like that before.\n\nWhatever she decides, she'll remember that you asked.`; } },
     ],
   },
   {
@@ -205,7 +205,7 @@ export const EVENTS: EventDef[] = [
     id: "prestige_offer", severity: "minor", endogenous: false,
     candidates: (s) => (s.arcology.rep > 2000 ? owned(s).filter((p) => p.body.face > 70).map((person) => ({ person })) : []),
     weight: () => 3,
-    seed: (_s, c) => `A promoter from one of the big arcologies up the coast has seen ${c.person!.name} and wants to put her on stage: a series of shows, filmed and sold across the Free Cities.\n\nHe's offering good money, and a lot of attention.`,
+    seed: (_s, c) => `A promoter from one of the big arcologies up the coast has seen ${c.person!.name} and wants to put her on stage in a series of shows, filmed and sold across the Free Cities.\n\nHe's offering good money, and a lot of attention.`,
     options: [
       { id: "yes", label: "Let him", resolve: (s, _e, p) => { p!.fame.prestige = Math.min(3, p!.fame.prestige + 1) as 0 | 1 | 2 | 3; p!.fame.why = "a local celebrity"; s.arcology.rep += 600; return `${p!.name} does the shows. She's nervous the first night and a natural by the third. The footage sells well across the Free Cities.\n\nShe's a minor celebrity now. Citizens recognize her on the concourse, and your reputation rises with hers.`; } },
       { id: "no", label: "Decline", resolve: () => `You decline. The promoter is disappointed, and tells you to call him if you change your mind. He'll be back.` },
@@ -287,9 +287,9 @@ export const EVENTS: EventDef[] = [
     id: "mercenary_offer", severity: "minor", endogenous: false,
     candidates: (s) => (!s.arcology.mercenaries.hired && s.arcology.cash > 25000 ? [{}] : []),
     weight: (s) => (s.arcology.security < 40 ? 5 : 2),
-    seed: () => `A mercenary company is looking for work: sixty soldiers, armed and experienced. Their captain is a scarred woman who's upfront about the price and cagey about their last job.\n\nThey'd make your arcology a lot harder to raid.`,
+    seed: () => `A mercenary company is looking for work. It's sixty soldiers, armed and experienced. Their captain is a scarred woman who's upfront about the price and cagey about their last job.\n\nThey'd make your arcology a lot harder to raid.`,
     options: [
-      { id: "hire", label: "Take them on", note: "¤22,000 up front — under the usual rate",
+      { id: "hire", label: "Take them on", note: "¤22,000 up front, which is under the usual rate",
         resolve: (s) => { s.arcology.cash -= 22000; s.arcology.mercenaries = { hired: true, strength: 50, loyalty: 55, upkeep: 3500 }; s.arcology.security = clamp(s.arcology.security + 18, 0, 100); return `You hire them. They move into the freight level the same day, and within a week they're running patrols and drilling on the concourse.\n\nYour citizens feel safer. Your neighbors notice.`; } },
       { id: "pass", label: "Pass", resolve: () => `You pass. The company goes east, to an arcology that could afford them.` },
     ],
@@ -358,10 +358,10 @@ export const EVENTS: EventDef[] = [
     id: "too_big", severity: "minor", endogenous: true,
     candidates: (s) => owned(s).filter((p) => (p.body.balls ?? 0) >= 8 || (p.body.dick ?? 0) >= 9).map((person) => ({ person })),
     weight: () => 4,
-    seed: (_s, c) => { const b = c.person!.body; return `${c.person!.name} is struggling. ${(b.balls ?? 0) >= 8 ? "Her balls are so heavy now that she has to hold them up with one hand when she walks, and they're so full she leaks cum through her clothes every few hours." : "Her cock is so big now that it gets in the way of everything: she can't sit properly, can't wear normal clothes, and it drags against her thighs when she walks."}\n\nShe's come to you, embarrassed, to ask for help.`; },
+    seed: (_s, c) => { const b = c.person!.body; return `${c.person!.name} is struggling. ${(b.balls ?? 0) >= 8 ? "Her balls are so heavy now that she has to hold them up with one hand when she walks, and they're so full she leaks cum through her clothes every few hours." : "Her cock is so big now that it gets in the way of everything. She can't sit properly, can't wear normal clothes, and it drags against her thighs when she walks."}\n\nShe's come to you, embarrassed, to ask for help.`; },
     options: [
-      { id: "milk", label: "Have her milked every morning", note: "relief; she'll come to depend on it",
-        resolve: (s, _e, p) => { if ((p!.body.balls ?? 0) > 0) resolveAct(s, p!, "drain her"); applyTreatment(p!, { kind: "kindness", size: 3, why: "milked every morning so she could walk" }, s.arcology.week); return `You have the dairy staff milk ${p!.name} every morning before her shift. The relief is enormous: she can walk without holding herself, and she stops leaking through her clothes.\n\nShe's come to look forward to it a little too much.`; } },
+      { id: "milk", label: "Have her milked every morning", note: "relief, though she'll come to depend on it",
+        resolve: (s, _e, p) => { if ((p!.body.balls ?? 0) > 0) resolveAct(s, p!, "drain her"); applyTreatment(p!, { kind: "kindness", size: 3, why: "milked every morning so she could walk" }, s.arcology.week); return `You have the dairy staff milk ${p!.name} every morning before her shift. The relief is enormous. She can walk without holding herself, and she stops leaking through her clothes.\n\nShe's come to look forward to it a little too much.`; } },
       { id: "shrink", label: "Put her on atrophiers", note: "she'll shrink back down over weeks",
         resolve: (_s, _e, p) => { const d = (p!.body.balls ?? 0) >= 8 ? "testicle atrophiers" : "penis atrophiers"; p!.health.drugs = [...p!.health.drugs.filter((x) => !/enhancement|atrophiers/.test(x)), d]; return `You take her off anything that's making her grow and put her on ${d}. It'll take weeks, but she'll shrink back to something she can live with.\n\n${p!.name} is relieved, and a little sorry to see it go.`; } },
       { id: "mock", label: "Tell her she'll get used to it",
@@ -386,10 +386,10 @@ export const EVENTS: EventDef[] = [
     id: "news_from_home", severity: "notable", endogenous: false,
     candidates: (s) => (s.world && Object.values(s.world.regions).some((r) => r.state === "war" || r.state === "collapse") ? owned(s).filter((p) => p.origin.acquired_how !== "born to it" && p.economics.weeks_owned > 3).map((person) => ({ person })) : []),
     weight: () => 2,
-    seed: (_s, c) => `${c.person!.name} saw the news on the dormitory screen: the fighting has reached the part of the world where her family still lives. She's been crying all day and can't work.\n\nShe's begging to be allowed to send them a message.`,
+    seed: (_s, c) => `${c.person!.name} saw the news on the dormitory screen. The fighting has reached the part of the world where her family still lives. She's been crying all day and can't work.\n\nShe's begging to be allowed to send them a message.`,
     options: [
       { id: "send", label: "Let her send a message, and pay for it to get through", note: "¤1,500",
-        resolve: (s, _e, p) => { s.arcology.cash -= 1500; applyTreatment(p!, { kind: "kindness", size: 8, why: "you paid for her message to reach her family" }, s.arcology.week); p!.bond.hope = clamp(p!.bond.hope + 15, 0, 100); return `You pay a courier service fifteen hundred to get her message through the lines. A week later a reply comes back: her mother and sister are alive, and heading for the coast.\n\n${p!.name} reads it over and over. She's yours in a way she wasn't before.`; } },
+        resolve: (s, _e, p) => { s.arcology.cash -= 1500; applyTreatment(p!, { kind: "kindness", size: 8, why: "you paid for her message to reach her family" }, s.arcology.week); p!.bond.hope = clamp(p!.bond.hope + 15, 0, 100); return `You pay a courier service fifteen hundred to get her message through the lines. A week later a reply comes back. Her mother and sister are alive, and heading for the coast.\n\n${p!.name} reads it over and over. She's yours in a way she wasn't before.`; } },
       { id: "comfort", label: "Sit with her while she cries",
         resolve: (s, _e, p) => { applyTreatment(p!, { kind: "kindness", size: 4, why: "comforted when the news came" }, s.arcology.week); return `You sit with ${p!.name} while she cries it out. There's nothing you can do about the war, and she knows it, but she wasn't alone.\n\nShe's back at work two days later.`; } },
       { id: "work", label: "Tell her to get back to work",
@@ -400,12 +400,12 @@ export const EVENTS: EventDef[] = [
     id: "citizen_wants_her", severity: "minor", endogenous: false,
     candidates: (s) => owned(s).filter((p) => p.age >= 5 && p.body.face > 60 && p.assignment !== "please you" && p.health.recovery_weeks === 0).map((person) => ({ person })),
     weight: (s) => (s.arcology.prosperity > 60 ? 3 : 1),
-    seed: (_s, c) => `A wealthy citizen from the upper residential floors has been watching ${c.person!.name} for weeks, and has finally sent a formal offer: he'd like her for a whole weekend at his apartment, and he's willing to pay very well for it.\n\n${c.person!.name} has heard about the offer, and is waiting to hear what you'll say.`,
+    seed: (_s, c) => `A wealthy citizen from the upper residential floors has been watching ${c.person!.name} for weeks, and has finally sent a formal offer. He'd like her for a whole weekend at his apartment, and he's willing to pay very well for it.\n\n${c.person!.name} has heard about the offer, and is waiting to hear what you'll say.`,
     options: [
       { id: "yes", label: "Rent her out for the weekend", note: "+¤4,000",
         resolve: (s, _e, p) => { s.arcology.cash += 4000; resolveAct(s, p!, p!.body.vagina !== null ? "vaginal" : "anal"); p!.health.energy = clamp(p!.health.energy - 25, 0, 100); return `${p!.name} spends the weekend in the citizen's apartment. She comes back on Monday exhausted, with a bruise on her hip and a new dress he bought her. He pays four thousand without complaint and asks when he can book her again.`; } },
       { id: "no", label: "Tell him she isn't available",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 3, why: "you refused to rent her out" }, s.arcology.week); s.arcology.rep = Math.max(0, s.arcology.rep - 50); return `You tell him ${p!.name} isn't for rent. He's offended; he's used to getting what he pays for.\n\n${p!.name} hears that you refused, and she's quietly grateful.`; } },
+        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 3, why: "you refused to rent her out" }, s.arcology.week); s.arcology.rep = Math.max(0, s.arcology.rep - 50); return `You tell him ${p!.name} isn't for rent. He's offended, because he's used to getting what he pays for.\n\n${p!.name} hears that you refused, and she's quietly grateful.`; } },
       { id: "sell", label: "Sell her to him outright", note: "+¤9,000",
         resolve: (s, _e, p) => { p!.status = "sold"; p!.exit_week = s.arcology.week; p!.exit_note = "sold to a citizen who wanted her"; s.arcology.cash += 9000; for (const f of Object.values(s.arcology.facilities)) { f.workers = f.workers.filter((w) => w !== p!.id); if (f.manager === p!.id) f.manager = undefined; } p!.facility = undefined; return `You offer to sell her instead, and he pays nine thousand on the spot. ${p!.name} packs her few things and goes upstairs to live in his apartment. She waves to the other girls from the elevator.`; } },
     ],

@@ -217,7 +217,7 @@ function Install({ p }: { p: PowerView }) {
               </div>
               <span className="text-[11px] dim">fit {Math.round(competence(save, w) * 100)}</span>
             </button>
-          )) : <div className="text-[12.5px] dim">Nobody of yours can go: she needs to be an adult who can speak and think, and not broken.</div>}
+          )) : <div className="text-[12.5px] dim">Nobody of yours can go. She needs to be an adult who can speak and think, and not broken.</div>}
         </div>
       )}
     </div>
@@ -326,7 +326,7 @@ function Wars() {
   return (
     <>
       {wars.length ? wars.map((w) => <WarCard key={w.id} w={w} />) : (
-        <Card className="mb-4 text-[13px] mid">No wars. Declare one from the Powers tab; build what you'll need under Arsenal first. Who you can beat depends on what you field against them: Free Cities over the water need ships and aircraft, Old World states need ground forces to hold what the air takes.</Card>
+        <Card className="mb-4 text-[13px] mid">No wars. Declare one from the Powers tab, and build what you'll need under Arsenal first. Who you can beat depends on what you field against them. Free Cities over the water need ships and aircraft, and Old World states need ground forces to hold what the air takes.</Card>
       )}
       {past.length ? (
         <Section title="Wars you've fought">

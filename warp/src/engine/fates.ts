@@ -135,8 +135,8 @@ export function settle(s: SaveState, name: string, fate: Fate, how: string, opts
     const c = x.cast.find((y) => !y.person && sameName(y.name, who));
     if (!c) continue;
     c.now = `${FATE_WORDS[fate]} in week ${week}`;
-    c.turns.push({ week, text: `${FATE_WORDS[fate]}: ${note.how}` });
-    x.facts.push(fate === "dead" ? `${c.name} is dead (week ${week}): ${note.how}. Never alive in a scene again.` : `${c.name} was ${FATE_WORDS[fate]} in week ${week}: ${note.how}.`);
+    c.turns.push({ week, text: `${FATE_WORDS[fate]}, because ${note.how}` });
+    x.facts.push(fate === "dead" ? `${c.name} died in week ${week} (${note.how}), and is never alive in a scene again.` : `${c.name} was ${FATE_WORDS[fate]} in week ${week} (${note.how}).`);
     if (x.chapter && x.chapter.text.includes(c.name.split(" ")[0])) x.chapter = undefined;
     full = c.name;
   }
@@ -170,7 +170,7 @@ export function settledBrief(s: SaveState, n = 12): string {
   for (const g of s.governors ?? []) for (const f of g.faces ?? []) if (f.gone) rows.set(keyOf(f.name), { ...f.gone, name: f.name, role: `${f.role} in ${g.name}` });
   const list = [...rows.values()].sort((a, b) => b.week - a.week).slice(0, n);
   if (!list.length) return "";
-  return `PEOPLE WHO HAVE BEEN DEALT WITH (settled; they stay that way. The dead never appear alive, the driven-out and the locked-up don't walk back in unless a scene says how, and the bought-off do what they were paid for. Others can talk about them, grieve them, fear what happened to them, or take their place):\n${list.map((x) => `· ${x.name}${x.role ? ` (${x.role})` : ""}: ${FATE_WORDS[x.fate]}, week ${x.week}. ${x.how}`).join("\n")}`;
+  return `PEOPLE WHO HAVE BEEN DEALT WITH. This is settled, and they stay that way. The dead never appear alive, the people driven out or locked up don't walk back in unless a scene says how, and the ones bought off do what they were paid for. Other people can talk about them, grieve them, fear what happened to them, or take their place.\n${list.map((x) => `· ${x.name}${x.role ? ` (${x.role})` : ""} was ${FATE_WORDS[x.fate]} in week ${x.week}. ${x.how}`).join("\n")}`;
 }
 
 /** How much weight the owner carries, in words, for anyone deciding how to approach them. */
@@ -181,13 +181,13 @@ export function weightBrief(s: SaveState): string {
   const top = ps.reduce((m, p) => Math.max(m, p.strength), 0);
   const d = dominion(s);
   const rich = a.cash >= 1_000_000 ? "vastly rich" : a.cash >= 200_000 ? "very rich" : a.cash >= 40_000 ? "comfortable" : a.cash >= 0 ? "short of money" : "in debt";
-  const arms = !top ? "armed" : mine >= top * 2 ? "the strongest power anyone here knows of, by a distance" : mine >= top ? "as strong as any power on the map" : mine >= top * 0.5 ? "a real military power, though not the biggest" : "lightly armed next to the big powers";
+  const arms = !top ? "armed" : mine >= top * 2 ? "by a distance the strongest power anyone here knows of" : mine >= top ? "as strong as any power on the map" : mine >= top * 0.5 ? "a real military power, though not the biggest" : "lightly armed next to the big powers";
   const home = a.security >= 60 ? "holds the arcology completely" : a.security >= 35 ? "holds the arcology" : "has a weak grip on the arcology's streets";
   const name = a.rep >= 15_000 ? "a name everyone in the Free Cities knows" : a.rep >= 5_000 ? "a name people know" : "not much of a name yet";
   const weak = a.security < 30 || a.public_standing <= -6 || a.cash < 0;
-  return `THE OWNER'S WEIGHT: ${rich}, ${arms}, ${home}, and ${name}${d.share >= 0.1 ? `; ${d.title.toLowerCase()}, with ${Math.round(d.share * 100)}% of the known world answering to them` : ""}. ${weak
-    ? "Right now the owner is weaker than they should be, and people who would normally be careful are getting bolder: still not reckless, but less afraid than they were."
-    : "Nobody inside the arcology, and nobody outside it with less than a city or an army behind them, confronts the owner to their face or threatens them openly: the owner could have them killed by morning, and they know it. People who want something ask, flatter, bargain or beg. People who oppose the owner work around them: through lawyers, rumours, bribed staff, a slave they've turned, a rival city, the Owners' Association, or by waiting. Only someone with real power of their own pushes openly, and when they do, the scene says what that power is."}`;
+  return `THE OWNER'S WEIGHT: the owner is ${rich}, ${arms}, ${home}, and has ${name}.${d.share >= 0.1 ? ` They are ${d.title.toLowerCase()}, with ${Math.round(d.share * 100)}% of the known world answering to them.` : ""} ${weak
+    ? "Right now the owner is weaker than they should be, and people who would normally be careful are getting bolder. They're still not reckless, but they're less afraid than they were."
+    : "Nobody inside the arcology, and nobody outside it with less than a city or an army behind them, confronts the owner to their face or threatens them openly, because the owner could have them killed by morning, and they know it. People who want something ask, flatter, bargain or beg. People who oppose the owner work around them, through lawyers, rumours, bribed staff, a slave they've turned, a rival city, the Owners' Association, or by waiting. Only someone with real power of their own pushes openly, and when they do, the scene says what that power is."}`;
 }
 
 /** What buying someone off costs. */

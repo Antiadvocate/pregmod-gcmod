@@ -34,7 +34,7 @@ export const WALK_OPTIONS = [
 /** Where you can walk: the concourse, one place per kind of district you have, and the verge. */
 export function places(s: SaveState): Place[] {
   const city = cityOf(s);
-  const out: Place[] = [{ id: "concourse", kind: "concourse", name: "The concourse", blurb: "The arcology's main floor: the lifts, the plaza, the fountain and the cafés.", condition: 70 }];
+  const out: Place[] = [{ id: "concourse", kind: "concourse", name: "The concourse", blurb: "The arcology's main floor, with the lifts, the plaza, the fountain and the cafés.", condition: 70 }];
   const seen = new Set<string>();
   for (const d of city.districts) {
     if (d.kind === "vacant" || d.kind === "spire" || seen.has(d.kind)) continue;
@@ -51,7 +51,7 @@ type Vignette = { w: number; text: string };
 
 const PLACE_LINES: Record<Place["kind"], string[]> = {
   concourse: [
-    "The lifts open onto the plaza every thirty seconds and let out another crowd: office workers, shoppers, slaves on errands with their owners' lists.",
+    "The lifts open onto the plaza every thirty seconds and let out another crowd of office workers, shoppers and slaves on errands with their owners' lists.",
     "The fountain is running. Children are throwing coins in it while their mothers talk at the café tables.",
   ],
   residential: [
@@ -64,7 +64,7 @@ const PLACE_LINES: Record<Place["kind"], string[]> = {
   ],
   industrial: [
     "The works are loud and hot. The slaves on the line wear ear defenders and nothing else.",
-    "A shift change: a hundred workers come out of the gates, grey with dust, and head for the canteens.",
+    "At the shift change, a hundred workers come out of the gates, grey with dust, and head for the canteens.",
   ],
   civic: [
     "The slave registry has a queue out of the door. Owners with papers, slaves standing behind them.",
@@ -100,7 +100,7 @@ const PLACE_LINES: Record<Place["kind"], string[]> = {
   ],
   temple: [
     "The temple doors are open. Inside, slaves kneel in rows along the aisle while the priest reads.",
-    "Worshippers leave offerings at the altar: flowers, coins, and a girl in white, collared and waiting.",
+    "Worshippers leave offerings at the altar, flowers and coins and a girl in white, collared and waiting.",
   ],
   exchange: [
     "The trading floor is shouting. On the big board, the price of a trained slave has gone up four percent since the morning.",
@@ -157,7 +157,7 @@ const NORM_LINES: Record<Norm, { hi: string[]; lo: string[] }> = {
   },
   modification: {
     hi: ["A clinic has a girl in the window to show what a week's surgery gets you. She turns slowly so people can see.",
-      "Half the slaves you pass have been redone somewhere: lips, breasts, hips, a tail."],
+      "Half the slaves you pass have been redone somewhere, with new lips, breasts, hips or a tail."],
     lo: ["A woman is heckled in the street for her implants.",
       "A salon sign offers to take implants out, discreetly."],
   },
@@ -172,14 +172,14 @@ const NORM_LINES: Record<Norm, { hi: string[]; lo: string[] }> = {
 /** For a city that hasn't made up its mind: both kinds of people, side by side. */
 const MIXED_LINES: Record<Norm, string[]> = {
   cruelty: ["A woman slaps her slave for dropping a bag. A man at the next table frowns at her, and she frowns back.",
-    "One owner drags his slave along by the collar; the next one walks hers on a loose leash and lets her look in the shop windows."],
+    "One owner drags his slave along by the collar, and the next one walks hers on a loose leash and lets her look in the shop windows."],
   exposure: ["Some slaves on the concourse are dressed and some are naked, and nobody seems sure which is the done thing.",
     "A café has put up a sign asking owners to keep their slaves clothed at the tables. Someone has scribbled over it."],
-  personhood: ["A shopkeeper takes an order from a slave but won't give her the change; he hands it to her owner instead.",
+  personhood: ["A shopkeeper takes an order from a slave but won't give her the change. He hands it to her owner instead.",
     "Two citizens at a café are arguing about whether a slave can be a witness to anything. Neither is winning."],
   reversal: ["A slave says something sharp to her owner in the queue, and he laughs instead of hitting her. People pretend not to notice."],
   feet: ["A barefoot slave is picking her way across the hot tiles by the fountain. An old man offers her his newspaper to stand on."],
-  manumission: ["A freedwoman is selling flowers by the lifts. Some people buy from her; some cross the plaza to avoid her."],
+  manumission: ["A freedwoman is selling flowers by the lifts. Some people buy from her, and some cross the plaza to avoid her."],
   modification: ["Two slaves are comparing their implants on a bench, and a woman walking past shakes her head at them."],
   order: ["A single patrol officer leans against a pillar, watching the crowd and doing nothing much."],
 };
@@ -256,12 +256,12 @@ function lawInAction(s: SaveState, l: { name: string; text: string; pull: Partia
   const q = `"${rule.replace(/"/g, "'")}."`;
   if (sup >= -10) {
     if (escort && aboutSlaves) return r.pick([
-      `Your law, the ${l.name}, says: ${q} So when ${escort.name} walks past a café, a man at one of the tables does exactly that, to her, right there on the tiles, in front of everyone. He does it because it's the law and he knows you're watching. ${escort.name} stands there and lets it happen, and looks at you.`,
-      `The ${l.name} is enforced here: ${q} A woman with shopping bags sees ${escort.name}'s collar and does it on the spot, to ${escort.name}, all of it, while the people around her wait their turn to do the same. Nobody skips it.`,
-      `A shopkeeper sees ${escort.name}, then sees you, and comes out to do what the ${l.name} orders: ${q} He does it to her properly, in the doorway of his shop, with the whole street watching, and doesn't stop until it's done.`,
+      `Your law, the ${l.name}, says ${q} So when ${escort.name} walks past a café, a man at one of the tables does exactly that, to her, right there on the tiles, in front of everyone. He does it because it's the law and he knows you're watching. ${escort.name} stands there and lets it happen, and looks at you.`,
+      `The ${l.name} is enforced here. It says ${q} A woman with shopping bags sees ${escort.name}'s collar and does it on the spot, to ${escort.name}, all of it, while the people around her wait their turn to do the same. Nobody skips it.`,
+      `A shopkeeper sees ${escort.name}, then sees you, and comes out to do what the ${l.name} orders, which is ${q} He does it to her properly, in the doorway of his shop, with the whole street watching, and doesn't stop until it's done.`,
     ]);
     return r.pick([
-      `The ${l.name} is the law, and people obey it: ${q} You watch it happen three times in a minute, in plain view: a shopkeeper does it, a woman with a pram does it, an old man does it slowly because his knees are bad. Nobody pretends it isn't happening.`,
+      `The ${l.name} is the law, and people obey it. It says ${q} You watch it happen three times in a minute, in plain view. A shopkeeper does it, a woman with a pram does it, and an old man does it slowly because his knees are bad. Nobody pretends it isn't happening.`,
       `Everyone here keeps the ${l.name}. It says ${q} and that is exactly what people are doing, openly, right in front of you, as if it had always been the rule.`,
     ]);
   }
@@ -286,15 +286,15 @@ function geneInAction(s: SaveState, place: Place, escort: Person | undefined, r:
     const byTag: Record<string, string[]> = {
       senses: [
         `A shopkeeper in ${here} catches a thief the others never noticed, and has him by the collar before he reaches the door. ${N}'s ${t.name}.`,
-        `The lights fail in ${here} for a minute. Half the crowd carries on as if nothing happened: ${t.name}, from ${name}. The other half stands still and waits.`,
-        `A child in ${here} points out a hawk circling the spire, far above, before any adult can see it. ${t.name[0].toUpperCase()}${t.name.slice(1)}: ${name}.`,
+        `The lights fail in ${here} for a minute. Half the crowd carries on as if nothing happened, thanks to the ${t.name} they got from ${name}. The other half stands still and waits.`,
+        `A child in ${here} points out a hawk circling the spire, far above, before any adult can see it. That's the ${t.name} from ${name}.`,
       ],
       strength: [
-        `Two ${who} carry a café's delivery crates up the stairs in ${here} as if they were empty. Nobody remarks on it any more; it's ${name}'s ${t.name}.`,
+        `Two ${who} carry a café's delivery crates up the stairs in ${here} as if they were empty. Nobody remarks on it any more, because it's ${name}'s ${t.name}.`,
         `A lift jams between floors in ${here}. Three of ${name}'s people prise the doors open by hand.`,
       ],
       intellect: [
-        `An argument about tariffs at a café table in ${here} is conducted entirely in figures, at speed. ${N} did that: ${t.name}.`,
+        `An argument about tariffs at a café table in ${here} is conducted entirely in figures, at speed. ${N} did that, with its ${t.name}.`,
         `A chess hustler in ${here} has stopped taking bets from anyone ${name} reached. He says it's bad for business.`,
       ],
       beauty: [
@@ -305,15 +305,15 @@ function geneInAction(s: SaveState, place: Place, escort: Person | undefined, r:
         `There are prams everywhere in ${here}. The clinics say ${name} has doubled the birth rate, and the nurseries are hiring.`,
       ],
       endurance: [
-        `A night-shift crew in ${here} is still working at dawn and looks fresh. ${N}: ${t.name}.`,
-        `The café in ${here} has stopped selling coffee after midnight: ${name}'s people don't need it, and they're most of the customers.`,
+        `A night-shift crew in ${here} is still working at dawn and looks fresh, thanks to the ${t.name} from ${name}.`,
+        `The café in ${here} has stopped selling coffee after midnight, because ${name}'s people don't need it and they're most of the customers.`,
       ],
       longevity: [
         `An old woman in ${here} tells you she's ninety-one and has never been ill. She thanks ${name} for it, and you, with a wink.`,
       ],
       "": [
-        `In ${here} you see ${name} everywhere you look: ${t.name}. ${t.what}`,
-        `A tourist in ${here} asks what's different about the people here. A waiter tells her: ${t.name}, ${name}. ${t.what}`,
+        `In ${here} you see ${name} everywhere you look, in the ${t.name}. ${t.what}`,
+        `A tourist in ${here} asks what's different about the people here. A waiter tells her it's the ${t.name} from ${name}. ${t.what}`,
       ],
     };
     options.push(...(byTag[t.tag ?? ""] ?? byTag[""]));
@@ -321,7 +321,7 @@ function geneInAction(s: SaveState, place: Place, escort: Person | undefined, r:
   const wx = s.world?.weather.kind;
   if ((e.spec.resist.heat ?? 0) > 0) options.push(wx === "heatwave" || wx === "hot" ? `It's sweltering, and the ${who} ${name} reached are the only ones in ${here} not looking for shade.` : `A vendor in ${here} sells cold drinks with a sign: "for the unedited". ${name[0].toUpperCase()}${name.slice(1)}'s people don't need them.`);
   if ((e.spec.resist.cold ?? 0) > 0) options.push(`The ${who} ${name} reached walk ${here} in shirtsleeves while everyone else is in coats.`);
-  if ((e.spec.resist.disease ?? 0) > 0) options.push(`A cough is going round ${here}. The ${who} ${name} reached don't catch it; the newcomers do.`);
+  if ((e.spec.resist.disease ?? 0) > 0) options.push(`A cough is going round ${here}. The ${who} ${name} reached don't catch it, but the newcomers do.`);
   if ((e.spec.resist.pollution ?? 0) > 0) options.push(`The air in ${here} smells of the works, and ${name}'s people breathe it without masks.`);
   if (e.spec.health) options.push(`Everyone in ${here} looks well. ${name[0].toUpperCase()}${name.slice(1)} shows in how they walk.`);
   const looks = [e.spec.skin && `${e.spec.skin} skin`, e.spec.hair && `${e.spec.hair} hair`, e.spec.eyes && `${e.spec.eyes} eyes`].filter(Boolean) as string[];
@@ -397,14 +397,14 @@ export const WALK_SYSTEM = `You write a walk through the player's arcology in Fr
 
 ${HOUSE_STYLE}
 
-Show the city as it is now, through what citizens and slaves are doing: how owners treat their slaves, how slaves carry themselves, what people say to each other and about the player. Everything you show must fit the CITY'S HABITS, the LAWS and what people know the player did. The laws are real and people live under them. Show citizens doing exactly what THE OWNER'S OWN LAWS require, here, in front of the player, and be blunt and explicit about it: write out plainly who does what the law requires, to whom, with the same crude directness as everything else, never a vague \"they comply\". The owner's security forces (patrols, guards, the security chief, the militia, mercenaries, knights, any soldier) obey the owner's orders at once and completely: they never ignore, stall, question, argue with or refuse an order from the owner, and they enforce the owner's laws. (If a slave holds the owner's collar, they obey her first.) The laws in force are exactly as written, word for word. Never invent clauses, subsections, articles, exemptions, amendments, penalties, loopholes or technicalities, and never attribute any provision to a law that isn't in its text. Only the owner changes a law. When a law applies to someone present (the player's slave included), show it being done to or by them in full. If the city is against a law, show it being dodged, and show patrols forcing people to do it. Name people with ordinary names and give them a line or two of their own. Every place has its own people, shops and venues: never bring people, restaurants or businesses from an earlier walk somewhere else into this one. Two to four paragraphs. If the player does something, write it happening and write how the people around react; everyone can see. Write the owner as WHO THE OWNER IS describes them, never a stock cold slave-owner, and don't write their feelings. Do not end the walk; stop where the player can act.
+Show the city as it is now, through what citizens and slaves are doing, such as how owners treat their slaves, how slaves carry themselves, and what people say to each other and about the player. Everything you show must fit the CITY'S HABITS, the LAWS and what people know the player did. The laws are real and people live under them. Show citizens doing exactly what THE OWNER'S OWN LAWS require, here, in front of the player, and be blunt and explicit about it. Write out plainly who does what the law requires to whom, with the same crude directness as everything else, and never a vague "they comply". The owner's security forces (patrols, guards, the security chief, the militia, mercenaries, knights and any soldier) obey the owner's orders at once and completely. They never ignore, stall, question, argue with or refuse an order from the owner, and they enforce the owner's laws. If a slave holds the owner's collar, they obey her first. The laws in force are exactly as written, word for word. Never invent clauses, subsections, articles, exemptions, amendments, penalties, loopholes or technicalities, and never attribute any provision to a law that isn't in its text. Only the owner changes a law. When a law applies to someone present, including the player's slave, show it being done to them or by them in full. If the city is against a law, show it being dodged, and show patrols forcing people to do it. Give people ordinary names and a line or two of their own. Every place has its own people, shops and venues, so never bring people, restaurants or businesses from an earlier walk somewhere else into this one. Write two to four paragraphs. If the player does something, write it happening and write how the people around react, because everyone can see. Write the owner as WHO THE OWNER IS describes them, never as a stock cold slave-owner, and don't write their feelings. Don't end the walk. Stop at a point where the player can act.
 
-Then, on its own line, write OPTIONS: and under it exactly four lines, each starting with "- ", giving four different things the player could do next, in the player's voice and under twelve words each: one that talks to someone you described, one that intervenes, one that uses the moment for the player's pleasure or power, and one that moves on to somewhere else or goes home.`;
+Then, on its own line, write OPTIONS: and under it write exactly four lines, each starting with "- ". They give four different things the player could do next, in the player's voice and in under twelve words each. One talks to someone you described, one intervenes, one uses the moment for the player's pleasure or power, and one moves on somewhere else or goes home.`;
 
 function ownLaws(s: SaveState): string {
   return lawsOf(s).filter((x) => x.id.startsWith("custom_")).map((x) => LAW_BY_ID[x.id]).filter(Boolean).map((l) => {
     const sup = lawSupport(s, l);
-    return `· the ${l.name}: ${l.text} (${sup > 30 ? "kept by everyone without thinking" : sup >= -10 ? "kept, some of it grudgingly" : sup > -40 ? "kept only where patrols are watching" : "openly defied, and enforced by patrols"})`;
+    return `· The ${l.name} says "${l.text.replace(/\.$/, "")}." It's ${sup > 30 ? "kept by everyone without thinking" : sup >= -10 ? "kept, some of it grudgingly" : sup > -40 ? "kept only where patrols are watching" : "openly defied, and enforced by patrols"}.`;
   }).join("\n");
 }
 
@@ -417,14 +417,14 @@ export function walkContext(s: SaveState, placeId?: string): string {
   const deeds = (s.deeds ?? []).filter((d) => d.public && (d.source !== "walk" || d.where === place.id)).slice(-5).map((d) => `· ${d.summary}${d.source === "walk" && d.fact ? ` (${d.fact})` : ""}`).join("\n");
   const rumors = [...s.rumors].filter((r) => !r.where || r.where === place.id).sort((a, b) => b.salience - a.salience).slice(0, 3).map((r) => `· "${r.content}"`).join("\n");
   return [
-    `## WHERE\n${place.name}: ${place.blurb}${place.condition <= 35 ? " It is run down." : ""}`,
-    `## THE CITY'S HABITS\n${cultureBrief(s) || "Nothing settled yet; citizens behave in all sorts of ways."}`,
-    genomeBrief(s) ? `## WHAT THE OWNER'S GENE PROGRAMS DID (people here carry these; show at least one of the changes at work in this scene, concretely: who, doing what, that they couldn't before)\n${genomeBrief(s)}` : "",
-    ownLaws(s) ? `## THE OWNER'S OWN LAWS (people here obey these; show at least one of them happening in this scene, spelled out bluntly: who does exactly what, to whom)\n${ownLaws(s)}` : "",
+    `## WHERE\n${place.name}. ${place.blurb}${place.condition <= 35 ? " It is run down." : ""}`,
+    `## THE CITY'S HABITS\n${cultureBrief(s) || "Nothing is settled yet, and citizens behave in all sorts of ways."}`,
+    genomeBrief(s) ? `## WHAT THE OWNER'S GENE PROGRAMS DID\nPeople here carry these. Show at least one of the changes at work in this scene, concretely, saying who is doing what that they couldn't do before.\n${genomeBrief(s)}` : "",
+    ownLaws(s) ? `## THE OWNER'S OWN LAWS\nPeople here obey these. Show at least one of them happening in this scene, spelled out bluntly, saying exactly who does what to whom.\n${ownLaws(s)}` : "",
     lawsBrief(s) ? `## LAWS IN FORCE\n${lawsBrief(s)}` : "",
     docs ? `## DOCTRINES\n${docs}` : "",
     sentinelsLine(s),
-    `## THE PLAYER\nOwner of the arcology. Reputation ${Math.round(s.arcology.rep)}; the city's opinion of them is ${s.arcology.public_standing >= 3 ? "good" : s.arcology.public_standing <= -3 ? "poor" : "mixed"}.${s.player.owned_by ? ` Wears the collar of their slave ${s.people[s.player.owned_by]?.name ?? ""}, and people can see it.` : ""}`,
+    `## THE PLAYER\nThe player owns the arcology. Their reputation is ${Math.round(s.arcology.rep)}, and the city's opinion of them is ${s.arcology.public_standing >= 3 ? "good" : s.arcology.public_standing <= -3 ? "poor" : "mixed"}.${s.player.owned_by ? ` They wear the collar of their slave ${s.people[s.player.owned_by]?.name ?? ""}, and people can see it.` : ""}`,
     deeds ? `## WHAT PEOPLE KNOW THE PLAYER DID\n${deeds}` : "",
     rumors ? `## WHAT PEOPLE ARE SAYING\n${rumors}` : "",
     freedWalkLine(s, place.id),
@@ -437,7 +437,7 @@ export function walkOffline(s: SaveState, placeId: string | undefined, reply: st
   const t = reply.toLowerCase();
   const more = walkScene(s, { ...place, id: `${place.id}:${reply.length}` }).split("\n\n").slice(1, 3).join("\n\n");
   if (/home|back up|penthouse|leave/.test(t)) return `You head back to the lifts. People make room for you.`;
-  if (/talk|ask|speak/.test(t)) return `The person you stop is nervous at first, then talks: about the prices, about the patrols, about you. They say what everyone says, and watch your face while they say it.\n\n${more}`;
+  if (/talk|ask|speak/.test(t)) return `The person you stop is nervous at first, and then talks about the prices, about the patrols, and about you. They say what everyone says, and watch your face while they say it.\n\n${more}`;
   if (/step in|stop|intervene|help/.test(t)) return `You step in. Everyone nearby stops what they're doing to watch what the arcology's owner does, and whatever you do next they'll be repeating by tonight.\n\n${more}`;
   return more || "You keep walking.";
 }

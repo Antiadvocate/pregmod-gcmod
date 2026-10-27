@@ -40,7 +40,7 @@ function CityThisWeek({ report }: { report: WeekReport }) {
     <Section title="The city this week" right={
       <div className="flex items-center gap-2">
         {report.city_prose && !busy ? <button className="text-[11px] dim underline" onClick={() => setPlain(!plain)}>{plain ? "the narrator's column" : "the scenes"}</button> : null}
-        {modelsAvailable() ? <Button size="sm" kind="ghost" disabled={!!busy} onClick={() => void write()} title="One model call: the narrator writes this week in full, from the scenes, your laws and everything behind them">{busy ? "writing…" : report.city_prose ? "write it again" : "have the narrator write the week"}</Button> : null}
+        {modelsAvailable() ? <Button size="sm" kind="ghost" disabled={!!busy} onClick={() => void write()} title="One model call. The narrator writes this week in full, from the scenes, your laws and everything behind them">{busy ? "writing…" : report.city_prose ? "write it again" : "have the narrator write the week"}</Button> : null}
       </div>
     }>
       {err ? <div className="text-[11.5px] warn mb-2">{err}</div> : null}

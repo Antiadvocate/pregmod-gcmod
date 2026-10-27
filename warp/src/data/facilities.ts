@@ -84,7 +84,7 @@ export const FACILITIES: FacilityDef[] = [
     upgrades: [
       { id: "advertising", name: "Advertising", cost: 5000, note: "more customers, worse ones" },
       { id: "drugs", name: "Bar and dispensary", cost: 8000, note: "customers pay more and stay longer" },
-      { id: "rooms", name: "Private rooms", cost: 12000, note: "higher prices; the work is less public", needs_level: 2 },
+      { id: "rooms", name: "Private rooms", cost: 12000, note: "higher prices, and the work is less public", needs_level: 2 },
     ],
     pleases: ["degradationist", "cummunism"],
   },
@@ -99,7 +99,7 @@ export const FACILITIES: FacilityDef[] = [
     trains: { entertainment: 2.0, oral: 0.6, whoring: 0.6 },
     upgrades: [
       { id: "lights", name: "Lighting rig", cost: 6000, note: "extra reputation each week" },
-      { id: "bar", name: "Full bar", cost: 9000, note: "citizens stay; income up" },
+      { id: "bar", name: "Full bar", cost: 9000, note: "citizens stay longer, so income goes up" },
     ],
     pleases: ["hedonist", "roman"],
   },
@@ -187,9 +187,9 @@ export const FACILITIES: FacilityDef[] = [
     trains: {},
     upgrades: [
       { id: "diagnostics", name: "Diagnostics", cost: 10000, note: "catches health problems early" },
-      { id: "surgery", name: "Surgical theatre", cost: 16000, note: "unlocks surgery on each slave's surgery tab; level 2 unlocks the advanced procedures" },
+      { id: "surgery", name: "Surgical theatre", cost: 16000, note: "unlocks surgery on each slave's surgery tab, and level 2 unlocks the advanced procedures" },
       { id: "organ_farm", name: "Organ farm", cost: 22000, note: "grow the parts instead of buying them", needs_level: 2 },
-      { id: "gene_lab", name: "Gene lab", cost: 30000, note: "unlocks fleshcraft on the surgery tab: real ears and tails, scales, milk and fertility genes, slowed ageing", needs_level: 2 },
+      { id: "gene_lab", name: "Gene lab", cost: 30000, note: "unlocks fleshcraft on the surgery tab, with real ears and tails, scales, milk and fertility genes, slowed ageing", needs_level: 2 },
     ],
     pleases: ["paternalist", "transformation"],
   },
@@ -270,7 +270,7 @@ export const FACILITIES: FacilityDef[] = [
     trains: { combat: 3.0 },
     upgrades: [
       { id: "seating", name: "Seating", cost: 8000, note: "more ticket sales" },
-      { id: "lethal", name: "Lethal bouts", cost: 0, note: "fights to the death: double the income, but slaves die" },
+      { id: "lethal", name: "Lethal bouts", cost: 0, note: "fights to the death, for double the income, but slaves die" },
     ],
     pleases: ["roman", "aztec", "degradationist"],
   },

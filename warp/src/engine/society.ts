@@ -110,7 +110,7 @@ export function explainFor(state: SaveState, p: Person): string[] {
     const [low, high] = AXIS_LABEL[axis];
     const wants = d.wants[axis]! > 0 ? high : low;
     const isPos = row.score > 0;
-    out.push(`${d.noun}: wants ${wants}; ${isPos ? "she is" : "she is not"} (${row.score > 0 ? "+" : ""}${row.score.toFixed(2)})`);
+    out.push(`${d.noun}: it wants ${wants}, and ${isPos ? "she is" : "she is not"} (${row.score > 0 ? "+" : ""}${row.score.toFixed(2)})`);
   }
   return out;
 }

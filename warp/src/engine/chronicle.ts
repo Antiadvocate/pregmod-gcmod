@@ -60,5 +60,5 @@ export function chronicleBrief(s: SaveState, keys: string[], n = 8): string {
   const done = entriesFor(s, keys, n);
   if (!done.length) return "";
   const lines = done.map((e) => `· week ${e.week}: ${e.text}${e.hook && !e.closed ? ` (Left open: ${e.hook})` : ""}`);
-  return `WHAT HAS ALREADY HAPPENED (in order; this is history, so build on it, don't repeat it):\n${lines.join("\n")}`;
+  return `WHAT HAS ALREADY HAPPENED, in order. This is history, so build on it rather than repeating it:\n${lines.join("\n")}`;
 }

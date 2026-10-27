@@ -125,7 +125,7 @@ export function places(s: SaveState): Place[] {
   const reach = reachKm(s);
   out.push({
     id: "yours", kind: "yours", name: s.arcology.name, at: home, radiusKm: reach, km: 0,
-    lines: [`Your arcology, in ${s.arcology.region}.`, `Reach: ${areaLabel(reach)} (${c.districts.filter((d) => d.level > 0).length} districts built, ${c.routes.length} trade route${c.routes.length === 1 ? "" : "s"}).`, `${s.arcology.population.toLocaleString()} citizens; prosperity ${Math.round(s.arcology.prosperity)}.`],
+    lines: [`Your arcology, in ${s.arcology.region}.`, `Reach: ${areaLabel(reach)} (${c.districts.filter((d) => d.level > 0).length} districts built, ${c.routes.length} trade route${c.routes.length === 1 ? "" : "s"}).`, `${s.arcology.population.toLocaleString()} citizens, and prosperity is ${Math.round(s.arcology.prosperity)}.`],
   });
   s.arcology.neighbours.forEach((n, i) => {
     const at = offset(home, BEARING[n.direction] ?? i * 120, 260 + i * 70);
@@ -150,7 +150,7 @@ export function places(s: SaveState): Place[] {
     const route = c.routes.find((x) => x.region === reg.id);
     out.push({
       id: `region:${reg.id}`, kind: "region", name: reg.name, at, radiusKm: 650, state: run?.state, route: !!route, disrupted: !!route && route.disrupted > 0, km: Math.round(distanceKm(home, at)),
-      lines: [`Old World region: ${reg.note}`, `${run ? `${REGION_STATE_WORD[run.state][0].toUpperCase()}${REGION_STATE_WORD[run.state].slice(1)} (stability ${Math.round(run.stability)}) since week ${run.since}.` : ""}`, route ? `Your trade route runs here${route.disrupted ? ", disrupted" : ""}.` : `No route yet: needs dock reach ${reg.reach} and ¤${reg.open.toLocaleString()} (City screen).`],
+      lines: [`Old World region: ${reg.note}`, `${run ? `${REGION_STATE_WORD[run.state][0].toUpperCase()}${REGION_STATE_WORD[run.state].slice(1)} (stability ${Math.round(run.stability)}) since week ${run.since}.` : ""}`, route ? `Your trade route runs here${route.disrupted ? ", disrupted" : ""}.` : `There's no route yet. Opening one needs dock reach ${reg.reach} and ¤${reg.open.toLocaleString()}, on the City screen.`],
     });
   }
   return out;
@@ -188,15 +188,15 @@ export interface Research { id: string; name: string; note: string; cost: number
   /** Every week after. */ weekly?: (s: SaveState) => void }
 
 export const RESEARCH: Research[] = [
-  { id: "solar_skin", kind: "energy", name: "Solar skin", note: "Photovoltaic cladding over the whole spire. A third of your power, clean; ¤400 a week in sales; pollution falls.", cost: 30000, weeks: 4,
+  { id: "solar_skin", kind: "energy", name: "Solar skin", note: "Photovoltaic cladding over the whole spire. It supplies a third of your power cleanly, sells ¤400 a week, and makes pollution fall.", cost: 30000, weeks: 4,
     weekly: (s) => { const w = worldOf(s); w.pollution = clamp(w.pollution - 1.2, 0, 100); s.arcology.cash += 400; } },
-  { id: "fusion", kind: "energy", name: "Compact fusion", note: "A reactor under the foundations. Most of your power, and power to sell to the neighbours: ¤1,500 a week. The climate stops getting worse because of you.", cost: 140000, weeks: 10, needs: ["solar_skin"],
+  { id: "fusion", kind: "energy", name: "Compact fusion", note: "A reactor under the foundations. It supplies most of your power, with power left over to sell to the neighbours for ¤1,500 a week. The climate stops getting worse because of you.", cost: 140000, weeks: 10, needs: ["solar_skin"],
     weekly: (s) => { const w = worldOf(s); w.pollution = clamp(w.pollution - 2.5, 0, 100); w.strain = clamp(w.strain - 0.3, 0, 100); s.arcology.cash += 1500; } },
   { id: "carbon_capture", kind: "climate", name: "Carbon capture", note: "Towers that pull carbon out of the sea air. The world's climate strain starts falling instead of rising.", cost: 60000, weeks: 6,
     weekly: (s) => { const w = worldOf(s); w.strain = clamp(w.strain - 0.6, 0, 100); } },
-  { id: "reforestation", kind: "climate", name: "Reforestation compacts", note: "Pay Old World governments to replant. Strain falls fast; ¤800 a week for as long as it runs; the regions you plant in steady.", cost: 90000, weeks: 8, needs: ["carbon_capture"],
+  { id: "reforestation", kind: "climate", name: "Reforestation compacts", note: "Pay Old World governments to replant. Strain falls fast, it costs ¤800 a week for as long as it runs, and the regions you plant in steady.", cost: 90000, weeks: 8, needs: ["carbon_capture"],
     weekly: (s) => { const w = worldOf(s); w.strain = clamp(w.strain - 1.2, 0, 100); s.arcology.cash -= 800; for (const r of Object.values(w.regions)) r.stability = clamp(r.stability + 0.3, 0, 100); } },
-  { id: "desalination", kind: "world", name: "Desalination fleet", note: "Floating plants that sell fresh water to the Old World at cost. Every region's stability rises a little each week; the world thanks you.", cost: 75000, weeks: 7,
+  { id: "desalination", kind: "world", name: "Desalination fleet", note: "Floating plants that sell fresh water to the Old World at cost. Every region's stability rises a little each week, and the world thanks you.", cost: 75000, weeks: 7,
     weekly: (s) => { for (const r of Object.values(worldOf(s).regions)) r.stability = clamp(r.stability + 0.8, 0, 100); s.arcology.rep += 25; } },
   { id: "vaccines", kind: "world", name: "Fever vaccines", note: "A vaccine line for the fevers that come in on the ships. Plagues end within a week, anywhere your routes reach.", cost: 45000, weeks: 5,
     weekly: (s) => { const w = worldOf(s); for (const [id, r] of Object.entries(w.regions)) if (r.plague_until && r.plague_until > s.arcology.week + 1 && s.city?.routes.some((x) => x.region === id)) r.plague_until = s.arcology.week + 1; } },
@@ -250,11 +250,11 @@ export function tickGlobe(s: SaveState): string[] {
 
 export type Involvement = "fund_peace" | "sell_arms" | "send_mercs" | "refugees" | "captives";
 export const INVOLVE: Record<Involvement, { label: string; note: string; when: RegionState[] }> = {
-  fund_peace: { label: "Fund a peace", note: "¤15,000. Stability +15; reputation and standing rise.", when: ["war", "collapse", "unrest"] },
-  sell_arms: { label: "Sell arms to both sides", note: "¤6,000–14,000 in; stability −12; your reputation abroad suffers.", when: ["war", "unrest"] },
-  send_mercs: { label: "Send your mercenaries", note: "Needs hired mercenaries. A fight: win and the region steadies and pays you; lose and they come home fewer.", when: ["war", "collapse"] },
-  refugees: { label: "Take in refugees", note: "+180 citizens; crime rises a little; reputation rises.", when: ["war", "collapse", "plague"] },
-  captives: { label: "Buy war captives", note: "¤5,000 for a captive, who becomes your slave.", when: ["war", "collapse"] },
+  fund_peace: { label: "Fund a peace", note: "Costs ¤15,000. Stability +15, and your reputation and standing rise.", when: ["war", "collapse", "unrest"] },
+  sell_arms: { label: "Sell arms to both sides", note: "Brings in ¤6,000–14,000. Stability −12, and your reputation abroad suffers.", when: ["war", "unrest"] },
+  send_mercs: { label: "Send your mercenaries", note: "Needs hired mercenaries. It's a fight. If you win, the region steadies and pays you, and if you lose, fewer of them come home.", when: ["war", "collapse"] },
+  refugees: { label: "Take in refugees", note: "+180 citizens. Crime rises a little, and so does your reputation.", when: ["war", "collapse", "plague"] },
+  captives: { label: "Buy war captives", note: "Costs ¤5,000 for a captive, who becomes your slave.", when: ["war", "collapse"] },
 };
 
 export function conflicts(s: SaveState): { id: string; name: string; state: RegionState; stability: number; since: number }[] {
@@ -329,14 +329,14 @@ function prisoners(s: SaveState, n: number, how: string): string[] {
 
 /** THE CLOSED TABLE. A visit's options can do these and nothing else, whoever wrote them. */
 export const VISIT_EFFECTS: Record<string, { note: string; run: (s: SaveState, place: Place, v: number) => string }> = {
-  cash: { note: "money changes hands: value is ¤, −20000…20000", run: (s, _p, v) => { const n = Math.round(clamp(v, -20000, 20000)); s.arcology.cash += n; return n ? `${n > 0 ? "+" : "−"}¤${Math.abs(n).toLocaleString()}` : ""; } },
-  rep: { note: "your name abroad: value −600…600", run: (s, _p, v) => { const n = Math.round(clamp(v, -600, 600)); s.arcology.rep = Math.max(0, s.arcology.rep + n); return n ? `${n > 0 ? "+" : "−"}${Math.abs(n)} reputation` : ""; } },
-  standing: { note: "what your own citizens hear of it: value −2…2", run: (s, _p, v) => { const n = clamp(v, -2, 2); s.arcology.public_standing = clamp(s.arcology.public_standing + n, -10, 10); return n ? `standing ${n > 0 ? "+" : ""}${n}` : ""; } },
-  attitude: { note: "a neighbour's feeling toward you: value −25…25 (neighbours only)", run: (s, p, v) => { const n = s.arcology.neighbours.find((x) => x.id === p.id); if (!n) return ""; const d = Math.round(clamp(v, -25, 25)); n.attitude = clamp(n.attitude + d, -100, 100); return `${n.name} ${d >= 0 ? "warms to you" : "cools on you"} (${d > 0 ? "+" : ""}${d})`; } },
-  ownership: { note: "you buy into a neighbour: value is % 1…10, costs ¤4,000 a point (neighbours only)", run: (s, p, v) => { const n = s.arcology.neighbours.find((x) => x.id === p.id); if (!n) return ""; const pts = Math.round(clamp(v, 1, 10)); s.arcology.cash -= pts * 4000; n.ownership = clamp(n.ownership + pts, 0, 100); return `you own ${Math.round(n.ownership)}% of ${n.name} (−¤${(pts * 4000).toLocaleString()})`; } },
-  stability: { note: "the region steadies or slips: value −15…15 (regions only)", run: (s, p, v) => { const run = worldOf(s).regions[p.id.replace("region:", "")]; if (!run) return ""; const d = Math.round(clamp(v, -15, 15)); run.stability = clamp(run.stability + d, 0, 100); return `${p.name} ${d >= 0 ? "steadies" : "slips"} (${d > 0 ? "+" : ""}${d})`; } },
-  slave: { note: "someone comes home with you as your slave: value is ¤ paid, 0…12000", run: (s, p, v) => { const paid = Math.round(clamp(v, 0, 12000)); s.arcology.cash -= paid; const [name] = prisoners(s, 1, `brought back from ${p.name}`); return `${name} comes home with you${paid ? ` (−¤${paid.toLocaleString()})` : ""}`; } },
-  nothing: { note: "nothing changes", run: () => "" },
+  cash: { note: "Money changes hands. The value is in ¤, from −20000 to 20000.", run: (s, _p, v) => { const n = Math.round(clamp(v, -20000, 20000)); s.arcology.cash += n; return n ? `${n > 0 ? "+" : "−"}¤${Math.abs(n).toLocaleString()}` : ""; } },
+  rep: { note: "Your name abroad changes. The value is from −600 to 600.", run: (s, _p, v) => { const n = Math.round(clamp(v, -600, 600)); s.arcology.rep = Math.max(0, s.arcology.rep + n); return n ? `${n > 0 ? "+" : "−"}${Math.abs(n)} reputation` : ""; } },
+  standing: { note: "What your own citizens think of it. The value is from −2 to 2.", run: (s, _p, v) => { const n = clamp(v, -2, 2); s.arcology.public_standing = clamp(s.arcology.public_standing + n, -10, 10); return n ? `standing ${n > 0 ? "+" : ""}${n}` : ""; } },
+  attitude: { note: "A neighbour's feeling toward you changes. The value is from −25 to 25, for neighbours only.", run: (s, p, v) => { const n = s.arcology.neighbours.find((x) => x.id === p.id); if (!n) return ""; const d = Math.round(clamp(v, -25, 25)); n.attitude = clamp(n.attitude + d, -100, 100); return `${n.name} ${d >= 0 ? "warms to you" : "cools on you"} (${d > 0 ? "+" : ""}${d})`; } },
+  ownership: { note: "You buy into a neighbour. The value is a percentage from 1 to 10, it costs ¤4,000 a point, and it's for neighbours only.", run: (s, p, v) => { const n = s.arcology.neighbours.find((x) => x.id === p.id); if (!n) return ""; const pts = Math.round(clamp(v, 1, 10)); s.arcology.cash -= pts * 4000; n.ownership = clamp(n.ownership + pts, 0, 100); return `you own ${Math.round(n.ownership)}% of ${n.name} (−¤${(pts * 4000).toLocaleString()})`; } },
+  stability: { note: "The region steadies or slips. The value is from −15 to 15, for regions only.", run: (s, p, v) => { const run = worldOf(s).regions[p.id.replace("region:", "")]; if (!run) return ""; const d = Math.round(clamp(v, -15, 15)); run.stability = clamp(run.stability + d, 0, 100); return `${p.name} ${d >= 0 ? "steadies" : "slips"} (${d > 0 ? "+" : ""}${d})`; } },
+  slave: { note: "Someone comes home with you as your slave. The value is the ¤ paid, from 0 to 12000.", run: (s, p, v) => { const paid = Math.round(clamp(v, 0, 12000)); s.arcology.cash -= paid; const [name] = prisoners(s, 1, `brought back from ${p.name}`); return `${name} comes home with you${paid ? ` (−¤${paid.toLocaleString()})` : ""}`; } },
+  nothing: { note: "Nothing changes.", run: () => "" },
 };
 
 export interface VisitOption { id: string; label: string; outcome: string; effects: { effect: string; value: number }[] }
@@ -387,7 +387,7 @@ function gameVisit(s: SaveState, p: Place): Omit<Visit, "place" | "week" | "by">
         { id: "flatter", label: "Flatter them and buy nothing", outcome: "They enjoy it. So do you.", effects: [{ effect: "attitude", value: 5 }] },
         { id: "insult", label: "Tell them their arcology is a slum", outcome: "It is, a little. They don't forget it.", effects: [{ effect: "attitude", value: -15 }, { effect: "standing", value: 0.5 }] },
       ] },
-    { scene: `An auction house in ${p.name} is selling off an estate: the owner died in debt, and his household goes under the hammer this afternoon. The star lot is a woman who was his personal secretary for eleven years.`,
+    { scene: `An auction house in ${p.name} is selling off an estate. The owner died in debt, and his household goes under the hammer this afternoon. The star lot is a woman who was his personal secretary for eleven years.`,
       options: [
         { id: "bid", label: "Bid on her", outcome: "You win at eight thousand. She's efficient about the paperwork of her own sale.", effects: [{ effect: "slave", value: 8000 }, { effect: "rep", value: 100 }] },
         { id: "watch", label: "Watch, and learn how they do it here", outcome: "Their auctions are better run than yours. You take notes.", effects: [{ effect: "nothing", value: 0 }] },
@@ -404,7 +404,7 @@ export async function startVisit(s: SaveState, p: Place, model?: string, fallbac
   let v: Visit | null = null;
   if (model) {
     const res = await call({
-      system: "You write events for a dark management game about a slave-owning arcology city-state. Answer only with JSON. Every person is an adult. Write plain and blunt, like a porn game and not literature: when sex comes into it, crude explicit words (cock, pussy, ass, tits, cum, fuck), never euphemism or flowery prose. Do not write consequences as numbers in the prose; the game applies them.",
+      system: "You write events for a dark management game about a slave-owning arcology city-state. Answer only with JSON. Every person is an adult. Write plain and blunt, like a porn game and not literature. When sex comes into it, use crude explicit words (cock, pussy, ass, tits, cum, fuck), never euphemism or flowery prose. Don't write consequences as numbers in the prose, because the game applies them.",
       user: [
         `THE PLAYER, owner of ${s.arcology.name} (reputation ${Math.round(s.arcology.rep)}, cash ¤${Math.round(s.arcology.cash).toLocaleString()}), is visiting:`,
         placeBrief(s, p),

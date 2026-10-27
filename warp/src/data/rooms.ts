@@ -74,7 +74,7 @@ const texture = (p: Person, re: RegExp) => [...p.persona.texture, ...p.persona.c
 const fetish = (p: Person, id: string, min = 40) => p.persona.fetishes.some((f) => f.name === id && f.strength >= min);
 
 export const EXTRAS: Extra[] = [
-  { id: "lock", name: "a lock on her door, and the only key", cost: 600, upkeep: 0, comfort: 1, trust: 4, note: "she can shut people out; trust rises",
+  { id: "lock", name: "a lock on her door, and the only key", cost: 600, upkeep: 0, comfort: 1, trust: 4, note: "she can shut people out, so trust rises",
     fits: (p) => (p.bond.fear > 40 ? 1.8 : 1) * (p.persona.attachment.style === "avoidant" ? 1.5 : 1) },
   { id: "books", name: "a shelf of books", cost: 1500, upkeep: 20, comfort: 0.6, note: "means a great deal to a reader",
     fits: (p) => (p.persona.education > 55 || ["sharp", "brilliant"].includes(p.persona.intelligence) ? 2.2 : 0.7) * (texture(p, /book|read|stud|librar|teach|writ/i) ? 1.5 : 1) },

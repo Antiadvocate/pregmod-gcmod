@@ -40,7 +40,7 @@ export default function Sagas() {
       <div className="card p-4 mb-5">
         <div className="text-[11px] uppercase tracking-wider dim mb-1 flex items-center gap-1.5"><BookOpen size={12} /> This arcology's stories</div>
         <p className="text-[13px] mid">{modelsAvailable()
-          ? `Long stories grow out of what this arcology becomes: the laws you write, the people who hate or love you, the strangers who keep turning up. The first begins around week ${st.next_start}.`
+          ? `Long stories grow out of what this arcology becomes, like the laws you write, the people who hate or love you, the strangers who keep turning up. The first begins around week ${st.next_start}.`
           : "Long stories written for this arcology need a narrator model (Settings). The written story below runs without one."}</p>
       </div>
     );
@@ -98,7 +98,7 @@ export function SagaCard({ id }: { id: string }) {
     stop.current = null;
     mutate(() => {});
     setBusy(false);
-    if (!res.ok && !ctl.signal.aborted) setErr(res.error ?? "that didn't work; try again");
+    if (!res.ok && !ctl.signal.aborted) setErr(res.error ?? "that didn't work, so try again");
   };
   const take = (i: number) => {
     const ch = x.chapter!;

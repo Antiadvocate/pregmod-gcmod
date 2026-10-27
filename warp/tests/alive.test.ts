@@ -14,7 +14,7 @@ const her = house[0];
 remember(s.memory[her.id], { content: "the owner laughed at me in front of the kitchen girls", week: s.arcology.week, importance: 8, charge: "sharp" });
 her.today = undefined;
 check("she wakes up with what happened to her", /still stung by this: the owner laughed at me/.test(today(s, her)), today(s, her));
-check("and every scene knows it", /TODAY SHE'S CARRYING/.test(personCard(s, her)));
+check("and every scene knows it", /WHAT SHE'S CARRYING TODAY/.test(personCard(s, her)));
 let came = 0, who = new Set<string>();
 for (let i = 0; i < 200; i++) { const x = walkIn(s, [her.id], `t${i}`, 0.5); if (x) { came++; who.add(x.person.id); } }
 check("now and then somebody walks in", came > 60 && came < 140, came);

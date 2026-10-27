@@ -41,7 +41,7 @@ Gifts like this are never free. She's beautiful and well trained, and she's very
       title: "What the gift was for",
       text: (c) => {
         const p = c.s.people[String(c.flag("gift_id"))];
-        return `${p?.name ?? "She"} has been sending the Association a weekly summary: your accounts, your household, who you meet and for how long. ${c.flag("gift_watched") ? "Your tap caught the first one before it left the building." : "You find out when a committee member mentions something at dinner that only your office knew."}`;
+        return `${p?.name ?? "She"} has been sending the Association a weekly summary of your accounts, your household, who you meet and for how long. ${c.flag("gift_watched") ? "Your tap caught the first one before it left the building." : "You find out when a committee member mentions something at dinner that only your office knew."}`;
       },
       options: [
         { id: "turn", label: "Turn her. She reports what you tell her to.", need: (c) => { const p = c.s.people[String(c.flag("gift_id"))]; return p && read(p).trust > -20 ? null : "she'd have to trust you more"; },
@@ -163,7 +163,7 @@ const heiress: ArcDef = {
   beats: {
     debt: {
       title: "A marker at the tables",
-      text: (c) => `Your club manager brings you a stack of markers: twenty-two thousand, signed by the daughter of the richest citizen on your residential levels. She's twenty-four, she's been playing for three nights, and she's asked to see you.
+      text: (c) => `Your club manager brings you a stack of markers for twenty-two thousand, signed by the daughter of the richest citizen on your residential levels. She's twenty-four, she's been playing for three nights, and she's asked to see you.
 
 She comes in with her chin up. "My father will pay," she says. "But if he finds out he'll cut me off. So I'm offering you something else. A year. On the books. As whatever you like."`,
       options: [
@@ -233,7 +233,7 @@ const twins: ArcDef = {
       title: "One of the twins",
       text: (c) => {
         const [a, b] = String(c.flag("twins")).split(",").map((id) => c.s.people[id]);
-        return `${b?.name ?? "One of them"} is sick — a fever that's gone into her chest — and ${a?.name ?? "her sister"} has been sleeping on the floor of the spa next to her for three nights. She asks to see you.
+        return `${b?.name ?? "One of them"} is sick with a fever that's gone into her chest, and ${a?.name ?? "her sister"} has been sleeping on the floor of the spa next to her for three nights. She asks to see you.
 
 "Whatever it costs," she says. "Take it out of me."`;
       },

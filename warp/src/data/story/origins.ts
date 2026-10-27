@@ -140,7 +140,7 @@ ${c.full("creditor")} stands by the window the whole time, because most of the f
 
 "Your father and I had an understanding," ${c.he("creditor")} says. "Ninety thousand, and I'm a patient ${c.he("creditor") === "he" ? "man" : "woman"}. Or you sign the building over by the end of the half-year and we part friends."
 
-${c.sn} — your father's head girl for nine years — is pouring the drinks and listening to every word.`,
+${c.sn}, who was your father's head girl for nine years, is pouring the drinks and listening to every word.`,
       options: [
         { id: "pay", label: "\"You'll get your money.\"", note: "a debt of ¤90,000, and your word on it",
           run: (c) => { c.set("heir_debt", 90000); c.set("heir_word", true); c.like("creditor", 5);
@@ -148,7 +148,7 @@ ${c.sn} — your father's head girl for nine years — is pouring the drinks and
         { id: "understanding", label: "Ask what the understanding actually was",
           run: (c) => { c.set("heir_debt", 90000); c.set("heir_asked", true); c.like("creditor", -5);
             return { text: `${c.n("creditor")} looks at you for a long moment. "Your father borrowed money. I lent it. That's the understanding." ${c.He("creditor")} finishes ${c.his("creditor")} drink. Across the room, ${c.sn} looks uncomfortable. She clearly knows something.`, next: "headgirl", after: 1 }; } },
-        { id: "share", label: "Offer a share of the building instead of cash", note: "halves the debt; costs you ownership", need: skill("trading", 25),
+        { id: "share", label: "Offer a share of the building instead of cash", note: "halves the debt, but costs you ownership", need: skill("trading", 25),
           run: (c) => { c.set("heir_debt", 45000); c.set("heir_partner", true); c.s.arcology.ownership = Math.max(5, c.s.arcology.ownership - 8); c.like("creditor", 15); c.out.push("−8% ownership");
             return { text: `${c.n("creditor")} actually laughs. "He never would have offered that. All right. Eight points of the building and I'll cut the paper in half." You shake on it.`, next: "headgirl", after: 1 }; } },
         { id: "out", label: (c) => `Have her show ${c.him("creditor")} out`, note: "the debt stands, and so does the insult",
@@ -185,16 +185,16 @@ She's in the grey robe she wore for your father. She stands by his chair, not in
     },
     ledger: {
       title: "The second ledger",
-      text: (c) => `It's where she said: taped to the underside of the bottom drawer, a cheap notebook with a split spine.
+      text: (c) => `It's where she said it would be, taped to the underside of the bottom drawer, a cheap notebook with a split spine.
 
-Your father's handwriting, small and slanted. Dates, amounts, and one name over and over — ${c.full("creditor")}. Not loans. Payments, going the other way, and next to each one a set of initials and a port.
+It's your father's handwriting, small and slanted. There are dates and amounts, and one name over and over, ${c.full("creditor")}. They aren't loans. They're payments going the other way, and next to each one is a set of initials and a port.
 
 ${c.n("creditor")} wasn't lending your father money. ${c.He("creditor")} was selling him women that weren't ${c.his("creditor")} to sell, and the debt is what your father owed for the last shipment. There are enough dates in here to interest the Owners' Association, and ${c.n("creditor")}'s other clients.`,
       options: [
-        { id: "leverage", label: `Show ${"it"} to the creditor and renegotiate`, note: "the debt shrinks; the creditor won't forget",
+        { id: "leverage", label: `Show ${"it"} to the creditor and renegotiate`, note: "the debt shrinks, but the creditor won't forget",
           run: (c) => { c.set("heir_debt", Math.round(heirDebt(c) * 0.35)); c.set("heir_leverage", true); c.like("creditor", -35);
             return { text: `You photograph one page and send it to ${c.n("creditor")} with no message. ${c.He("creditor")} calls within the hour. By the end of the call your father's debt is ${money(heirDebt(c))}, and ${c.n("creditor")}'s voice has gone very quiet and very polite.`, next: "payday", after: 5 }; } },
-        { id: "sell", label: "Sell the ledger to one of the creditor's rivals", note: "money now; trouble later",
+        { id: "sell", label: "Sell the ledger to one of the creditor's rivals", note: "money now, and trouble later",
           run: (c) => { c.cash(35000); c.set("heir_sold_ledger", true); c.like("creditor", -60);
             return { text: `A woman from the Kestrel exchange pays thirty-five thousand for it and doesn't ask how you got it. Within a fortnight two of ${c.n("creditor")}'s ports are closed to ${c.him("creditor")}. ${c.He("creditor")} knows exactly where that came from.`, next: "payday", after: 5 }; } },
         { id: "burn", label: "Burn it. It's his sin, not yours.",
@@ -236,7 +236,7 @@ ${c.n("creditor")} wasn't lending your father money. ${c.He("creditor")} was sel
       title: "The reckoning",
       text: (c) => {
         if (c.flag("heir_war") || c.npc("creditor").disposition < -40) {
-          return `Three weeks of small disasters: a freight contract cancelled, a shipment of curatives that never arrived, one of your women followed home from the concourse. It's ${c.n("creditor")}, and everyone in the building knows it.
+          return `There are three weeks of small disasters. A freight contract is cancelled, a shipment of curatives never arrives, and one of your women is followed home from the concourse. It's ${c.n("creditor")}, and everyone in the building knows it.
 
 Then ${c.he("creditor")} sends a note, handwritten. *${money(Math.max(heirDebt(c), 1))}, or the building. Friday.*`;
         }
@@ -249,11 +249,11 @@ Then ${c.he("creditor")} sends a note, handwritten. *${money(Math.max(heirDebt(c
         { id: "ruin", label: "Take the ledger to the Association", show: (c) => !!c.flag("heir_leverage") || !!c.flag("heir_ledger") && !c.flag("heir_burned") && !c.flag("heir_sold_ledger"),
           run: (c) => { c.set("heir_debt", 0); c.npc("creditor").status = "gone"; c.rep(400); c.standing(1);
             if (c.he("creditor") === "she") {
-              const p = c.addSlave({ seed: "creditor", name: c.full("creditor"), age: 44, quality: 0.3, how: "the Association seized her and sold her to cover her debts; you bought the paper", hostile: true });
+              const p = c.addSlave({ seed: "creditor", name: c.full("creditor"), age: 44, quality: 0.3, how: "the Association seized her and sold her to cover her debts, and you bought the paper", hostile: true });
               c.npc("creditor").status = "owned"; c.npc("creditor").person = p.id;
               return { text: `The Association moves faster than you expected. ${c.n("creditor")}'s accounts are frozen by Wednesday, and by the end of the month she's on a block in the Grand Exchange to cover what she owes. You buy her cheap. She's furious.`, end: "the creditor was ruined, and ended up yours" };
             }
-            return { text: `The Association moves faster than you expected. ${c.n("creditor")}'s accounts are frozen by Wednesday and he's gone by the weekend — a yacht, people say, going south. Your father's debt goes with him.`, end: "the creditor was ruined and fled" }; } },
+            return { text: `The Association moves faster than you expected. ${c.n("creditor")}'s accounts are frozen by Wednesday and he's gone by the weekend, on a yacht going south, people say. Your father's debt goes with him.`, end: "the creditor was ruined and fled" }; } },
         { id: "kill", label: "Have it dealt with. Permanently.", need: (c) => (c.s.arcology.security >= 55 || c.s.arcology.mercenaries.hired ? null : "needs security 55 or mercenaries"),
           run: (c) => { c.set("heir_debt", 0); c.npc("creditor").status = "dead"; c.crime(5); c.rep(-150); c.household("coercion", 2, "the house heard what happened to the creditor");
             return { text: `It happens on a service stair at two in the morning and it's in the news by breakfast. Nobody asks you about it directly. The debt dies with ${c.him("creditor")}, and your citizens are more afraid of you now.`, end: "the creditor was killed" }; } },
@@ -299,9 +299,9 @@ const raider: ArcDef = {
 
 "The lads want paying," ${c.he("captain")} says. "They were promised a city. So far they've had a city's worth of paperwork."
 
-Out past the breakwater, a white yacht sits at anchor where everyone can see it. ${c.full("deposed")} has been broadcasting from it all week: you're a pirate, the registry is void, and ${c.he("deposed")}'ll be home by summer.
+Out past the breakwater, a white yacht sits at anchor where everyone can see it. ${c.full("deposed")} has been broadcasting from it all week that you're a pirate, the registry is void, and ${c.he("deposed")}'ll be home by summer.
 
-Downstairs, ${c.sn} — one of ${c.n("deposed")}'s women, and yours now — is scrubbing the floor where the fighting was worst. She's scrubbed it every day for four months.`,
+Downstairs, ${c.sn}, who was one of ${c.n("deposed")}'s women and is yours now, is scrubbing the floor where the fighting was worst. She's scrubbed it every day for four months.`,
       options: [
         { id: "bonus", label: "Pay them a bonus out of what's left", note: "¤15,000", need: cash(15000),
           run: (c) => { c.cash(-15000); c.like("captain", 15); c.s.arcology.mercenaries.loyalty += 10;
@@ -347,10 +347,10 @@ ${c.sn} is standing behind you with a tray, and she's terrified.`,
       options: [
         { id: "deal", label: "Offer her a good place in the house for the truth",
           run: (c) => { const e = c.s.people[String(c.flag("raider_envoy"))]; c.treat(e, "promise_kept", 6, "offered a real place for the truth"); c.set("raider_plan", true);
-            return { text: `She thinks about it for a long time. Then she tells you: forty hired men, a fishing fleet out of Ardent, the night of the next new moon, through the freight doors on the industrial level. "He's never kept a promise to me," she says. "Let's see if you do."`, next: "night", after: 5 }; } },
+            return { text: `She thinks about it for a long time. Then she tells you everything. Forty hired men and a fishing fleet out of Ardent will come on the night of the next new moon, through the freight doors on the industrial level. "He's never kept a promise to me," she says. "Let's see if you do."`, next: "night", after: 5 }; } },
         { id: "break", label: "Break her until she talks", note: "ugly, and it works",
           run: (c) => { const e = c.s.people[String(c.flag("raider_envoy"))]; if (e) { resolveAct(c.s, e, "discipline"); resolveAct(c.s, e, "restraint"); } c.treat(e, "cruelty", 8, "made to talk"); c.set("raider_plan", true);
-            return { text: `You tie her down and whip her until she talks. It takes most of the night. By the end she's sobbing out everything: forty men, the fishing fleet, the freight doors, the new moon. She's terrified of you afterwards.`, next: "night", after: 5 }; } },
+            return { text: `You tie her down and whip her until she talks. It takes most of the night. By the end she's sobbing out everything, the forty men, the fishing fleet, the freight doors and the new moon. She's terrified of you afterwards.`, next: "night", after: 5 }; } },
         { id: "use", label: "Send her back to him with a false plan", need: skill("hacking", 25),
           run: (c) => { const e = c.s.people[String(c.flag("raider_envoy"))]; if (e) c.remove(e, "gone", "sent back to the yacht carrying a lie"); c.set("raider_plan", true); c.set("raider_trap", true);
             return { text: `You let her overhear exactly what you want ${c.n("deposed")} to hear, and then you let her escape. When they come, they'll come where you're waiting.`, next: "night", after: 5 }; } },
@@ -360,7 +360,7 @@ ${c.sn} is standing behind you with a tray, and she's terrified.`,
       title: "The night they come back",
       text: (c) => `${c.flag("raider_plan") ? "You knew it was coming. " : ""}At two in the morning the freight doors on the industrial level blow inward and the lights go out across four floors.
 
-${c.n("captain")}'s voice on the radio: "Fishing boats. Thirty, forty men. ${c.n("deposed")}'s with them — I can hear ${c.him("deposed")} shouting." A pause. "Your call."`,
+${c.n("captain")}'s voice on the radio: "Fishing boats. Thirty, forty men. ${c.n("deposed")}'s with them. I can hear ${c.him("deposed")} shouting." A pause. "Your call."`,
       options: [
         { id: "fight", label: "Meet them at the doors", note: (c) => `your strength ${Math.round(strength(c))}`,
           run: (c) => {
@@ -462,7 +462,7 @@ Clipped to it is a card in ${c.n("old_owner")}'s handwriting. *For your files. I
       options: [
         { id: "void", label: "Pay the registrar to void it quietly", note: "¤25,000", need: cash(25000),
           run: (c) => { c.cash(-25000); c.set("climber_void", true);
-            return { text: `The registrar takes your money without comment; clearly she's done this before. The record disappears. The original is still in ${c.n("old_owner")}'s safe, but in ${c.arcology} it no longer means anything.`, next: "claim", after: 4 }; } },
+            return { text: `The registrar takes your money without comment. Clearly she's done this before. The record disappears. The original is still in ${c.n("old_owner")}'s safe, but in ${c.arcology} it no longer means anything.`, next: "claim", after: 4 }; } },
         { id: "hack", label: "Erase it from the registry yourself", need: skill("hacking", 30),
           run: (c) => { c.set("climber_void", true); c.set("climber_hacked", true);
             return { text: `It takes a night and most of a pot of coffee. When you're done, there's no record in ${c.arcology} that you were ever a slave.`, next: "claim", after: 4 }; } },
@@ -559,14 +559,14 @@ Lot fourteen is a woman in her thirties with a scar through one eyebrow. The auc
 She recognizes you in the second row, and glares at you.`,
       options: [
         { id: "buy", label: "Buy her", note: "¤7,000", need: cash(7000),
-          run: (c) => { c.cash(-7000); const p = c.addSlave({ seed: "sold_one", name: c.full("sold_one"), age: 34, quality: 0.1, how: "you sold her eight years ago; you bought her back", hostile: true }); c.npc("sold_one").status = "owned"; c.npc("sold_one").person = p.id; p.health.health = -10;
+          run: (c) => { c.cash(-7000); const p = c.addSlave({ seed: "sold_one", name: c.full("sold_one"), age: 34, quality: 0.1, how: "you sold her eight years ago, and now you've bought her back", hostile: true }); c.npc("sold_one").status = "owned"; c.npc("sold_one").person = p.id; p.health.health = -10;
             return { text: `Nobody bids against you. She's brought up to your office in the evening. She's furious with you. "You told me it was a good house," she says.`, next: "yours", after: 0 }; } },
         { id: "free", label: "Buy her freedom through a lawyer, anonymously", note: "¤12,000", need: cash(12000),
           run: (c) => { c.cash(-12000); c.npc("sold_one").status = "gone"; c.set("broker_freed", true);
             return { text: `A lawyer you've never met buys lot fourteen and walks her out of the building with a ticket and a sealed envelope. She never finds out who paid.`, next: "rival", after: 6 }; } },
         { id: "pass", label: "Look at your programme until the lot is over",
           run: (c) => { c.set("broker_passed", true);
-            return { text: `The bidding is slow. She goes for five thousand to a buyer in a good suit — ${c.full("rival_broker")}'s man. As she's led off she glares back at you.`, next: "rival", after: 5 }; } },
+            return { text: `The bidding is slow. She goes for five thousand to a buyer in a good suit, ${c.full("rival_broker")}'s man. As she's led off she glares back at you.`, next: "rival", after: 5 }; } },
       ],
     },
     yours: {
@@ -642,7 +642,7 @@ const investor: ArcDef = {
 
 "Questions?"`,
       options: [
-        { id: "double", label: "\"I'll beat the numbers by a third.\"", note: "harder targets; bigger reward",
+        { id: "double", label: "\"I'll beat the numbers by a third.\"", note: "harder targets, but a bigger reward",
           run: (c) => { c.set("inv_base", c.s.arcology.cash); c.set("inv_bold", true); c.like("chair", 15);
             return { text: `${c.n("chair")} is impressed. "Then we'll hold you to it." The call ends. Your targets have gone up.`, next: "q1", after: 13 }; } },
         { id: "fine", label: "\"Understood.\"",
@@ -681,7 +681,7 @@ ${hit ? `${c.n("chair")} looks through the figures and nods. "Good work."` : `${
     },
     visit: {
       title: (c) => `${c.n("chair")} comes to see the building`,
-      text: (c) => `${c.full("chair")} arrives in person. ${c.He("chair")} wants to see everything: the brothel, the kitchens, the dormitories, the books. ${c.He("chair")} asks the Madam three questions you didn't know the answers to.
+      text: (c) => `${c.full("chair")} arrives in person. ${c.He("chair")} wants to see everything, the brothel, the kitchens, the dormitories and the books. ${c.He("chair")} asks the Madam three questions you didn't know the answers to.
 
 At the end of the day, in the penthouse, ${c.he("chair")} takes ${c.his("chair")} shoes off and eyes up your slaves.`,
       options: [
@@ -709,14 +709,14 @@ ${hit ? `"Good," ${c.n("chair")} says. "Better than good. The board wants to tal
       options: [
         { id: "future", label: "Hear them out", show: (c) => !!q2hit(c),
           run: (c) => { c.cash(25000); c.like("chair", 15);
-            return { text: `The board offers you a stake: ten percent of whatever the building's worth in five years, on top of salary. ${c.n("chair")} is smiling. You sign.`, next: "final", after: 12 }; } },
+            return { text: `The board offers you a stake of ten percent of whatever the building's worth in five years, on top of salary. ${c.n("chair")} is smiling. You sign.`, next: "final", after: 12 }; } },
         { id: "buyout", label: "Buy the fund out", note: "¤250,000", need: cash(250000),
           run: (c) => { c.cash(-250000); c.s.arcology.ownership = Math.min(100, c.s.arcology.ownership + 30); c.npc("chair").status = "gone"; c.out.push("+30% ownership");
             return { text: `${c.n("chair")} is surprised. The fund sells, and the arcology is yours.`, end: "you bought the building out from under the fund" }; } },
         { id: "fight", label: "Refuse to hand over and dare them to remove you", show: (c) => !q2hit(c), need: (c) => (c.s.arcology.security >= 50 ? null : "needs security 50"),
           run: (c) => { c.npc("chair").disposition = -60; c.rep(-200); c.standing(1); c.set("inv_seized", true);
             return { text: `The replacement arrives on Friday with two lawyers and is met at the lift by your guards. They go back down. The fund can sue you, but your arcology doesn't recognize their courts. Your citizens love the drama.`, end: "you seized the building from the fund that owned it" }; } },
-        { id: "go", label: "Go quietly", show: (c) => !q2hit(c), note: "you stay as the owner's manager; the fund takes a cut",
+        { id: "go", label: "Go quietly", show: (c) => !q2hit(c), note: "you stay as the owner's manager, and the fund takes a cut",
           run: (c) => { c.s.arcology.ownership = Math.max(1, c.s.arcology.ownership - 15); c.out.push("−15% ownership"); c.like("chair", 10);
             return { text: `The replacement turns out to be a nervous man called Gerald who knows nothing about slaves. Within a month he's asking you to run it for him. You do, for a smaller cut than before.`, end: "the fund took more of the building, and you run it for them" }; } },
       ],
@@ -798,7 +798,7 @@ It's signed with her full name.`,
       title: (c) => `${c.n("sibling")} makes a move`,
       text: (c) => c.flag("prod_ally")
         ? `${c.n("sibling")} calls. "Mother's changed the will," ${c.he("sibling")} says. "Everything to whichever of us breaks the alliance first. She thinks one of us will." There's a pause. "I want you to know I thought about it."`
-        : `${c.subj?.name ?? "One of your women"} brings you a note she found under her pillow. It's from ${c.n("sibling")}, in ${c.his("sibling")} looping hand: an offer of freedom, a flat in the family's city, and a monthly allowance — if she walks out of your building and tells the papers what goes on in it.
+        : `${c.subj?.name ?? "One of your women"} brings you a note she found under her pillow. It's from ${c.n("sibling")}, in ${c.his("sibling")} looping hand. It's an offer of freedom, a flat in the family's city, and a monthly allowance — if she walks out of your building and tells the papers what goes on in it.
 
 She could have taken the offer, but she brought it to you instead.`,
       options: [
@@ -810,7 +810,7 @@ She could have taken the offer, but she brought it to you instead.`,
             if (stays) { c.treat(c.subj, "promise_kept", 8, "offered freedom, and stayed"); c.hope(5); return { text: `She reads the note again and puts it in the fire. "I don't want ${c.his("sibling")} flat," she says. "I want to stay here."`, next: "will", after: 10 }; }
             if (c.subj) c.remove(c.subj, "free", `walked out on your sibling's offer`); c.rep(-300);
             return { text: `She goes. A week later she's on a Kestrel news programme, talking. ${c.n("sibling")} sends you a clipping.`, next: "will", after: 10 }; } },
-        { id: "back", label: "Return the favour: bribe their household manager", need: cash(15000), show: (c) => !c.flag("prod_ally"),
+        { id: "back", label: "Return the favour by bribing their household manager", need: cash(15000), show: (c) => !c.flag("prod_ally"),
           run: (c) => { c.cash(-15000); c.like("sibling", -20); c.set("prod_sabotage", true);
             return { text: `${c.n("sibling")}'s manager starts sending you the weekly accounts. You have your sibling's whole operation on your desk every Monday. It's weaker than you thought.`, next: "will", after: 10 }; } },
         { id: "trust", label: "\"I thought about it too.\"", show: (c) => !!c.flag("prod_ally"),

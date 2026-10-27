@@ -41,7 +41,7 @@ function slave(s: SaveState, b: Partial<Person["bond"]>, extra: (p: Person) => v
 
   const rebel = slave(s, { bond: -70, resentment: 90, hope: 0 });
   check("her card tells the narrator how she takes orders", /HOW SHE TAKES ORDERS[^\n]*refuses/.test(personCard(s, rebel)));
-  check("but how it sounds is hers, not a stock slave's", /how it sounds is hers[^\n]*never a stock slave's lines/.test(personCard(s, rebel)));
+  check("but how it sounds is hers, not a stock slave's", /how it sounds is up to her[^\n]*never in a stock slave's lines/.test(personCard(s, rebel)));
   check("and the scene writer doesn't just do what the player says", MOMENT_SYSTEM.includes("happens only as far as HOW SHE TAKES ORDERS") && !MOMENT_SYSTEM.includes("Follow the player's reply exactly"));
   rebel.persona.fetishes = [{ name: "buttslut", strength: 90, known: true }];
   rebel.persona.flaw = undefined; rebel.persona.quirk = undefined;
@@ -53,7 +53,7 @@ function slave(s: SaveState, b: Partial<Person["bond"]>, extra: (p: Person) => v
   for (let i = 0; i < 8; i++) applyTreatment(brat, { kind: "kindness", size: 8, why: "a gift" }, s.arcology.week);
   brat.bond.weeks_since_cruelty = 10;
   check("indulged for weeks and never disciplined, she pushes her luck", obeys(s, brat).pushes, [brat.bond.indulged, obeys(s, brat).label]);
-  check("and her flaw is on her card", /HER FLAW \(arrogant\)/.test(personCard(s, brat)));
+  check("and her flaw is on her card", /HER FLAW, arrogant\./.test(personCard(s, brat)));
   for (let i = 0; i < 4; i++) applyTreatment(brat, { kind: "coercion", size: 6, why: "punished" }, s.arcology.week);
   check("discipline takes the spoiling down", (brat.bond.indulged ?? 0) < 30 && !obeys(s, brat).pushes, brat.bond.indulged);
   check("and wears her flaw into its quirk", brat.persona.behavior?.quirk === "confident", brat.persona.behavior);

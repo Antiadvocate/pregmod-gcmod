@@ -72,24 +72,24 @@ export function dueToGrow(s: SaveState): Person[] {
 
 const GROW_SYSTEM = `You re-read a woman in Free Cities, an adult text game about owning an arcology, after weeks in the owner's house, and write who she is NOW, as one strict JSON object.
 
-Her first card was written the week she arrived; a lot has happened since. What has happened to her, the orders she lives under, where she stands with the owner and how she is with people now are the truth about her: write the real, grounded person all of that has made. A person, not a bundle of quirks.
+Her first card was written the week she arrived, and a lot has happened since. What has happened to her, the orders she lives under, where she stands with the owner and how she is with people now are the truth about her. Write the real, grounded person all of that has made, as a person and not a bundle of quirks.
 
 Rules that matter most:
-- She talks like a real person: mostly plain, ordinary sentences. Describe her voice the way you'd describe someone you know (blunt, quiet, quick, warm, dry), not as a list of gimmicks.
-- Don't turn a one-off joke, image or number from a scene into who she is. If a scene had her call herself bread, or count to eighty-nine, that was one moment; leave it there.
-- "tics": at most two small, believable habits real people have (a word from her own language when she swears, what she calls the owner, a way she laughs), each something she does only now and then. Leave it empty if nothing fits. Never generic fillers ("like", "just", "honestly", "okay", "I mean").
-- Her body is fact. Where a memory says something her body couldn't have done (a cock far too big for a throat taken all the way down, say), the body wins: it went as far as it physically could, and that's who she is and what she remembers.
-- IN BED is fact. Her core traits, voice and agenda must have room for it and say how it comes out: a quiet, careful or obedient woman can be a dom or a sadist in bed. Write the contrast, never write it away.
-- What's done is done. An operation, a punishment, a promise or a scene that already happened is in her past: it can have changed her, but she doesn't count the days since it, wait for it, or bring it up every time she talks. DONE TO HER BODY and the weeks on everything tell you what's over.
+- She talks like a real person, in mostly plain, ordinary sentences. Describe her voice the way you'd describe someone you know (blunt, quiet, quick, warm or dry), and not as a list of gimmicks.
+- Don't turn a one-off joke, image or number from a scene into who she is. If a scene had her call herself bread, or count to eighty-nine, that was one moment, so leave it there.
+- "tics" is at most two small, believable habits that real people have, like a word from her own language when she swears, what she calls the owner, or a way she laughs, and each is something she does only now and then. Leave it empty if nothing fits, and never use generic fillers like "like", "just", "honestly", "okay" or "I mean".
+- Her body is fact. Where a memory says something her body couldn't have done, such as taking a cock that's far too big for her throat all the way down, the body wins. It went as far as it physically could, and that's who she is and what she remembers.
+- IN BED is fact. Her core traits, voice and agenda must have room for it and say how it comes out, because a quiet, careful or obedient woman can be a dom or a sadist in bed. Write the contrast, and never write it away.
+- What's done is done. An operation, a punishment, a promise or a scene that already happened is in her past. It can have changed her, but she doesn't count the days since it, wait for it, or bring it up every time she talks. DONE TO HER BODY and the weeks on everything tell you what's over.
 - She has a life of her own besides the owner and what's been done to her. This is a porn game, so it has a sexual edge, and it grows out of her personality traits first, then her fetishes, then the job she had. "interests": ${OWN_LIFE_ASK.interests}. "goals": ${OWN_LIFE_ASK.goals}. Keep the ones on her card that still fit, and change what her weeks here would have changed.
-- "exchanges": three short, ordinary exchanges with the owner, the kind that happen every day, in the relationship they actually have (THE POWER BETWEEN THEM and her STANDING ORDERS decide how she speaks to him). The owner says something ordinary ("How are you?", "Come here.", "What do you think of the new room?") and she answers in one to three plain sentences, as herself. These set the length and plainness of how she talks, so keep them short and natural.
+- "exchanges" is three short, ordinary exchanges with the owner, the kind that happen every day, in the relationship they actually have. THE POWER BETWEEN THEM and her STANDING ORDERS decide how she speaks to him. The owner says something ordinary ("How are you?", "Come here.", "What do you think of the new room?") and she answers in one to three plain sentences, as herself. These set the length and plainness of how she talks, so keep them short and natural.
 
 Also:
-- "core_traits": 3 to 5, concrete and specific to her now, the way the game lists them ("fixes anything that rattles", "fucks the owner's throat the moment she sees him").
-- "voice": diction, syntax, rhythm (a sentence each, plain), never_says, agenda.
-- "life_history": 4 to 6 plain sentences: who she has become here and the turning points that made her, with the weeks.
-- "signature": one sentence, the one thing about her nobody else in the house has, shown as something she does.
-Plain words, nothing literary. Keep everything true to the facts given; invent nothing that contradicts them.
+- "core_traits" is 3 to 5 traits, concrete and specific to her now, the way the game lists them ("fixes anything that rattles", "fucks the owner's throat the moment she sees him").
+- "voice" has diction, syntax and rhythm (a plain sentence each), never_says, and agenda.
+- "life_history" is 4 to 6 plain sentences about who she has become here and the turning points that made her, with the weeks.
+- "signature" is one sentence about the one thing she has that nobody else in the house has, shown as something she does.
+Use plain words and nothing literary. Keep everything true to the facts given, and invent nothing that contradicts them.
 
 {"core_traits":["..."],"interests":["..."],"goals":["..."],"speech_pattern":"a few words","voice":{"diction":"...","syntax":"...","rhythm":"...","tics":["..."],"never_says":["..."],"agenda":"..."},"exchanges":[{"you":"...","her":"..."}],"life_history":"...","signature":"..."}`;
 
@@ -106,17 +106,17 @@ function brief(s: SaveState, p: Person): string {
   const bed = inBed(p);
   return [
     `## WHO SHE WAS WHEN SHE ARRIVED (week ${p.origin.acquired_week})`,
-    `${p.name}, ${p.age}, ${p.origin.nationality}; was a ${p.origin.career}. ${p.persona.background}`,
-    `Traits then: ${p.persona.core_traits.join("; ")}. Talked: ${p.persona.speech_pattern}. ${v?.diction ?? ""} Habits then: ${(v?.tics ?? []).join("; ")}.`,
-    p.persona.life_history ? `Who she'd become, last time she was read (week ${p.persona.grown_week}): ${p.persona.life_history}` : "",
-    `## HER BODY NOW\n${p.body.appearance_facts} ${featureFacts(p)}\nBetween her legs: ${describeGenitals(p)}\nFeet: ${describeFeet(p)}${p.body.traits?.length ? `\nAltered: ${p.body.traits.join(", ")}` : ""}`,
-    surgeryPast(s, p, 999) ? `## DONE TO HER BODY (over; in the past)\n${surgeryPast(s, p, 999)}` : "",
-    `## HER OWN LIFE, AS HER CARD HAS IT NOW\nWhat she does with her time: ${(p.persona.interests ?? []).join("; ") || "nothing written yet"}\nWhat she wants in the long run: ${(p.persona.goals ?? []).join("; ") || "nothing written yet"}\nLikes and dislikes: ${p.persona.texture.join("; ")}\nWorks as: ${p.assignment}. Before she was taken: ${p.origin.career}.`,
-    `## WHERE SHE STANDS WITH THE OWNER (week ${s.arcology.week})\nStanding: ${rom.standing}. Toward the owner: ${r.label}, ${r.trust_label}.${bed ? `\nIN BED (fact): ${bed}.` : ""}\n${powerBetween(s, p)}`,
+    `${p.name}, ${p.age}, ${p.origin.nationality}, was a ${p.origin.career}. ${p.persona.background}`,
+    `Her traits then were these: ${p.persona.core_traits.map((t) => t.replace(/[.;]\s*$/, "")).join(", ")}. She talked like this: ${p.persona.speech_pattern}. ${v?.diction ?? ""} Her habits then were ${(v?.tics ?? []).join(", ") || "none in particular"}.`,
+    p.persona.life_history ? `This is who she'd become the last time she was read, in week ${p.persona.grown_week}: ${p.persona.life_history}` : "",
+    `## HER BODY NOW\n${p.body.appearance_facts} ${featureFacts(p)}\nBetween her legs: ${describeGenitals(p)}\nHer feet: ${describeFeet(p)}${p.body.traits?.length ? `\nWhat's been altered: ${p.body.traits.join(", ")}` : ""}`,
+    surgeryPast(s, p, 999) ? `## DONE TO HER BODY\nThis is over and in the past.\n${surgeryPast(s, p, 999)}` : "",
+    `## HER OWN LIFE, AS HER CARD HAS IT NOW\nWhat she does with her time is ${(p.persona.interests ?? []).join(", ") || "nothing written yet"}.\nWhat she wants in the long run is ${(p.persona.goals ?? []).join(", ") || "nothing written yet"}.\nShe ${p.persona.texture.join(", and she ")}.\nShe works as ${p.assignment}. Before she was taken, she was ${p.origin.career}.`,
+    `## WHERE SHE STANDS WITH THE OWNER (week ${s.arcology.week})\nShe stands as ${rom.standing}. Toward the owner she's ${r.label}, ${r.trust_label}.${bed ? `\nIN BED, which is a fact: ${bed}` : ""}\n${powerBetween(s, p)}`,
     agreementsBrief(s, p),
     mannerLines(p).length ? `## HOW SHE IS WITH OTHER PEOPLE\n${mannerLines(p).join("\n")}` : "",
-    (mem?.facts ?? []).length ? `## WHAT SHE KNOWS ABOUT THE OWNER (with the week she learned it)\n${mem!.facts.map((f) => `· week ${f.week}: ${f.text}`).join("\n")}` : "",
-    `## WHAT HAS HAPPENED TO HER (the ones that matter most, in order)\n${memories.join("\n")}`,
+    (mem?.facts ?? []).length ? `## WHAT SHE KNOWS ABOUT THE OWNER\nEach one has the week she learned it.\n${mem!.facts.map((f) => `· week ${f.week}: ${f.text}`).join("\n")}` : "",
+    `## WHAT HAS HAPPENED TO HER\nThese are the things that matter most, in order.\n${memories.join("\n")}`,
   ].filter(Boolean).join("\n\n");
 }
 

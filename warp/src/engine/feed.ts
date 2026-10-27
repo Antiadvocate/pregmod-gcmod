@@ -102,7 +102,7 @@ export function sources(s: SaveState): Source[] {
   const yours = societies(s).find((x) => x.kind === "yours");
   if (yours) {
     const h = household(yours);
-    out.push({ id: "dress", label: "the dress code", text: `On the street, citizen women wear ${h.citizen.clothes} and ${h.citizen.shoes}; their husbands ${h.husband}${h.slave ? `; household slaves ${h.slave.clothes}, ${h.slave.collar}, ${h.slave.shoes}` : ""}.` });
+    out.push({ id: "dress", label: "the dress code", text: `On the street, citizen women wear ${h.citizen.clothes} and ${h.citizen.shoes}, and their husbands wear ${h.husband}.${h.slave ? ` Household slaves wear ${h.slave.clothes} and ${h.slave.collar}, with ${h.slave.shoes}.` : ""}` });
   }
   const menials = slavesBrief(s);
   if (menials) out.push({ id: "menials", label: "the city's slaves", text: menials.replace(/^·\s*/, "") });
@@ -120,7 +120,7 @@ export function sources(s: SaveState): Source[] {
   // The owner's own people, as the city sees them: the ones who go out, and what they look like.
   for (const p of Object.values(s.people).filter((x) => (x.status === "owned" || x.status === "indentured") && x.age >= 18).slice(0, 6)) {
     const look = [p.body.boobs > 900 ? "huge tits" : p.body.boobs > 500 ? "big tits" : "", `${p.body.hair_color} hair`, p.clothes && p.clothes !== "no clothing" ? `usually in ${p.clothes}` : "usually naked"].filter(Boolean).join(", ");
-    out.push({ id: `slave:${p.id}`, label: p.name, text: `${p.name}, ${p.age}, one of the owner's slaves (${p.assignment || "in the penthouse"}; ${look}). People in the city have seen her.${mannerLines(p).length ? ` How she is with people (seen when they're around): ${mannerLines(p).join("; ")}.` : ""}` });
+    out.push({ id: `slave:${p.id}`, label: p.name, text: `${p.name}, ${p.age}, is one of the owner's slaves (${p.assignment || "in the penthouse"}, with ${look}). People in the city have seen her.${mannerLines(p).length ? ` When people are around, this is how she is with them: ${mannerLines(p).join(", and ")}.` : ""}` });
   }
   // Women the owner freed, who live in the city now and are known for it.
   for (const p of freedInCity(s).slice(-3)) out.push({ id: `freed:${p.id}`, label: p.name, text: `${freeLine(s, p)} People in her district know she used to belong to the owner.` });
@@ -138,7 +138,7 @@ function ownerAsTheCitySeesThem(s: SaveState): string {
   const pr = s.player.pronouns ?? "he/him";
   const named = s.player.name && s.player.name !== "you" ? s.player.name : "";
   const title = s.player.address || (pr === "she/her" ? "Mistress" : "Master");
-  return `THE OWNER (the player, who is reading this feed): ${named ? `${named}, ` : ""}${genderWord(s)}, ${pr}. The posts are written by other people, so they refer to the owner in the third person, as "the owner"${named ? `, "${named}"` : ""} or "${title}", with ${pr} pronouns. The owner is never the author of a post.`;
+  return `THE OWNER is the player, who is reading this feed. The owner is ${named ? `${named}, ` : ""}${genderWord(s)}, and goes by ${pr}. The posts are written by other people, so they refer to the owner in the third person, as "the owner"${named ? `, "${named}"` : ""} or "${title}", with ${pr} pronouns. The owner is never the author of a post.`;
 }
 
 /* ── writing posts ─────────────────────────────────────────────────────────────────────────── */
@@ -149,16 +149,16 @@ function ownerAsTheCitySeesThem(s: SaveState): string {
  * board is people with an angle, taking their world for granted; the facts are the water they
  * swim in, not the subject.
  */
-const FEED_VOICE = `HOW THE POSTS SOUND. Like a real city's boards: people typing fast on their phones, mid-grievance, mid-brag, horny, petty, funny, scared. Slang, swearing, lowercase when they can't be bothered. Nobody writes like a press release, a narrator or a guidebook. No moral, no summing-up last line, no "it's a reminder that".
+const FEED_VOICE = `HOW THE POSTS SOUND. They read like a real city's boards, with people typing fast on their phones in the middle of a grievance or a brag, and being horny, petty, funny or scared. They use slang and swearing, and lowercase when they can't be bothered. Nobody writes like a press release, a narrator or a guidebook, and there's no moral, no summing-up last line and no "it's a reminder that".
 
-EVERY POSTER HAS AN ANGLE. They want something, are showing off, are pissed at someone, are hiding something, or are trying to get laid, and it leaks into how they write. Unreliable, biased, sometimes wrong about things. The replies disagree with them.
+EVERY POSTER HAS AN ANGLE. They want something, they're showing off, they're pissed at someone, they're hiding something, or they're trying to get laid, and it leaks into how they write. They're unreliable and biased, and sometimes they're wrong about things. The replies disagree with them.
 
-SHOW THE WORLD WITHOUT EXPLAINING IT. Each post lets the reader learn one thing about how life works here that an outsider wouldn't know: what things cost, which floor is rough, what a collar colour means, what the patrols look the other way on, a brand, a queue, a nickname, a bit of slang, a rumour about the owner. Posters take all of it for granted and never explain it. Invent those details freely; they just can't contradict WHAT'S TRUE HERE.
+SHOW THE WORLD WITHOUT EXPLAINING IT. Each post lets the reader learn one thing about how life works here that an outsider wouldn't know, like what things cost, which floor is rough, what a collar colour means, what the patrols look the other way on, a brand, a queue, a nickname, a bit of slang, or a rumour about the owner. Posters take all of it for granted and never explain it. Invent those details freely, as long as they don't contradict WHAT'S TRUE HERE.
 
-IT'S A PORN GAME. Sex is ordinary here and people post about it the way people do when nobody's stopping them: crude and specific. Say cock, dick, balls, pussy, cunt, clit, ass, asshole, tits, cum, fuck, suck, slut, whore plainly. Never a euphemism: no "core", "center", "folds", "member", "length", "womanhood", "down there", "made love", "had her way". Everyone in a post is an adult.`;
+IT'S A PORN GAME. Sex is ordinary here, and people post about it the way people do when nobody's stopping them, crudely and specifically. Say cock, dick, balls, pussy, cunt, clit, ass, asshole, tits, cum, fuck, suck, slut and whore plainly. Never use a euphemism, so no "core", "center", "folds", "member", "length", "womanhood", "down there", "made love" or "had her way". Everyone in a post is an adult.`;
 
 /** A different arcology's posts, for the voice only. */
-const EXAMPLES = `EXAMPLES OF THE VOICE (from a different arcology; copy the voice, never these details):
+const EXAMPLES = `EXAMPLES OF THE VOICE. These come from a different arcology, so copy the voice and never these details:
 · Confessions — u/throwaway_31st (citizen): "wife found out i've been tipping the pedicure girl" — Twenty a week so the salon slave on 31 rubs her tits on my shins while the missus gets her nails done. Wife found the receipts. Now she wants the girl for our place and she wants ME to pay for it. Cheapest divorce I never had.
    ↳ nailgirl_enjoyer: 20?? she does it for 12 if you ask for the side chair
    ↳ petra_k: your wife is the smartest person in this story
@@ -182,9 +182,9 @@ export function feedPrompt(s: SaveState, n = 3): { system: string; user: string 
   const followUp = f.posts.length >= 4 && r.chance(0.4) ? r.pick(f.posts.slice(0, 15).filter((p) => p.kind !== "official")) : undefined;
   return {
     system: [
-      `You write the message boards of an arcology, a private city-state in an adult game where slavery is legal and ordinary. Posts are short, like Reddit: a title, two to five sentences, and two or three replies. Citizens, slaves posting anonymously, visitors from outside, officials and businesses all post.`,
+      `You write the message boards of an arcology, a private city-state in an adult game where slavery is legal and ordinary. Posts are short, like Reddit posts, with a title, two to five sentences, and two or three replies. Citizens, slaves posting anonymously, visitors from outside, officials and businesses all post.`,
       FEED_VOICE,
-      `WHAT'S TRUE HERE is binding. The laws are binding and literal: people keep them, dodge them, or break them and pay for it, and never mention a clause that isn't in the law's words. The gene programs show on the bodies of the people they were run on. People wear what the dress code says. The beliefs and habits are what people think is normal. Never invent a law, exemption or penalty, and never contradict a fact.`,
+      `WHAT'S TRUE HERE is binding. The laws are binding and literal, so people keep them, dodge them, or break them and pay for it, and nobody mentions a clause that isn't in the law's words. The gene programs show on the bodies of the people they were run on. People wear what the dress code says. The beliefs and habits are what people think is normal. Never invent a law, exemption or penalty, and never contradict a fact.`,
       ownerAsTheCitySeesThem(s),
       EXAMPLES,
       `Reply with JSON only.`,
@@ -192,16 +192,16 @@ export function feedPrompt(s: SaveState, n = 3): { system: string; user: string 
     user: [
       `## WHAT'S TRUE HERE (posters take all this for granted)`,
       ...world.map((x) => `[${x.id}] ${x.text}`),
-      happened.length ? `\n## WHAT JUST HAPPENED (people are talking about this)\n${happened.map((x) => `[${x.id}] ${x.text}`).join("\n")}` : "",
-      people.length ? `\n## PEOPLE THE CITY HAS NOTICED (the owner's slaves)\n${people.map((x) => `[${x.id}] ${x.text}`).join("\n")}` : "",
+      happened.length ? `\n## WHAT JUST HAPPENED\nPeople are talking about this.\n${happened.map((x) => `[${x.id}] ${x.text}`).join("\n")}` : "",
+      people.length ? `\n## PEOPLE THE CITY HAS NOTICED\nThese are the owner's slaves.\n${people.map((x) => `[${x.id}] ${x.text}`).join("\n")}` : "",
       ``,
       `## BOARDS: ${BOARDS.join(" · ")}`,
-      `## KINDS OF POST: a confession, a rant, a brag, asking for advice, a review, a classified ad, a personal ad, a PSA, a rumour, gossip about the owner or the owner's slaves, a first impression from a visitor, an official notice people mock in the replies.`,
+      `## KINDS OF POST\nA post can be a confession, a rant, a brag, asking for advice, a review, a classified ad, a personal ad, a PSA, a rumour, gossip about the owner or the owner's slaves, a first impression from a visitor, an official notice people mock in the replies.`,
       liked.length ? `The reader likes posts about: ${liked.join(", ")}. Write more that touch these.` : "",
       focus ? `At least one post touches [${focus}].` : "",
       happened.length ? `At least one post reacts to WHAT JUST HAPPENED.` : "",
       followUp ? `One post is an UPDATE from u/${followUp.author}, who earlier posted "${followUp.title}": ${followUp.body} Say what happened next.` : "",
-      recent.length ? `## ALREADY POSTED (don't repeat these)\n${recent.join("\n")}` : "",
+      recent.length ? `## ALREADY POSTED\nDon't repeat these.\n${recent.join("\n")}` : "",
       ``,
       `Write ${n} new posts, each on a different board, from different kinds of author, each a different kind of post. For each, list the ids of the facts it touches (at least one).`,
       `JSON: {"posts":[{"board":"one of the boards","author":"a username","kind":"${KINDS.join("|")}","title":"the post title","body":"2-5 sentences","replies":[{"author":"a username","text":"one or two sentences"}],"draws_on":["ids from the lists above"]}]}`,
@@ -294,11 +294,11 @@ export function storyPrompt(s: SaveState, p: Post): { system: string; user: stri
   const laws = src.filter((x) => x.id.startsWith("law:") && !p.draws.includes(x.id));
   const rest = src.filter((x) => !x.id.startsWith("law:") && !p.draws.includes(x.id));
   return {
-    system: `You write the stories behind posts on an arcology's message boards, for an adult game where slavery is legal and ordinary. A reader tapped a post; tell what actually happened, in full: the people in it, the place, the incident, the sex if there was any, and what came of it.
+    system: `You write the stories behind posts on an arcology's message boards, for an adult game where slavery is legal and ordinary. A reader tapped a post, so tell what actually happened, in full, with the people in it, the place, the incident, the sex if there was any, and what came of it.
 
 ${HOUSE_STYLE}
 
-The story is about the people in the post, told in the third person, past or present tense. The laws are binding and literal: people keep them, or break them and it matters. The gene programs are visible on the bodies of the people they were run on. People wear what the dress code says. The doctrines and habits are what people think is normal. Never invent a law, clause, exemption or penalty. If the owner (the player) appears, write the owner as "you". Everyone is an adult. Four to eight paragraphs. Plain prose only, no title, no JSON.`,
+The story is about the people in the post, told in the third person, past or present tense. The laws are binding and literal, so people keep them, or they break them and it matters. The gene programs are visible on the bodies of the people they were run on. People wear what the dress code says. The doctrines and habits are what people think is normal. Never invent a law, clause, exemption or penalty. If the owner, who is the player, appears, write the owner as "you". Everyone is an adult. Write four to eight paragraphs of plain prose, with no title and no JSON.`,
     user: [
       `## THE POST, on ${p.board}, by ${p.author} (${p.kind})`,
       `${p.title}`,
@@ -307,8 +307,8 @@ The story is about the people in the post, told in the third person, past or pre
       ``,
       `## WHAT IT GREW FROM (the story keeps to these)`,
       ...drawn.map((x) => x.text),
-      laws.length ? `\n## THE OTHER LAWS IN FORCE (binding here too)\n${laws.map((x) => x.text).join("\n")}` : "",
-      rest.length ? `\n## THE REST OF THE ARCOLOGY (background)\n${rest.map((x) => x.text).join("\n")}` : "",
+      laws.length ? `\n## THE OTHER LAWS IN FORCE\nThese bind here too.\n${laws.map((x) => x.text).join("\n")}` : "",
+      rest.length ? `\n## THE REST OF THE ARCOLOGY\nThis is background.\n${rest.map((x) => x.text).join("\n")}` : "",
     ].filter(Boolean).join("\n"),
   };
 }

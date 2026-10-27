@@ -281,7 +281,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     }
     if (res.written?.tags.length) entries.push({ k: "tags", tags: res.written.tags, tone: o.landing });
     const refused = res.notes.find((n) => /refused/.test(n));
-    if (refused) entries.push({ k: "note", text: `${refused.replace(/^the narrator did not answer \((.*)\)$/, "$1")}; this is the game's own version. Pick a different narrator model in Settings.` });
+    if (refused) entries.push({ k: "note", text: `${refused.replace(/^the narrator did not answer \((.*)\)$/, "$1")}, so this is the game's own version. Pick a different narrator model in Settings.` });
     setLog((l) => [...l, ...entries]);
     record([{ role: "you", text: act.name }, { role: "scene", text: entries.filter((e) => e.k === "prose" || e.k === "said").map((e) => ("text" in e ? e.text : "")).join("\n\n") }]);
     setReplies([]);
@@ -398,10 +398,10 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
           }}>
             <input ref={inputRef} className="flex-1 min-w-0" value={said} disabled={busy} onChange={(e) => setSaid(e.target.value)} onFocus={() => setTyping(true)} onBlur={() => setTyping(false)} placeholder={`Say or do something to ${p.name}`} />
             {busy && stopper.current
-              ? <button type="button" className="btn btn-sm btn-danger" onClick={() => stopper.current?.abort()} title="Stop the model; this reply is thrown away"><Square size={12} /> stop</button>
+              ? <button type="button" className="btn btn-sm btn-danger" onClick={() => stopper.current?.abort()} title="Stop the model and throw this reply away"><Square size={12} /> stop</button>
               : <button className="btn btn-sm btn-primary" disabled={busy || !said.trim()} onMouseDown={(e) => e.preventDefault()}>Go</button>}
             {!busy && lastCall.current ? <button type="button" className="btn btn-sm" onClick={retry} title="Throw away that response and ask the model again"><RotateCcw size={12} /> retry</button> : null}
-            {mid && engaged.current ? <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void endHere()} title="End the scene; what you did in it starts to count">Done</button> : null}
+            {mid && engaged.current ? <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void endHere()} title="End the scene, and what you did in it starts to count">Done</button> : null}
           </form>
         ) : null}
         {!ended && next.length && (!typing || wide) ? (

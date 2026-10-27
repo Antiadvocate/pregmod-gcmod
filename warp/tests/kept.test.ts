@@ -78,8 +78,8 @@ function owned(seed: string, style: string) {
   for (let i = 0; i < 8; i++) (s.deeds ??= []).push({ id: `d${i}`, week: 1, person: her.id, summary: "She made you kneel.", tags: ["bottomed"], public: false, witnesses: [], effects: [], source: "test" });
   check("nor is one who has been topping you all along", styleOf(s, her) !== "doting", styleOf(s, her));
   s.player.self = "I'm a pain slut. I want to be used and kept hard.";
-  check("your own words are read as what being owned is for you", selfProfile(s).some((l) => /what being owned is for them/.test(l) && /pain slut/.test(l)));
-  check("her feelings for you aren't written as softness", /That is a feeling, not a manner/.test(personCard(s, her)));
+  check("your own words are read as what being owned is for you", selfProfile(s).some((l) => /what being owned means to them/.test(l) && /pain slut/.test(l)));
+  check("her feelings for you aren't written as softness", /That is a feeling rather than a manner/.test(personCard(s, her)));
   s.reign!.portrait = "She keeps you on the floor and uses you when she's bored.";
   check("the reading of her wins in every scene", /HOW SHE KEEPS YOU.*on the floor/.test(personCard(s, her)));
 }

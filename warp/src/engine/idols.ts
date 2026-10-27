@@ -18,8 +18,8 @@ import { practise } from "./player";
 export type IdolImage = "sweet" | "sexy" | "cool" | "bad girl";
 export const IDOL_IMAGES: Record<IdolImage, string> = {
   sweet: "girl-next-door: smiles, bows, no scandals",
-  sexy: "all legs and pouts; more fans, more trouble",
-  cool: "aloof and serious; fewer fans, more loyal ones",
+  sexy: "all legs and pouts, with more fans and more trouble",
+  cool: "aloof and serious, with fewer fans but more loyal ones",
   "bad girl": "swears on stream and gets arrested on purpose",
 };
 
@@ -112,9 +112,9 @@ const IDOL_EVENTS: EventDef[] = [
     id: "idol_scandal", severity: "notable", endogenous: true,
     candidates: (s) => idols(s).filter((p) => idolOf(p).fans > 1500).map((person) => ({ person })),
     weight: (_s, c) => (idolOf(c.person!).image === "bad girl" ? 5 : idolOf(c.person!).image === "sexy" ? 3.5 : 2),
-    seed: (_s, c) => `Photos of ${c.person!.name} are all over the arcology feeds this morning: her on her knees in a service corridor with two of your guards, taken on someone's phone. Her fans are fighting about it in every comment section.`,
+    seed: (_s, c) => `Photos of ${c.person!.name} are all over the arcology feeds this morning, of her on her knees in a service corridor with two of your guards, taken on someone's phone. Her fans are fighting about it in every comment section.`,
     options: [
-      { id: "lean", label: "Lean into it: she's a bad girl now", note: "more fans, less respect",
+      { id: "lean", label: "Lean into it, because she's a bad girl now", note: "more fans, less respect",
         resolve: (s, _e, p) => { idolOf(p!).image = "bad girl"; fans(p!, 1.3); s.arcology.rep = Math.max(0, s.arcology.rep - 150); return `You have ${p!.name} post a photo the next day, from the same corridor, winking. Her fan count jumps by a third overnight. Some of the older citizens stop coming to her shows.`; } },
       { id: "deny", label: "Say the photos are fake", note: "some fans believe it",
         resolve: (_s, _e, p) => { fans(p!, 0.9); return `Your people put out a statement that the photos are fakes, with a technician's report attached. About half of her fans believe it. The other half make memes of the corridor, and ${p!.name} has to smile through a week of shows where someone in the crowd is always holding one up.`; } },
@@ -130,7 +130,7 @@ const IDOL_EVENTS: EventDef[] = [
     weight: () => 1.5,
     seed: (s, c) => `${s.arcology.neighbours[0]?.name ?? "The arcology across the strait"} has an idol of its own, and she's challenged ${c.person!.name} to a live sing-off on both arcologies' feeds. The loser's owner pays ¤5,000 to charity, and everyone will be watching.`,
     options: [
-      { id: "accept", label: "Accept the challenge", note: "win and her fans double; lose and they don't forgive it",
+      { id: "accept", label: "Accept the challenge", note: "if she wins her fans double, and if she loses they don't forgive it",
         resolve: (s, _e, p) => { const win = p!.skills.entertainment + read(p!).devotion / 3 + (s.arcology.week % 17) > 70;
           if (win) { fans(p!, 1.7); s.arcology.rep += 400; applyTreatment(p!, { kind: "recognition", size: 7, why: "won the sing-off", }, s.arcology.week); return `${p!.name} wins, by a lot. The other girl forgets the words to her second song and cries on the feed. ${p!.name}'s fans take over the other arcology's comment sections for a week.`; }
           fans(p!, 0.75); s.arcology.cash -= 5000; applyTreatment(p!, { kind: "cruelty", size: 2, why: "lost the sing-off in front of everyone", }, s.arcology.week); return `${p!.name} loses. She's good, but the other girl is better, and everyone saw it. You pay the ¤5,000. ${p!.name} doesn't come out of her room for two days.`; } },
@@ -156,7 +156,7 @@ const IDOL_EVENTS: EventDef[] = [
     id: "office_manager", severity: "minor", endogenous: true,
     candidates: (s) => Object.values(s.people).filter((p) => p.status === "owned" && p.assignment === "work in an office" && p.age >= 18).map((person) => ({ person })),
     weight: () => 1.5,
-    seed: (_s, c) => `The citizen who manages the office ${c.person!.name} works in has been keeping her late, and she's been coming back to the penthouse with her blouse buttoned wrong. Today he sent a message: he'd like to buy her contract outright, and he names a good price.`,
+    seed: (_s, c) => `The citizen who manages the office ${c.person!.name} works in has been keeping her late, and she's been coming back to the penthouse with her blouse buttoned wrong. Today he sent a message saying he'd like to buy her contract outright, and he names a good price.`,
     options: [
       { id: "sell", label: "Sell her to him", note: "a good price",
         resolve: (s, _e, p) => { p!.status = "sold"; p!.exit_week = s.arcology.week; p!.exit_note = "sold to the manager of the office she worked in"; s.arcology.cash += 12000; return `You sell ${p!.name} to him for ¤12,000. She packs her things in silence and is at his desk on Monday.`; } },

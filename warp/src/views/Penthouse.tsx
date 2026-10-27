@@ -463,7 +463,7 @@ function HandCard() {
     <div className="card p-3 mb-4">
       <p className="text-[13px]">{hand === "shared"
         ? <>{keeper.name} owns you, and lets you keep running things. She can stop anything you do.</>
-        : <>{keeper.name} runs {save.arcology.name} now. You can see everything she does with it; you can't change any of it.</>}</p>
+        : <>{keeper.name} runs {save.arcology.name} now. You can see everything she does with it, but you can't change any of it.</>}</p>
       <HowSheKeepsYou />
       {recent.length ? <ul className="mt-2 space-y-0.5 text-[12px] mid">{recent.map((x, i) => <li key={i}>· week {x.week}: {x.line}</li>)}</ul> : null}
       <div className="flex flex-wrap gap-2 mt-2">
@@ -490,7 +490,7 @@ function HowSheKeepsYou() {
     const ok = await readHer(save, note);
     mutate(() => {});
     setBusy(false);
-    if (ok) { setFixing(false); setNote(""); } else setErr("That didn't work; try again.");
+    if (ok) { setFixing(false); setNote(""); } else setErr("That didn't work. Try again.");
   };
   return (
     <div className="mt-2">
@@ -499,7 +499,7 @@ function HowSheKeepsYou() {
         ? <button className="text-[11.5px] dim underline mt-1" onClick={() => setFixing(true)}>that isn't her</button>
         : (
           <div className="mt-2">
-            <textarea className="w-full" rows={3} placeholder="What's wrong with it: how she's actually treated you, what you've told her, what you are to her." value={note} onChange={(e) => setNote(e.target.value)} />
+            <textarea className="w-full" rows={3} placeholder="Say what's wrong with it, like how she's actually treated you, what you've told her, what you are to her." value={note} onChange={(e) => setNote(e.target.value)} />
             <div className="flex gap-2 mt-1">
               <Button size="sm" kind="primary" disabled={busy} onClick={() => void go()}>{busy ? "Reading her again…" : "Read her again"}</Button>
               <Button size="sm" kind="ghost" onClick={() => setFixing(false)}>never mind</Button>

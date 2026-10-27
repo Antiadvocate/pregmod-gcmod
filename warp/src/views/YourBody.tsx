@@ -101,7 +101,7 @@ export default function YourBody() {
             {b.dick ? <Chips label="Foreskin" value={b.foreskin ? "uncut" : "cut"} options={["uncut", "cut"] as const} onPick={(v) => set("foreskin", v === "uncut" ? 2 : 0)} /> : null}
             <Chips label="Pussy" value={b.vagina !== null ? "yes" : "no"} options={["yes", "no"] as const} onPick={(v) => set("vagina", v === "yes" ? 2 : null)} />
             <Chips label="Pubic hair" value={b.pubic_hair} options={PUBIC} onPick={(v) => set("pubic_hair", v)} />
-            <p className="text-[12px] dim">{b.dick ? (b.balls ? "Every act is open to you." : "No balls: you can't breed anyone, and nobody on a fucktoy or concubine job gets pregnant by you.")
+            <p className="text-[12px] dim">{b.dick ? (b.balls ? "Every act is open to you." : "You have no balls, so you can't breed anyone, and nobody on a fucktoy or concubine job gets pregnant by you.")
               : "Without a cock, penetration is the strap-on from the drawer, and anything that needs you to come in or on her is closed."}</p>
           </>
         ) : tab === "face" ? (

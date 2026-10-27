@@ -44,7 +44,7 @@ her.persona.voice = { tics: ["'Bon.', under her breath"], example_lines: ["I am 
 her.persona.exchanges = [{ you: "How are you?", her: "Tired. The rain kept me up." }];
 const card = personCard(s, her, "");
 check("her card shows an ordinary exchange instead of quirk lines", card.includes("AN ORDINARY EXCHANGE WITH HER") && card.includes("Tired. The rain kept me up.") && !card.includes("I am the bread"));
-check("her habits are marked as rare", card.includes("NOW AND THEN SHE"));
+check("her habits are marked as rare", card.includes("HABITS SHE HAS NOW AND THEN"));
 
 her.persona.grown_week = s.arcology.week; her.persona.grown_v = 1; her.economics.weeks_owned = 10;
 check("a woman written by the old reading is read again", GROW_V >= 2 && dueToGrow(s).includes(her));
@@ -72,7 +72,7 @@ check("but one read just before it keeps her voice and isn't read again", !dueTo
   const at = bodies.length;
   await playMoment(s, id, "what are you asking? I don't understand. Fine about what");
   const sent = bodies.slice(at).find((b) => JSON.stringify(b).includes("You continue a scene")) as { messages: { content: string }[] } | undefined;
-  check("then the next reply is told to explain plainly and add nothing", !!sent && /THE PLAYER DIDN'T FOLLOW THAT[^\n]*Add nothing new/.test(sent.messages[1].content));
+  check("then the next reply is told to explain plainly and add nothing", !!sent && /THE PLAYER DIDN'T FOLLOW THAT[^\n]*Don't add anything new/.test(sent.messages[1].content));
 
   const seed = "The storm has the workers' canteen on Block 3 packed, and Daryna is there with the household for the evening meal. Bohdan Kravets kneels in front of her on your order, head down, his mates at the next table watching with their jaws working. Half the canteen is watching too. A woman from the kitchen line, Nel Coster, an older cook with flour on her forearms, says quietly, 'Someone should tell her it's over. She's shaking.' Bohdan's mate mutters, 'He's knelt long enough.'";
   const part = partIn(seed, "Nel Coster");

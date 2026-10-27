@@ -62,13 +62,13 @@ export const RULE_LABEL = {
 export function rulesLine(s: SaveState): string {
   const r = rulesOf(s);
   const bits = [
-    r.release === "you" ? "a slave gets off only with the owner: not by herself, not with another slave"
+    r.release === "you" ? "a slave gets off only with the owner, not by herself and not with another slave"
       : r.release === "self" ? "a slave may get herself off, but not with another slave"
       : "slaves may fuck each other",
-    slaveSex(s) ? (r.consent === "required" ? "only with the other girl's consent: no slave forces another" : "a slave may take another who doesn't want it, and the house allows it") : "",
-    r.relationships === "forbidden" ? "no relationships between slaves, not even close friendships" : r.relationships === "friends" ? "slaves can be friends, but not lovers" : "slaves may be lovers",
+    slaveSex(s) ? (r.consent === "required" ? "sex between slaves needs the other girl's consent, and no slave forces another" : "a slave may take another who doesn't want it, and the house allows it") : "",
+    r.relationships === "forbidden" ? "there are no relationships between slaves, not even close friendships" : r.relationships === "friends" ? "slaves can be friends, but not lovers" : "slaves may be lovers",
   ].filter(Boolean);
-  return `HOUSE RULES BETWEEN SLAVES (the owner's; slaves keep them, and breaking one is a real offence): ${bits.join("; ")}.`;
+  return `HOUSE RULES BETWEEN SLAVES. These are the owner's rules, slaves keep them, and breaking one is a real offence. The rules are that ${bits.join(", that ")}.`;
 }
 
 /** Weekly: what the release rule does. A slave allowed to see to herself, or to the other girls,

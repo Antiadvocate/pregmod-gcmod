@@ -55,13 +55,13 @@ export interface GeneSpec {
 export type TraitTag = "strength" | "intellect" | "beauty" | "fertility" | "endurance" | "longevity" | "senses";
 export interface GeneTrait { name: string; what: string; tag?: TraitTag }
 export const TRAIT_TAGS: Record<TraitTag, string> = {
-  strength: "stronger: menials produce more, security rises a little",
-  intellect: "sharper: the city grows a little richer every week",
-  beauty: "beautiful: the arcology's name travels (reputation every week)",
-  fertility: "more fertile: the city grows faster",
-  endurance: "tireless: fewer menials are lost, slaves recover energy",
-  longevity: "longer-lived: health holds up",
-  senses: "keener senses: crime is harder to get away with",
+  strength: "stronger, so menials produce more and security rises a little",
+  intellect: "sharper, so the city grows a little richer every week",
+  beauty: "beautiful, so the arcology's name travels and reputation grows every week",
+  fertility: "more fertile, so the city grows faster",
+  endurance: "tireless, so fewer menials are lost and slaves recover energy",
+  longevity: "longer-lived, so health holds up",
+  senses: "keener senses, so crime is harder to get away with",
 };
 const TAG_WORDS: [RegExp, TraitTag][] = [
   [/\b(strong|stronger|strength|muscl|bone|dense)/, "strength"], [/\b(smart|intellig|clever|genius|memory|brain|iq|minds?|sharper|wits?|learn)/, "intellect"],
@@ -256,7 +256,7 @@ export function readWords(text: string): GeneSpec {
   spec.complexity = clamp(parts.length, 1, 5);
   spec.remade = 3 + parts.length * 2;
   spec.summary = parts.length ? parts.join(", ") : "nothing the clinics can do";
-  spec.society = parts.length ? `Everyone the program reached shows it: ${parts.join(", ")}. People notice who has had it and who hasn't.` : "";
+  spec.society = parts.length ? `Everyone the program reached shows it, with ${parts.join(", ")}. People notice who has had it and who hasn't.` : "";
   spec.side_effects = spec.complexity >= 3 ? "Some of the edited run fevers for a week while it takes." : "None worth reporting.";
   return spec;
 }
@@ -303,18 +303,18 @@ export async function design(s: SaveState, draft: { name: string; text: string; 
   if (model) {
     const who = draft.target === "slaves" ? "the owner's slaves (all adults)" : draft.target === "citizens" ? "the arcology's citizens" : "the owner's slaves and the arcology's citizens";
     const res = await call({
-      system: "You are the chief geneticist of a Free City arcology in a dark future where the owner can rewrite the DNA of whoever they pay for. You design mass gene edits from the owner's words, and answer only with JSON. The game can apply only what the JSON schema offers; leave out anything else. Describe only adults, and never describe a child's body.",
+      system: "You are the chief geneticist of a Free City arcology in a dark future where the owner can rewrite the DNA of whoever they pay for. You design mass gene edits from the owner's words, and answer only with JSON. The game can only apply what the JSON schema offers, so leave out anything else. Describe only adults, and never describe a child's body.",
       user: [
         `THE OWNER'S WORDS: "${text}"`,
         `APPLIED TO: ${who}.`,
         `THE CITY: ${s.arcology.name}, ${Math.round(s.arcology.population).toLocaleString()} citizens, prosperity ${Math.round(s.arcology.prosperity)}.`,
         ``,
-        `Answer with JSON. Change only what the owner's words ask for; a field you leave out stays as the people were born. Colour and height fields are only for when the words ask for them. Anything else the words ask for (night vision, gills, stronger bones, slower ageing, a tail) goes in "traits", in the words' own terms.`,
-        `{"summary": "<what it does, a few words>", "complexity": <1-5, how hard: a colour is 1, one resistance 2, several changes 3-5>,`,
+        `Answer with JSON. Change only what the owner's words ask for. Any field you leave out stays as the people were born. Colour and height fields are only for when the words ask for them. Anything else the words ask for (night vision, gills, stronger bones, slower ageing, a tail) goes in "traits", in the words' own terms.`,
+        `{"summary": "<what it does, a few words>", "complexity": <1-5 for how hard it is, where a colour is 1, one resistance is 2, and several changes are 3-5>,`,
         ` ONLY IF ASKED: "skin": "<one of ${GENE_COLOURS.join(", ")}>", "hair": "<same list>", "eyes": "<same list>", "height": <cm change, -12..12>,`,
         ` "resist": {"heat": <0-0.9>, "cold": <0-0.9>, "disease": <0-0.9>, "pollution": <0-0.9>}, "health": <0-20 one-off>, "remade": <0-15, how far it pushes the city toward remade bodies>,`,
-        ` "traits": [{"name": "<a few words>", "what": "<one sentence: what it's like to have it, day to day>", "tag": "<optional, one of ${Object.keys(TRAIT_TAGS).join(", ")}>"}],${draft.target !== "slaves" ? " Citizens include children: traits for citizens must not be sexual or about sexual body parts." : ""}`,
-        ` "society": "<120-220 words: how the city changes once this is done: fashion, work, who has it and who doesn't, what the neighbours and the Old World say. Concrete, no moralising.>",`,
+        ` "traits": [{"name": "<a few words>", "what": "<one sentence about what it's like to have it, day to day>", "tag": "<optional, one of ${Object.keys(TRAIT_TAGS).join(", ")}>"}],${draft.target !== "slaves" ? " Citizens include children, so traits for citizens must not be sexual or about sexual body parts." : ""}`,
+        ` "society": "<120-220 words about how the city changes once this is done, including fashion, work, who has it and who doesn't, and what the neighbours and the Old World say. Keep it concrete and don't moralise.>",`,
         ` "side_effects": "<one or two sentences>", "reaction": <-2..2, how the citizens take it>}`,
       ].join("\n"),
       model, fallback, json: true, maxTokens: 900, temperature: 0.8,
@@ -352,7 +352,7 @@ export function apply(s: SaveState): string {
   if (d.revises) return applyRevision(s);
   const slaves = household(s);
   const q = quote(s, d.target, d.spec, slaves);
-  if (s.arcology.cash < q.cost) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}; the program costs ¤${q.cost.toLocaleString()}.`;
+  if (s.arcology.cash < q.cost) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}, but the program costs ¤${q.cost.toLocaleString()}.`;
   s.arcology.cash -= q.cost;
   if (d.target !== "citizens") for (const p of slaves) rewrite(p, d.spec, d.name);
   const edit: GeneEdit = { id: `gene_${s.arcology.week}_${g.edits.length}`, name: d.name, text: d.text, target: d.target, spec: d.spec, by: d.by, week: s.arcology.week, cost: q.cost, citizens: q.citizens, slaves: d.target !== "citizens" ? slaves.map((p) => p.id) : [], menials: q.menials };
@@ -442,8 +442,8 @@ export function genomeBrief(s: SaveState): string {
   return edits.map((e) => {
     const c = citizenShare(s, e), sl = slaveShare(s, e);
     const reach = [c && `${Math.round(c * 100)}% of citizens`, sl && `${Math.round(sl * 100)}% of the owner's slaves`].filter(Boolean).join(" and ");
-    const traits = (e.spec.traits ?? []).map((t) => `${t.name}: ${t.what}`).join(" ");
-    return `· Engineered, the ${e.name} program (${e.spec.summary}; ${reach || "nobody any more"}).${traits ? ` ${traits}` : ""}${e.spec.society ? ` ${e.spec.society}` : ""}`;
+    const traits = (e.spec.traits ?? []).map((t) => `They have ${t.name}. ${t.what}`).join(" ");
+    return `· The ${e.name} program (${e.spec.summary}) has changed ${reach || "nobody any more"}.${traits ? ` ${traits}` : ""}${e.spec.society ? ` ${e.spec.society}` : ""}`;
   }).join("\n");
 }
 
@@ -471,7 +471,7 @@ export function tickGenome(s: SaveState): string[] {
     if (!e.auto) continue;
     const more = topUp(s, e.id, true);
     if (!more.citizens && !more.slaves.length && !more.menials) continue;
-    if (s.arcology.cash < more.cost) { out.push(`The ${e.name} program couldn't reach this week's newcomers: it needs ¤${more.cost.toLocaleString()}.`); continue; }
+    if (s.arcology.cash < more.cost) { out.push(`The ${e.name} program couldn't reach this week's newcomers, because it needs ¤${more.cost.toLocaleString()}.`); continue; }
     const done = topUp(s, e.id);
     if (done.line) out.push(done.line);
   }
@@ -539,7 +539,7 @@ export function applyRevision(s: SaveState): string {
   const e = d?.revises ? g.edits.find((x) => x.id === d.revises) : undefined;
   if (!d || !e) return "";
   const cost = revisionCost(s);
-  if (s.arcology.cash < cost) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}; the revision costs ¤${cost.toLocaleString()}.`;
+  if (s.arcology.cash < cost) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}, but the revision costs ¤${cost.toLocaleString()}.`;
   s.arcology.cash -= cost;
   const was = { name: e.name, changes: changesOf(e.spec) };
   for (const id of e.slaves) { const p = s.people[id]; if (p) undo(s, p, e); }
@@ -567,13 +567,13 @@ export function reverse(s: SaveState, id: string): string {
   const e = g.edits.find((x) => x.id === id);
   if (!e) return "";
   const cost = reverseCost(s, id);
-  if (s.arcology.cash < cost) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}; reversing it costs ¤${cost.toLocaleString()}.`;
+  if (s.arcology.cash < cost) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}, but reversing it costs ¤${cost.toLocaleString()}.`;
   s.arcology.cash -= cost;
   for (const pid of e.slaves) { const p = s.people[pid]; if (p) undo(s, p, e); }
   g.edits = g.edits.filter((x) => x !== e);
   pushNorm(s, "modification", -((e.spec.remade ?? 4) / 2), `you reversed the ${e.name} gene program`);
   startRumor(s, `the owner has reversed the ${e.name} gene program`, { salience: 6 });
-  return `The ${e.name} program is reversed: everyone it reached is back as they were (−¤${cost.toLocaleString()}).`;
+  return `The ${e.name} program is reversed, and everyone it reached is back as they were (−¤${cost.toLocaleString()}).`;
 }
 
 export function rename(s: SaveState, id: string, name: string): void {

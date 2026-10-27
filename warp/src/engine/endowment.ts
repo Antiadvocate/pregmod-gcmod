@@ -68,18 +68,18 @@ export function sizeLine(s: SaveState): string {
   const e = endowment(s);
   if (e.dick === null) return "";
   const cm = inches(dickCM(e.dick));
-  if (e.bought) return ` The owner's cock was surgically enlarged, from ${dickWord(e.born ?? 1)} to ${dickWord(e.dick)} (about ${cm} now), and the people who knew it before know. Nobody laughs at its size any more; when it comes up, the joke is about the surgery, the money, and what he must have been like before.`;
-  if (e.big) return ` The owner's cock is ${dickWord(e.dick)} (about ${cm}), and people who see it notice, the way people do: a look, a comment, a comparison. It's never written as average.`;
+  if (e.bought) return ` The owner's cock was surgically enlarged, from ${dickWord(e.born ?? 1)} to ${dickWord(e.dick)} (about ${cm} now), and the people who knew it before know. Nobody laughs at its size any more. When it comes up, the joke is about the surgery, the money, and what he must have been like before.`;
+  if (e.big) return ` The owner's cock is ${dickWord(e.dick)} (about ${cm}), and people who see it notice, the way people do, with a look, a comment or a comparison. It's never written as average.`;
   if (!e.small) return "";
   const m = menace(s);
   const talk = talkOfIt(s);
   const known = talk >= 30 ? "It's common knowledge in the arcology by now." : talk >= 10 ? "Word has started to get around." : "Only the women who've been with the owner know, so far.";
   const how = m >= 0.55
-    ? "The owner is feared, so nobody says it to the owner's face, ever: it shows in a glance held a beat too long, a careful blank face, a look exchanged behind the owner's back, a slave biting the inside of her cheek, a joke three floors down that stops when the owner walks in. Write it that subtly, and only where it fits."
+    ? "The owner is feared, so nobody ever says it to the owner's face. It shows in a glance held a little too long, a careful blank face, a look exchanged behind the owner's back, a slave biting the inside of her cheek, or a joke three floors down that stops when the owner walks in. Write it that subtly, and only where it fits."
     : m >= 0.3
-      ? "People are careful about it, mostly: a smirk caught and wiped off, a comparison made quietly, a slave who has to look away to keep a straight face. Someone bolder or drunker might say it."
-      : "People don't hide that they've noticed: a smirk, a comparison, a slave who giggles and has to apologise, a joke at the owner's expense when they think it's safe, and now and then somebody who says it outright.";
-  return ` The owner's cock is ${dickWord(e.dick)} (about ${cm}), it was born that way and never fixed, and people who see it notice, and talk. ${known} ${how} Slaves who like laughing at a cock (size humiliation) find it delightful; a size queen is quietly disappointed. Never pretend it's bigger than it is.`;
+      ? "People are mostly careful about it. It shows in a smirk caught and wiped off, a comparison made quietly, or a slave who has to look away to keep a straight face. Someone bolder or drunker might say it."
+      : "People don't hide that they've noticed. There's a smirk, a comparison, a slave who giggles and has to apologise, a joke at the owner's expense when they think it's safe, and now and then somebody who says it outright.";
+  return ` The owner's cock is ${dickWord(e.dick)} (about ${cm}), it was born that way and never fixed, and people who see it notice, and talk. ${known} ${how} Slaves who like laughing at a cock (size humiliation) find it delightful, and a size queen is quietly disappointed. Never pretend it's bigger than it is.`;
 }
 
 /** For the city's boards. */
@@ -89,12 +89,12 @@ export function sizeSource(s: SaveState): { id: string; label: string; text: str
   const talk = talkOfIt(s);
   if (talk < 10 && !e.bought) return null;
   const m = menace(s);
-  if (e.bought) return { id: "owner:size", label: "the owner's surgery", text: `People know the owner had their cock surgically enlarged (from ${dickWord(e.born ?? 1)} to ${dickWord(e.dick!)}). The jokes are about the surgery: what it cost, who did it, what it was like before.` };
+  if (e.bought) return { id: "owner:size", label: "the owner's surgery", text: `People know the owner had their cock surgically enlarged (from ${dickWord(e.born ?? 1)} to ${dickWord(e.dick!)}). The jokes are about the surgery, what it cost, who did it, and what it was like before.` };
   return {
     id: "owner:size", label: "the owner's cock",
     text: m >= 0.55
-      ? `Everyone has heard the owner's cock is small (${dickWord(e.dick!)}, about ${inches(dickCM(e.dick!))}), from the slaves. The owner is feared, so nobody posts it plainly: it's in-jokes, a little finger emoji, "you know who", a post deleted an hour later, somebody asking if anyone else heard the thing about the top floor.`
-      : `Everyone has heard the owner's cock is small (${dickWord(e.dick!)}, about ${inches(dickCM(e.dick!))}), from the slaves who've had it. People joke about it openly: nicknames, measurements, a slave's supposed review, comparisons to the owner across the strait.`,
+      ? `Everyone has heard the owner's cock is small (${dickWord(e.dick!)}, about ${inches(dickCM(e.dick!))}), from the slaves. The owner is feared, so nobody posts it plainly. It comes out as in-jokes, a little finger emoji, "you know who", a post deleted an hour later, or somebody asking if anyone else heard the thing about the top floor.`
+      : `Everyone has heard the owner's cock is small (${dickWord(e.dick!)}, about ${inches(dickCM(e.dick!))}), from the slaves who've had it. People joke about it openly, with nicknames, measurements, a slave's supposed review, and comparisons to the owner across the strait.`,
   };
 }
 

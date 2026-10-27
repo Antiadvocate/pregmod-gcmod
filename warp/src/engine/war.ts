@@ -25,10 +25,10 @@ import { empireOf, forces, has, keepRecord, note, powerById, powers, shift, setW
 export type Strategy = "balanced" | "air" | "siege" | "shock";
 
 export const STRATEGY: Record<Strategy, { name: string; note: string }> = {
-  balanced: { name: "Combined arms", note: "steady; costs what it costs" },
+  balanced: { name: "Combined arms", note: "steady, and it costs what it costs" },
   air: { name: "Air and missile campaign", note: "your losses low, theirs high, the world appalled" },
   siege: { name: "Blockade and siege", note: "slow, cheap, and it starves them" },
-  shock: { name: "Shock assault", note: "fast and expensive; readiness burns" },
+  shock: { name: "Shock assault", note: "fast and expensive, and it burns readiness" },
 };
 
 export interface War {
@@ -91,7 +91,7 @@ export function declareWar(s: SaveState, id: string, by: "you" | "them" = "you")
   }
   startRumor(s, by === "you" ? `the owner has declared war on ${p.name}` : `${p.name} has declared war on us`, { salience: 10 });
   const line = by === "you"
-    ? `You declare war on ${p.name}. ${hatred > 80 ? "They hated you before this; expect them to hit back inside your walls." : "The world holds its breath."}`
+    ? `You declare war on ${p.name}. ${hatred > 80 ? "They hated you before this, so expect them to hit back inside your walls." : "The world holds its breath."}`
     : `${p.name} declares war on you. ${hatred > 80 ? "Their hatred is personal, and they'll bring it to your streets." : "Their forces are moving."}`;
   note(s, line);
   return line;
@@ -215,7 +215,7 @@ export function tickWars(s: SaveState): { lines: string[]; cash: number } {
   if (d.share >= 1 && !e.dictator) {
     e.dictator = s.arcology.week;
     s.player.title = "Master of the World";
-    s.canon.push(`${s.player.name || "The owner"} of ${s.arcology.name} rules the whole world: every power on the map is theirs or answers to them.`);
+    s.canon.push(`${s.player.name || "The owner"} of ${s.arcology.name} rules the whole world. Every power on the map is theirs or answers to them.`);
     s.arcology.rep += 10_000;
     fireEvent(s, "world_dictator");
     out.push(`There is nobody left who doesn't answer to you. You rule the world.`);
@@ -251,16 +251,16 @@ export const WAR_EVENTS: EventDef[] = [
     id: "victory", severity: "major", endogenous: false, candidates: () => [], weight: () => 0,
     seed: (s) => `${nameOf(s, "victory")} has fallen. Its leaders have fled or are in your custody, its army has surrendered, and its people are waiting in their streets to find out who they belong to now.\n\nYour generals want to know what you want done with it.`,
     options: [
-      { id: "annex", label: "Annex it: it's yours now", note: "most income; they'll resent it", resolve: (s) => take(s, "annex") },
+      { id: "annex", label: "Annex it and make it yours", note: "the most income, but they'll resent it", resolve: (s) => take(s, "annex") },
       { id: "vassal", label: "Leave it a government that answers to you", note: "tribute, less trouble", resolve: (s) => take(s, "vassal") },
-      { id: "govern", label: "Keep it, and put one of your women in charge of it", note: "pick her in the War Room; she runs it as herself, loyal to you", resolve: (s) => `${take(s, "vassal")} Its palace is empty, waiting for whoever you send. Choose her in the War Room.` },
+      { id: "govern", label: "Keep it, and put one of your women in charge of it", note: "pick her in the War Room, and she runs it as herself, loyal to you", resolve: (s) => `${take(s, "vassal")} Its palace is empty, waiting for whoever you send. Choose her in the War Room.` },
       { id: "loot", label: "Strip it and leave", note: "a fortune now, hatred forever", resolve: (s) => take(s, "loot") },
       { id: "release", label: "Let it go", note: "reputation", resolve: (s) => take(s, "release") },
     ],
   },
   {
     id: "defeat", severity: "major", endogenous: false, candidates: () => [], weight: () => 0,
-    seed: (s) => `Your lines have broken. ${nameOf(s, "defeat")}'s forces are in sight of the outer ring, and their terms came in an hour ago: money, an apology on every feed, and a share of your arcology.`,
+    seed: (s) => `Your lines have broken. ${nameOf(s, "defeat")}'s forces are in sight of the outer ring, and their terms came in an hour ago. They want money, an apology on every feed, and a share of your arcology.`,
     options: [
       { id: "pay", label: "Accept their terms", resolve: (s) => { const p = about(s, "defeat"); const n = Math.round((p?.strength ?? 60) * 1500); s.arcology.cash -= n; s.arcology.ownership = clamp(s.arcology.ownership - 8, 0, 100); s.arcology.rep = Math.max(0, s.arcology.rep - 1500); return `You sign. ¤${n.toLocaleString()}, eight percent of the arcology, and you read their apology yourself on camera. They go home. Everyone saw it.`; } },
       { id: "fight", label: "Fight for every floor", resolve: (s) => { const p = about(s, "defeat"); s.arcology.prosperity = clamp(s.arcology.prosperity - 20, 0, 200); s.arcology.population = Math.max(200, Math.round(s.arcology.population * 0.9)); s.arcology.security = clamp(s.arcology.security - 15, 0, 100); if (p) p.rec.hurt += Math.round(p.strength * 0.5); return `They come into the outer ring and you fight them floor by floor for nine days. They take the verge and lose half their army doing it, and in the end they go home with nothing but their dead. Your city will take years to rebuild.`; } },
@@ -268,11 +268,11 @@ export const WAR_EVENTS: EventDef[] = [
   },
   {
     id: "war_bombing", severity: "major", endogenous: false, candidates: () => [], weight: () => 0,
-    seed: (s) => `Air raid sirens at two in the morning. ${nameOf(s, "war_bombing")} got bombers through: the outer ring is burning, the docks are hit, and the hospital is full. Your citizens are in the shelters asking each other what the war is for.`,
+    seed: (s) => `Air raid sirens at two in the morning. ${nameOf(s, "war_bombing")} got bombers through. The outer ring is burning, the docks are hit, and the hospital is full. Your citizens are in the shelters asking each other what the war is for.`,
     options: [
       { id: "rebuild", label: "Rebuild at once, at any cost", note: "¤50,000", resolve: (s) => { s.arcology.cash -= 50_000; s.arcology.public_standing = clamp(s.arcology.public_standing + 1, -10, 10); return `Crews are on the rubble before the fires are out. By the end of the week the docks are working and the city sees that you meant it.`; } },
       { id: "revenge", label: "Answer it, twice as hard", resolve: (s) => { const p = about(s, "war_bombing"); const w = p && warWith(s, p.id); if (w) w.front = clamp(w.front + 8, -100, 100); s.arcology.rep = Math.max(0, s.arcology.rep - 300); s.arcology.prosperity = clamp(s.arcology.prosperity - 5, 0, 200); return `Your answer goes out the same night. Their capital burns brighter than your outer ring did. The front moves your way, and the world counts the dead.`; } },
-      { id: "shelter", label: "Keep people underground and wait", resolve: (s) => { s.arcology.prosperity = clamp(s.arcology.prosperity - 8, 0, 200); return `You keep the city in the shelters for a week. Nobody else dies; nothing gets made or sold; the outer ring is left to burn itself out.`; } },
+      { id: "shelter", label: "Keep people underground and wait", resolve: (s) => { s.arcology.prosperity = clamp(s.arcology.prosperity - 8, 0, 200); return `You keep the city in the shelters for a week. Nobody else dies, but nothing gets made or sold, and the outer ring is left to burn itself out.`; } },
     ],
   },
   {

@@ -136,12 +136,12 @@ export const TERMS: Record<string, Term> = {
     apply: (s, p, v) => { const n = clamp(Math.round(Number(v) || 5000), 500, Math.max(500, Math.round(s.arcology.cash))); s.arcology.cash -= n; const by = clamp(Math.round(n / Math.max(400, p.strength * 120)), 1, 20); shift(s, p.id, by); return `You pay ${p.name} ¤${n.toLocaleString()}. They like you better for it (+${by}).`; },
   },
   pact: {
-    label: "a trade pact: money both ways every week", value: "nothing",
+    label: "a trade pact, with money both ways every week", value: "nothing",
     open: (_s, p) => (p.rec.pact ? "you already have one" : p.attitude >= 15 || tied(p) ? null : "they need to like you more (15+)"),
     apply: (s, p) => { p.rec.pact = true; shift(s, p.id, 4); return `A trade pact with ${p.name}.`; },
   },
   alliance: {
-    label: "an alliance: their forces fight beside yours", value: "nothing",
+    label: "an alliance, with their forces fighting beside yours", value: "nothing",
     open: (_s, p) => (p.rec.status === "allied" ? "already allied" : p.rec.status !== "free" ? "they already answer to you" : !p.rec.pact ? "needs a trade pact first" : p.attitude < 45 ? "they need to be close to you (45+)" : null),
     apply: (s, p) => { p.rec.status = "allied"; p.rec.since = s.arcology.week; shift(s, p.id, 8); startRumor(s, `${s.arcology.name} and ${p.name} are allies now`, { salience: 7 }); return `${p.name} is your ally.`; },
   },
@@ -186,7 +186,7 @@ export const TERMS: Record<string, Term> = {
     apply: (s, p) => { p.rec.status = "vassal"; p.rec.since = s.arcology.week; p.rec.pays = Math.round(p.strength * 120); return `${p.name} agrees to pay you ¤${p.rec.pays.toLocaleString()} a week and answer to you.`; },
   },
   submit: {
-    label: "they submit to you completely: their city is yours to run (you can then put one of your women in charge of it)", value: "nothing",
+    label: "they submit to you completely, so their city is yours to run, and you can put one of your women in charge of it", value: "nothing",
     open: (_s, p, lev) => (p.rec.status === "conquered" ? "it's already yours" : lev >= 3 || (friendly(p, 85) && lev >= 1.5) ? null : "needs three times their strength, or them devoted to you and you much the stronger"),
     apply: (s, p) => { p.rec.status = "vassal"; p.rec.since = s.arcology.week; p.rec.pays = Math.round(p.strength * 160); p.rec.grudge = clamp(p.rec.grudge + 10, 0, 100); startRumor(s, `${p.name} has submitted to the owner`, { salience: 9 }); return `${p.name} submits. It's yours to run. Put someone in charge of it from the War Room.`; },
   },
@@ -223,7 +223,7 @@ export function powerBrief(s: SaveState, p: PowerView): string {
   const theirLog = e.log.filter((l) => l.text.includes(p.name)).slice(-4).map((l) => `week ${l.week}: ${l.text}`);
   return [
     `${p.name.toUpperCase()}: ${p.kind === "neighbour" ? "a neighbouring arcology" : p.kind === "freecity" ? "a Free City" : "an Old World state"}, ${p.km.toLocaleString()} km away. ${p.lines.filter(Boolean).join(" ")}`,
-    `ITS RULER: ${ruler.name}, ${ruler.title}, a ${ruler.age}-year-old ${ruler.sex}. Manner: ${ruler.manner}. Wants ${ruler.wants}. Afraid of ${ruler.fears}. Vice: ${ruler.vice}.`,
+    `ITS RULER: ${ruler.name}, ${ruler.title}, a ${ruler.age}-year-old ${ruler.sex}. Their manner is ${ruler.manner}. They want ${ruler.wants}, they're afraid of ${ruler.fears}, and their vice is ${ruler.vice}.`,
     `STRENGTH: theirs ${p.strength}, the player's ${forces(s).total}. ${rel}`,
     `OPINION OF THE PLAYER: ${p.attitude} out of ±100. Grudge ${Math.round(p.rec.grudge)}. Status: ${p.rec.status}${p.rec.pact ? ", trade pact" : ""}${war ? `, AT WAR (front ${war.front}, positive means the player is winning)` : ""}.`,
     p.rec.laws?.length ? `They already keep these of the player's laws: ${p.rec.laws.map((id) => LAW_BY_ID[id]?.name).filter(Boolean).join(", ")}.` : "",

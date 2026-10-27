@@ -44,18 +44,18 @@ export interface FeatureDef {
 
 export const FEATURES: Record<FeatureId, FeatureDef> = {
   freckles: { id: "freckles", label: "freckles", rarity: 1, value: 1.03, words: () => "a dusting of freckles across her nose and cheeks" },
-  heavy_freckles: { id: "heavy_freckles", label: "heavy freckles", rarity: 2, value: 1.08, words: () => "freckles everywhere: thick across her face, shoulders, chest and arms" },
+  heavy_freckles: { id: "heavy_freckles", label: "heavy freckles", rarity: 2, value: 1.08, words: () => "freckles everywhere, thick across her face, shoulders, chest and arms" },
   beauty_mark: { id: "beauty_mark", label: "beauty mark", rarity: 1, value: 1.03, words: (f) => `a small dark beauty mark on her ${f.where}` },
   dimples: { id: "dimples", label: "dimples", rarity: 1, value: 1.03, words: () => "deep dimples when she smiles" },
   long_lashes: { id: "long_lashes", label: "long lashes", rarity: 1, value: 1.02, words: () => "unusually long, dark lashes" },
   full_lips: { id: "full_lips", label: "naturally full lips", rarity: 2, value: 1.05, words: () => "naturally full, soft lips" },
   stretch_marks: { id: "stretch_marks", label: "stretch marks", rarity: 1, value: 0.98, words: (f) => `faint silvery stretch marks on her ${f.where}` },
-  natural_redhead: { id: "natural_redhead", label: "natural redhead", rarity: 3, value: 1.15, words: () => "a true natural redhead, red all over" },
+  natural_redhead: { id: "natural_redhead", label: "natural redhead", rarity: 3, value: 1.15, words: () => "true natural red hair, red all over" },
   striking_eyes: { id: "striking_eyes", label: "striking eyes", rarity: 3, value: 1.15, words: (f) => `strikingly pale, bright ${f.detail} eyes that people stop to look at` },
   birthmark: { id: "birthmark", label: "birthmark", rarity: 2, value: 1.0, words: (f) => `a ${f.detail} birthmark on her ${f.where}` },
-  vitiligo: { id: "vitiligo", label: "vitiligo", rarity: 3, value: 1.12, words: (f) => `vitiligo: pale, sharply edged patches of unpigmented skin on her ${f.where}` },
-  heterochromia: { id: "heterochromia", label: "heterochromia", rarity: 4, value: 1.3, words: (f) => `eyes of two different colours: her left is ${f.detail}` },
-  albino: { id: "albino", label: "albino", rarity: 4, value: 1.6, words: () => "albino: milk-white skin, white hair and white lashes, pale pinkish-violet eyes, and she squints in bright light" },
+  vitiligo: { id: "vitiligo", label: "vitiligo", rarity: 3, value: 1.12, words: (f) => `vitiligo, with pale, sharply edged patches of unpigmented skin on her ${f.where}` },
+  heterochromia: { id: "heterochromia", label: "heterochromia", rarity: 4, value: 1.3, words: (f) => `eyes of two different colours, with her left one ${f.detail}` },
+  albino: { id: "albino", label: "albino", rarity: 4, value: 1.6, words: () => "albinism, with milk-white skin, white hair and white lashes, pale pinkish-violet eyes, and she squints in bright light" },
 };
 
 const FACE_SPOTS = ["left cheek", "right cheek", "upper lip", "chin", "left temple"];
@@ -122,7 +122,7 @@ export const RARITY_WORD = ["", "", "uncommon", "rare", "very rare"] as const;
 /** For her card: the facts, in words. */
 export function featuresLine(p: Person): string {
   const fs = featuresOf(p);
-  return fs.length ? `DISTINCTIVE (real and permanent; bring one up only when it matters to the moment, not every scene): ${fs.map((f) => FEATURES[f.id].words(f)).join("; ")}.` : "";
+  return fs.length ? `WHAT'S DISTINCTIVE ABOUT HER. These are real and permanent, so bring one up only when it matters to the moment, not in every scene. She has ${fs.map((f) => FEATURES[f.id].words(f)).join(", and ")}.` : "";
 }
 
 const SHORT: Partial<Record<FeatureId, (f: Feature) => string>> = {

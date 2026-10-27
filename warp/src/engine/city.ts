@@ -258,7 +258,7 @@ export function annex(s: SaveState, neighbourId: string, how: "buy" | "force"): 
   const city = cityOf(s);
 
   if (how === "buy") {
-    if (n.ownership < 55) return { ok: false, why: `you hold ${Math.round(n.ownership)}% of it; a purchase needs 55%` };
+    if (n.ownership < 55) return { ok: false, why: `you hold ${Math.round(n.ownership)}% of it, and a purchase needs 55%` };
     const price = annexCost(s, neighbourId);
     if (s.arcology.cash < price) return { ok: false, why: `costs ¤${price.toLocaleString()}, which you don't have` };
     s.arcology.cash -= price;
@@ -266,7 +266,7 @@ export function annex(s: SaveState, neighbourId: string, how: "buy" | "force"): 
     const mine = militaryStrength(s);
     const theirs = n.prosperity * 0.5 + 20;
     if (mine < theirs * 1.3) {
-      return { ok: false, why: `${n.name} can field about ${Math.round(theirs)} against your ${Math.round(mine)} — you need half again as much` };
+      return { ok: false, why: `${n.name} can field about ${Math.round(theirs)} against your ${Math.round(mine)}, and you need half again as much` };
     }
     s.arcology.rep = Math.max(0, s.arcology.rep - 2500);
     s.arcology.security = clamp(s.arcology.security - 15, 0, 100);
@@ -393,7 +393,7 @@ export function cityProblems(s: SaveState): string[] {
   const city = cityOf(s);
   const out: string[] = [];
   const ceiling = 400 + y.housing;
-  if (s.arcology.population > ceiling * 0.92) out.push(`Housing is nearly full — ${Math.round(s.arcology.population).toLocaleString()} of ${Math.round(ceiling).toLocaleString()}. Build residential, or put up prefab housing blocks (Arcology → Public works), or the city stops growing.`);
+  if (s.arcology.population > ceiling * 0.92) out.push(`Housing is nearly full, at ${Math.round(s.arcology.population).toLocaleString()} of ${Math.round(ceiling).toLocaleString()}. Build residential, or put up prefab housing blocks (Arcology → Public works), or the city stops growing.`);
   if (y.security < 6 && s.arcology.crime > 40) out.push("Crime is rising in the outer blocks and there's no police presence. Police stations or a police surge (Arcology → Public works) will answer it.");
   if (!y.reach) out.push("Without docks you can't open trade routes.");
   if (y.arms < 15 && s.arcology.neighbours.some((n) => n.attitude < -40)) out.push("A hostile neighbor is out there, and your military is too weak to deter them.");

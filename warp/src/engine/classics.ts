@@ -52,7 +52,7 @@ export const CLASSICS: EventDef[] = [
     weight: () => 8,
     seed: (_s, c) => `${c.person!.name} ${c.person!.misbehaved!.what} this week. The household knows, and they're watching to see what you do about it.`,
     options: [
-      { id: "private", label: "Punish her in private", note: "she learns; her flaw wears",
+      { id: "private", label: "Punish her in private", note: "she learns, and her flaw wears down",
         resolve: (s, _e, p) => { applyTreatment(p!, { kind: "coercion", size: 5, why: `punished for what she did` }, s.arcology.week); shove(p!.psyche, -0.6, { hard: true }); return `You take ${first(p!)} somewhere quiet and make her understand. She doesn't do it again this week.`; } },
       { id: "public", label: "Punish her in front of the household", note: "everyone learns",
         resolve: (s, _e, p) => { applyTreatment(p!, { kind: "coercion", size: 7, why: `punished in front of everyone` }, s.arcology.week); shove(p!.psyche, -1, { hard: true }); for (const o of others(s, p!)) { o.bond.fear = clamp(o.bond.fear + 3, 0, 100); o.bond.indulged = Math.max(0, (o.bond.indulged ?? 0) - 10); } return `You have the household watch. ${first(p!)} is punished where every one of them can see it, and every one of them remembers it the next time they think about pushing you.`; } },
@@ -140,7 +140,7 @@ export const CLASSICS: EventDef[] = [
     options: [
       { id: "comfort", label: "Sit with her until she sleeps", note: "",
         resolve: (s, _e, p) => { applyTreatment(p!, { kind: "kindness", size: 5, why: "sat with her on a bad night" }, s.arcology.week); return `You sit on the edge of the bed until she stops. She doesn't understand why you did it, and she remembers it.`; } },
-      { id: "truth", label: "Tell her the truth: she's yours now", note: "",
+      { id: "truth", label: "Tell her the truth, that she's yours now", note: "",
         resolve: (s, _e, p) => { applyTreatment(p!, { kind: "coercion", size: 3, why: "told what she is now" }, s.arcology.week); return `You tell her plainly what she is and what happens to slaves who make trouble. She stops crying where you can hear it.`; } },
       { id: "use", label: "Give her something else to think about", note: "",
         resolve: (s, _e, p) => { const r = act(s, p!, usable(p!, "vaginal", "oral")); return `You pull back her blanket and give her something else to cry about. ${r}`; } },

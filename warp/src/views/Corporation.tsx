@@ -26,7 +26,7 @@ export default function Corporation() {
     return (
       <Section title="Corporation">
         <Card>
-          <p className="font-prose text-[14.5px] leading-relaxed mb-3">Found a company that trades in slaves at scale: acquisition, training, surgery, arcades, dairies and export. You hold the shares and take a dividend; sell shares when you need cash, and the other shareholders get a say.</p>
+          <p className="font-prose text-[14.5px] leading-relaxed mb-3">Found a company that trades in slaves at scale, with acquisition, training, surgery, arcades, dairies and export. You hold the shares and take a dividend. Sell shares when you need cash, and the other shareholders get a say.</p>
           <input value={name} onChange={(e) => setName(e.target.value)} className="mb-2" />
           <Button kind="primary" disabled={save.arcology.cash < FOUNDING} onClick={() => mutate((s) => { foundCorp(s, name); })}>Found it · {money(FOUNDING)}</Button>
         </Card>

@@ -25,15 +25,15 @@ export interface CustomLaw {
 const owned = (s: SaveState): Person[] => Object.values(s.people).filter((p) => p.status === "owned");
 
 export const CUSTOM_EFFECTS: Record<string, { name: string; note: string; run: (s: SaveState, house: boolean) => string | null }> = {
-  tax: { name: "A tax", note: "¤ from every citizen each week; prosperity dips", run: (s) => { const n = Math.round(s.arcology.population * 0.6); s.arcology.cash += n; s.arcology.prosperity = clamp(s.arcology.prosperity - 0.3, 5, 200); return null; } },
-  subsidy: { name: "Paid for by the arcology", note: "¤1,500 a week; prosperity rises", run: (s) => { s.arcology.cash -= 1500; s.arcology.prosperity = clamp(s.arcology.prosperity + 0.6, 5, 200); return null; } },
-  enforcement: { name: "Enforced by patrols", note: "crime falls; ¤500 a week", run: (s) => { s.arcology.cash -= 500; s.arcology.crime = clamp(s.arcology.crime - 1.5, 0, 100); s.arcology.security = clamp(s.arcology.security + 0.3, 0, 100); return null; } },
+  tax: { name: "A tax", note: "¤ from every citizen each week, but prosperity dips", run: (s) => { const n = Math.round(s.arcology.population * 0.6); s.arcology.cash += n; s.arcology.prosperity = clamp(s.arcology.prosperity - 0.3, 5, 200); return null; } },
+  subsidy: { name: "Paid for by the arcology", note: "costs ¤1,500 a week, and prosperity rises", run: (s) => { s.arcology.cash -= 1500; s.arcology.prosperity = clamp(s.arcology.prosperity + 0.6, 5, 200); return null; } },
+  enforcement: { name: "Enforced by patrols", note: "crime falls, for ¤500 a week", run: (s) => { s.arcology.cash -= 500; s.arcology.crime = clamp(s.arcology.crime - 1.5, 0, 100); s.arcology.security = clamp(s.arcology.security + 0.3, 0, 100); return null; } },
   prestige: { name: "Admired abroad", note: "reputation rises every week", run: (s) => { s.arcology.rep += 40; return null; } },
   hope: { name: "Gives slaves hope", note: "your slaves' hope rises", run: (s, house) => { if (house) for (const p of owned(s)) p.bond.hope = clamp(p.bond.hope + 0.6, 0, 100); return null; } },
-  fear: { name: "Keeps slaves afraid", note: "your slaves' fear rises; obedience holds", run: (s, house) => { if (house) for (const p of owned(s)) p.bond.fear = clamp(p.bond.fear + 0.6, 0, 100); return null; } },
-  care: { name: "Mandatory care", note: "your slaves' health improves; ¤300 a week", run: (s, house) => { if (!house) return null; s.arcology.cash -= 300; for (const p of owned(s)) p.health.health = clamp(p.health.health + 0.5, -100, 100); return null; } },
+  fear: { name: "Keeps slaves afraid", note: "your slaves' fear rises, and obedience holds", run: (s, house) => { if (house) for (const p of owned(s)) p.bond.fear = clamp(p.bond.fear + 0.6, 0, 100); return null; } },
+  care: { name: "Mandatory care", note: "your slaves' health improves, for ¤300 a week", run: (s, house) => { if (!house) return null; s.arcology.cash -= 300; for (const p of owned(s)) p.health.health = clamp(p.health.health + 0.5, -100, 100); return null; } },
   barefoot: { name: "Slaves go barefoot", note: "your household goes barefoot", run: (s, house) => { if (house) for (const p of owned(s)) if (p.shoes && p.shoes !== "none" && !/bare/i.test(p.shoes) && !p.body.feet?.heels_clipped) p.shoes = "barefoot"; return null; } },
-  unrest: { name: "Hard on the poor", note: "prosperity rises for the rich; crime rises", run: (s) => { s.arcology.prosperity = clamp(s.arcology.prosperity + 0.4, 5, 200); s.arcology.crime = clamp(s.arcology.crime + 0.8, 0, 100); return null; } },
+  unrest: { name: "Hard on the poor", note: "prosperity rises for the rich, and so does crime", run: (s) => { s.arcology.prosperity = clamp(s.arcology.prosperity + 0.4, 5, 200); s.arcology.crime = clamp(s.arcology.crime + 0.8, 0, 100); return null; } },
 };
 
 /** Words in your text that say which way a law leans, for a starting suggestion. */

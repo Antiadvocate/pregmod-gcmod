@@ -136,7 +136,7 @@ export function fewBrief(s: SaveState): string {
   const few = theFew(s);
   const names = few.map((p) => p.name).join(" and ");
   const felt = few.filter((p) => (f.power[p.id] ?? 0) >= 40).map((p) => p.name);
-  return `THE OWNER KEEPS ONLY ${few.length === 1 ? "ONE SLAVE" : "TWO SLAVES"}: ${names}, for ${f.weeks} weeks now. Owners here keep dozens, and ${heardWord(f.heard)}: some say the owner is broke, some a monk, some in love. ${few.length === 1 ? `${names} knows she's the only one` : `${names} know they're the only two`}: closer to the owner than slaves usually get, in every meal and every bed, and falling harder for the person who chose to keep only them.${felt.length ? ` ${felt.join(" and ")} ${felt.length === 1 ? "has" : "have"} started to feel some of the owner's weight on ${felt.length === 1 ? "her" : "them"}: a little bolder, proud, possessive, sometimes speaking or deciding small things in the owner's name, and the staff and citizens let ${felt.length === 1 ? "her" : "them"}.` : ""} It gives them no rank over the owner and doesn't free them; it shows in small liberties, pride, and how they look at the owner.`;
+  return `THE OWNER KEEPS ONLY ${few.length === 1 ? "ONE SLAVE" : "TWO SLAVES"}, ${names}, and has for ${f.weeks} weeks now. Owners here keep dozens, and ${heardWord(f.heard)}. Some say the owner is broke, some say a monk, and some say in love. ${few.length === 1 ? `${names} knows she's the only one` : `${names} know they're the only two`}, so ${few.length === 1 ? "she's" : "they're"} closer to the owner than slaves usually get, in every meal and every bed, and falling harder for the person who chose to keep only them.${felt.length ? ` ${felt.join(" and ")} ${felt.length === 1 ? "has" : "have"} started to feel some of the owner's weight on ${felt.length === 1 ? "her" : "them"}. It makes ${felt.length === 1 ? "her" : "them"} a little bolder, proud and possessive, sometimes speaking or deciding small things in the owner's name, and the staff and citizens let ${felt.length === 1 ? "her" : "them"}.` : ""} It gives them no rank over the owner and doesn't free them. It shows in small liberties, in pride, and in how they look at the owner.`;
 }
 
 /** For the city's boards. */
@@ -144,7 +144,7 @@ export function fewSource(s: SaveState): { id: string; label: string; text: stri
   const f = s.player.few;
   if (!f || f.heard < 15 || !keepingFew(s)) return null;
   const names = theFew(s).map((p) => p.name).join(" and ");
-  return { id: "owner:few", label: "the owner's household", text: `The owner keeps only ${names}, and has for ${f.weeks} weeks, when every other owner keeps dozens. ${cap(heardWord(f.heard))}. Theories: broke, impotent, a monk, a romantic, hiding something. People who've seen ${names} on the concourse say they walk like they own the place.` };
+  return { id: "owner:few", label: "the owner's household", text: `The owner keeps only ${names}, and has for ${f.weeks} weeks, when every other owner keeps dozens. ${cap(heardWord(f.heard))}. People's theories are that the owner is broke, impotent, a monk, a romantic, or hiding something. People who've seen ${names} on the concourse say they walk like they own the place.` };
 }
 
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);

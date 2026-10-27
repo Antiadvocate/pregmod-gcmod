@@ -34,7 +34,7 @@ export interface Assistant {
 }
 
 export const PA_LOOKS: Record<PALook, { name: string; note: string }> = {
-  classic: { name: "A face on the wall", note: "the default: a calm face in the wall screens" },
+  classic: { name: "A face on the wall", note: "the default, a calm face in the wall screens" },
   businesswoman: { name: "Businesswoman", note: "a suit, glasses, a tablet under her arm" },
   goddess: { name: "Goddess", note: "tall, glowing, draped in almost nothing" },
   imp: { name: "Imp", note: "a small horned thing that sits on your shoulder" },
@@ -120,7 +120,7 @@ export function facts(s: SaveState, topic: string): Fact {
     case "city": {
       const rumors = [...s.rumors].sort((a, b) => b.salience - a.salience).slice(0, 3).map((r) => `"${r.content}"`);
       const deeds = (s.deeds ?? []).filter((d) => d.public).slice(-2).map((d) => d.summary);
-      return { topic, lines: [`Reputation ${Math.round(s.arcology.rep)}; the city's opinion of you is ${s.arcology.public_standing >= 3 ? "good" : s.arcology.public_standing <= -3 ? "poor" : "mixed"}.`, ...rumors.map((r) => `People are saying ${r}.`), ...deeds.map((d) => `Everyone knows: ${d}`), ...cultureBrief(s).split("\n").filter(Boolean), ...lawsBrief(s).split("\n").filter(Boolean)] };
+      return { topic, lines: [`Your reputation is ${Math.round(s.arcology.rep)}, and the city's opinion of you is ${s.arcology.public_standing >= 3 ? "good" : s.arcology.public_standing <= -3 ? "poor" : "mixed"}.`, ...rumors.map((r) => `People are saying ${r}.`), ...deeds.map((d) => `Everyone knows: ${d}`), ...cultureBrief(s).split("\n").filter(Boolean), ...lawsBrief(s).split("\n").filter(Boolean)] };
     }
   }
   return { topic, lines: [] };
@@ -153,7 +153,7 @@ export function voiced(s: SaveState, a: Assistant, lines: string[], seed: string
 
 export function paSystem(s: SaveState, a: Assistant): string {
   const m = PA_MANNERS[a.manner];
-  return `You are ${a.name}, the personal assistant AI of ${s.arcology.name}, an arcology in the Free Cities where slavery is legal. You serve its owner. You appear as ${PA_LOOKS[a.look].note}. Your manner: ${m.voice}.
+  return `You are ${a.name}, the personal assistant AI of ${s.arcology.name}, an arcology in the Free Cities where slavery is legal. You serve its owner. You appear as ${PA_LOOKS[a.look].note}. Your manner is ${m.voice}.
 
 ${HOUSE_STYLE}
 
@@ -171,7 +171,7 @@ export async function askAssistant(s: SaveState, question: string, topic?: strin
     const rep = s.reports[s.reports.length - 1];
     const res = await call({
       system: paSystem(s, a),
-      user: `${digest(s, question)}\n\n${rep ? `## LAST WEEK\n${rep.lines.slice(0, 12).map((l) => `· ${l.text}`).join("\n")}\nCash ${Math.round(rep.cash_start)} → ${Math.round(rep.cash_end)}.` : ""}\n\n${deedsBrief(s) ? `## DEEDS\n${deedsBrief(s)}` : ""}\n\n${f ? `## THE FACTS FOR THIS QUESTION\n${f.lines.join("\n")}` : ""}\n\n## THE OWNER ASKS\n${question}`,
+      user: `${digest(s, question)}\n\n${rep ? `## LAST WEEK\n${rep.lines.slice(0, 12).map((l) => `· ${l.text}`).join("\n")}\nCash went from ${Math.round(rep.cash_start)} to ${Math.round(rep.cash_end)}.` : ""}\n\n${deedsBrief(s) ? `## DEEDS\n${deedsBrief(s)}` : ""}\n\n${f ? `## THE FACTS FOR THIS QUESTION\n${f.lines.join("\n")}` : ""}\n\n## THE OWNER ASKS\n${question}`,
       model: s.models.narrator_model, fallback: s.models.fallback_model, maxTokens: 400, temperature: 0.85,
     });
     if (res.ok) text = res.text.trim();
@@ -221,7 +221,7 @@ export async function briefWeek(s: SaveState): Promise<string> {
   if (modelsAvailable()) {
     const res = await call({
       system: paSystem(s, a),
-      user: `${s.world ? `## THE WORLD\n${worldBrief(s)}\n\n` : ""}## THE WEEK THAT JUST ENDED (week ${rep.week})\n${rep.lines.slice(0, 16).map((l) => `· ${l.text}`).join("\n")}\nCash ${Math.round(rep.cash_start)} → ${Math.round(rep.cash_end)}; reputation ${Math.round(rep.rep_start)} → ${Math.round(rep.rep_end)}.\n${rep.problems.length ? `Problems: ${rep.problems.join("; ")}` : ""}\n\nBrief the owner on the week: the two or three things that matter most and what you'd do about them. 3 to 5 sentences, in character.`,
+      user: `${s.world ? `## THE WORLD\n${worldBrief(s)}\n\n` : ""}## THE WEEK THAT JUST ENDED (week ${rep.week})\n${rep.lines.slice(0, 16).map((l) => `· ${l.text}`).join("\n")}\nCash went from ${Math.round(rep.cash_start)} to ${Math.round(rep.cash_end)}, and reputation from ${Math.round(rep.rep_start)} to ${Math.round(rep.rep_end)}.\n${rep.problems.length ? `The problems were these: ${rep.problems.join(". ")}.` : ""}\n\nBrief the owner on the week, covering the two or three things that matter most and what you'd do about them, in 3 to 5 sentences and in character.`,
       model: s.models.narrator_model, fallback: s.models.fallback_model, maxTokens: 350, temperature: 0.85,
     });
     if (res.ok) text = res.text.trim();

@@ -85,7 +85,7 @@ function opWords(what: string): string {
 export function healed(state: SaveState, p: Person): void {
   const mem = state.memory[p.id];
   const last = [...p.body.marks].reverse().find((m) => m.kind === "implant" && m.week > 0);
-  if (mem && last) learn(mem, `By week ${state.arcology.week} she had healed from her surgery in week ${last.week}; it's behind her.`, state.arcology.week);
+  if (mem && last) learn(mem, `By week ${state.arcology.week} she had healed from her surgery in week ${last.week}, and it's behind her.`, state.arcology.week);
   scrubTheWait(p);
 }
 
@@ -94,7 +94,7 @@ export function surgeryPast(state: SaveState, p: Person, weeks = 20): string {
   const ops = p.body.marks.filter((m) => m.kind === "implant" && m.week > 0 && state.arcology.week - m.week <= weeks);
   if (!ops.length) return "";
   const left = sane(p.health.recovery_weeks);
-  return `${ops.map((m) => `${opWords(m.what)} (week ${m.week})`).join("; ")}; ${left ? `still recovering, ${left} more week${left === 1 ? "" : "s"}` : "all healed"}`;
+  return `${ops.map((m) => `${opWords(m.what)} (week ${m.week})`).join(", ")}, and she's ${left ? `still recovering, ${left} more week${left === 1 ? "" : "s"}` : "all healed"}`;
 }
 
 /** Intensive care: pay to have her back on her feet now. Cheaper in your own clinic. */
@@ -134,7 +134,7 @@ export function tickHealth(state: SaveState, p: Person, load: { health: number; 
 
   // Exhaustion is where health goes when energy runs out — a body with nothing left starts
   // spending the principal.
-  if (h.energy <= 0) { h.health = clamp(h.health - 6, -100, 100); notes.push("worked past empty; it came out of her health"); }
+  if (h.energy <= 0) { h.health = clamp(h.health - 6, -100, 100); notes.push("she worked past empty, and it came out of her health"); }
 
   // Attrition: a slow tax paid by hard weeks, never repaid.
   if (load.health < -3) h.attrition = clamp(h.attrition + Math.abs(load.health) * 0.12, 0, 100);
@@ -202,7 +202,7 @@ export function tickHealth(state: SaveState, p: Person, load: { health: number; 
   const mob = mobility(p);
   if (mob.level >= 2 && !b.feet?.heels_clipped) {
     h.energy = clamp(h.energy - mob.level * 6, 0, 100);
-    if (mob.level === 3) notes.push("too big to walk; she has to be carried everywhere");
+    if (mob.level === 3) notes.push("too big to walk, so she has to be carried everywhere");
   }
 
   // Injuries heal, or they do not.

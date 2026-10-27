@@ -156,7 +156,7 @@ function Skills() {
               {list.map(row)}
               {title === "Your own" ? (
                 <div className="card-2 p-3">
-                  <div className="text-[12px] mid mb-2">Make up a skill of your own. Every scene, event and story is told what it is and how good you are; you get better by using it (say its name when you do), or by paying.</div>
+                  <div className="text-[12px] mid mb-2">Make up a skill of your own. Every scene, event and story is told what it is and how good you are. You get better by using it (say its name when you do), or by paying.</div>
                   <input className="mb-2" value={name} maxLength={40} placeholder="Name, e.g. Hypnosis" onChange={(e) => setName(e.target.value)} />
                   <textarea rows={2} value={does} maxLength={300} placeholder="What it lets you do, in your words, e.g. I can put people under with my voice and they do what I say." onChange={(e) => setDoes(e.target.value)} />
                   <Button size="sm" kind="primary" className="mt-2" disabled={!name.trim() || !does.trim()} onClick={() => {
@@ -171,7 +171,7 @@ function Skills() {
           </div>
         ))}
       </div>
-      <div className="text-[11px] dim mt-3">Tap a skill to pay for training. You also get better at each by doing it: charm by talking, seduction in bed, intimidation by punishing, insight by finding things out.</div>
+      <div className="text-[11px] dim mt-3">Tap a skill to pay for training. You also get better at each by doing it, charm by talking, seduction in bed, intimidation by punishing, insight by finding things out.</div>
     </Card>
   );
 }
@@ -212,7 +212,7 @@ function WhoYouAre() {
   const read = selfProfile({ ...save, player: { ...save.player, self: "" } });
   return (
     <Card>
-      <Field label="In your own words" hint="How you are with people, how you talk, what you're like with the ones you defer to. Every scene writes you this way; it wins over the record below.">
+      <Field label="In your own words" hint="How you are with people, how you talk, what you're like with the ones you defer to. Every scene writes you this way, and it wins over the record below.">
         <textarea rows={3} value={save.player.self ?? ""} placeholder="e.g. Quiet and courteous with everyone. Generous with the household. With Sabine I'm hers: I ask permission and I mean it."
           onChange={(e) => mutate((s) => { s.player.self = e.target.value || undefined; })} />
       </Field>

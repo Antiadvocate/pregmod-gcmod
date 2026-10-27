@@ -12,6 +12,7 @@
  * you are kept here too, marked as hers.
  */
 import type { Person, SaveState } from "./types";
+import { sentences } from "./style";
 
 export interface Agreement {
   /** The rule, written as what she does: `calls you "Rabi"`, `kneels when you come in`. */
@@ -108,5 +109,5 @@ export function agreementsBrief(s: SaveState, p: Person): string {
   const house = houseRules(s).filter((a) => !a.calls || !mine.some((m) => m.calls));
   const all = [...house, ...mine];
   if (!all.length) return "";
-  return `STANDING ORDERS (she agreed to these; she keeps to them in every scene from now on, without being reminded, unless she is openly defying you — and then the defiance is the point of the scene): ${all.map((a) => a.rule).join("; ")}.`;
+  return `STANDING ORDERS. She agreed to these, and she keeps to them in every scene from now on without being reminded, unless she's openly defying you, in which case the defiance is the point of the scene. ${sentences(all.map((a) => (/^(you|she|her|the|no|every|all|a|an|if|when|only|never|always)\b/i.test(a.rule) ? a.rule : `she ${a.rule}`)))}`;
 }

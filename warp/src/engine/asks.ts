@@ -326,7 +326,7 @@ const WORDING: Record<string, { ask: string[]; tell: string[]; timid?: string[];
     timid: ["She mentions, looking at the floor, that the other slaves all wear {value}."],
   },
   spare: {
-    ask: ["She asks you about {target}. Not for herself — for {target}. She wants her taken off what she's on.", "\"{Target} isn't going to last where she is. Please move her.\""],
+    ask: ["She asks you about {target}. It's not for herself but for {target}. She wants her taken off what she's on.", "\"{Target} isn't going to last where she is. Please move her.\""],
     tell: ["\"I'm taking {target} off that rota. I'm telling you as a courtesy.\""],
   },
   name: {
@@ -589,33 +589,33 @@ export async function voiceAsk(s: SaveState, ask: Ask): Promise<string> {
   const doctrines = Object.entries(s.arcology.doctrines).filter(([, d]) => d.adoption >= 30).map(([id, d]) => `${DOCTRINE_BY_ID[id]?.noun ?? id} (${Math.round(d.adoption)}%)`);
   const flaw = p.persona.flaw ? FLAW_BY_ID[p.persona.flaw.id]?.note : undefined;
   const res = await call({
-    system: `You write one short scene for Free Cities, an adult text game about owning an arcology where slavery is legal. One of the owner's slaves wants something from them. Write the moment she asks: where she catches the owner, why she is asking now (it comes out of her record and what has already happened between them), and what she says, in her own words, the way this particular person would say it. Crude if she is crude, frightened if she is frightened, cold if she is cold. She lives in this arcology and knows its laws, its customs and how its slaves dress; if what she wants goes against a law or custom, she knows it and it shows. Do not change what she is asking for. Three to six sentences, second person, present tense, with her line in quotes.
+    system: `You write one short scene for Free Cities, an adult text game about owning an arcology where slavery is legal. One of the owner's slaves wants something from them. Write the moment she asks. Say where she catches the owner, why she's asking now, which comes out of her record and what has already happened between them, and what she says in her own words, the way this particular person would say it. She's crude if she's crude, frightened if she's frightened, and cold if she's cold. She lives in this arcology and knows its laws, its customs and how its slaves dress, so if what she wants goes against a law or a custom, she knows it and it shows. Don't change what she's asking for. Write three to six sentences in the second person and the present tense, with her line in quotes.
 
 ${HOUSE_STYLE}
 
 Output JSON only: {"says":"the scene"}`,
     user: [
       `HER: ${p.name}, ${p.age}. ${p.persona.speech_pattern}`,
-      p.persona.exchanges?.length ? `HOW SHE TALKS (an ordinary exchange; don't reuse it): You: "${p.persona.exchanges[0].you}" / ${p.name}: "${p.persona.exchanges[0].her}"` : p.persona.voice?.example_lines?.length ? `SOUNDS LIKE: "${p.persona.voice.example_lines[0]}"` : "",
-      p.persona.voice?.never_says?.length ? `NEVER SAYS: ${p.persona.voice.never_says.join("; ")}` : "",
-      `TRAITS: ${p.persona.core_traits.join("; ")}`,
-      p.persona.values?.length ? `WHAT SHE VALUES: ${p.persona.values.join("; ")}` : "",
-      `UNDER PRESSURE: ${p.persona.attachment.under_threat}`,
+      p.persona.exchanges?.length ? `HOW SHE TALKS. This is an ordinary exchange, so don't reuse it. You: "${p.persona.exchanges[0].you}" / ${p.name}: "${p.persona.exchanges[0].her}"` : p.persona.voice?.example_lines?.length ? `SHE SOUNDS LIKE THIS: "${p.persona.voice.example_lines[0]}"` : "",
+      p.persona.voice?.never_says?.length ? `THINGS SHE NEVER SAYS: ${p.persona.voice.never_says.join(", ")}.` : "",
+      `HER TRAITS: ${p.persona.core_traits.map((t) => t.replace(/[.;]\s*$/, "")).join(", ")}.`,
+      p.persona.values?.length ? `WHAT SHE VALUES: ${p.persona.values.join(", ")}.` : "",
+      `WHAT SHE'S LIKE UNDER PRESSURE: ${p.persona.attachment.under_threat}`,
       flaw ? `HER FLAW: ${flaw}` : "",
-      `HOW SHE FEELS ABOUT HER OWNER: devotion ${Math.round(r.devotion)}, trust ${Math.round(r.trust)} (−100 to 100); ${Math.round(r.fragility * 100)}% of her obedience is fear.`,
-      `HER STANDING WITH HER OWNER: ${rom.standing} (${Math.round(rom.dominion)}/100 say in the household).`,
+      `HOW SHE FEELS ABOUT HER OWNER: her devotion is ${Math.round(r.devotion)} and her trust is ${Math.round(r.trust)}, on a scale from −100 to 100, and ${Math.round(r.fragility * 100)}% of her obedience is fear.`,
+      `HER STANDING WITH HER OWNER: ${rom.standing}, with ${Math.round(rom.dominion)} out of 100 say in the household.`,
       powerBetween(s, p),
-      `HOW SHE IS: ${p.bond.read.label}, mood ${p.psyche.mood}. Wearing ${p.clothes}.`,
-      mannerLines(p).length ? `HOW SHE IS WITH PARTICULAR PEOPLE (if what she asks touches one of them, it shows): ${mannerLines(p).join("; ")}` : "",
-      w.laws.length ? `LAWS OF THE ARCOLOGY: ${w.laws.map((l) => `the ${l.name}: ${l.text}${l.exempt ? " (the owner's household is exempt)" : ""}`).join(" | ")}` : "",
+      `HOW SHE IS: she's ${p.bond.read.label}, her mood is ${p.psyche.mood}, and she's wearing ${p.clothes}.`,
+      mannerLines(p).length ? `HOW SHE IS WITH PARTICULAR PEOPLE. If what she asks touches one of them, it shows: ${mannerLines(p).join(", and ")}.` : "",
+      w.laws.length ? `LAWS OF THE ARCOLOGY: ${w.laws.map((l) => `the ${l.name} says "${l.text.replace(/\.$/, "")}"${l.exempt ? " (the owner's household is exempt)" : ""}`).join(". ")}.` : "",
       habits.length ? `HOW THE CITY BEHAVES: ${habits.join(" ")}` : "",
       doctrines.length ? `WHAT THE CITY BELIEVES: ${doctrines.join(", ")}` : "",
       w.slaveDress ? `WHAT SLAVES IN THE CITY WEAR: ${w.slaveDress}` : "",
       roomLine(p),
       chronicleBrief(s, [p.id], 6),
       `WHAT SHE IS ASKING FOR: ${ask.text}`,
-      ask.against ? `IT GOES AGAINST: ${ask.against}. She knows.` : "",
-      ask.kind === "instruction" ? `She is not asking; she has enough standing to tell her owner, and does.` : "",
+      ask.against ? `IT GOES AGAINST ${ask.against}, and she knows it.` : "",
+      ask.kind === "instruction" ? `She isn't asking. She has enough standing to tell her owner, and she does.` : "",
     ].filter(Boolean).join("\n"),
     model: s.models.narrator_model,
     fallback: s.models.fallback_model,

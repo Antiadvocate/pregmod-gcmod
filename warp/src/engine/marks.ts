@@ -83,13 +83,13 @@ export type BeatKind = "shudder" | "jelly" | "float" | "loom" | "shrink" | "spir
 
 export const BEATS: Record<BeatKind, string> = {
   shudder: "a full-body shudder, like a dog shaking off water",
-  jelly: "goes to jelly: wobbles and half-melts, then pulls herself back together",
+  jelly: "goes to jelly, wobbles and half-melts, then pulls herself back together",
   float: "floats up off the floor for a moment, blissed out, and drifts back down",
-  loom: "looms: gets bigger and closer, filling the frame, the way she feels to the person under her",
-  shrink: "shrinks: gets small, smaller than she should be, then grows back",
-  spiral: "spiral eyes: dazed, fucked stupid, not home",
-  steam: "steam comes off her head: flustered, overheated, embarrassed",
-  throb: "throbs: her hips pulse, slow and obvious",
+  loom: "looms. She gets bigger and closer and fills the frame, the way she feels to the person under her",
+  shrink: "shrinks, gets small, smaller than she should be, then grows back",
+  spiral: "gets spiral eyes, dazed, fucked stupid, not home",
+  steam: "steams at the head, flustered, overheated and embarrassed",
+  throb: "throbs, and her hips pulse, slow and obvious",
   faint: "tips over sideways in a slow swoon and pops back up",
   hearts: "hearts float up off her",
   stretch: "her neck stretches tall in shock, cartoonishly, and snaps back",
@@ -113,8 +113,8 @@ export const MARKS_SCHEMA = `"marks": [{"on":"person id, or owner","what":"${MAR
  "washed": ["person id, or owner: whoever washed or was washed this turn"],
  "beat": [{"on":"person id, or owner","what":"${Object.keys(BEATS).join("|")}"}]`;
 
-export const MARKS_RULES = `marks: record what this turn left on someone's body that would still be there afterwards: cum, spit, a sole print, welts from a cane, lipstick, something written on them, and where. Only what the prose actually put on the page. Whose body it's on, not who did it.
-beat: at most one, and only when the prose has a body doing something big and physical worth seeing (a full shudder, going limp, being overwhelmed, shocked stiff, blissed out, shrinking from humiliation, looming over someone). Pick the closest from the list even if it's strange; the strange ones are wanted. Usually empty.`;
+export const MARKS_RULES = `marks: record what this turn left on someone's body that would still be there afterwards, like cum, spit, a sole print, welts from a cane, lipstick or something written on them, and where it is. Only record what the prose actually put on the page. Record whose body it's on, not who did it.
+beat: record at most one, and only when the prose has a body doing something big and physical worth seeing, like a full shudder, going limp, being overwhelmed, being shocked stiff, being blissed out, shrinking from humiliation, or looming over someone. Pick the closest from the list even if it's strange, because the strange ones are wanted. It's usually empty.`;
 
 /** Apply the bookkeeper's fields. Returns notes. */
 export function applyMarks(s: SaveState, d: { marks?: { on?: string; what?: string; where?: string; text?: string }[]; washed?: string[]; beat?: { on?: string; what?: string }[] }): void {

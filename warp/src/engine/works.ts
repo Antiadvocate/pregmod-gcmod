@@ -146,7 +146,7 @@ export function emergency(s: SaveState, id: string, amount: number): string {
   const e = EMERGENCY_BY_ID[id];
   const { units, cost } = emergencyPreview(s, id, amount);
   if (!e || !units) return "";
-  if (s.arcology.cash < cost) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}; that would cost ¤${cost.toLocaleString()}.`;
+  if (s.arcology.cash < cost) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}, but that would cost ¤${cost.toLocaleString()}.`;
   s.arcology.cash -= cost;
   e.apply(s, units);
   return `${e.line(units, s)} (−¤${cost.toLocaleString()})`;

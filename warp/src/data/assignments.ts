@@ -32,7 +32,7 @@ export interface AssignmentDef {
 }
 
 export const ASSIGNMENTS: AssignmentDef[] = [
-  { id: "rest", label: "Rest", group: "household", blurb: "No work this week; she rests and recovers.",
+  { id: "rest", label: "Rest", group: "household", blurb: "No work this week, so she rests and recovers.",
     base_income: 0, rep: 0, psyche: { relaxation: 0.8, wear: 0.8, health: 3, energy: -40 }, trains: {} },
   { id: "please you", label: "Please you", group: "household", blurb: "She stays with you all week to serve you personally.",
     base_income: 0, rep: 4, psyche: { relaxation: 0.3, wear: 0.2, health: 0, energy: 25 },

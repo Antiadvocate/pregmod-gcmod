@@ -68,7 +68,7 @@ export function roomLine(p: Person): string {
   const things = r.extras.map((id) => EXTRA_BY_ID[id]?.name).filter(Boolean);
   const touches = r.touches.map((t) => t.text);
   if (!bits.length && !things.length && !touches.length) return "";
-  return `HER ROOM (real; she lives here): ${[...bits, ...things, ...touches].join("; ")}.`;
+  return `HER ROOM, where she really lives. It has ${[...bits, ...things, ...touches].join(", ")}.`;
 }
 
 export interface RoomOption { kind: "axis" | "extra" | "remove"; axis?: RoomAxis; id?: string; level?: number; name: string; cost: number; upkeep: number; note: string; blocked?: string }
@@ -89,7 +89,7 @@ export function roomOptions(s: SaveState, p: Person): RoomOption[] {
   }
   for (const [id, x] of Object.entries(EXTRA_BY_ID)) {
     if (r.extras.includes(id)) out.push({ kind: "remove", id, name: x.name, cost: 0, upkeep: 0, note: "take it away" });
-    else out.push({ kind: "extra", id, name: x.name, cost: x.cost, upkeep: x.upkeep, note: x.fits(p) >= 1.5 ? `${x.note}; she would love this` : x.fits(p) < 0 ? `${x.note}; she would like it more than you'd think` : x.note, blocked: s.arcology.cash < x.cost ? `costs ¤${x.cost.toLocaleString()}` : undefined });
+    else out.push({ kind: "extra", id, name: x.name, cost: x.cost, upkeep: x.upkeep, note: x.fits(p) >= 1.5 ? `${x.note}, and she would love this` : x.fits(p) < 0 ? `${x.note}, and she would like it more than you'd think` : x.note, blocked: s.arcology.cash < x.cost ? `costs ¤${x.cost.toLocaleString()}` : undefined });
   }
   return out;
 }

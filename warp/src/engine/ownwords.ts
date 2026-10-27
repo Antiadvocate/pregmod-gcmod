@@ -20,9 +20,9 @@ import { isOwnerName } from "./you";
 
 export interface Option { id: string; label: string; note?: string }
 
-const SYSTEM = `You read what the player typed in answer to a situation in an adult text game, and decide which ONE of the numbered choices it comes closest to doing. Every choice is something the game can carry out; the player's own words will be played out exactly as they wrote them, and the choice only decides what the game does about it. Always pick one, the nearest, even if the player said more, less or something different.
+const SYSTEM = `You read what the player typed in answer to a situation in an adult text game, and decide which ONE of the numbered choices it comes closest to doing. Every choice is something the game can carry out. The player's own words will be played out exactly as they wrote them, and the choice only decides what the game does about it. Always pick one, the nearest, even if the player said more, less or something different.
 
-The player owns the city, and their orders are carried out. If what they typed orders something done to a particular person in the situation (killed, executed, jailed, thrown out of the city, ruined, or paid off), list it under "orders" with the person's name as the situation gives it, the fate (dead, jailed, exiled, ruined or bought) and how, in a few words from what they typed. Only orders the player actually gave; never the player's own slaves, and never the player. Usually there are none.
+The player owns the city, and their orders are carried out. If what they typed orders something done to a particular person in the situation (killed, executed, jailed, thrown out of the city, ruined, or paid off), list it under "orders" with the person's name as the situation gives it, the fate (dead, jailed, exiled, ruined or bought), and how, in a few words from what they typed. Only list orders the player actually gave, never the player's own slaves, and never the player. Usually there are none.
 
 Answer with JSON only: {"choice": <number>, "orders": [{"name": "...", "fate": "dead", "how": "..."}]}`;
 
@@ -104,7 +104,7 @@ export function applyOrders(s: SaveState, orders: Order[]): string[] {
     if (yours || isOwnerName(s, o.name)) continue;
     const how = o.how || "on your order";
     const lines = settle(s, o.name, o.fate, `On your order: ${how}`, { by: "your order" });
-    if (lines.length) facts.push(`By your order, ${o.name} was ${FATE_WORDS[o.fate]} (${how}). That's final: they're ${o.fate === "dead" ? "dead" : FATE_WORDS[o.fate]}, and everyone there saw it done.`);
+    if (lines.length) facts.push(`By your order, ${o.name} was ${FATE_WORDS[o.fate]} (${how}). That's final, so they're ${o.fate === "dead" ? "dead" : FATE_WORDS[o.fate]}, and everyone there saw it done.`);
   }
   return facts;
 }

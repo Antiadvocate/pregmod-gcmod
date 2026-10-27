@@ -46,7 +46,7 @@ const INCIDENTS: Incident[] = [
   { id: "hair", needs: "friends", w: (s, a, b) => (warmth(s, a, b) > 10 ? 1.5 : 0.3),
     run: (s, a, b) => { both(s, a, b, { warmth: 2 }); shove(a.psyche, 0.2); shove(b.psyche, 0.2); return `${a.name} spent an evening braiding ${b.name}'s hair, and they talked until lights out.`; } },
   { id: "teach", w: (s, a, b) => (weeksHere(s, a) > 10 && weeksHere(s, b) < 6 && a.persona.conscience > 0.4 ? 3 : 0),
-    run: (s, a, b) => { both(s, a, b, { warmth: 4, trust: 4 }); addRole(s.edges, b.id, a.id, "the one who showed her the ropes"); b.psyche.relaxation = clamp(b.psyche.relaxation + 0.5, -10, 10); mem(s, b, `${a.name} showed me how things work here, and what not to do`, "warm", 5); return `${a.name} took the new girl, ${b.name}, under her wing: where to stand, what not to say, which guards to avoid.`; } },
+    run: (s, a, b) => { both(s, a, b, { warmth: 4, trust: 4 }); addRole(s.edges, b.id, a.id, "the one who showed her the ropes"); b.psyche.relaxation = clamp(b.psyche.relaxation + 0.5, -10, 10); mem(s, b, `${a.name} showed me how things work here, and what not to do`, "warm", 5); return `${a.name} took the new girl, ${b.name}, under her wing, and showed her where to stand, what not to say and which guards to avoid.`; } },
   { id: "comfort", w: (s, a, b) => (b.bond.weeks_since_cruelty <= 1 && warmth(s, a, b) > 0 ? 3 : 0),
     run: (s, a, b) => { both(s, a, b, { warmth: 4, trust: 2 }); b.psyche.relaxation = clamp(b.psyche.relaxation + 0.6, -10, 10); mem(s, b, `${a.name} held me after what you did`, "warm", 5); return `${a.name} sat up with ${b.name} after what happened to her this week, and held her until she slept.`; } },
   { id: "share_food", w: (s, a, b) => (a.persona.conscience > 0.5 && b.health.health < 10 ? 2 : 0.2),
@@ -94,7 +94,7 @@ const DISPUTES: Dispute[] = [
       { id: "together", label: "Make them spend a night locked in together", run: (s, a, b) => { both(s, a, b, { warmth: 10, trust: 4 }); return `You lock them in a spare room overnight. It's loud for an hour, and then quiet. In the morning they come out together and won't say what happened.`; } },
     ] },
   { id: "hh_theft", when: (s, a, b) => warmth(s, b, a) < -10 && (getEdge(s.edges, b.id, a.id)?.trust ?? 0) < -10,
-    seed: (a, b) => `${b.name} says ${a.name} has been stealing from her: food, clothes, a letter from home. ${a.name} says ${b.name} is lying to get her in trouble. They're both standing in front of you.`,
+    seed: (a, b) => `${b.name} says ${a.name} has been stealing from her, taking food, clothes and a letter from home. ${a.name} says ${b.name} is lying to get her in trouble. They're both standing in front of you.`,
     options: [
       { id: "believe_b", label: "Believe the accuser", run: (s, a, b) => { applyTreatment(a, { kind: "coercion", size: 4, why: "punished for stealing" }, s.arcology.week); moveEdge(s.edges, a.id, b.id, { warmth: -10 }); return `You believe ${b.name}. ${a.name} is punished, and swears to anyone who'll listen that she didn't do it.`; } },
       { id: "believe_a", label: "Believe the accused", run: (s, a, b) => { applyTreatment(b, { kind: "coercion", size: 3, why: "punished for a false accusation" }, s.arcology.week); moveEdge(s.edges, b.id, a.id, { warmth: -8 }); return `You believe ${a.name}. ${b.name} is punished for lying, and hates ${a.name} for it.`; } },
@@ -104,15 +104,15 @@ const DISPUTES: Dispute[] = [
     seed: (a, b) => `The house steward tells you ${a.name} has had ${b.name} doing her chores for weeks, and taking her food when she says no. ${b.name} hasn't complained. She wouldn't dare.`,
     options: [
       { id: "stop", label: "Stop it", run: (s, a, b) => { applyTreatment(a, { kind: "coercion", size: 4, why: `made to stop bullying ${b.name}` }, s.arcology.week); applyTreatment(b, { kind: "kindness", size: 4, why: "you stopped the bullying" }, s.arcology.week); const e = getEdge(s.edges, a.id, b.id); if (e) e.roles = e.roles.filter((r) => r !== "makes her do her chores"); return `You put a stop to it. ${a.name} does her own chores again, loudly. ${b.name} eats a whole dinner for the first time in a month.`; } },
-      { id: "order", label: "Leave it: it's how a household sorts itself", run: (s, a, b) => { shove(b.psyche, -0.6); return `You leave it. ${a.name} takes that as permission. ${b.name} takes it as an answer.`; } },
+      { id: "order", label: "Leave it, because it's how a household sorts itself", run: (s, a, b) => { shove(b.psyche, -0.6); return `You leave it. ${a.name} takes that as permission. ${b.name} takes it as an answer.`; } },
       { id: "reverse", label: "Put her victim in charge of her for a month", run: (s, a, b) => { const e = getEdge(s.edges, a.id, b.id); if (e) e.roles = e.roles.filter((r) => r !== "makes her do her chores"); addRole(s.edges, b.id, a.id, "was put in charge of her"); moveEdge(s.edges, b.id, a.id, { power: 20 }); shove(b.psyche, 0.8); applyTreatment(a, { kind: "coercion", size: 3, why: `put under ${b.name}` }, s.arcology.week); return `You put ${b.name} in charge of ${a.name} for a month. ${b.name} doesn't know what to do with it for three days, and then she does.`; } },
     ] },
   { id: "hh_caught", needs: "sex", when: (s, a, b) => attraction(s, a, b) > 45 && attraction(s, b, a) > 30,
     seed: (a, b) => `You walk into the dormitory and find ${a.name} and ${b.name} together on ${a.name}'s bed, naked, too busy to hear the door.`,
     options: [
       { id: "leave", label: "Leave them to it", run: (s, a, b) => { both(s, a, b, { attraction: 4, warmth: 3 }); addRole(s.edges, a.id, b.id, "sleeps with her"); addRole(s.edges, b.id, a.id, "sleeps with her"); return `You close the door quietly. They find out you saw them the next morning, and neither of them can look at you all day.`; } },
-      { id: "watch", label: "Stay and watch", run: (s, a, b) => { both(s, a, b, { attraction: 2 }); for (const p of [a, b]) p.psyche.arousal = clamp((p.psyche.arousal ?? 0) + 20, 0, 100); return `You pull up a chair. ${a.name} notices first and freezes; you tell them to carry on, and after a moment they do.`; } },
-      { id: "forbid", label: "Forbid it", run: (s, a, b) => { for (const p of [a, b]) applyTreatment(p, { kind: "coercion", size: 3, why: "caught with another slave" }, s.arcology.week); both(s, a, b, { attraction: 3 }); return `You forbid it. They're put in separate dormitories. It doesn't stop them; it just makes them careful.`; } },
+      { id: "watch", label: "Stay and watch", run: (s, a, b) => { both(s, a, b, { attraction: 2 }); for (const p of [a, b]) p.psyche.arousal = clamp((p.psyche.arousal ?? 0) + 20, 0, 100); return `You pull up a chair. ${a.name} notices first and freezes. You tell them to carry on, and after a moment they do.`; } },
+      { id: "forbid", label: "Forbid it", run: (s, a, b) => { for (const p of [a, b]) applyTreatment(p, { kind: "coercion", size: 3, why: "caught with another slave" }, s.arcology.week); both(s, a, b, { attraction: 3 }); return `You forbid it. They're put in separate dormitories. It doesn't stop them, but it makes them careful.`; } },
     ] },
   { id: "hh_room", needs: "friends", when: (s, a, b) => warmth(s, a, b) > 45 && warmth(s, b, a) > 40,
     seed: (a, b) => `${a.name} and ${b.name} have asked, together, if they can share a room. ${a.name} does the talking. ${b.name} is holding her hand.`,
@@ -180,6 +180,6 @@ export function othersBrief(s: SaveState, p: Person): string {
   const edges = s.edges.filter((e) => e.from === p.id && e.to !== "owner" && s.people[e.to]?.status === "owned" && (Math.abs(e.warmth) > 25 || e.attraction > 45 || e.roles.length));
   if (!edges.length) return "";
   const top = edges.sort((a, b) => Math.abs(b.warmth) + b.roles.length * 20 - (Math.abs(a.warmth) + a.roles.length * 20)).slice(0, 3);
-  const word = (w: number) => (w > 60 ? "close to" : w > 25 ? "friendly with" : w < -50 ? "hates" : w < -25 ? "dislikes" : "knows");
-  return `WITH THE OTHERS (when they're in the scene, they talk to and act on each other, not only on you): ${top.map((e) => `${word(e.warmth)} ${s.people[e.to].name}${e.roles.length ? ` (${e.roles.slice(-2).join(", ")})` : ""}${e.attraction > 45 ? ", wants her" : ""}`).join("; ")}.`;
+  const word = (w: number) => (w > 60 ? "is close to" : w > 25 ? "is friendly with" : w < -50 ? "hates" : w < -25 ? "dislikes" : "knows");
+  return `WITH THE OTHERS. When they're in the scene, they talk to each other and act on each other, not only on you. She ${top.map((e) => `${word(e.warmth)} ${s.people[e.to].name}${e.roles.length ? ` (${e.roles.slice(-2).join(", ")})` : ""}${e.attraction > 45 ? ", and wants her" : ""}`).join(". She ")}.`;
 }

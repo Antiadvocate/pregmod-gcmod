@@ -36,7 +36,7 @@ export function Reaction({ seed, className, auto = false, label = "Play it out",
   if (id) return <MomentCard id={id} className={cx("basis-full", className)} bare />;
   if (!seed.person && !modelsAvailable()) return null;
   return (
-    <button className={cx("btn btn-sm mt-3", className)} onClick={start} title={modelsAvailable() ? "Write it out with the model and answer it; what you do there has consequences" : "Answer it in the written game"}><MessageCircle size={13} /> {label}</button>
+    <button className={cx("btn btn-sm mt-3", className)} onClick={start} title={modelsAvailable() ? "Write it out with the model and answer it. What you do there has consequences" : "Answer it in the written game"}><MessageCircle size={13} /> {label}</button>
   );
 }
 
@@ -112,7 +112,7 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
   if (folded) {
     return (
       <div className={cx("text-[12px] dim mt-3 flex items-center gap-2", className)}>
-        Left for later; it's on {p ? `${p.name}'s page` : "the Penthouse"}.
+        Left for later. It's on {p ? `${p.name}'s page` : "the Penthouse"}.
         <button className="underline" onClick={() => setFolded(false)}>back to it</button>
       </div>
     );
@@ -137,7 +137,7 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
           : l.text.split(/\n\n+/).map((para, j) => <p key={`${i}-${j}`} className="font-prose text-[15px] leading-relaxed" style={{ color: "#e6dfd1" }}>{para}</p>))}
         {stream ? <p className="font-prose text-[15px] leading-relaxed mid whitespace-pre-line">{stream}</p> : null}
         {busy && !stream ? <div className="flex items-center gap-2 dim text-[12px]"><Loader2 size={13} className="animate-spin" /> …</div> : null}
-        {busy && stopper.current ? <button className="btn btn-sm btn-danger" onClick={() => stopper.current?.abort()} title="Stop the model; this reply is thrown away"><Square size={12} /> stop</button> : null}
+        {busy && stopper.current ? <button className="btn btn-sm btn-danger" onClick={() => stopper.current?.abort()} title="Stop the model and throw this reply away"><Square size={12} /> stop</button> : null}
         {err ? <div className="text-[12px] bad">{err}</div> : null}
       </div>
       {bare && cast.length ? <div className="clear-both" /> : null}
@@ -155,7 +155,7 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
           <div className="flex gap-2 mt-2">
             {bare ? null : <Button size="sm" kind="ghost" onClick={() => { setFolded(true); onClose?.(); }}>Continue later</Button>}
             {last.current !== undefined ? <Button size="sm" kind="ghost" onClick={retry} title="Throw away that response and ask the model again"><RotateCcw size={12} /> Retry</Button> : null}
-            <Button size="sm" kind="ghost" disabled={ending} onClick={() => void end()} title="End it where it is; what you did counts">{ending ? "…" : "Done"}</Button>
+            <Button size="sm" kind="ghost" disabled={ending} onClick={() => void end()} title="End it where it is. What you did still counts">{ending ? "…" : "Done"}</Button>
           </div>
         </>
       ) : null}
@@ -174,7 +174,7 @@ export function OpenMoments({ person, title }: { person?: string; title?: string
     <div className="space-y-2">
       <div className="flex items-center">
         {title ? <div className="text-[11px] uppercase tracking-wider dim">{title}</div> : null}
-        {!person ? <button className="ml-auto text-[11px] dim underline" title="End every one of these where it stands; what you said in them still counts" onClick={() => { mutate((s) => { closeAllMoments(s); }); setOn(null); }}>clear all</button> : null}
+        {!person ? <button className="ml-auto text-[11px] dim underline" title="End every one of these where it stands. What you said in them still counts" onClick={() => { mutate((s) => { closeAllMoments(s); }); setOn(null); }}>clear all</button> : null}
       </div>
       {list.map((m) => on === m.id
         ? <MomentCard key={m.id} id={m.id} onClose={() => setOn(null)} />

@@ -10,7 +10,7 @@ import { modelsAvailable } from "../config";
 const IDEAS = [
   "On the concourse at sunset, in front of everyone. She keeps her collar, gold now, and kneels for the vows. Afterwards she still calls me Master, but she sleeps in my bed and runs the household staff.",
   "Private, just the two of us and a registrar, in my rooms. I free her first so she marries me as a free woman, and between us we're equals.",
-  "A ceremony she designs. I kneel to her in front of the household and she puts a ring on me. In our house she leads; in public I'm still the owner.",
+  "A ceremony she designs. I kneel to her in front of the household and she puts a ring on me. In our house she leads, but in public I'm still the owner.",
 ];
 
 const STATUS: Record<Written["status"], string> = { "slave wife": "keeps her collar", wife: "off the slave registry", "free wife": "freed" };
@@ -70,7 +70,7 @@ export default function MarriageCard({ id }: { id: string }) {
       <Sheet open={open} onClose={() => { stop.current?.abort(); setOpen(false); }} title={`Marrying ${p.name}`} wide>
         {!draft ? (
           <>
-            <p className="text-[12.5px] dim mb-2">No ladder, no gates. Say how the marriage goes: where, who's watching, what she wears, what's said and done, what she is to you afterwards, and who leads. {modelsAvailable() ? "The narrator writes the wedding from your words, and you read it before it's true." : "Without a model the game reads your words for what matters: public or private, whether she stays a slave, and who leads."}</p>
+            <p className="text-[12.5px] dim mb-2">No ladder, no gates. Say how the marriage goes, where, who's watching, what she wears, what's said and done, what she is to you afterwards, and who leads. {modelsAvailable() ? "The narrator writes the wedding from your words, and you read it before it's true." : "Without a model the game reads your words for what matters, whether it's public or private, whether she stays a slave, and who leads."}</p>
             <textarea rows={6} value={terms} onChange={(e) => setTerms(e.target.value)} placeholder="How the marriage plays out…" />
             <div className="flex flex-wrap gap-1.5 mt-2">
               {IDEAS.map((t, i) => <button key={i} className="chip !text-[11.5px]" onClick={() => setTerms(t)}>idea {i + 1}</button>)}

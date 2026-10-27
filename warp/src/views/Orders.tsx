@@ -62,7 +62,7 @@ export default function Orders() {
       </Section>
 
       <Card className="text-[11.5px] dim">
-        Lowest priority runs first; a later rule wins on the same field. Exempt slaves are skipped.
+        Lowest priority runs first, and a later rule wins on the same field. Exempt slaves are skipped.
       </Card>
 
       <Sheet open={!!editing} onClose={() => setEditing(null)} title="Edit order" wide>

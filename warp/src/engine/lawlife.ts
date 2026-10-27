@@ -83,7 +83,7 @@ export function propaganda(s: SaveState, id: string, amount: number): string {
   const spend = Math.floor(amount);
   if (!l || !x) return "";
   if (!(spend >= 1000)) return "A campaign needs at least ¤1,000.";
-  if (spend > s.arcology.cash) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}; the campaign would cost ¤${spend.toLocaleString()}.`;
+  if (spend > s.arcology.cash) return `You have ¤${Math.round(s.arcology.cash).toLocaleString()}, but the campaign would cost ¤${spend.toLocaleString()}.`;
   const pv = propagandaPreview(s, id, spend);
   s.arcology.cash -= spend;
   pushWithLaw(s, l, pv.points, `you paid ¤${spend.toLocaleString()} for propaganda for the ${l.name}`);
@@ -91,9 +91,9 @@ export function propaganda(s: SaveState, id: string, amount: number): string {
   std(s, Math.min(2, spend / 250000));
   startRumor(s, `the ${l.name} is on every screen in the arcology`, { salience: Math.min(9, 4 + Math.round(spend / 100000)), charge: 1 });
   const how = spend >= 1000000
-    ? `For a week there's nothing else. The ${l.name} is on every screen, every lift door and every coffee cup; children sing it in the schoolrooms, the FCTV anchors read it out between every segment, and paid speakers stand on crates at every junction from the spire to the verge. By Sunday people who hated it can't remember why.`
+    ? `For a week there's nothing else. The ${l.name} is on every screen, every lift door and every coffee cup. Children sing it in the schoolrooms, the FCTV anchors read it out between every segment, and paid speakers stand on crates at every junction from the spire to the verge. By Sunday people who hated it can't remember why.`
     : spend >= 200000
-      ? `The campaign runs for a fortnight: posters on every floor, a jingle on FCTV, a parade down the main concourse with the ${l.name} on a banner the width of the street. People start quoting it without meaning to.`
+      ? `The campaign runs for a fortnight, with posters on every floor, a jingle on FCTV, a parade down the main concourse with the ${l.name} on a banner the width of the street. People start quoting it without meaning to.`
       : spend >= 30000
         ? `Posters for the ${l.name} go up at every lift, and FCTV runs a spot about it before the evening news. It gets talked about.`
         : `A few hundred posters for the ${l.name} go up on the busier floors. Some of them stay up.`;
@@ -146,7 +146,7 @@ export function lawPulseTagged(s: SaveState): { law: string; line: string; total
     const line = c.total > 30
       ? c.norms > 0 || loved
         ? r.pick(loved && c.norms <= 0
-          ? [`Plenty of citizens thought the ${l.name} was a strange law. They keep it anyway, because it's yours.`, `People keep the ${l.name} the way they'd keep a friend's house rules: they don't all see the point, but they like you.`, `A block captain on the residential floors has been reading the ${l.name} out at meetings. "The owner hasn't steered us wrong yet," he says.`]
+          ? [`Plenty of citizens thought the ${l.name} was a strange law. They keep it anyway, because it's yours.`, `People keep the ${l.name} the way they'd keep a friend's house rules. They don't all see the point, but they like you.`, `A block captain on the residential floors has been reading the ${l.name} out at meetings. "The owner hasn't steered us wrong yet," he says.`]
           : [`The ${l.name} is simply how things are done now. Citizens keep it without being told.`, `People quote the ${l.name} at each other in the concourse, approvingly.`, `Shops have put up copies of the ${l.name} next to their prices.`])
         : r.pick([`The ${l.name} is kept to the letter. There's a patrol on every corner to see that it is.`, `Nobody breaks the ${l.name}. Nobody talks about it either, not with the cameras listening.`])
       : c.total > 0
@@ -192,7 +192,7 @@ export const LAW_EVENTS: EventDef[] = [
     ]),
   lawEvent("law_household", (s, l) => owned(s).length > 0 && !lawsOf(s).find((x) => x.id === l.id)?.exempt, () => 1,
     (s, l) => { const p = owned(s)[0]; return `A citizen has written to the civic hall complaining that ${p.name}, one of your own slaves, broke the ${l.name} in the market this morning. The law says ${quote(l)} The clerk wants to know whether the owner's household keeps the owner's law.`; }, [
-      { id: "punish", label: "Punish her in public", run: (s, l) => { const p = owned(s)[0]; if (p) applyTreatment(p, { kind: "coercion", size: 5, why: `punished in public for breaking the ${l.name}` }, s.arcology.week); pushWithLaw(s, l, 5, `you punished your own slave for breaking the ${l.name}`); std(s, 1); return `You have ${p?.name ?? "her"} punished at the fountain, under a notice of the ${l.name}. It's the most effective thing you could have done for the law: if the owner's own slave isn't exempt, nobody is.`; } },
+      { id: "punish", label: "Punish her in public", run: (s, l) => { const p = owned(s)[0]; if (p) applyTreatment(p, { kind: "coercion", size: 5, why: `punished in public for breaking the ${l.name}` }, s.arcology.week); pushWithLaw(s, l, 5, `you punished your own slave for breaking the ${l.name}`); std(s, 1); return `You have ${p?.name ?? "her"} punished at the fountain, under a notice of the ${l.name}. It's the most effective thing you could have done for the law, because if the owner's own slave isn't exempt, nobody is.`; } },
       { id: "exempt", label: "Exempt your household from it", note: "standing falls", run: (s, l) => { const x = lawsOf(s).find((y) => y.id === l.id); if (x) x.exempt = true; pushWithLaw(s, l, -5, `you exempted your own household from the ${l.name}`); std(s, -1.5); return `You exempt your household from the ${l.name}. It's legal, and everyone in the arcology now knows the law is for other people.`; } },
       { id: "pay", label: "Pay the fine and apologise", run: (s, l) => { s.arcology.cash -= 1000; std(s, 0.5); pushWithLaw(s, l, 2, `you paid your slave's fine under the ${l.name}`); return `You pay the fine yourself and send the citizen a note. He frames it.`; } },
     ]),
@@ -206,7 +206,7 @@ export const LAW_EVENTS: EventDef[] = [
     (s, l) => `There are a few hundred protesters outside the civic hall. They want the ${l.name} gone. Someone has painted ${quote(l)} on a bedsheet with a red line through it, and hung it from the balcony.`, [
       { id: "disperse", label: "Have them dispersed", run: (s, l) => { pushWithLaw(s, l, 4, `you dispersed the protest against the ${l.name}`); pushNorm(s, "order", 4, `you dispersed a protest`); std(s, -1); return `Security clears the steps in twenty minutes. Nobody is badly hurt. The bedsheet ends up in a museum in an Old World city, with your name on the label.`; } },
       { id: "listen", label: "Go out and hear them", run: (s, l) => { pushWithLaw(s, l, -3, `you went out to hear the protest against the ${l.name}`); std(s, 1); return `You go out onto the steps and listen for an hour. You don't promise anything. They go home anyway, and some of them stop hating you.`; } },
-      { id: "repeal", label: "Give them what they want: strike it", run: (s, l) => `${repealByDecree(s, l.id)} The protesters go home singing.` },
+      { id: "repeal", label: "Give them what they want and strike it", run: (s, l) => `${repealByDecree(s, l.id)} The protesters go home singing.` },
     ]),
   lawEvent("law_abroad", () => true, () => 0.6,
     (s, l) => `An Old World newspaper has run a long piece about ${s.arcology.name} and the ${l.name}, quoting it in full: ${quote(l)} It's being read in a dozen cities, and three owners have written to ask what you meant by it.`, [
@@ -227,6 +227,6 @@ registerEvents(LAW_EVENTS);
 export function lawsLine(s: SaveState): string {
   const ls = lawsOf(s).map((x) => LAW_BY_ID[x.id]).filter(Boolean) as LawDef[];
   if (!ls.length) return "";
-  return `LAWS OF THE ARCOLOGY (people keep or break them where it fits the scene): ${ls.map((l) => `the ${l.name}: ${l.text}`).join(" | ")}`;
+  return `LAWS OF THE ARCOLOGY. People keep or break them where it fits the scene. ${ls.map((l) => `The ${l.name} says: ${l.text.replace(/\.?$/, ".")}`).join(" ")}`;
 }
 
