@@ -12,7 +12,7 @@ import { useGame } from "../lib/game";
 import { useHand } from "../lib/hand";
 import { Button, Chip, cx } from "../lib/ui";
 import type { Person, SaveState } from "../engine/types";
-import { facesOf, keyOf, knownFaces, personOf, syncStoryCast, type Face } from "../engine/faces";
+import { facesOf, findFace, keyOf, knownFaces, personOf, syncStoryCast, type Face } from "../engine/faces";
 import { known, note, tie } from "../engine/others";
 import { BUY_OFF, FATE_WORDS, orderDealt, type Fate } from "../engine/fates";
 import { openMoment } from "../engine/moments";
@@ -24,7 +24,7 @@ const towardWord = (n?: number) => n === undefined ? "" : n >= 50 ? "fond of you
 /** Their record, filed if it was only the story's until now, so it can be changed. */
 function filed(s: SaveState, name: string): Face | undefined {
   syncStoryCast(s);
-  return facesOf(s)[keyOf(name)];
+  return findFace(s, name) ?? facesOf(s)[keyOf(name)];
 }
 
 export default function Others() {

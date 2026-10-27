@@ -15,6 +15,7 @@
 import type { SaveState } from "./types";
 import { chronicle, chronicleOf } from "./chronicle";
 import type { Face } from "./faces";
+import { findFace } from "./faceid";
 import { arcDef, PERSONAL_ROLES } from "./story";
 import { dominion, forces, powers } from "./power";
 
@@ -72,10 +73,11 @@ export function settle(s: SaveState, name: string, fate: Fate, how: string, opts
   let full = who;
   let role = "";
 
-  // The faces on file.
+  // The faces on file: the one this name means, whatever spelling the scene used.
+  const meant = findFace(s, who);
   for (const f of Object.values(s.faces ?? {})) {
     // Bought off is the one fate that can be followed by another.
-    if (!sameName(f.name, who, f.short) || (f.fate && f.fate.fate !== "bought")) continue;
+    if ((f !== meant && !sameName(f.name, who, f.short)) || (f.fate && f.fate.fate !== "bought")) continue;
     f.fate = note;
     full = f.name;
     keys.push(`face:${keyOf(f.name)}`);

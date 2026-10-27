@@ -37,7 +37,7 @@ import { worldOf, worldBrief } from "./world";
 import { cultureBrief } from "./culture";
 import { genomeOf, genomeBrief } from "./genome";
 import { menialsOf } from "./menials";
-import { facesOf, keyOf, meet, nationFrom, type Face } from "./faces";
+import { faceKey, facesOf, findFace, keyOf, meet, nationFrom, type Face } from "./faces";
 import { note } from "./others";
 import { deedsOf } from "./deeds";
 import { HOUSE_STYLE } from "./prompts";
@@ -721,7 +721,8 @@ function whoIs(s: SaveState, name: string): { person?: string; face?: string } {
   const k = keyOf(name);
   const p = owned(s).find((x) => keyOf(x.name) === k || keyOf(x.name.split(" ")[0]) === k);
   if (p) return { person: p.id };
-  if (facesOf(s)[k]) return { face: k };
+  const f = findFace(s, name);
+  if (f) return { face: faceKey(s, f) };
   return {};
 }
 
@@ -737,7 +738,7 @@ export function takeBible(s: SaveState, x: Saga, raw: Record<string, unknown>): 
     let at = whoIs(s, name);
     if (!at.person && !at.face) {
       const f = meet(s, { name, pronoun: /^he$/i.test(String(o.pronoun ?? "")) ? "he" : "she", age: num(o.age, 18, 85), nation: nationFrom(str(o.nationality, 40)), skin: str(o.skin, 40), hair: str(o.hair, 60)?.split(",")[0].trim(), hair_style: str(o.hair, 60)?.split(",").slice(1).join(",").trim() || undefined, eyes: str(o.eyes, 30), detail: str(o.detail, 120) });
-      if (f) at = { face: keyOf(f.name) };
+      if (f) at = { face: faceKey(s, f) };
     }
     return [{ name, ...at, role: str(o.role, 160) ?? "", want: str(o.want, 200) ?? "", fear: str(o.fear, 200) ?? "", secret: str(o.secret, 300), toward: num(o.toward, -100, 100) ?? 0, now: str(o.now, 120) ?? "", desire: str(o.desire, 200), limit: str(o.limit, 200), turns: [] }];
   }).slice(0, 7);

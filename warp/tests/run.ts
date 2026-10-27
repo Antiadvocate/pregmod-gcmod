@@ -69,6 +69,7 @@ import "./partner.test.ts";
 import "./living.test.ts";
 import "./ownerlife.test.ts";
 import "./allowance.test.ts";
+import "./faces-id.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);
