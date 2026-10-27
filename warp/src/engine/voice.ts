@@ -334,3 +334,17 @@ export function say(s: SaveState, p: Person, what: Said, r: Rng, extra: Record<s
   const pname = s.player.name && s.player.name !== "you" ? s.player.name : addressFor(s, "proper");
   return fill(line, { you: addressFor(s, reg, p), name: p.name, pname, ...extra });
 }
+
+/**
+ * HOW SHE TALKS, SAID BY THE PLAYER. The voice the forge or the last re-reading wrote (her diction,
+ * sample lines, what she never says) describes the woman it imagined. When the player writes how
+ * she talks, that wins: the old samples go, so the card can't argue with itself, and the next
+ * re-reading writes new ones to fit. Her habits stay; they're small and usually still true.
+ */
+export function setSpeech(p: Person, text: string): void {
+  p.persona.speech_pattern = text;
+  p.persona.speech_own = true;
+  const v = p.persona.voice;
+  if (v) { delete v.diction; delete v.syntax; delete v.rhythm; delete v.never_says; delete v.example_lines; }
+  delete p.persona.exchanges;
+}

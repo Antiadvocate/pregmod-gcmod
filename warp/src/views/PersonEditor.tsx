@@ -14,6 +14,7 @@ import { ASSIGNMENTS } from "../data/assignments";
 import { FETISHES, QUIRKS, FLAWS } from "../data/intimacy";
 import { NATIONS } from "../data/people";
 import { refresh } from "../engine/obedience";
+import { setSpeech } from "../engine/voice";
 import { feetOf } from "../engine/genitals";
 import { romanceOf } from "../engine/romance";
 
@@ -118,7 +119,8 @@ export default function PersonEditor({ target }: { target: Person }) {
 
   const write = (path: Path, value: unknown) => mutate((s: SaveState) => {
     const p = s.people[id];
-    setAt(p, path, value);
+    if (path.join(".") === "persona.speech_pattern") setSpeech(p, String(value ?? ""));
+    else setAt(p, path, value);
     refresh(p, s.memory[p.id]);
   });
 
