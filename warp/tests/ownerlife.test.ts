@@ -97,7 +97,7 @@ function drain(s: SaveState, seed: string, holes: string[], seen: Set<string>): 
   const sk = addCustomSkill(s, "Hypnosis", "I can put people under with my voice and they do what I say.");
   check("a custom skill can be added", !!sk && s.player.skills[sk!.id] === 20);
   check("the same one can't be added twice", addCustomSkill(s, "hypnosis", "again") === null);
-  check("every prompt is told what it is and how good the owner is", /Hypnosis 20[\s\S]*put people under/.test(skillsBrief(s)), skillsBrief(s));
+  check("every prompt is told what it is and how good the owner is", /Hypnosis, at 20 out of 100[\s\S]*put people under/.test(skillsBrief(s)), skillsBrief(s));
   const before = s.player.skills[sk!.id];
   practiseFrom(s, "I try to hypnotise her with my voice");
   check("and using it by name is practice", s.player.skills[sk!.id] > before);
@@ -120,7 +120,7 @@ function drain(s: SaveState, seed: string, holes: string[], seen: Set<string>): 
   s.player.skills.intimidation = 100;
   const quiet = sizeLine(s);
   check("an owner nobody fears hears it said", /don't hide that they've noticed/.test(loud), loud);
-  check("a feared one only sees it in the silences", /nobody says it to the owner's face/.test(quiet), quiet);
+  check("a feared one only sees it in the silences", /nobody ever says it to the owner's face/.test(quiet), quiet);
   resolveAct(s, her, "vaginal");
   for (let i = 0; i < 12; i++) tickEndowment(s);
   check("the women you've had talk, and it gets around", talkOfIt(s) > 10, talkOfIt(s));

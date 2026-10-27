@@ -138,7 +138,7 @@ function ownerAsTheCitySeesThem(s: SaveState): string {
   const pr = s.player.pronouns ?? "he/him";
   const named = s.player.name && s.player.name !== "you" ? s.player.name : "";
   const title = s.player.address || (pr === "she/her" ? "Mistress" : "Master");
-  return `THE OWNER is the player, who is reading this feed. The owner is ${named ? `${named}, ` : ""}${genderWord(s)}, and goes by ${pr}. The posts are written by other people, so they refer to the owner in the third person, as "the owner"${named ? `, "${named}"` : ""} or "${title}", with ${pr} pronouns. The owner is never the author of a post.`;
+  return `THE OWNER. This is the player, who is reading this feed. The owner is ${named ? `${named}, ` : ""}${genderWord(s)}, and goes by ${pr}. The posts are written by other people, so they refer to the owner in the third person, as "the owner"${named ? `, "${named}"` : ""} or "${title}", with ${pr} pronouns. The owner is never the author of a post.`;
 }
 
 /* ── writing posts ─────────────────────────────────────────────────────────────────────────── */

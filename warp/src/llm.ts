@@ -152,7 +152,7 @@ const STREAM_IDLE_MS = 90_000;
  */
 let ownerContext = "";
 export function setOwnerContext(text: string): void { ownerContext = text; }
-const OWNER_MARK = "THE OWNER (the player";
+const OWNER_MARK = "THE OWNER. This is the player";
 
 export function withOwner<T extends { system: string; user: string }>(raw: T): T {
   return ownerContext && !raw.system.includes(OWNER_MARK) && !raw.user.includes(OWNER_MARK)
