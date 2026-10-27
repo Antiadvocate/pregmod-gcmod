@@ -30,7 +30,7 @@ import { hasWomb } from "./pregnancy";
 import { sell } from "./market";
 import { asFate, sameName, settle, settledBrief, weightBrief } from "./fates";
 import { isOwnerName } from "./you";
-import { meet } from "./faces";
+import { findFace, meet } from "./faces";
 import { note, tie } from "./others";
 import { addWays } from "./ways";
 
@@ -455,7 +455,7 @@ function outsiders(s: SaveState, deed: Deed, r: Read): string[] {
   for (const x of (r.outsiders ?? []).slice(0, 4)) {
     const name = String(x?.name ?? "").trim();
     if (!name || byName(s, name) || isOwnerName(s, name)) continue;
-    const f = Object.values(s.faces ?? {}).find((y) => sameName(y.name, name, y.short)) ?? meet(s, { name });
+    const f = findFace(s, name) ?? Object.values(s.faces ?? {}).find((y) => sameName(y.name, name, y.short)) ?? meet(s, { name });
     if (!f || f.fate?.fate === "dead") continue;
     if (x.what && !f.what) f.what = String(x.what).slice(0, 80);
     if (x.remembers) note(s, f, String(x.remembers));

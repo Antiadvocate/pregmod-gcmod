@@ -33,9 +33,11 @@ check("seen twice is counted", facesOf(s)["dara whitfield"].seen === 2);
 check("a man is drawn with a man's face and short hair", personOf(facesOf(s)["tomas reyes"]).body.face_shape === "masculine" && personOf(facesOf(s)["tomas reyes"]).body.hair_length <= 6);
 
 check("a first name finds her", facesIn(s, "Dara waves from across the concourse.").map((f) => f.name).join() === "Dara Whitfield");
-meet(s, { name: "Dara Kovacs" });
-check("an ambiguous first name finds no one", !facesIn(s, "Dara waves.").length);
-check("a full name still does", facesIn(s, "Dara Kovacs waves.")[0]?.name === "Dara Kovacs");
+check("a scene that gives Dara a new surname still means Dara", meet(s, { name: "Dara Kovacs" }) === facesOf(s)["dara whitfield"] && !facesOf(s)["dara kovacs"]);
+check("and the new spelling finds her too", facesIn(s, "Dara Kovacs waves.")[0]?.name === "Dara Whitfield");
+facesOf(s)["dara kovacs"] = { name: "Dara Kovacs", pronoun: "she", age: 30, first: 1, last: 1, seen: 1 };
+check("two on file with one first name: the first name alone finds no one", !facesIn(s, "Dara waves.").length);
+delete facesOf(s)["dara kovacs"];
 check("junk isn't a name", !meet(s, { name: "the crowd | 3" }) && !meet(s, { name: "" }));
 
 const brief = castBrief(s, "Dara Whitfield is back.");

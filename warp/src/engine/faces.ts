@@ -25,7 +25,12 @@ import { isOwnerName } from "./you";
 import { known, record } from "./others";
 
 export interface Face {
+  /** Who they are, whatever a scene calls them: "f-3k9q2". Shown to the model beside the name, and
+   *  taken back from it, so "Yvette" and "Yvette Dubois" can't become two people. */
+  id?: string;
   name: string;
+  /** Other names a scene has used for them (a first name alone, a surname it invented). */
+  aliases?: string[];
   pronoun: "she" | "he";
   age: number;
   nation?: string;
@@ -59,8 +64,8 @@ export interface Face {
 }
 
 
-export const keyOf = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
-export const facesOf = (s: SaveState): Record<string, Face> => (s.faces ??= {});
+import { keyOf, facesOf, findFace, giveId, oneOfOurs } from "./faceid";
+export { keyOf, facesOf, findFace, faceKey, settleFaces } from "./faceid";
 
 const NATION_NAMES = NATIONS.map((n) => n.name);
 export function nationFrom(text?: string): string | undefined {
@@ -99,13 +104,18 @@ export function personOf(f: Face): Person {
 export function meet(s: SaveState, o: Partial<Face> & { name: string }): Face | undefined {
   const name = o.name.trim().replace(/\s+/g, " ");
   if (name.length < 2 || name.length > 48 || !/^[\p{L}][\p{L}'’.\- ]*$/u.test(name)) return undefined;
-  // The owner is never a stranger with a face on file.
-  if (isOwnerName(s, name)) return undefined;
+  // The owner is never a stranger with a face on file, and nor is one of the player's own.
+  if (isOwnerName(s, name) || oneOfOurs(s, name)) return undefined;
   const all = facesOf(s);
   const k = keyOf(name);
   const week = s.arcology.week;
-  const had = all[k];
+  const had = (o.id ? findFace(s, o.id) : undefined) ?? findFace(s, name);
   if (had) {
+    giveId(s, had);
+    // Another name for the same person is remembered as one, not filed as somebody new.
+    if (keyOf(had.name) !== k && !(had.aliases ?? []).some((a) => keyOf(a) === k)) had.aliases = [...(had.aliases ?? []), name].slice(-6);
+    // The dead aren't seen again, whatever a scene says.
+    if (had.fate?.fate === "dead") return had;
     if (had.last !== week) had.seen++;
     had.last = week;
     for (const f of ["nation", "skin", "hair", "hair_style", "eyes", "detail", "short", "role"] as const) if (!had[f] && o[f]) (had as unknown as Record<string, unknown>)[f] = o[f];
@@ -117,6 +127,7 @@ export function meet(s: SaveState, o: Partial<Face> & { name: string }): Face | 
     first: week, last: week, seen: 1,
   };
   all[k] = f;
+  giveId(s, f);
   return f;
 }
 
@@ -167,7 +178,7 @@ export function facesIn(s: SaveState, text: string, max = 3): Face[] {
   for (const f of all) { const fn = f.name.split(" ")[0].toLowerCase(); firstCount.set(fn, (firstCount.get(fn) ?? 0) + 1); }
   const hits: { f: Face; at: number }[] = [];
   for (const f of all) {
-    const names = [f.name, f.short, firstCount.get(f.name.split(" ")[0].toLowerCase()) === 1 ? f.name.split(" ")[0] : undefined]
+    const names = [f.name, f.short, ...(f.aliases ?? []).filter((a) => a.includes(" ")), firstCount.get(f.name.split(" ")[0].toLowerCase()) === 1 ? f.name.split(" ")[0] : undefined]
       .filter((x): x is string => !!x && x.length > 2);
     let at = -1;
     for (const n of names) {
@@ -199,8 +210,11 @@ export function parseCast(text: string): { prose: string; cast: (Partial<Face> &
     if (!f[0]) continue;
     const hair = f[5] ?? "";
     const [colour, ...style] = hair.split(/,|;/).map((x) => x.trim());
+    const head = f[0].replace(/^["*\[]+|["*\]]+$/g, "");
+    const id = /^f-[a-z0-9]+$/i.test(head) ? head : /^(f-[a-z0-9]+)\s+(.+)$/i.exec(head)?.[1];
     cast.push({
-      name: f[0].replace(/^["*]+|["*]+$/g, ""),
+      id,
+      name: id ? head.replace(id, "").trim() || id : head,
       pronoun: /\bhe\b|\bman\b|\bmale\b|\bhim\b/i.test(f[1] ?? "") ? "he" : "she",
       age: ageFrom(f[2] ?? ""),
       nation: nationFrom(f[3]),
@@ -221,10 +235,10 @@ export function castBrief(s: SaveState, text: string): string {
   const recent = knownFaces(s).filter((f) => f.seen > 0).sort((a, b) => b.last - a.last).slice(0, 6);
   const list = [...new Map([...named, ...recent].map((f) => [f.name, f])).values()].slice(0, 10);
   const fate = (f: Face) => (f.fate ? ` [${f.fate.fate === "dead" ? "DEAD" : f.fate.fate === "bought" ? "BOUGHT OFF" : f.fate.fate === "exiled" ? "DRIVEN OUT" : f.fate.fate.toUpperCase()} since week ${f.fate.week}: ${f.fate.how}]` : "");
-  const line = (f: Face) => `· ${f.name}${fate(f)} — ${f.pronoun}, about ${f.age}${f.nation ? `, ${f.nation}` : ""}${f.skin ? `, ${f.skin} skin` : ""}${f.hair ? `, ${f.hair} hair${f.hair_style ? ` (${f.hair_style})` : ""}` : ""}${f.eyes ? `, ${f.eyes} eyes` : ""}${f.detail ? `; ${f.detail}` : ""}${record(s, f)}`;
+  const line = (f: Face) => `· [${giveId(s, f)}] ${f.name}${fate(f)} — ${f.pronoun}, about ${f.age}${f.nation ? `, ${f.nation}` : ""}${f.skin ? `, ${f.skin} skin` : ""}${f.hair ? `, ${f.hair} hair${f.hair_style ? ` (${f.hair_style})` : ""}` : ""}${f.eyes ? `, ${f.eyes} eyes` : ""}${f.detail ? `; ${f.detail}` : ""}${(f.aliases ?? []).length ? `. Also called ${f.aliases!.join(", ")}, the same person` : ""}${record(s, f)}`;
   return [
-    list.length ? `## PEOPLE THE PLAYER HAS MET\nThey aren't the player's people. If one of them appears, use this name and look.\n${list.map(line).join("\n")}` : "",
-    `## CAST LINES\nAfter the options, add one line for each person in the scene who is not the player and not one of the player's slaves, and who speaks or acts, in this form. CAST: full name | she or he | age | nationality | skin | hair colour, style | eye colour | one visible detail. Give anyone new a full name. Leave out crowds nobody would name.`,
+    list.length ? `## PEOPLE THE PLAYER HAS MET\nThey aren't the player's people. Each has an id in brackets, and that id is who they are. If one of them appears, it's that same person, with this name and look. Someone marked DEAD can't appear at all.\n${list.map(line).join("\n")}` : "",
+    `## CAST LINES\nAfter the options, add one line for each person in the scene who is not the player and not one of the player's slaves, and who speaks or acts, in this form. CAST: full name | she or he | age | nationality | skin | hair colour, style | eye colour | one visible detail. For someone already met, put their id in front of the name, like "CAST: f-3k9q2 Yvette Charron | ...". Give anyone new a full name whose first name nobody on file has, alive or dead, and that none of the player's slaves has. Leave out crowds nobody would name.`,
   ].filter(Boolean).join("\n\n");
 }
 
