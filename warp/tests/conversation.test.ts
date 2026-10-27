@@ -35,7 +35,7 @@ check("other women are never written in", !(m.others ?? []).includes(other.id));
 // The scene call, not the bookkeeper that follows it.
 const scenes = bodies.filter((b) => JSON.stringify(b).includes("You continue a scene")) as { messages: { content: string }[]; temperature: number; presence_penalty?: number; max_tokens: number }[];
 const last = scenes.at(-1)!;
-check("the scene writer is told how a conversation goes", last.messages[0].content.includes("LENGTH FOLLOWS THE PLAYER") && last.messages[0].content.includes(CONVERSATION.slice(0, 40)));
+check("the scene writer is told how a conversation goes", last.messages[0].content.includes("MATCH THE PLAYER'S PACING") && last.messages[0].content.includes(CONVERSATION.slice(0, 40)));
 check("calmer settings and room to finish", last.temperature <= 0.85 && (last.presence_penalty ?? 0) > 0 && last.max_tokens >= 1500, [last.temperature, last.presence_penalty, last.max_tokens]);
 check("what she's been overusing is named for the next reply", /TOO MUCH LATELY[\s\S]*"bon"/.test(overused(s, her, m)), overused(s, her, m));
 check("and it goes in the prompt", last.messages[1].content.includes("TOO MUCH LATELY"));
@@ -43,8 +43,8 @@ check("and it goes in the prompt", last.messages[1].content.includes("TOO MUCH L
 her.persona.voice = { tics: ["'Bon.', under her breath"], example_lines: ["I am the bread, Master."] };
 her.persona.exchanges = [{ you: "How are you?", her: "Tired. The rain kept me up." }];
 const card = personCard(s, her, "");
-check("her card shows an ordinary exchange instead of quirk lines", card.includes("AN ORDINARY EXCHANGE WITH HER") && card.includes("Tired. The rain kept me up.") && !card.includes("I am the bread"));
-check("her habits are marked as rare", card.includes("HABITS SHE HAS NOW AND THEN"));
+check("her card shows an ordinary exchange instead of quirk lines", card.includes("SAMPLE EXCHANGE") && card.includes("Tired. The rain kept me up.") && !card.includes("I am the bread"));
+check("her habits are marked as rare", card.includes("OCCASIONAL HABITS"));
 
 her.persona.grown_week = s.arcology.week; her.persona.grown_v = 1; her.economics.weeks_owned = 10;
 check("a woman written by the old reading is read again", GROW_V >= 2 && dueToGrow(s).includes(her));
@@ -63,8 +63,8 @@ check("but one read just before it keeps her voice and isn't read again", !dueTo
   check("and ordinary talk isn't mistaken for it", ["Tell me about what happened at the canteen.", "Come here.", "What do you want for dinner?", "Who is she?", "How are you?"].every((x) => !didntFollow(x)));
   const { finishLast } = await import("../src/engine/style.ts");
   const { NARRATOR_SYSTEM } = await import("../src/engine/prompts.ts");
-  check("the narrator doesn't put words in the owner's mouth", NARRATOR_SYSTEM.includes("DON'T TALK FOR THEM") && CONVERSATION.includes("THE PLAYER SPEAKS FOR THEMSELVES"));
-  check("an act is short", NARRATOR_SYSTEM.includes("under about 250 words"));
+  check("the narrator doesn't put words in the owner's mouth", NARRATOR_SYSTEM.includes("DON'T PUT WORDS IN THEIR MOUTH") && CONVERSATION.includes("NEVER SPEAK FOR THE PLAYER"));
+  check("an act is short", NARRATOR_SYSTEM.includes("under 250 words"));
   check("and nobody's voice is flattened into the same plain speech", !PLAIN_RULES.includes("TALK LIKE AN AI") && !/plainer, clumsier/.test(PLAIN_RULES));
   const cut = 'Then, as you finish the fourth nail, she sits up. Her grey eyes come up. "And then I want to be on top of you, and I want to be rough';
   check("a reply cut off mid-sentence ends at its last whole sentence", finishLast(cut).endsWith("Her grey eyes come up."), finishLast(cut));

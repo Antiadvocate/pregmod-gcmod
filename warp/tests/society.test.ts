@@ -46,7 +46,7 @@ const deed = (s: SaveState, tags: string[], pub: boolean, summary: string): Deed
   check("the petition names what you did", !!e && /names you: knelt to Mira/.test(e.seed), e?.seed);
   resolveEvent(s, e!, "sign");
   check("signing puts it in force", inForce(s, "collar_covenant") && lawsOf(s)[0].by === "you");
-  check("the narrator is told the city's habits and the laws", /HOW CITIZENS BEHAVE/.test(digest(s)) && /Collar Covenant/.test(digest(s)));
+  check("the narrator is told the city's habits and the laws", /PUBLIC BEHAVIOR/.test(digest(s)) && /Collar Covenant/.test(digest(s)));
 }
 
 {

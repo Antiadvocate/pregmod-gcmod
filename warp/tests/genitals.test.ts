@@ -39,7 +39,7 @@ function world(seed: string, sex: "female" | "male" | "futa" = "futa") {
   check("and her balls", /large balls/.test(g), g);
   check("and her pussy", /pussy/.test(g), g);
   const card = personCard(s, p);
-  check("the narrator's card carries it as fact", /BETWEEN HER LEGS/.test(card) && /huge uncut cock/.test(card), card);
+  check("the narrator's card carries it as fact", /GENITALS \(canon/.test(card) && /huge uncut cock/.test(card), card);
   check("and her feet", /FEET: She has .* feet \(EU \d+\)/.test(card), card);
   check("generated people get feet and a fitted scrotum", !!p.body.feet && (p.body.scrotum ?? -1) >= (p.body.balls ?? 0));
 }

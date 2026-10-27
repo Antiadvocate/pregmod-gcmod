@@ -337,7 +337,7 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
     : act.group === "hers" || act.tags.includes("domination")
       ? `WHO DOES WHAT. ${p.name} is the active one here, and she does this to you.`
       : `WHO DOES WHAT. You do this to ${p.name}, or have her do it for you, exactly as described above.`);
-  lines.push(`Her genitals and feet are on her card under BETWEEN HER LEGS and FEET. Use exactly what is there.`);
+  lines.push(`Her genitals and feet are on her card under GENITALS and FEET. Use exactly what is there.`);
   lines.push(`Write the owner doing it in their own manner (see WHO THE OWNER IS), and write her as the power between you really stands (see THE POWER BETWEEN YOU on her card). However she takes it, given her character, age and personality, an owned slave shows it the way a slave would, and not by telling her owner off.`);
   lines.push(`Write this act happening with ${p.name}, from start to finish. It is the whole scene. Do not write a scene about something else.`);
   lines.push(``);

@@ -30,7 +30,7 @@ check("threats and her own trouble aren't", !["attack", "assassins", "office_man
   check("all of it, all the time", businessAllowed(s, "gx_crash"));
 }
 
-check("nothing written about her is paperwork", /ledgers/.test(NOT_PAPERWORK) && /desk job/.test(NOT_PAPERWORK));
+check("nothing written about her is paperwork", /ledgers/.test(NOT_PAPERWORK) && /works at a desk/.test(NOT_PAPERWORK));
 {
   const s = newGame({ seed: "paper-office", starting_slaves: 2, plot: false } as never);
   const p = Object.values(s.people).find((x) => x.status === "owned")!;

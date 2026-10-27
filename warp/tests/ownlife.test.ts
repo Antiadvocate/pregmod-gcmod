@@ -60,10 +60,10 @@ g.fetch = async (_u: string, init: { body: string }) => {
   check("what she knows says it happened", mem.facts.some((f) => /had surgery: .*It's done\./.test(f.text)));
   check("and the rest of what she knows is kept", mem.facts.some((f) => /taught girls dance/.test(f.text)));
   check("the promise she remembers reads as kept", mem.episodic.some((m) => /promised me surgery.*done in week/.test(m.content)));
-  check("her card has it as done and over", /SURGERY, DONE AND OVER[^\n]*still recovering/.test(personCard(s, p)), personCard(s, p).match(/SURGERY[^\n]*/)?.[0]);
+  check("her card has it as done and over", /PAST SURGERY[^\n]*still recovering/.test(personCard(s, p)), personCard(s, p).match(/SURGERY[^\n]*/)?.[0]);
   for (let i = 0; i < 4 && p.health.recovery_weeks > 0; i++) tickHealth(s, p, { health: 0, energy: 0 });
   check("out of recovery, she knows she's healed", mem.facts.some((f) => /healed from her surgery/.test(f.text)), mem.facts.map((f) => f.text));
-  check("and her card says healed", /SURGERY, DONE AND OVER[^\n]*all healed/.test(personCard(s, p)));
+  check("and her card says healed", /PAST SURGERY[^\n]*all healed/.test(personCard(s, p)));
 
   // A save from before: the operation on her body, the plan still in what she knows.
   const q = generatePerson({ seed: "done-q", sex: "female" });
@@ -144,7 +144,7 @@ g.fetch = async (_u: string, init: { body: string }) => {
   await playMoment(s, id, "Busy?");
   const scene = bodies.find((x) => JSON.stringify(x).includes("You continue a scene"))!;
   check("the scene is told where it is and what she's doing", scene.messages[1].content.includes("## WHERE THIS IS") && scene.messages[1].content.includes("on the phone at her desk"));
-  check("and that where you are matters", scene.messages[0].content.includes("WHERE YOU ARE MATTERS") && scene.messages[0].content.includes("SHE HAS A LIFE"));
+  check("and that where you are matters", scene.messages[0].content.includes("GROUND THE SCENE IN ITS LOCATION") && scene.messages[0].content.includes("GIVE HER AN INDEPENDENT LIFE"));
 }
 
 /* ── what goes on between people ───────────────────────────────────────────────────────────── */
@@ -175,7 +175,7 @@ g.fetch = async (_u: string, init: { body: string }) => {
   });
   const e = await generateGoing(s, pair, "");
   const asked = bodies.at(-1)!.messages[1].content;
-  check("and never to make it paperwork", bodies.at(-1)!.messages[0].content.includes("NEVER PAPERWORK"));
+  check("and never to make it paperwork", bodies.at(-1)!.messages[0].content.includes("SKIP THE PAPERWORK"));
   check("the model is told the house rules, and that nothing sexual happens between them", asked.includes("HOUSE RULES BETWEEN SLAVES") && /Nothing sexual happens between these two/.test(asked));
   check("the model writes it as an event between the two of them", !!e && e.person === pair.main.id && e.other === pair.other!.id && e.options.length === 4, e);
   check("each choice says which of them it lands on", !!e && e.options.some((o) => o.id.includes("@other")));

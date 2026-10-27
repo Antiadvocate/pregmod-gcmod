@@ -79,7 +79,7 @@ function owned(seed: string, style: string) {
   check("nor is one who has been topping you all along", styleOf(s, her) !== "doting", styleOf(s, her));
   s.player.self = "I'm a pain slut. I want to be used and kept hard.";
   check("your own words are read as what being owned is for you", selfProfile(s).some((l) => /what being owned means to them/.test(l) && /pain slut/.test(l)));
-  check("her feelings for you aren't written as softness", /That is a feeling rather than a manner/.test(personCard(s, her)));
+  check("her feelings for you aren't written as softness", /this is her internal feeling/.test(personCard(s, her)));
   s.reign!.portrait = "She keeps you on the floor and uses you when she's bored.";
   check("the reading of her wins in every scene", /HOW SHE KEEPS YOU.*on the floor/.test(personCard(s, her)));
 }
@@ -122,8 +122,8 @@ function owned(seed: string, style: string) {
   const { s, her } = owned("kept-body", "stern");
   s.player.body.dick = 1; her.body.dick = 6;
   check("a tiny cock is called tiny, and noticed", /tiny cock/.test(ownerLine(s)) && /people who see it notice/.test(ownerLine(s)));
-  check("and set against hers", /HERS AGAINST YOURS: her cock is enormous[\s\S]*yours is tiny/.test(personCard(s, her)));
+  check("and set against hers", /SIZE COMPARISON: Her cock is enormous[\s\S]*yours is tiny/.test(personCard(s, her)));
   (s.house_rules ??= []).push({ rule: "I only speak to women's feet not their faces, do not make me look up", week: 1, by: "you" });
   check("your own rules are hard lines for everyone", selfProfile(s).some((l) => /hard lines[\s\S]*do not make me look up/.test(l)));
-  check("and no stock 'look at me' beat overrides them", /WHAT'S TRUE OF THE PLAYER STAYS TRUE[\s\S]*look at me/.test(HOUSE_STYLE));
+  check("and no stock 'look at me' beat overrides them", /CONSISTENCY WITH THE PLAYER[\s\S]*look at me/.test(HOUSE_STYLE));
 }

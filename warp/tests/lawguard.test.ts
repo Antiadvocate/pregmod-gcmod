@@ -33,7 +33,7 @@ import type { SaveState } from "../src/engine/types.ts";
   check("the law itself is untouched", /Kneeling Act: Every citizen kneels when a slave of the owner's household passes\./.test(lawsBrief(s)));
   const { HOUSE_STYLE, BOOKKEEPER_SYSTEM } = await import("../src/engine/prompts.ts");
   const { WALK_SYSTEM } = await import("../src/engine/walk.ts");
-  check("the scene, walk and bookkeeper prompts all carry the rule", [HOUSE_STYLE, WALK_SYSTEM].every((x) => /Never invent clauses, subsections/.test(x)) && /Never record a new clause/.test(BOOKKEEPER_SYSTEM));
+  check("the scene, walk and bookkeeper prompts all carry the rule", /Never make up new clauses/.test(HOUSE_STYLE) && /Never invent clauses, subsections/.test(WALK_SYSTEM) && /Never log invented legal clauses/.test(BOOKKEEPER_SYSTEM));
 }
 
 {
@@ -45,5 +45,5 @@ import type { SaveState } from "../src/engine/types.ts";
   const g0 = garrison(s).total;
   check("you can build a robot guard corps", buildDefense(s, "sentinels") && garrison(s).total > g0 + 1.5);
   check("every scene knows they're at your side and can't refuse", /ROBOT GUARDS[\s\S]*never hesitate, question or refuse[\s\S]*nobody else/.test(digest(s)));
-  check("and that every soldier and guard obeys you at once", /security forces[\s\S]*never ignore, stall, question, argue with or refuse an order from the owner/.test(HOUSE_STYLE));
+  check("and that every soldier and guard obeys you at once", /security forces[\s\S]*never stall, argue, or refuse an order/.test(HOUSE_STYLE));
 }
