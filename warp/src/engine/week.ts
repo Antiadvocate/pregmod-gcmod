@@ -62,6 +62,9 @@ import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf, inHousehold } fro
 import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
 import { tickStory } from "./story";
+import { tickEndowment } from "./endowment";
+import { tickFew } from "./fewslaves";
+import { tickMarriage } from "./marriage";
 import { ageMoments } from "./moments";
 import { tickDeeds } from "./deeds";
 import { tickCulture } from "./culture";
@@ -334,6 +337,10 @@ export function endWeek(s: SaveState): WeekReport {
   // The plot chain, which is a society pass of its own: it moves your standing with the trade, it
   // moves the arcology's adoption, and it is where the service fees come from once they are open.
   lines.push(...tickReversal(s));
+  // What the city says about you, and what a small household does to the women in it.
+  for (const l of tickEndowment(s)) push(l.text, l.tone, l.weight);
+  for (const l of tickFew(s)) push(l.text, l.tone, l.weight, l.person);
+  for (const l of tickMarriage(s)) push(l.text, l.tone, l.weight, l.person);
   for (const l of tickStory(s)) push(l.text, l.tone, l.weight);
   lines.push(...tickRun(s));
 
@@ -461,13 +468,13 @@ export function endWeek(s: SaveState): WeekReport {
   }
 
   if (arc.cash < 0) problems.push(`You are ${Math.abs(arc.cash)} in the red.`);
-  if (arc.food.stores < 100 && arc.food.consumption > 0) problems.push(`Food stores are nearly out: the city eats ${arc.food.consumption.toLocaleString()} a week${s.menials?.owned ? ` (${(s.menials.owned * 2).toLocaleString()} of it your menials)` : ""}, and the shortfall is bought at ¤8 a unit. Automated farm decks or hydroponic towers (Arcology → Public works), or menials on the farms (each grows 14 and eats 2), fix it.`);
+  if (arc.food.stores < 100 && arc.food.consumption > 0) problems.push(`Food stores are nearly out. The city eats ${arc.food.consumption.toLocaleString()} a week${s.menials?.owned ? ` (${(s.menials.owned * 2).toLocaleString()} of it your menials)` : ""}, and the shortfall is bought at ¤8 a unit. Automated farm decks or hydroponic towers (Arcology → Public works), or menials on the farms (each grows 14 and eats 2), fix it.`);
   const overworked = alive(s).filter((p) => p.health.energy < 12);
   if (overworked.length) problems.push(`${overworked.length} of your slaves are exhausted.`);
   const wornOut = alive(s).filter((p) => wear(p.psyche) > 0.7);
   if (wornOut.length) problems.push(`${wornOut.length} of your slaves have been stressed for so long it's permanently affected them.`);
   const u = unrest(s);
-  if (u > 50) problems.push(`Household unrest is at ${Math.round(u)}. Guards won't fix it; better treatment will.`);
+  if (u > 50) problems.push(`Household unrest is at ${Math.round(u)}. Guards won't fix it, but better treatment will.`);
 
   // You get better at this by doing it: a week of running a household is a week of practice.
   practise(s, "slaving", 0.5 + alive(s).length * 0.05);

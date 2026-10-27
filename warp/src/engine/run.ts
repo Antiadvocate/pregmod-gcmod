@@ -195,7 +195,7 @@ function fate(s: SaveState, p: Person): string {
   if (p.womb.births > 0) facts.push(`She's had ${p.womb.births === 1 ? "a child" : `${p.womb.births} children`}.`);
   if (p.womb.fetuses.length) facts.push("She's carrying now.");
   if (known.length) facts.push(`You found out she's ${known.join(" and ")}.`);
-  if (p.persona.paraphilia) facts.push(`She has a paraphilia; she needs it now.`);
+  if (p.persona.paraphilia) facts.push(`She has a paraphilia, and she needs it now.`);
   if (p.fame.why) facts.push(`People know her as the one who ${p.fame.why.replace(/^(the one who )/, "")}.`);
   const fact = facts.length ? ` ${pick.pick(facts)}` : "";
 
@@ -236,7 +236,7 @@ export function epilogue(s: SaveState, lost: string | null): Ending {
   const opening: Record<string, string> = {
     broke: `Your debts caught up with you. The receivers came up in the elevator with a court order and a locksmith, and changed the codes on you.`,
     empty: `By the end you had no slaves left. The dormitories were empty, and you slept in the penthouse alone.`,
-    revolt: `Your slaves revolted. It started in the laundry and reached your floor by midnight. They didn't need guns; they had the door codes, and there were more of them than you.`,
+    revolt: `Your slaves revolted. It started in the laundry and reached your floor by midnight. They didn't need guns. They had the door codes, and there were more of them than you.`,
     signed: `You signed away the last of your ownership. You still live in the penthouse, but someone else owns it.`,
   };
   if (lost) lines.push(opening[lost]);

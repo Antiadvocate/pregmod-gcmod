@@ -162,7 +162,7 @@ The clerk reads your filing twice, then calls her supervisor. The two of them ar
 
 They decide it's just unusual. They file it at 3:40 that afternoon and hand you a copy with both your names on it, printed the same size.`,
     options: [
-      { id: "file", label: "File it", note: "you can still sell her; that's on the paper too" },
+      { id: "file", label: "File it", note: "you can still sell her, because that's on the paper too" },
       { id: "onesided", label: "File only her ownership of you", note: "gives up your right to sell her" },
       { id: "withdraw", label: "Withdraw it" },
     ],
@@ -186,7 +186,7 @@ They decide it's just unusual. They file it at 3:40 that afternoon and hand you 
 
 ${A} does the talking. She wants what ${her} has, and she's clearly practiced her speech about how good she'd be at it.
 
-${B} stands behind her and says nothing. She wants the opposite: she's spent ${years === 1 ? "most of a year" : `${years} years`} learning to be a good slave, she likes it, and the idea of being put in charge frightens her. She only came along because refusing would have looked bad.`;
+${B} stands behind her and says nothing. She wants the opposite. She's spent ${years === 1 ? "most of a year" : `${years} years`} learning to be a good slave, she likes it, and the idea of being put in charge frightens her. She only came along because refusing would have looked bad.`;
     },
     options: [
       { id: "both", label: "Give each of them what she asked for", note: "one gets power, the other stays a slave" },
@@ -265,12 +265,12 @@ None of it is illegal. The other arcologies are showing ${s.arcology.name} what 
     title: "They offer to buy you out",
     text: (s, her = "she") => `Eiger comes in person, which is both a courtesy and a threat.
 
-He offers more than ${s.arcology.name} is worth, and you both know it. The extra is what the Association will pay to have your arrangement undone. The condition is simple: the ownership papers are voided and your household is broken up.
+He offers more than ${s.arcology.name} is worth, and you both know it. The extra is what the Association will pay to have your arrangement undone. The condition is simple. The ownership papers are voided and your household is broken up.
 
 He asks after ${her} by name, politely, and waits for your answer.`,
     options: [
       { id: "refuse", label: "Refuse", note: "and expect what comes next" },
-      { id: "sell", label: "Take it", note: "ends the story; your household is broken up" },
+      { id: "sell", label: "Take it", note: "ends the story, and your household is broken up" },
       { id: "counter", label: "Offer him a place on the waiting list", note: "he came a long way to ask about her" },
     ],
   },
@@ -281,7 +281,7 @@ He asks after ${her} by name, politely, and waits for your answer.`,
     title: "They come for it",
     text: (s) => `Last month it was paperwork. Last week the Association held a vote and nobody told you the result. Yesterday your security chief caught two men on the freight level with no business there and fake papers. This morning the elevators to the residential ring stopped working, and the concourse cameras are going dark one floor at a time.
 
-Nobody is going to storm ${s.arcology.name}. They're going to take it over the usual way: by getting enough of the right people inside it to switch sides at once.
+Nobody is going to storm ${s.arcology.name}. They're going to take it over the usual way, by getting enough of the right people inside it to switch sides at once.
 
 What matters now is who in your arcology is loyal to you.`,
     options: [
@@ -303,7 +303,7 @@ export const SUPPLICATIONISM: Doctrine = {
   earned: "Can't be adopted by decree. It spreads as the arcology sees you living it.",
   look: "no raised seating anywhere, and the best rooms given to former servants",
   policies: [
-    { id: "service_fees", name: "Service arrangements", note: "citizens pay to serve your slaves; there's a waiting list", cost: 10000 },
+    { id: "service_fees", name: "Service arrangements", note: "citizens pay to serve your slaves, and there's a waiting list", cost: 10000 },
     { id: "dual_title", name: "Dual ownership", note: "you and your slave legally own each other", cost: 6000 },
   ],
 };

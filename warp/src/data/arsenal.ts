@@ -12,13 +12,13 @@ import type { DistrictKind } from "./districts";
 export type Branch = "grand" | "ground" | "air" | "sea" | "missile" | "cyber" | "space";
 
 export const BRANCHES: Record<Branch, { name: string; note: string }> = {
-  grand: { name: "Grand projects", note: "Infrastructure a nation would build: what makes the rest possible." },
+  grand: { name: "Grand projects", note: "Infrastructure a nation would build, which makes the rest possible." },
   ground: { name: "Ground", note: "What holds ground once it's taken." },
   air: { name: "Air", note: "Needs an airport, except drones." },
   sea: { name: "Sea", note: "Needs docks. What reaches the Free Cities over water." },
-  missile: { name: "Missiles", note: "Reach without risk: strikes, and the shield against theirs." },
+  missile: { name: "Missiles", note: "Reach without risk, with strikes and a shield against theirs." },
   cyber: { name: "Cyber", note: "Blinds them before you hit them." },
-  space: { name: "Space", note: "Needs a launch complex. Sees everything; can hit anything." },
+  space: { name: "Space", note: "Needs a launch complex. It sees everything and can hit anything." },
 };
 
 export interface Program {
@@ -40,10 +40,10 @@ export interface Program {
 
 export const PROGRAMS: Program[] = [
   /* grand */
-  { id: "airport", name: "International airport", branch: "grand", cost: 250_000, weeks: 6, power: 0, upkeep: 2_000, max: 1, note: "Runways long enough for anything, on reclaimed ground off the verge.", does: "air programs; +¤6,000 a week in traffic; reach; visits abroad cost half" },
-  { id: "airline", name: "Your own airline", branch: "grand", cost: 400_000, weeks: 5, power: 0, upkeep: 3_000, max: 1, needs: ["airport"], note: "Your livery on tails in every Free City.", does: "+¤12,000 a week; reputation abroad; other powers warm to you" },
-  { id: "intel", name: "Private intelligence service", branch: "grand", cost: 300_000, weeks: 4, power: 0, upkeep: 2_500, max: 1, note: "Analysts, agents and a building with no name on it.", does: "espionage and coups against other powers; their schemes against you move slower" },
-  { id: "media", name: "Global media network", branch: "grand", cost: 600_000, weeks: 6, power: 0, upkeep: 4_000, max: 1, note: "Channels, feeds and papers, in forty languages, all saying what you'd like said.", does: "+reputation every week; every power's opinion of you drifts up" },
+  { id: "airport", name: "International airport", branch: "grand", cost: 250_000, weeks: 6, power: 0, upkeep: 2_000, max: 1, note: "Runways long enough for anything, on reclaimed ground off the verge.", does: "unlocks air programs, brings in +¤6,000 a week in traffic and more reach, and visits abroad cost half" },
+  { id: "airline", name: "Your own airline", branch: "grand", cost: 400_000, weeks: 5, power: 0, upkeep: 3_000, max: 1, needs: ["airport"], note: "Your livery on tails in every Free City.", does: "+¤12,000 a week and reputation abroad, and other powers warm to you" },
+  { id: "intel", name: "Private intelligence service", branch: "grand", cost: 300_000, weeks: 4, power: 0, upkeep: 2_500, max: 1, note: "Analysts, agents and a building with no name on it.", does: "espionage and coups against other powers, and their schemes against you move slower" },
+  { id: "media", name: "Global media network", branch: "grand", cost: 600_000, weeks: 6, power: 0, upkeep: 4_000, max: 1, note: "Channels, feeds and papers, in forty languages, all saying what you'd like said.", does: "+reputation every week, and every power's opinion of you drifts up" },
   { id: "bank", name: "Sovereign debt desk", branch: "grand", cost: 900_000, weeks: 6, power: 0, upkeep: 3_000, max: 1, note: "A bank that lends to governments, and owns them when they can't pay.", does: "buy an Old World state's debt and make it your vassal" },
   { id: "launch", name: "Launch complex", branch: "grand", cost: 1_500_000, weeks: 10, power: 0, upkeep: 6_000, max: 1, note: "A pad, a gantry, and rockets that land themselves.", does: "space programs" },
 
@@ -59,7 +59,7 @@ export const PROGRAMS: Program[] = [
   { id: "stealth", name: "Stealth wing", branch: "air", cost: 2_500_000, weeks: 10, power: 110, upkeep: 20_000, max: 2, needs: ["bombers"], note: "Aircraft their radar has never seen and never will." },
 
   /* sea */
-  { id: "patrol", name: "Patrol flotilla", branch: "sea", cost: 60_000, weeks: 3, power: 10, upkeep: 600, max: 4, district: "docks", note: "Fast boats with guns; the end of piracy in your waters.", defence: 0.6 },
+  { id: "patrol", name: "Patrol flotilla", branch: "sea", cost: 60_000, weeks: 3, power: 10, upkeep: 600, max: 4, district: "docks", note: "Fast boats with guns, and the end of piracy in your waters.", defence: 0.6 },
   { id: "frigates", name: "Frigate squadron", branch: "sea", cost: 450_000, weeks: 8, power: 40, upkeep: 4_500, max: 3, needs: ["patrol"], note: "Warships that can sit off any coast for a month." },
   { id: "subs", name: "Attack submarines", branch: "sea", cost: 1_000_000, weeks: 10, power: 70, upkeep: 9_000, max: 2, needs: ["frigates"], note: "Nobody knows where they are. That is the point." },
   { id: "carrier", name: "Carrier group", branch: "sea", cost: 4_000_000, weeks: 16, power: 180, upkeep: 35_000, max: 1, needs: ["frigates", "fighters"], note: "An airfield that sails. Most countries never had one." },

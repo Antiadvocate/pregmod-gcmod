@@ -17,7 +17,7 @@ function readings(save: ReturnType<typeof useGame>["save"]): Record<string, stri
   const a = save.arcology;
   const w = worldOf(save);
   return {
-    food: `stores ${Math.round(a.food.stores).toLocaleString()} of ${foodCap(save).toLocaleString()}; the city eats ${foodEats(save).toLocaleString()}/wk`,
+    food: `stores ${Math.round(a.food.stores).toLocaleString()} of ${foodCap(save).toLocaleString()}, and the city eats ${foodEats(save).toLocaleString()}/wk`,
     "food stores": `the stores hold ${foodCap(save).toLocaleString()}`,
     "food, at scale": `the city eats ${foodEats(save).toLocaleString()}/wk`,
     pollution: `pollution ${Math.round(w.pollution)}`,

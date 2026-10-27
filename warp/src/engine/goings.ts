@@ -23,7 +23,7 @@ import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { coarsen, REGISTER_TAIL } from "./register";
 import { HOUSE_STYLE, NOT_PAPERWORK, personCard } from "./prompts";
-import { PLAIN_RULES } from "./style";
+import { PLAIN_RULES, sentences } from "./style";
 import { chronicleBrief } from "./chronicle";
 import { DYNAMIC_EFFECTS, PAIR_EFFECTS, effectList } from "./dynamic";
 import { ACT_BY_ID } from "../data/intimacy";
@@ -105,7 +105,7 @@ export function goingsCandidates(s: SaveState): Going[] {
     const ties = tiedTo(s, p.id).filter((t) => !t.face.fate);
     const talk = s.rumors.filter((r) => r.about === p.id && r.week >= week - 2).slice(0, 1);
     const facts = [
-      where.withYou ? `Her place is with the owner (${p.assignment}); the people around her are the owner's guests, staff and visitors.` : `She works ${inPlace(where.name)}: ${where.look}. The people there: whoever works or comes there.`,
+      where.withYou ? `Her place is with the owner (${p.assignment}), and the people around her are the owner's guests, staff and visitors.` : `She works ${inPlace(where.name)}, which is ${where.look}. The people there are whoever works there or comes there.`,
       ...ties.slice(0, 3).map((t) => `In her life outside the house: ${t.face.name}, ${t.what}.`),
       ...talk.map((r) => `People are saying: ${r.content}`),
     ];
@@ -118,9 +118,9 @@ export function goingsCandidates(s: SaveState): Going[] {
     if (does.length || wants.length) out.push({
       key: `own:${p.id}`, kind: "pursuit", main: p, weight: 1 + (wants.length ? 0.4 : 0),
       facts: [
-        does.length ? `What she does with her own time: ${does.join("; ")}.` : "",
-        wants.length ? `What she wants in the long run: ${wants.join("; ")}.` : "",
-        `Someone else gets involved in it this week: ${betweenEvents(s) ? "another of the owner's women, " : ""}someone where she works, or a citizen.`,
+        does.length ? `What she does with her own time: ${sentences(does)}` : "",
+        wants.length ? `What she wants in the long run: ${sentences(wants)}` : "",
+        `Someone else gets involved in it this week, ${betweenEvents(s) ? "another of the owner's women, " : ""}someone where she works, or a citizen.`,
       ].filter(Boolean),
     });
   }
@@ -150,28 +150,28 @@ export function pickGoings(s: SaveState): Going[] {
   return out;
 }
 
-const GOING_SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. It is NOT one of the owner's slaves wanting something from the owner. It is something going on between people (two of the owner's slaves, or one of them and someone outside the household: a customer, a coworker, her boss, a citizen, a guard, somebody else's slave, someone from her life before) that the owner comes across, walks in on or hears about, and can get involved in.
+const GOING_SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. It is NOT one of the owner's slaves wanting something from the owner. It's something going on between people that the owner comes across, walks in on or hears about, and can get involved in. The people can be two of the owner's slaves, or one of them and someone outside the household, like a customer, a coworker, her boss, a citizen, a guard, somebody else's slave, or someone from her life before.
 
 How to build it:
-- Start from THE FACTS: they are true, and they're why it's happening now. Build it out of them, the people's natures, how they feel about each other, where they are, and this week.
-- It happens somewhere real: where she works, somewhere in the house, on the concourse. Say where.
+- Start from THE FACTS. They're true, and they're why it's happening now. Build it out of them, the people's natures, how they feel about each other, where they are, and this week.
+- It happens somewhere real, like where she works, somewhere in the house, or on the concourse. Say where.
 - ${NOT_PAPERWORK}
-- This is an adult game and sex is most of what happens between people in it. Something is actually happening, with a shape, and more often than not it's sexual: a customer who gets rough, a coworker or her boss with his hands on her, a crowd gathering to watch, a client who wants her for a whole night. Between two of the owner's own women, only what BETWEEN THEM below allows. It can also be a quarrel, a favour, a dare, a secret found out or a competition, but it doesn't have to stay clean. Their fetishes, bodies and what they're into (on their cards) decide what it is. Write the sex as plainly as the rest. Not a mood and not a status report.
-- People act as their place allows: a slave is a slave to the owner (THE POWER BETWEEN YOU on her card), and outsiders know who the owner is.
+- This is an adult game and sex is most of what happens between people in it. Something is actually happening, with a shape, and more often than not it's sexual, like a customer who gets rough, a coworker or her boss with his hands on her, a crowd gathering to watch, or a client who wants her for a whole night. Between two of the owner's own women, only what BETWEEN THEM below allows. It can also be a quarrel, a favour, a dare, a secret found out or a competition, but it doesn't have to stay clean. Their fetishes, bodies and what they're into (on their cards) decide what it is. Write the sex as plainly as the rest. It's not a mood and it's not a status report.
+- People act as their place allows. A slave is a slave to the owner (see THE POWER BETWEEN YOU on her card), and outsiders know who the owner is.
 - An outsider in it who has no name yet gets a name and one detail, and goes under "cast".
-- Second person, present tense, one or two short paragraphs, ending where the owner can step in. Their words in their own voices, short and plain.
+- Write one or two short paragraphs in the second person and the present tense, ending where the owner can step in, with their words in their own voices, short and plain.
 
-Then three or four choices for the owner, really different: two ways of getting involved (join in, take one of them, make them do it in front of you, take a side, use it, put a stop to it, make it worse), and when it's sexual at least one of those is the owner getting in on it (effect "act" with an act id, "on" the one he takes, or "both"), and at least one choice that leaves them to it. Each choice has an effect from EFFECT IDS and "on": "main" (the first of the owner's women in THE PEOPLE), "other" (the second, if there is one) or "both". The effects that are about the two of them together land on both whatever "on" says.
+Then give three or four really different choices for the owner. Two are ways of getting involved, like joining in, taking one of them, making them do it in front of you, taking a side, using it, putting a stop to it, or making it worse. When it's sexual, at least one of those is the owner getting in on it (effect "act" with an act id, "on" the one he takes, or "both"). At least one choice leaves them to it. Each choice has an effect from EFFECT IDS and an "on", which is "main" for the first of the owner's women in THE PEOPLE, "other" for the second if there is one, or "both". The effects that are about the two of them together land on both whatever "on" says.
 
 ${HOUSE_STYLE}
 
 Output ONE strict JSON object and nothing else:
-{"title":"2-5 words","situation":"...","options":[{"label":"what you do, 2-9 words","note":"a few plain words for the player, like \\"she won't forget it\\"; never the effect's description","effect":"effect id","on":"main","value":"optional"}],"hook":"what this leaves open for later, or empty","cast":[{"name":"...","pronoun":"she or he","what":"who they are, a few words","to_her":"what they are to her, a few words"}]}`;
+{"title":"2-5 words","situation":"...","options":[{"label":"what you do, 2-9 words","note":"a few plain words for the player, like \\"she won't forget it\\", and never the effect's description","effect":"effect id","on":"main","value":"optional"}],"hook":"what this leaves open for later, or empty","cast":[{"name":"...","pronoun":"she or he","what":"who they are, a few words","to_her":"what they are to her, a few words"}]}`;
 
 /** What may happen between two of your own women, by the house rules. */
 function betweenThem(s: SaveState): string {
-  if (!sexBetween(s)) return "Nothing sexual happens between these two: the house rules keep it to everything else (a quarrel, a favour, a rivalry, a friendship, a theft, a secret).";
-  if (!forcedAllowed(s)) return "It can be sexual between them (two of the girls fucking in the showers, one teaching the other how to suck cock, a crush turning into her mouth between the other's legs), always with both of them willing: no slave forces another.";
+  if (!sexBetween(s)) return "Nothing sexual happens between these two, because the house rules keep it to everything else, like a quarrel, a favour, a rivalry, a friendship, a theft or a secret.";
+  if (!forcedAllowed(s)) return "It can be sexual between them (two of the girls fucking in the showers, one teaching the other how to suck cock, a crush turning into her mouth between the other's legs), always with both of them willing, because no slave forces another.";
   return "It can be sexual between them (two of the girls fucking in the showers, one teaching the other how to suck cock, a crush turning into her mouth between the other's legs), and the house rules let one take the other whether she wants it or not.";
 }
 

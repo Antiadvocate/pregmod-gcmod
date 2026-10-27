@@ -100,7 +100,7 @@ They've been on the same shift since week ${Math.max(1, c.s.arcology.week - c.we
         options: [
           { id: "split", label: "Put them on different rotas", note: "they'll both know why" },
           { id: "sit", label: "Pull out a chair and sit down with them", note: "ask what's going on" },
-          { id: "buy", label: "Give one of them something", note: "cheap; the other one watches" },
+          { id: "buy", label: "Give one of them something", note: "cheap, but the other one watches" },
           { id: "leave", label: "Take your coffee and go", note: "they'll keep plotting" },
         ],
       },
@@ -153,7 +153,7 @@ She's been here longer than ${c.who.risen}. She was better at the work, and she 
         at: 74,
         line: (c) => `${c.who.a} asked you for a favor for ${c.who.b}'s sake.`,
         title: "Lovers",
-        text: (c) => `${c.who.a} asks to be put on the same rota as ${c.who.b}. She's clearly practiced her excuse: the laundry runs faster with two girls who know the machines, and ${c.who.b} knows the machines.
+        text: (c) => `${c.who.a} asks to be put on the same rota as ${c.who.b}. She's clearly practiced her excuse. The laundry runs faster with two girls who know the machines, and ${c.who.b} knows the machines.
 
 She's nervous. Yesterday you caught the two of them holding each other on the service stairs.
 
@@ -338,10 +338,10 @@ She wants a room with a window and one day off a week. She's sure she's earned i
   {
     kind: "rivals",
     name: "Two slaves who hate each other",
-    blurb: "Two of your slaves can't stand each other, and they're both after the same thing: you.",
+    blurb: "Two of your slaves can't stand each other, and they're both after the same thing, which is you.",
     build: 11, cool: 12, roles: ["a", "b"],
     beats: [
-      { at: 20, line: (c) => `${c.who.a} and ${c.who.b} have started sabotaging each other's work in small ways: a ruined dress, a message that never got passed on.` },
+      { at: 20, line: (c) => `${c.who.a} and ${c.who.b} have started sabotaging each other's work in small ways, with a ruined dress and a message that never got passed on.` },
       { at: 45, line: (c) => `${c.who.a} and ${c.who.b} had a screaming fight in the kitchen this week. ${c.who.b} has a scratch down her cheek.` },
       {
         at: 70,
@@ -402,18 +402,18 @@ ${c.who.guard} came in with her without being called. "I'll take it," she says, 
               applyTreatmentLite(s, g, "coercion", 3, `took ${w.name}'s punishment`, week); applyTreatmentLite(s, g, "recognition", 5, "you let her protect the new girl", week);
               applyTreatmentLite(s, w, "kindness", 5, `${g.name} took her punishment for her`, week); w.bond.fear = Math.max(0, w.bond.fear - 10);
               roles(s, g.id, w.id, "protects her", "protected by her"); warm(s, w.id, g.id, 25);
-              return { line: `You let ${nm("guard")} take it: ten strokes, bent over your desk, with ${nm("ward")} made to watch. ${nm("guard")} doesn't make a sound until the last one.\n\n${nm("ward")} helps her walk back downstairs. From then on, she'd walk into fire for her.`, closes: true, cool: 80 }; } },
+              return { line: `You let ${nm("guard")} take it. It's ten strokes, bent over your desk, with ${nm("ward")} made to watch. ${nm("guard")} doesn't make a sound until the last one.\n\n${nm("ward")} helps her walk back downstairs. From then on, she'd walk into fire for her.`, closes: true, cool: 80 }; } },
           { id: "refuse", label: "Punish the one who broke it", note: "and make the other one watch",
             run: ({ s, P, week }) => { const g = P("guard"), w = P("ward"); if (!g || !w) return { line: "" };
               applyTreatmentLite(s, w, "cruelty", 6, "punished while her protector was made to watch", week); applyTreatmentLite(s, g, "cruelty", 4, "made to watch the girl she protects punished", week);
               return { line: `You tell ${g.name} to stand by the wall, and you punish ${w.name} yourself. ${g.name} watches all of it with her jaw set.\n\nThat night ${w.name} is back in ${g.name}'s bunk. ${g.name} lies awake long after she's asleep.`, cool: 30 }; } },
-          { id: "train", label: "Make it official: the new girl is hers to train", note: "the new girl learns faster",
+          { id: "train", label: "Make it official, so the new girl is hers to train", note: "the new girl learns faster",
             run: ({ s, P, week }) => { const g = P("guard"), w = P("ward"); if (!g || !w) return { line: "" };
               applyTreatmentLite(s, g, "recognition", 7, "given the new girl to train", week); applyTreatmentLite(s, w, "kindness", 3, "given to the one who looks after her", week);
               for (const k of ["oral", "entertainment"] as const) w.skills[k] = Math.min(100, w.skills[k] + 5);
               roles(s, g.id, w.id, "her trainer", "her student");
-              return { line: `You tell ${g.name} the decanter comes out of her allowance, and ${w.name} is hers now: hers to train, hers to answer for. ${g.name} looks at you for a long moment, and then nods.\n\n${w.name} starts learning faster almost at once.`, closes: true, cool: 75 }; } },
-          { id: "split", label: "Split them up; she's getting soft", note: "both of them will hate it",
+              return { line: `You tell ${g.name} the decanter comes out of her allowance, and ${w.name} is hers now, hers to train and hers to answer for. ${g.name} looks at you for a long moment, and then nods.\n\n${w.name} starts learning faster almost at once.`, closes: true, cool: 75 }; } },
+          { id: "split", label: "Split them up, because she's getting soft", note: "both of them will hate it",
             run: ({ s, P, week }) => { const g = P("guard"), w = P("ward"); if (!g || !w) return { line: "" };
               w.facility = undefined; applyTreatmentLite(s, w, "cruelty", 5, `taken away from ${g.name}`, week); applyTreatmentLite(s, g, "cruelty", 5, `the girl she looked after was taken away`, week);
               return { line: `You move ${w.name} to the other side of the arcology. ${g.name} doesn't say anything when she hears. She just stops talking to anyone for three days.`, closes: true, cool: 90 }; } },
@@ -453,7 +453,7 @@ ${c.who.bully} makes her kneel and hold a tray of full glasses above her head fo
             run: ({ s, P, week }) => { const b = P("bully"), t = P("target"); if (!b || !t) return { line: "" };
               applyTreatmentLite(s, t, "cruelty", 8, `given to ${b.name} as her personal slave`, week); applyTreatmentLite(s, b, "recognition", 5, "given a slave of her own", week);
               t.bond.fear = Math.min(100, t.bond.fear + 15); roles(s, b.id, t.id, "owns her", "belongs to her");
-              return { line: `You call ${b.name} up and tell her ${t.name} is hers now: her maid, her footstool, whatever she wants. ${b.name} smiles. ${t.name} doesn't make a sound.`, closes: true, cool: 70 }; } },
+              return { line: `You call ${b.name} up and tell her ${t.name} is hers now, as her maid, her footstool, or whatever she wants. ${b.name} smiles. ${t.name} doesn't make a sound.`, closes: true, cool: 70 }; } },
           { id: "turn", label: "Let the target have one night with the bully tied up", note: "turn it around",
             run: ({ s, P, week }) => { const b = P("bully"), t = P("target"); if (!b || !t) return { line: "" };
               applyTreatmentLite(s, t, "recognition", 6, `given a night with ${b.name} tied up`, week); applyTreatmentLite(s, b, "cruelty", 6, `given to ${t.name} for a night, tied up`, week);

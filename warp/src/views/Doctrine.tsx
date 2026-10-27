@@ -82,7 +82,7 @@ export default function Doctrine() {
             })}
           </div>
         ) : (
-          <Card><div className="text-[13px] mid">No doctrine adopted. Up to four; conflicting ones cannot coexist.</div></Card>
+          <Card><div className="text-[13px] mid">No doctrine adopted. You can have up to four, but conflicting ones cannot coexist.</div></Card>
         )}
       </Section>
 

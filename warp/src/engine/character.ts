@@ -103,11 +103,11 @@ export function characterLines(p: Person): string[] {
   const b = p.persona.behavior;
   const flaw = b?.flaw ? BEHAVIOR_FLAW_BY_ID[b.flaw] : undefined;
   const quirk = b?.quirk ? BEHAVIOR_QUIRK_BY_ID[b.quirk] : undefined;
-  if (flaw) out.push(`HER FLAW (${flaw.id}): ${flaw.note} When she's told what to do, ${flaw.friction}. Being fond of the owner doesn't fix it; only being made to answer for it, again and again, wears it down.`);
+  if (flaw) out.push(`HER FLAW, ${flaw.id}. ${flaw.note} When she's told what to do, ${flaw.friction}. Being fond of the owner doesn't fix it. Only being made to answer for it, again and again, wears it down.`);
   // One written in by hand (the editor, or a model) isn't in the table: it's shown as written.
   else if (b?.flaw) out.push(`HER FLAW: ${b.flaw}. It shows whenever it can, and being fond of the owner doesn't fix it.`);
   if (quirk) out.push(`HER WAY (${quirk.id}): ${quirk.note}`);
   else if (b?.quirk) out.push(`HER WAY: ${b.quirk}.`);
-  if (p.persona.talents?.length) out.push(`WHAT SHE'S GOOD AT, BESIDES SEX: ${p.persona.talents.join("; ")}.`);
+  if (p.persona.talents?.length) out.push(`WHAT SHE'S GOOD AT, BESIDES SEX: ${p.persona.talents.join(", ")}.`);
   return out;
 }

@@ -279,7 +279,7 @@ export function takenBy(s: SaveState, p: Person): string[] {
   const out: string[] = [];
   if (p.body.vagina !== null) {
     if (p.body.hymen) { p.body.hymen = false; c.firsts.push("her virginity"); out.push(`${b.short} took her virginity.`); }
-    if (p.body.vagina < Math.min(6, b.dick - 1)) { p.body.vagina = Math.min(10, p.body.vagina + 1); out.push(`His cock stretched her pussy; she's looser for the owner now.`); }
+    if (p.body.vagina < Math.min(6, b.dick - 1)) { p.body.vagina = Math.min(10, p.body.vagina + 1); out.push(`His cock stretched her pussy, and she's looser for the owner now.`); }
   } else {
     if (p.body.anus === 0) { c.firsts.push("her ass"); out.push(`${b.short} took her anal virginity.`); }
     if (p.body.anus < Math.min(3, b.dick - 3)) { p.body.anus = Math.min(4, p.body.anus + 1); out.push(`His cock stretched her ass.`); }
@@ -326,20 +326,20 @@ const firstTime = (x: Ctx) => x.c.phase === "tease" && (x.c.in_phase >= 1 || x.c
 const canBreed = (x: Ctx) => hasWomb(x.p) && !x.c.breeding && !x.p.womb.fetuses.length && x.c.fall >= 45;
 
 export const MOVES: Move[] = [
-  { id: "pick", phases: ["choose"], does: "the owner picks this man; he's the one from now on",
+  { id: "pick", phases: ["choose"], does: "the owner picks this man, and he's the one from now on",
     run: (x, ch) => {
       x.c.bull = bullFrom(x.s, ch.man!);
       return { phase: "tease", facts: [`The owner chose ${x.c.bull.name}.`], shift: { fall: 4, yielded: 5, arousal: x.c.motive === "for_her" ? 15 : 5 } };
     } },
-  { id: "never", phases: ["choose"], does: "the owner takes it back; it never happens", must: () => true,
+  { id: "never", phases: ["choose"], does: "the owner takes it back, and it never happens", must: () => true,
     run: () => ({ end: "called_off", facts: ["The owner called it off before it began."] }) },
   { id: "push", phases: ["tease", "affair"], does: "the owner pushes her further toward him than she's gone so far",
     run: (x) => ({ facts: x.c.phase === "affair" ? ["She spent the night with him."] : [], shift: { fall: 11, yielded: 8, pull: -5, arousal: 25, night: x.c.phase === "affair" } }) },
   { id: "watch", phases: ["tease", "affair"], does: "the owner lets it happen and watches, or listens, saying nothing",
     run: (x) => ({ facts: x.c.phase === "affair" ? ["She spent the night with him."] : [], shift: { fall: 7, yielded: 7, arousal: 15, night: x.c.phase === "affair" } }) },
-  { id: "hold", phases: ["tease", "affair"], does: "the owner pulls her back toward them a little: claims her, refuses him something, or is tender with her",
+  { id: "hold", phases: ["tease", "affair"], does: "the owner pulls her back toward them a little, by claiming her, refusing him something, or being tender with her",
     run: (x) => ({ facts: [], shift: { pull: M(x, 6, 2, 1), fall: -2, her: x.c.motive === "for_you" ? "kindness" : x.c.motive === "for_her" ? "neglect" : undefined, size: 2 } }) },
-  { id: "stop", phases: ["tease"], does: "the owner ends it before he's had her; she stays only the owner's", must: () => true,
+  { id: "stop", phases: ["tease"], does: "the owner ends it before he's had her, and she stays only the owner's", must: () => true,
     run: (x) => ({ end: "called_off", facts: ["The owner ended it before the other man had her."], shift: { pull: 6, her: x.c.motive === "for_her" ? "neglect" : "kindness", size: 2 } }) },
   { id: "first", phases: ["tease"], does: "he fucks her for the first time, with the owner watching or knowing", when: firstTime, must: (x) => x.c.in_phase >= 3,
     run: (x) => {
@@ -353,18 +353,18 @@ export const MOVES: Move[] = [
     run: (x) => ({ facts: ["The owner cleaned the other man's cum out of her with their mouth."], shift: { fall: 8, yielded: 18, arousal: 25, pull: x.c.motive === "for_you" ? 2 : -6,
       memory: { text: `The owner licked ${x.c.bull!.short}'s cum out of ${x.first}`, importance: 8, charge: x.c.motive === "spite" ? "bright" : "sharp", core: true } } }) },
   { id: "cage", phases: ["affair"], does: "the owner locks their own cock in a chastity cage and gives the other man the key", when: (x) => hasCock(x.s) && !x.c.caged && x.c.yielded >= 30,
-    run: (x) => { x.c.caged = true; return { facts: [`The owner is locked in a cage; ${x.c.bull!.short} has the key.`], shift: { fall: 10, yielded: 22, pull: -10, arousal: 20, night: true,
+    run: (x) => { x.c.caged = true; return { facts: [`The owner is locked in a cage, and ${x.c.bull!.short} has the key.`], shift: { fall: 10, yielded: 22, pull: -10, arousal: 20, night: true,
       memory: { text: `The owner gave ${x.c.bull!.short} the key to the owner's cage`, importance: 9, charge: x.c.motive === "for_you" ? "sharp" : "bright", core: true } } }; } },
   { id: "punish", phases: ["affair"], does: "the owner punishes her for what she's becoming",
     run: (x) => ({ facts: ["The owner punished her. She went to the other man afterwards."], shift: { pull: M(x, -5, -10, -15), fall: M(x, 5, 5, 10), her: "cruelty", size: 4, night: true } }) },
   { id: "breed_yes", phases: ["affair"], does: "the owner lets him try to get her pregnant", when: canBreed,
     run: (x) => { x.c.breeding = "yes"; x.p.womb.contraceptives = false; const took = seed(x.s, x.p, 6);
-      return { facts: [took ? "He bred her, and she is pregnant with his child." : "He's trying to breed her; it hasn't taken yet."], shift: { fall: 12, yielded: 14, pull: -10, night: true, her: x.c.motive === "for_her" ? "recognition" : undefined, size: 4 } }; } },
+      return { facts: [took ? "He bred her, and she is pregnant with his child." : "He's trying to breed her, but it hasn't taken yet."], shift: { fall: 12, yielded: 14, pull: -10, night: true, her: x.c.motive === "for_her" ? "recognition" : undefined, size: 4 } }; } },
   { id: "breed_hers", phases: ["affair"], does: "the owner leaves it to her whether he gets her pregnant", when: canBreed,
     run: (x) => { x.c.breeding = "hers"; return { facts: ["Whether he breeds her is up to her now."], shift: { fall: 6, yielded: 8 } }; } },
   { id: "breed_no", phases: ["affair"], does: "the owner forbids it and puts her on contraceptives", when: canBreed,
     run: (x) => { x.c.breeding = "no"; x.p.womb.contraceptives = true; return { facts: ["She's on contraceptives, by the owner's order."], shift: { pull: M(x, 5, -8, -4), her: x.c.motive === "for_you" ? undefined : "promise_broken", size: 2 } }; } },
-  { id: "sell", phases: ["offer"], does: "the owner sells her papers to him; she leaves with him", must: () => true,
+  { id: "sell", phases: ["offer"], does: "the owner sells her papers to him, and she leaves with him", must: () => true,
     run: (x) => {
       const price = offerPrice(x.s, x.p);
       const before = x.s.arcology.cash;
@@ -373,17 +373,17 @@ export const MOVES: Move[] = [
       x.p.exit_note = `sold to ${x.c.bull!.name} for ¤${price.toLocaleString()}`;
       return { end: "sold", facts: [`The owner sold her to ${x.c.bull!.name} for ¤${price.toLocaleString()}. She leaves with him.`] };
     } },
-  { id: "share", phases: ["offer"], does: "the owner keeps her and she keeps seeing him; nothing changes", must: () => true,
+  { id: "share", phases: ["offer"], does: "the owner keeps her and she keeps seeing him, so nothing changes", must: () => true,
     run: () => ({ end: "shared", facts: ["She stays the owner's on paper and keeps spending her nights with him."], shift: { yielded: 8 } }) },
   { id: "his", phases: ["offer"], does: "the owner gives her to him in everything but the papers, and serves the two of them", when: (x) => x.c.yielded >= 50, must: (x) => x.c.yielded >= 50,
-    run: (x) => ({ end: "his", facts: [`She's ${x.c.bull!.short}'s now in all but the papers. He moves in next to the owner's rooms; the owner serves them.`],
+    run: (x) => ({ end: "his", facts: [`She's ${x.c.bull!.short}'s now in all but the papers. He moves in next to the owner's rooms, and the owner serves them.`],
       shift: { yielded: 20, fall: 15, pull: -15, her: x.c.motive === "spite" ? "recognition" : undefined, size: 5,
         memory: { text: `The owner gave ${x.first} to ${x.c.bull!.short} in all but name, and serves the two of them`, importance: 10, charge: "bright", core: true } } }) },
   { id: "reclaim", phases: ["offer"], does: "the owner takes her back and ends it (whether she's still the owner's to take back is up to her)", must: () => true,
     run: (x) => x.c.pull >= 0
-      ? { end: "reclaimed", facts: ["The owner took her back, and she came: she chose the owner over him."], shift: { pull: 15, her: x.c.motive === "for_you" ? "promise_kept" : "kindness", size: 5,
+      ? { end: "reclaimed", facts: ["The owner took her back, and she came. She chose the owner over him."], shift: { pull: 15, her: x.c.motive === "for_you" ? "promise_kept" : "kindness", size: 5,
         memory: { text: `The owner took ${x.first} back from ${x.c.bull!.short}`, importance: 9, charge: "warm", core: true } } }
-      : { end: "lost", facts: ["The owner took her back, but too late: she obeys and goes back to the owner's bed, and her heart stays with the other man for good."], shift: { her: "promise_broken", size: 4, pull: -10,
+      : { end: "lost", facts: ["The owner took her back, but too late. She obeys and goes back to the owner's bed, and her heart stays with the other man for good."], shift: { her: "promise_broken", size: 4, pull: -10,
         memory: { text: `The owner took ${x.first} away from ${x.c.bull!.short} after she'd already given herself to him`, importance: 9, charge: "cold", core: true } } } },
 ];
 export const MOVE_BY_ID: Record<string, Move> = Object.fromEntries(MOVES.map((m) => [m.id, m]));

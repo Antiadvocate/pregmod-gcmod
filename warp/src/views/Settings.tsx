@@ -1,7 +1,8 @@
 /** SETTINGS — models, saves, and the two dials that change how the world behaves. */
+import { setLayout, setNav, useLayout } from "../lib/layout";
 import { useEffect, useState } from "react";
 import { useGame } from "../lib/game";
-import { Button, Card, Chip, Field, Section } from "../lib/ui";
+import { Button, Card, Chip, Field, Section, cx } from "../lib/ui";
 import { getThinking, setThinking, type Thinking, getApiKey, setApiKey, getLocalEndpoint, setLocalEndpoint, modelsAvailable, getLocalImage, setLocalImage, LOCAL_IMAGE_DEFAULTS, type LocalImageEndpoint } from "../config";
 import { generateLocalImage, KONTEXT_WORKFLOW, listLocalCheckpoints, WORKFLOW_TOKENS } from "../lib/diffusion";
 import { dynamicReadiness } from "../engine/dynamic";
@@ -31,6 +32,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
   useEffect(() => { void loadModels(); }, []);
   const [local, setLocal] = useState(getLocalEndpoint()?.url ?? "");
   const [theme, setTheme] = useState(document.documentElement.dataset.theme ?? "brass");
+  const { layout, nav } = useLayout();
   const [img, setImg] = useState<LocalImageEndpoint>(getLocalImage() ?? { url: "", backend: "comfy" });
   const [testing, setTesting] = useState("");
   const [testImg, setTestImg] = useState<string | null>(null);
@@ -75,7 +77,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
               </Field>
             ))}
           </div>
-          <Field label="City feed — the cheap model that writes the posts" hint="Short posts only, a few at a time; the narrator writes the full story when you open one. Blank uses the bookkeeper.">
+          <Field label="City feed — the cheap model that writes the posts" hint="Short posts only, a few at a time, and the narrator writes the full story when you open one. Blank uses the bookkeeper.">
             <ModelPicker value={save.models.feed_model ?? ""} models={models} onChange={(id) => mutate((s) => { s.models.feed_model = id; })} />
           </Field>
           <Field label="How often the city posts" hint="While the game is open and in front of you. Each batch is one small call.">
@@ -85,12 +87,12 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
               ))}
             </div>
           </Field>
-          <Field label="Lean mode" hint="Only call the model when you ask for something: no automatic week summary and no automatic assistant brief (she gets a button instead). Scenes, conversations and events still use the model when you play them.">
+          <Field label="Lean mode" hint="Only call the model when you ask for something. There's no automatic week summary and no automatic assistant brief (she gets a button instead). Scenes, conversations and events still use the model when you play them.">
             <div className="flex gap-1.5">
               <Chip on={!!save.models.lean_mode} onClick={() => mutate((s) => { s.models.lean_mode = true; })}>On</Chip>
               <Chip on={!save.models.lean_mode} onClick={() => mutate((s) => { s.models.lean_mode = false; })}>Off</Chip>
             </div>
-            <div className="text-[12px] dim mt-3 mb-1">Business, money and politics as events: loans, suppliers, share raids, envoys and summits, strikes, festivals, citizens' meetings. Attacks and wars still come whatever this says.</div>
+            <div className="text-[12px] dim mt-3 mb-1">Business, money and politics as events, like loans, suppliers, share raids, envoys and summits, strikes, festivals, citizens' meetings. Attacks and wars still come whatever this says.</div>
             <div className="flex gap-1.5">
               {(["off", "some", "on"] as const).map((k) => <Chip key={k} on={(save.business_events ?? "off") === k} onClick={() => mutate((s) => { s.business_events = k; })}>{{ off: "None of it", some: "One a month", on: "All of it" }[k]}</Chip>)}
             </div>
@@ -104,7 +106,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
               <Chip on={save.models.write_outcomes === false} onClick={() => mutate((s) => { s.models.write_outcomes = false; })}>Just apply it</Chip>
             </div>
           </Field>
-          <Field label="Thinking" hint="Reasoning models (and many flash models) think before they write, which can take a long time. Off asks them not to; if a model refuses the switch, the call is sent again without it.">
+          <Field label="Thinking" hint="Reasoning models (and many flash models) think before they write, which can take a long time. Off asks them not to, and if a model refuses the switch, the call is sent again without it.">
             <div className="flex gap-1.5">
               {([["off", "Off — fastest"], ["low", "A little"], ["model", "Model's default"]] as [Thinking, string][]).map(([v, label]) => (
                 <Chip key={v} on={thinking === v} onClick={() => { setThinking(v); setThinkingState(v); }}>{label}</Chip>
@@ -126,7 +128,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
         <Card>
           <div className="text-[11.5px] dim mb-3">
             Point this at ComfyUI or an A1111-style WebUI on your own machine to generate a portrait for each slave
-            (kept consistent across the game) and a picture after every scene. It has to be local: hosted image APIs
+            (kept consistent across the game) and a picture after every scene. It has to be local, because hosted image APIs
             refuse most of this game's content and charge per image.
           </div>
           <div className="grid sm:grid-cols-3 gap-3">
@@ -193,7 +195,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
             The scenes, the generated events and the wording of what she asks for all go through the narrator slot.
             This game asks for explicit material, and hosted models often refuse it or tone it down.
             Put a local model behind the narrator — KoboldCpp, llama-server, LM Studio, Ollama — and prefix the id
-            with <span className="font-mono">local/</span>. The bookkeeper can stay hosted; it only outputs JSON,
+            with <span className="font-mono">local/</span>. The bookkeeper can stay hosted, because it only outputs JSON,
             which small local models are bad at.
           </div>
         </Card>
@@ -224,6 +226,25 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
           <Field label={`Scene history kept in context — ${save.models.history_window} turns`} hint="How many recent turns the narrator sees for continuity. Lower is cheaper.">
             <input type="range" min={2} max={12} value={save.models.history_window} onChange={(e) => mutate((s) => { s.models.history_window = Number(e.target.value); })} />
           </Field>
+        </Card>
+      </Section>
+
+      <Section title="Layout">
+        <Card>
+          <div className="text-[12px] mid mb-1.5">How screens are laid out</div>
+          <div className="segmented mb-1.5">
+            {([["columns", "Side by side"], ["strip", "Scroll sideways"], ["stack", "One column"]] as const).map(([k, label]) => (
+              <button key={k} className={cx("seg", layout === k && "on")} onClick={() => setLayout(k)}>{label}</button>
+            ))}
+          </div>
+          <div className="text-[11px] dim mb-3">{layout === "columns" ? "Cards flow into as many columns as the window has room for." : layout === "strip" ? "The screen flows into columns down the height of the window and scrolls sideways, like a broadsheet. The mouse wheel scrolls it, and there are arrows at the edges." : "The old single column, scrolling down."}</div>
+          <div className="text-[12px] mid mb-1.5">Getting around, on a wider screen</div>
+          <div className="segmented mb-1.5">
+            {([["top", "Across the top"], ["rail", "Down the side"]] as const).map(([k, label]) => (
+              <button key={k} className={cx("seg", nav === k && "on")} onClick={() => setNav(k)}>{label}</button>
+            ))}
+          </div>
+          <div className="text-[11px] dim">On a phone the tab bar stays at the bottom either way.</div>
         </Card>
       </Section>
 

@@ -35,17 +35,17 @@ export const canWrite = (s: SaveState) => modelsAvailable() && !s.models.lean_mo
 const MOTIVE: Record<Motive, string> = {
   for_you: "She is doing this FOR THE OWNER. She loves them, or near enough, and they asked. Every step costs her something, and the sting is watching her find out she likes what it costs.",
   for_her: "She is doing this FOR HERSELF. She wanted a man like him and the owner gave her leave. She tries to be kind to the owner about it, which is worse than if she weren't.",
-  spite: "She is doing this TO HURT THE OWNER. She has resented them for a while and they handed her the knife. Polite on the surface, and she enjoys every inch of it.",
+  spite: "She is doing this TO HURT THE OWNER. She has resented them for a while, and they handed her the knife. She's polite on the surface, and she enjoys every inch of it.",
 };
 
 function howFar(s: SaveState, c: CuckState): string {
   const fall = c.fall < 20 ? "She's barely started with him." : c.fall < 45 ? "She's starting to want him." : c.fall < 70 ? "She goes to him gladly and thinks about him when she's with the owner." : "In her body and her habits she's his.";
   const pull = c.pull > 40 ? "Her heart is still the owner's." : c.pull > 0 ? "She's still more the owner's than his, just." : c.pull > -40 ? "She's more his than the owner's now, and both of them know it." : "She's his. The owner is someone she lives with.";
-  const you = c.yielded < 20 ? "The owner arranged this and still thinks of it as arranging." : c.yielded < 50 ? "The owner has started watching, and getting off on it." : c.yielded < 80 ? "The owner has taken the role: the one who waits, watches, cleans up." : "The owner is all the way in, and knows what they are.";
+  const you = c.yielded < 20 ? "The owner arranged this and still thinks of it as arranging." : c.yielded < 50 ? "The owner has started watching, and getting off on it." : c.yielded < 80 ? "The owner has taken the role of the one who waits, watches, and cleans up." : "The owner is all the way in, and knows what they are.";
   const extra = [
     c.nights ? `She has spent ${c.nights} night${c.nights === 1 ? "" : "s"} with him.` : "",
     c.firsts.length ? `He took ${c.firsts.join(" and ")}.` : "",
-    c.caged ? "The owner is locked in a chastity cage; he has the key." : "",
+    c.caged ? "The owner is locked in a chastity cage, and he has the key." : "",
     c.breeding === "yes" ? "The owner has let him try to breed her." : c.breeding === "hers" ? "Whether he breeds her is up to her." : c.breeding === "no" ? "She's on contraceptives by the owner's order." : "",
   ];
   const p = herOf(s);
@@ -57,13 +57,13 @@ function himBrief(s: SaveState, c: CuckState): string {
   const b = c.bull;
   if (!b) return "";
   const yours = hasCock(s) ? `the owner's is ${dickWord(yourDick(s))}` : "the owner has no cock";
-  return `## HIM (keep him exactly this man)\n${b.name}, ${b.age}. ${b.who}\nHow he is: ${b.manner}\nHe has ${bullDickWords(b)}; ${yours}.`;
+  return `## HIM\nKeep him exactly this man.\n${b.name}, ${b.age}. ${b.who}\nThis is how he is: ${b.manner}\nHe has ${bullDickWords(b)}, and ${yours}.`;
 }
 
 function ownerVoice(c: CuckState): string {
   const said = c.log.map((l) => `${l.own ? "(typed it themselves) " : ""}"${l.chose}"`);
   return said.length
-    ? `## WHAT THE OWNER HAS SAID AND DONE SO FAR (this is their voice: the choices you write must sound like this person, and the ones they typed themselves count most)\n${said.join("\n")}`
+    ? `## WHAT THE OWNER HAS SAID AND DONE SO FAR\nThis is their voice. The choices you write must sound like this person, and the ones they typed themselves count most.\n${said.join("\n")}`
     : "";
 }
 
@@ -74,35 +74,35 @@ function soFar(c: CuckState, skipLast = false): string {
     const full = i >= log.length - 2;
     return full
       ? `### Week ${l.week}, ${l.title}\n${l.scene.slice(0, 2400)}\nTHE OWNER: ${l.chose}\n${l.text.slice(0, 2400)}`
-      : `· Week ${l.week}, ${l.title}: the owner: "${l.chose}". ${l.facts.join(" ")} ${l.text.slice(0, 300).replace(/\n+/g, " ")}…`;
+      : `· Week ${l.week}, ${l.title}. The owner said or did this: "${l.chose}". ${l.facts.join(" ")} ${l.text.slice(0, 300).replace(/\n+/g, " ")}…`;
   });
-  return `## THE STORY SO FAR (build on it; people remember; never repeat a situation, a line or a beat from it)\n${lines.join("\n\n")}`;
+  return `## THE STORY SO FAR\nBuild on it, because people remember. Never repeat a situation, a line or a moment from it.\n${lines.join("\n\n")}`;
 }
 
 /** What this chapter is for. Direction, not prose: the model writes all of it. */
 function direction(s: SaveState, c: CuckState, must: Move[]): string {
   const p = herOf(s)!;
   switch (c.phase) {
-    case "choose": return `This is the first chapter. The owner tells ${p.name} what they want: another man, chosen by the owner, to have her while the owner watches or waits, and she tells the owner about it after. Write her hearing it and answering out of who she is. The owner has three men in mind: invent THREE, each a different kind of man who would want her and would plausibly be in this arcology, each a real person with a name, an age, who he is and how he talks. Offer each as a "pick" choice with the man filled in, plus a "never" choice.`;
-    case "tease": return `He hasn't had her yet. This is chapter ${c.in_phase + 1} before he does. Each chapter goes a step further than the last: meeting him, being looked at, touched, kissed, his hands on her with the owner there, her wanting it. No sex happens in the scene itself.${must.some((m) => m.id === "first") ? " This chapter builds to the night he takes her: the \"first\" choice must be there." : ""}`;
-    case "affair": return `He's having her now, on her own nights between chapters. This is chapter ${c.in_phase + 1} of the affair. Each chapter is a new turn of the screw, picked to fit how far it has gone and what hasn't happened yet in the story so far: she comes home from him, she compares, he calls while he's in her, she says his name in the owner's bed, he takes her in the owner's own bed, he wants to breed her, she starts dressing for him, she stops needing the owner. Never repeat a situation.`;
+    case "choose": return `This is the first chapter. The owner tells ${p.name} what they want, which is for another man, chosen by the owner, to have her while the owner watches or waits, and for her to tell the owner about it afterwards. Write her hearing it and answering out of who she is. The owner has three men in mind. Invent THREE, each a different kind of man who would want her and would plausibly be in this arcology, and each a real person with a name, an age, a sense of who he is, and a way of talking. Offer each as a "pick" choice with the man filled in, plus a "never" choice.`;
+    case "tease": return `He hasn't had her yet. This is chapter ${c.in_phase + 1} before he does. Each chapter goes a step further than the last, through meeting him, being looked at, being touched, being kissed, his hands on her with the owner there, and her wanting it. No sex happens in the scene itself.${must.some((m) => m.id === "first") ? " This chapter builds to the night he takes her, so the \"first\" choice must be there." : ""}`;
+    case "affair": return `He's having her now, on her own nights between chapters. This is chapter ${c.in_phase + 1} of the affair. Each chapter is a new turn of the screw, picked to fit how far it has gone and what hasn't happened yet in the story so far. She might come home from him, or compare them, or he might call while he's inside her, or she might say his name in the owner's bed. He might take her in the owner's own bed, or want to breed her, or she might start dressing for him, or stop needing the owner. Never repeat a situation.`;
     case "offer": return `This is the LAST chapter. He wants her for good. He offers ¤${offerPrice(s, p).toLocaleString()} for her papers, or to keep her as his without them. Write the scene where it gets decided, with her in it showing where she stands. The choices are the endings.`;
   }
 }
 
 const CHAPTER_SYSTEM = `You write a netorare (NTR, cuckold) story inside Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. The player is the owner, written as "you". They have chosen to give one of their slave women to another man, a little more every week, and watch her go. This is the owner's own taste and they asked for it.
 
-Write it the way the best NTR stories are written: slow, specific and humiliating. The sting is in the small things: the comparisons, her eyes going to him and not coming back, what she says and what she stops saying, the owner noticing every one. He's confident and enjoys it. She still speaks to the owner the way THE POWER BETWEEN YOU on her card says: unless it gives her latitude, the humiliation comes through what she does, what she tells and what she stops saying, said by title and as a slave ("He's bigger than you, Master. I'm sorry."), never by her dropping her place. She changes a little each chapter, in her own way, out of her own personality: her voice, her past, her body, what she's into, her memories. Nothing she says could be said by a different woman. Explicit, in plain crude words, when there's sex.
+Write it the way the best NTR stories are written, slowly, specifically and humiliatingly. The sting is in the small things, like the comparisons, her eyes going to him and not coming back, what she says and what she stops saying, and the owner noticing every one of them. He's confident and he enjoys it. She still speaks to the owner the way THE POWER BETWEEN YOU on her card says. Unless that gives her latitude, the humiliation comes through what she does, what she tells and what she stops saying, said by title and as a slave ("He's bigger than you, Master. I'm sorry."), and never through her dropping her place. She changes a little each chapter, in her own way and out of her own personality, through her voice, her past, her body, what she's into and her memories. Nothing she says could be said by a different woman. When there's sex, write it explicitly in plain crude words.
 
-You write the chapter and the owner's choices. THE CHOICES ARE THE OWNER SPEAKING OR ACTING: each label is the actual thing the owner says out loud or does, in the owner's own voice and character, the way this particular person would say it (their self-description, their body, how they've answered so far). Not menu text, not generic, not what any owner would say. 4 to 25 words each. Each choice is tagged with one move from MOVES THAT CAN BE OFFERED; the move is what will happen, so the words must match it. Offer three to five choices, every move under MUST BE OFFERED among them, and the rest whichever moves fit the scene best (moves can repeat with different words).
+You write the chapter and the owner's choices. THE CHOICES ARE THE OWNER SPEAKING OR ACTING. Each label is the actual thing the owner says out loud or does, in the owner's own voice and character, the way this particular person would say it, going by their self-description, their body and how they've answered so far. It isn't menu text, it isn't generic, and it isn't something any owner would say. Each one is 4 to 25 words long. Each choice is tagged with one move from MOVES THAT CAN BE OFFERED, and the move is what will happen, so the words must match it. Offer three to five choices, with every move under MUST BE OFFERED among them, and make the rest whichever moves fit the scene best. Moves can repeat with different words.
 
-Rules: second person, present tense, four to seven paragraphs. Stop at the moment of choice; never decide what the owner does or feels at the end. Never invent another named person apart from the men in a "pick". Continue THE STORY SO FAR.
+Write in the second person and the present tense, in four to seven paragraphs. Stop at the moment of choice, and never decide what the owner does or feels at the end. Never invent another named person apart from the men in a "pick". Continue THE STORY SO FAR.
 
 ${HOUSE_STYLE}
 
 Output ONE strict JSON object and nothing else:
 {"title":"2-6 words","scene":"the chapter","choices":[{"label":"what the owner says or does","move":"move id","man":{"name":"First Last","age":30,"who":"who he is, one sentence","manner":"how he looks, moves and talks, one or two sentences"}}]}
-("man" only on "pick" choices.)`;
+(Only "pick" choices have a "man".)`;
 
 function context(s: SaveState, query: string): string[] {
   const c = s.cuckold!;
@@ -116,7 +116,7 @@ function context(s: SaveState, query: string): string[] {
 }
 
 function movesList(may: Move[], must: Move[]): string {
-  return `## MOVES THAT CAN BE OFFERED (id: what it does)\n${may.map((m) => `· ${m.id}: ${m.does}`).join("\n")}\n## MUST BE OFFERED\n${must.map((m) => m.id).join(", ") || "nothing in particular"}`;
+  return `## MOVES THAT CAN BE OFFERED\nEach line is a move's id and what it does.\n${may.map((m) => `· ${m.id}: ${m.does}`).join("\n")}\n## MUST BE OFFERED\n${must.map((m) => m.id).join(", ") || "nothing in particular"}`;
 }
 
 /** Write the chapter waiting. Mutates `s.cuckold.chapter` on success. */
@@ -195,9 +195,9 @@ export async function answerOwn(s: SaveState, typed: string, signal?: AbortSigna
   return answer(s, choice) ? { ok: true } : { ok: false, error: "that can't happen right now" };
 }
 
-const OUTCOME_SYSTEM = `You write what happens next in a netorare (NTR, cuckold) story inside Free Cities, an adult text game about owning an arcology. The owner ("you") answered the chapter. WHAT THE GAME DECIDED is true and final: keep every fact in it (who did what, what happened to her body, any money, any pregnancy, how it ends) and add nothing that contradicts it. If the owner typed their answer in their own words, play out exactly what they said and did, in their words, and the facts are what came of it.
+const OUTCOME_SYSTEM = `You write what happens next in a netorare (NTR, cuckold) story inside Free Cities, an adult text game about owning an arcology. The owner ("you") answered the chapter. WHAT THE GAME DECIDED is true and final. Keep every fact in it, including who did what, what happened to her body, any money, any pregnancy and how it ends, and add nothing that contradicts it. If the owner typed their answer in their own words, play out exactly what they said and did, in their words, and the facts are what came of it.
 
-Carry on straight from the chapter: same room, same people, same voices, same man. Her lines come out of her card, why she's doing it and how far it has gone, and nobody else could say them. Two to five paragraphs, second person, present tense. Explicit in plain crude words when there's sex. If the story ends here, land it properly. Don't end on a question to the owner.
+Carry on straight from the chapter, in the same room, with the same people, the same voices and the same man. Her lines come out of her card, why she's doing it and how far it has gone, and nobody else could say them. Write two to five paragraphs in the second person and the present tense, explicitly and in plain crude words when there's sex. If the story ends here, land it properly. Don't end on a question to the owner.
 
 ${HOUSE_STYLE}`;
 

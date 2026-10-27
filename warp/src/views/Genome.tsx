@@ -22,7 +22,7 @@ function Changes({ spec }: { spec: GeneSpec }) {
     spec.health && chip(`+${Math.round(spec.health)} health`, "hp"),
     ...(spec.traits ?? []).map((t) => <span key={`t-${t.name}`} className="chip on !text-[11px] pointer-events-none" title={`${t.what}${t.tag ? ` (${TRAIT_TAGS[t.tag]})` : ""}`}>{t.name}</span>),
   ].filter(Boolean);
-  return <div className="flex flex-wrap gap-1.5">{out.length ? out : <span className="text-[12px] dim">Nothing the clinics can do yet. Say what should change: a trait, a colour, a height, what it should resist.</span>}</div>;
+  return <div className="flex flex-wrap gap-1.5">{out.length ? out : <span className="text-[12px] dim">Nothing the clinics can do yet. Say what should change, like a trait, a colour, a height, or what it should resist.</span>}</div>;
 }
 
 function Draft() {
@@ -99,7 +99,7 @@ function Writer() {
   return (
     <Card>
       <div className="text-[11px] uppercase tracking-wider dim mb-1">Write a gene edit</div>
-      <div className="text-[11.5px] dim mb-2">In your words. Anything you write becomes a trait the city lives with (night vision, stronger bones, slower ageing); the clinics can also change colouring and height, give resistance to heat, cold, disease and pollution, and better health. {modelsAvailable() ? "The narrator designs it and writes what it does to the city." : "Without a narrator model the game reads your words for those things."}</div>
+      <div className="text-[11.5px] dim mb-2">In your words. Anything you write becomes a trait the city lives with (night vision, stronger bones, slower ageing). The clinics can also change colouring and height, give resistance to heat, cold, disease and pollution, and better health. {modelsAvailable() ? "The narrator designs it and writes what it does to the city." : "Without a narrator model the game reads your words for those things."}</div>
       <input className="mb-2" value={name} onChange={(e) => setName(e.target.value)} placeholder="Its name, e.g. Azure" maxLength={60} />
       <textarea className="mb-2" rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="What it does, e.g. Blue skin for every citizen, and lungs that shrug off the smog." maxLength={600} />
       <div className="flex items-center gap-1.5 flex-wrap mb-2">
@@ -195,7 +195,7 @@ function Programs() {
             {e.spec.society ? <p className="font-prose text-[13.5px] leading-relaxed mb-2">{e.spec.society}</p> : null}
             <label className="flex items-center gap-2 text-[12px] mb-2 cursor-pointer">
               <input type="checkbox" className="!w-auto shrink-0" checked={!!e.auto} onChange={(ev) => mutate((s) => { const x = genomeOf(s).edits.find((y) => y.id === e.id); if (x) x.auto = ev.target.checked; })} />
-              Keep everyone up to date: each week, pay to reach new slaves and newcomers to the city
+              Keep everyone up to date by paying each week to reach new slaves and newcomers to the city
             </label>
             {more.citizens || more.slaves.length || more.menials ? (
               <Button size="sm" kind="ghost" disabled={save.arcology.cash < more.cost} onClick={() => { let t = ""; mutate((s) => { t = topUp(s, e.id).line ?? ""; }); setSaid(t); }}>
@@ -233,7 +233,7 @@ export default function Genome() {
                   </div>
                 ))}
               </div>
-              <p className="text-[11.5px] dim mt-2">Heat and cold cut what heatwaves and freezes cost and do to the slaves working outside; pollution cuts what smog and dust do; disease cuts the fevers that come in on the ships.</p>
+              <p className="text-[11.5px] dim mt-2">Heat and cold resistance cut what heatwaves and freezes cost and do to the slaves working outside. Pollution resistance cuts what smog and dust do, and disease resistance cuts the fevers that come in on the ships.</p>
             </Card>
           </Section>
         ) },

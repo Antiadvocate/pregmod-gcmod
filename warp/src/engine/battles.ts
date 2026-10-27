@@ -21,10 +21,10 @@ import { registerEvents, fireEvent, type EventDef } from "./events";
 
 export type Defense = "walls" | "drones" | "armory" | "sentinels";
 export const DEFENSES: Record<Defense, { name: string; note: string; cost: number; power: number }> = {
-  walls: { name: "Walls and gates", note: "the outer rings can be sealed; defending costs you less", cost: 25000, power: 1.2 },
+  walls: { name: "Walls and gates", note: "the outer rings can be sealed, so defending costs you less", cost: 25000, power: 1.2 },
   drones: { name: "Drone racks", note: "armed drones over every concourse", cost: 30000, power: 1.5 },
   armory: { name: "Armory", note: "rifles and armour for anyone who'll fight", cost: 20000, power: 1.0 },
-  sentinels: { name: "Robot guard corps", note: "machines keyed to your voice alone: they carry out your orders instantly and literally, can't refuse, can't be bribed or turned, and obey nobody else, even someone who holds your collar. A squad escorts you in public", cost: 40000, power: 1.8 },
+  sentinels: { name: "Robot guard corps", note: "machines keyed to your voice alone. They carry out your orders instantly and literally, can't refuse, can't be bribed or turned, and obey nobody else, even someone who holds your collar. A squad escorts you in public", cost: 40000, power: 1.8 },
 };
 
 export type Attacker = "raiders" | "militia" | "mercs" | "freed" | "pirates";
@@ -58,7 +58,7 @@ export function buildDefense(s: SaveState, d: Defense): boolean {
 export function sentinelsLine(s: SaveState): string {
   const n = defensesOf(s).sentinels;
   if (!n) return "";
-  return `THE OWNER'S ROBOT GUARDS (${n * 12} units, keyed to the owner's voice alone): a squad is always at the owner's side in public. They carry out any order the owner gives, instantly and literally, including force; they never hesitate, question or refuse, can't be bribed, reasoned with or turned, and take orders from nobody else, whoever that is.`;
+  return `THE OWNER'S ROBOT GUARDS. The owner has ${n * 12} units keyed to the owner's voice alone, and a squad is always at the owner's side in public. They carry out any order the owner gives, instantly and literally, including force. They never hesitate, question or refuse, can't be bribed, reasoned with or turned, and take orders from nobody else, whoever that is.`;
 }
 
 /** Your strength, in the same units as an attacker's size. */
@@ -141,7 +141,7 @@ function lose(s: SaveState, heavy: boolean): string {
     const v = Object.values(s.people).filter((p) => p.status === "owned" && p.age >= 18 && p.assignment !== "guard you").sort((a, c) => a.bond.bond - c.bond.bond)[0];
     if (v) { v.status = "free"; v.exit_week = arc.week; v.exit_note = `taken by ${ATTACKERS[b.attacker].name} when they broke into the arcology`; taken = v.name; }
   }
-  return `They lose you ¤${cash.toLocaleString()} in looted stores and damage${sector ? `, and a sector of the outer ring is wrecked` : ""}.${taken ? ` ${taken} is gone when the smoke clears; ${b.attacker === "freed" ? "she went with them" : "they took her"}.` : ""}`;
+  return `They lose you ¤${cash.toLocaleString()} in looted stores and damage${sector ? `, and a sector of the outer ring is wrecked` : ""}.${taken ? ` ${taken} is gone when the smoke clears, because ${b.attacker === "freed" ? "she went with them" : "they took her"}.` : ""}`;
 }
 
 const ATTACK: EventDef = {
@@ -157,9 +157,9 @@ const ATTACK: EventDef = {
     { id: "meet", label: "Meet them at the gates", note: "win big or lose big",
       resolve: (s) => { const b = current(s); const r = fight(s, 0, "meet");
         if (r.win) { b.result = "won"; s.arcology.rep += 700 + Math.round(b.size * 100); s.arcology.cash += ATTACKERS[b.attacker].loot; const pr = prisoners(s, b.attacker === "freed" ? 0 : r.margin > 2 ? 2 : 1, `taken prisoner when ${ATTACKERS[b.attacker].name} attacked the arcology`); startRumor(s, `${s.arcology.name} beat off ${ATTACKERS[b.attacker].name} at its gates`, { salience: 8, charge: 1 });
-          return `Your forces meet them on the approach road at dawn. It's over by noon: the survivors scatter back the way they came and leave their trucks and supplies behind, worth ¤${ATTACKERS[b.attacker].loot.toLocaleString()}.${pr.length ? ` Your people bring back ${pr.join(" and ")} in chains.` : ""} The citizens cheer the returning troops through the concourse.`; }
+          return `Your forces meet them on the approach road at dawn. It's over by noon. The survivors scatter back the way they came and leave their trucks and supplies behind, worth ¤${ATTACKERS[b.attacker].loot.toLocaleString()}.${pr.length ? ` Your people bring back ${pr.join(" and ")} in chains.` : ""} The citizens cheer the returning troops through the concourse.`; }
         b.result = "lost"; return `Your forces meet them at the gates and are driven back into the arcology. They pour into the outer ring for a night of looting before your people push them out again. ${lose(s, true)}`; } },
-    { id: "hold", label: "Seal the spire and let the outer ring take it", note: "safer; the outer ring suffers",
+    { id: "hold", label: "Seal the spire and let the outer ring take it", note: "safer, but the outer ring suffers",
       resolve: (s) => { const b = current(s); const r = fight(s, 1.5 + defensesOf(s).walls * 0.8, "hold"); b.result = "held";
         s.arcology.prosperity = clamp(s.arcology.prosperity - 4, 0, 200); s.arcology.public_standing = clamp(s.arcology.public_standing - 1, -10, 10);
         return r.win ? `You seal the spire and let them have the outer ring for a day. They smash windows and loot shops, but they can't get through the gates, and when your people counterattack at dusk they break and run. The outer ring's citizens remember whose doors were locked.` : `You seal the spire. They can't get in, but they take the outer ring apart looking for a way. ${lose(s, false)}`; } },

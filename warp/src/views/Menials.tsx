@@ -35,7 +35,7 @@ export default function MenialsPanel() {
       <div className="grid gap-2.5 md:grid-cols-2 min-w-0">
         <Card className="min-w-0">
           <div className="text-[11px] uppercase tracking-wider dim mb-1">Buy and sell</div>
-          <div className="text-[11.5px] dim mb-2">¤{price.toLocaleString()} each this week; wars abroad make them cheaper. Idle menials sell to citizen households at full price while they want more, and back to the trade at 70% after that.</div>
+          <div className="text-[11.5px] dim mb-2">¤{price.toLocaleString()} each this week, and wars abroad make them cheaper. Idle menials sell to citizen households at full price while they want more, and back to the trade at 70% after that.</div>
           <div className="flex flex-wrap items-center gap-1.5 mb-2">
             <input type="number" min={1} step={10} value={n} onChange={(e) => setN(Math.max(0, Math.floor(Number(e.target.value) || 0)))} className="!w-28 shrink-0" />
             {[10, 100, 1000].map((k) => <button key={k} className="chip !text-[11px]" onClick={() => setN(k)}>{k.toLocaleString()}</button>)}
@@ -53,7 +53,7 @@ export default function MenialsPanel() {
           <div className="text-[11.5px] dim">{TREATMENT[m.treatment].note}. They eat 2 food a week each: {(m.owned * 2).toLocaleString()} a week for all of them.</div>
           <label className="flex items-center gap-2 text-[12px] mt-2 cursor-pointer">
             <input type="checkbox" className="!w-auto shrink-0" checked={m.autofeed !== false} onChange={(e) => mutate((s) => { menialsOf(s).autofeed = e.target.checked; })} />
-            Keep the city fed: each week, move menials to the farms when the city would otherwise go hungry
+            Keep the city fed by moving menials, each week, to the farms when the city would otherwise go hungry
           </label>
           {m.last && m.last.week >= save.arcology.week - 1 ? <div className="text-[11.5px] mt-2">Last week: {m.last.cash >= 0 ? "+" : "−"}¤{Math.abs(m.last.cash).toLocaleString()} net{m.last.food ? `, ${m.last.food.toLocaleString()} food grown` : ""}{m.last.lost ? `, ${m.last.lost} lost` : ""}.</div> : null}
         </Card>
@@ -74,7 +74,7 @@ export default function MenialsPanel() {
               </div>
             ))}
           </div>
-          <div className="text-[11px] dim mt-2">{servingCitizens(save).toLocaleString()} slaves serve citizen households: theirs and yours on lease.</div>
+          <div className="text-[11px] dim mt-2">{servingCitizens(save).toLocaleString()} slaves serve citizen households, both theirs and yours on lease.</div>
         </Card>
       </div>
     </Section>

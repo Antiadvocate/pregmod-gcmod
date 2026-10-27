@@ -341,5 +341,5 @@ function planted(seed: string, opts: { fetish?: string; flaw?: string; quirk?: s
   check("effect notes are plain words, with what to fill in kept apart", Object.values(DYNAMIC_EFFECTS).every((e) => !/value is|\bids?\b|—|negative to/.test(e.note)), Object.values(DYNAMIC_EFFECTS).map((e) => e.note));
   const card = personCard(s, p);
   check("her card says how she feels about you in words, without a score", /TOWARD YOU: [a-z ,]+\./.test(card) && !/TOWARD YOU:[^\n]*\d/.test(card), card.split("\n").find((l) => l.startsWith("TOWARD")));
-  check("and the narrator is told nobody talks game", NARRATOR_SYSTEM.includes("Game talk"));
+  check("and the narrator is told nobody talks game", NARRATOR_SYSTEM.includes("Meta/game terminology"));
 }

@@ -17,7 +17,7 @@ export type KillHow = "private" | "public";
 
 export const KILL_HOW: Record<KillHow, { label: string; note: string }> = {
   private: { label: "Behind a closed door", note: "Quick, in your office. The household finds out afterwards." },
-  public: { label: "In front of the household", note: "They're made to watch. More fear, less of everything else; the harder citizens approve." },
+  public: { label: "In front of the household", note: "They're made to watch. It means more fear and less of everything else, and the harder citizens approve." },
 };
 
 /** Kill her. Returns a line for the screen, or why not. */

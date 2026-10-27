@@ -14,6 +14,7 @@
  * snapshot) and to who she was before. The engine supplies what the answers DO: granting the
  * request it found for her (if any), refusing it, and the closed effect table.
  */
+import { keepingFew, theFew } from "./fewslaves";
 import type { PendingEvent, Person, SaveState } from "./types";
 import { read } from "./obedience";
 import { romanceOf } from "./romance";
@@ -87,6 +88,10 @@ export function reasonsOf(s: SaveState, p: Person): Reason[] {
   if (p.bond.hope < 15 && r.trust > -20) add("hope", "She's lost hope that anything here will get better.", 2);
   if (rom.since_week >= week && rom.standing !== "property") add("standing", `She just became your ${rom.standing}.`, 3);
   if (rom.dominion >= 40) add("standing", "She has real say over you now and uses it.", 1.5, false);
+  // One of the only ones: the owner's weight on her, and it wants out. Fresh the week it crosses a line.
+  const few = s.player.few;
+  const felt = few && keepingFew(s) ? few.power[p.id] ?? 0 : 0;
+  if (felt >= 30) add("only", `She's one of only ${theFew(s).length === 1 ? "one" : "two"} women the owner keeps, and she feels it (${Math.round(felt)} out of 100). She's bolder, prouder and more in love, and she's starting to act in the owner's name.`, 1.5 + felt / 30, few!.leaked?.[p.id] === s.arcology.week - 1);
   const refused = Object.entries(p.counters).filter(([k, v]) => k.startsWith("ask_refused:") && week - v <= 2);
   if (refused.length) add("refused", "You refused her something in the last two weeks.", 1.8);
 
@@ -144,23 +149,23 @@ export function pickWants(s: SaveState): { p: Person; reasons: Reason[]; score: 
   return out;
 }
 
-const WANT_SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. It is about ONE of the owner's slaves and what SHE wants this week: to get something, stop something, change something, say something, or do something about her situation, whether by asking, bargaining, sulking, scheming, seducing, defying or running.
+const WANT_SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. It's about ONE of the owner's slaves and what SHE wants this week, which might be to get something, stop something, change something, say something, or do something about her situation, whether by asking, bargaining, sulking, scheming, seducing, defying or running.
 
 How to build it:
-- Start from HER REASONS THIS WEEK: they are facts the game found. Pick the one or two that matter most to her and build what she wants out of them, filtered through who she is (her background, her career before, her personality, her fetishes and flaws), how she stands with the owner, and the laws she lives under.
-- Tie it to THIS WEEK: something that actually happened (a person, a law, a sale, a rumour, the war, the weather) is the reason it's happening now. Name it.
-- It has to make sense. A frightened slave doesn't demand; a devoted one doesn't scheme against the owner; a woman who hates a law and knows the owner wrote it handles that carefully or recklessly according to who she is.
-- If ENGINE REQUEST is given, it is a concrete thing she could ask for; use it if it fits what she wants (then the "grant" and "refuse" effects do it), or ignore it.
-- Second person, present tense, one or two short paragraphs, ending where the owner has to answer. Her words in her voice.
+- Start from HER REASONS THIS WEEK, which are facts the game found. Pick the one or two that matter most to her and build what she wants out of them, filtered through who she is (her background, her career before, her personality, her fetishes and her flaws), how she stands with the owner, and the laws she lives under.
+- Tie it to THIS WEEK. Something that actually happened, such as a person, a law, a sale, a rumour, the war or the weather, is the reason it's happening now, so name it.
+- It has to make sense. A frightened slave doesn't make demands, and a devoted one doesn't scheme against the owner. A woman who hates a law and knows the owner wrote it handles that carefully or recklessly, according to who she is.
+- If ENGINE REQUEST is given, it's a concrete thing she could ask for. Use it if it fits what she wants, in which case the "grant" and "refuse" effects carry it out, or ignore it.
+- Write one or two short paragraphs in the second person and the present tense, ending where the owner has to answer, with her words in her own voice.
 
-Then three or four choices for the owner, each a genuinely different response, at least one of which lets it go.
+Then give three or four choices for the owner, each a genuinely different response, and make at least one of them let it go.
 
 ${NOT_PAPERWORK}
 
 ${HOUSE_STYLE}
 
 Output ONE strict JSON object and nothing else:
-{"title":"2-5 words","situation":"...","options":[{"label":"what you do, 2-9 words","note":"a few plain words for the player, like \"she won't forget it\" or \"costs you ¤2,000\"; never the effect's description","effect":"effect id","value":"optional"}],"hook":"what this leaves open for later, or empty"}`;
+{"title":"2-5 words","situation":"...","options":[{"label":"what you do, 2-9 words","note":"a few plain words for the player, like \"she won't forget it\" or \"costs you ¤2,000\", and never the effect's description","effect":"effect id","value":"optional"}],"hook":"what this leaves open for later, or empty"}`;
 
 /** Write her event. Null when there's no model or it came back unusable. */
 export async function generateWant(s: SaveState, p: Person, reasons: Reason[], snapshot: string): Promise<PendingEvent | null> {

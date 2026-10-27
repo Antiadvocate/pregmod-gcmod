@@ -40,11 +40,11 @@ const storm: ArcDef = {
       title: "A storm is coming",
       text: (c) => `The weather service has upgraded the system off the coast to a superstorm. It will make landfall within two weeks, and ${c.arcology} is squarely in its path.
 
-Your engineers give you the numbers. The spire itself will stand; it was built for this. The outer rings are another matter: the housing blocks, the shops and the docks were built cheap and fast, and a direct hit will tear the cladding off them and flood the lower levels. The citizens who live there are watching the forecast and waiting to see what you do.
+Your engineers give you the numbers. The spire itself will stand. It was built for this. The outer rings are another matter. The housing blocks, the shops and the docks were built cheap and fast, and a direct hit will tear the cladding off them and flood the lower levels. The citizens who live there are watching the forecast and waiting to see what you do.
 
 ${c.flag("sea_wall") ? "Your sea wall will take the worst of the surge." : "There is no sea wall. The surge will come straight in."}${c.flag("shutters") ? " The storm shutters you installed last time are still in place." : ""}`,
       options: [
-        { id: "shutters", label: "Pay to shutter and brace the outer rings", note: "¤15,000; much less damage", need: cash(15000), show: (c) => !c.flag("shutters"),
+        { id: "shutters", label: "Pay to shutter and brace the outer rings", note: "costs ¤15,000, and means much less damage", need: cash(15000), show: (c) => !c.flag("shutters"),
           run: (c) => { c.cash(-15000); project(c, "shutters", "the outer rings are storm-proofed for good"); c.standing(1);
             return { text: `Crews work around the clock fitting steel shutters over every window on the outer rings and bracing the dock cranes. Your citizens see it happening and feel a lot better about living in your arcology.
 
@@ -54,12 +54,12 @@ The shutters stay up after the storm, too. The next one will find them waiting.`
             return { text: `You turn out the whole household to fill and stack sandbags along the dock walls. They work for three days straight in the wind and the rain, soaked and exhausted, while the citizens watch from behind their windows.
 
 The walls are as ready as they're going to get. Your slaves are dead on their feet.`, next: "landfall", after: 1 }; } },
-        { id: "evacuate", label: "Evacuate the outer rings into the spire", note: "costs goodwill with nobody; costs you rent and space",
+        { id: "evacuate", label: "Evacuate the outer rings into the spire", note: "nobody minds, but it costs you rent and space",
           run: (c) => { c.cash(-4000); c.set("storm_evac", true); c.standing(2); c.hope(3);
             return { text: `You open the spire's lower floors and tell the outer rings to come in. Thousands of citizens file into your atriums and corridors with bags and children and pets, and camp there. It costs you a week's rents and a lot of cleaning.
 
 Nobody on the outer rings is going to die in this storm, and they all know who to thank.`, next: "landfall", after: 1 }; } },
-        { id: "nothing", label: "Do nothing; the spire will stand",
+        { id: "nothing", label: "Do nothing, because the spire will stand",
           run: (c) => { c.set("storm_nothing", true);
             return { text: `You tell your engineers the spire will stand and the rest is insured. Word gets around the outer rings that you aren't going to do anything, and the people who can afford to leave start packing.`, next: "landfall", after: 1 }; } },
       ],
@@ -80,7 +80,7 @@ Your crews can't do both.`;
             return { text: `Your crews dig for eleven hours. They pull out forty-one people alive and nine dead. The footage of your security teams carrying children out of the rubble plays on every screen in the region.
 
 The warehouse floods. ${money(loss)} of imports are ruined.`, next: "aftermath", after: 1 }; } },
-        { id: "cargo", label: "Save the warehouse; the trapped citizens can wait",
+        { id: "cargo", label: "Save the warehouse, and let the trapped citizens wait",
           run: (c) => { c.standing(-3); c.rep(-300); pop(c, -60); c.rumor("the owner saved the cargo and left people to drown", -1);
             return { text: `Your crews save the imports. By the time anyone gets to the collapsed section, it's too late for most of the people under it. Sixty dead.
 
@@ -109,10 +109,10 @@ Meanwhile, the families who lost their homes in your outer ring are sleeping in 
         { id: "buy", label: "Buy a share of the neighbor's arcology while it's cheap", note: "¤25,000", need: cash(25000),
           run: (c) => { c.cash(-25000); const n = c.s.arcology.neighbours[0]; if (n) { n.ownership = clamp(n.ownership + 12, 0, 100); n.attitude = clamp(n.attitude - 15, -100, 100); } c.like("rival_owner", -20);
             return { text: `You buy up twelve percent of the damaged arcology at a fraction of what it was worth a month ago. ${c.n("rival_owner")} signs the papers with a very sour expression. You're now a significant shareholder in your neighbor.`, end: "you bought into your neighbor after the storm" }; } },
-        { id: "rebuild", label: "Rebuild the outer ring properly, with a sea wall", note: "¤30,000; the next storm will do far less", need: cash(30000), show: (c) => !c.flag("sea_wall"),
+        { id: "rebuild", label: "Rebuild the outer ring properly, with a sea wall", note: "costs ¤30,000, and the next storm will do far less", need: cash(30000), show: (c) => !c.flag("sea_wall"),
           run: (c) => { c.cash(-30000); project(c, "sea_wall", "a sea wall now protects the arcology"); c.prosperity(4); c.standing(2);
             return { text: `You hire engineers to rebuild the outer ring to a higher standard and throw up a proper sea wall along the waterfront. It's expensive and takes months, but when it's done, ${c.arcology} will shrug off storms that would flatten its neighbors.`, end: "you built a sea wall after the storm" }; } },
-        { id: "families", label: "Let the homeless families sell themselves into slavery", note: "cheap slaves; a lot of bitterness",
+        { id: "families", label: "Let the homeless families sell themselves into slavery", note: "cheap slaves, and a lot of bitterness",
           run: (c) => { for (let i = 0; i < 2; i++) c.addSlave({ seed: `stormfam${c.week}:${i}`, age: 20 + i * 7, quality: 0, how: "sold herself into slavery after the superstorm took her home", hostile: i === 1 }); c.standing(-2); c.rumor("the owner is buying storm victims for next to nothing", -1);
             return { text: `You set up a table in the atrium where anyone who lost everything can sign themselves over in exchange for food and a bed. A lot of people walk past it. Two young women sign.
 
@@ -138,7 +138,7 @@ const drought: ArcDef = {
       title: "The reservoirs are low",
       text: (c) => `The heatwave has lasted long enough that ${c.arcology}'s reservoirs are down to a third. The water barges that normally top them up are being fought over by every arcology on the coast, and the price has tripled.
 
-Your engineers say you have enough for about five weeks at the current rate. The citizens use most of it. Your household uses a surprising amount too: the dairy, the spa and the clinic all run on water, and ${household(c).length} slaves need to drink and wash.`,
+Your engineers say you have enough for about five weeks at the current rate. The citizens use most of it. Your household uses a surprising amount too, because the dairy, the spa and the clinic all run on water, and ${household(c).length} slaves need to drink and wash.`,
       options: [
         { id: "barges", label: "Outbid everyone for water barges", note: "¤18,000", need: cash(18000),
           run: (c) => { c.cash(-18000); c.set("drought_bought", true); c.like("rival_owner", -10);
@@ -148,9 +148,9 @@ Your engineers say you have enough for about five weeks at the current rate. The
             return { text: `Your slaves get one cup of water with each meal and a bucket to wash in once a week. The dairy cows are the only ones who get enough. Within days the whole household is irritable, headachy and filthy.
 
 The citizens don't notice any difference, which was the point.`, next: "riot", after: 2 }; } },
-        { id: "citizens", label: "Ration the citizens", note: "the household is spared; the city is not",
+        { id: "citizens", label: "Ration the citizens", note: "the household is spared, but the city isn't",
           run: (c) => { c.standing(-2); c.prosperity(-3); c.set("drought_citizens", true);
-            return { text: `You put the whole arcology on water rationing: taps run two hours a day in the residential blocks, and the fountains on the concourse are shut off. The citizens grumble, and some of them start noticing that the penthouse fountains are still running.`, next: "riot", after: 2 }; } },
+            return { text: `You put the whole arcology on water rationing. Taps run two hours a day in the residential blocks, and the fountains on the concourse are shut off. The citizens grumble, and some of them start noticing that the penthouse fountains are still running.`, next: "riot", after: 2 }; } },
       ],
     },
     riot: {
@@ -178,12 +178,12 @@ In the middle of it, your security team catches one of your slaves, ${c.sn}, car
       title: "Water for good",
       text: (c) => `The heat finally breaks in late summer, and the rain refills the reservoirs. Everyone knows it will happen again next year, and the year after, worse each time.
 
-${c.full("engineer")}, an engineer who builds desalination plants for arcologies up and down the coast, has sent you a proposal: a plant on your docks that would turn seawater into drinking water, enough that ${c.arcology} would never need a water barge again.`,
+${c.full("engineer")}, an engineer who builds desalination plants for arcologies up and down the coast, has sent you a proposal for a plant on your docks that would turn seawater into drinking water, enough that ${c.arcology} would never need a water barge again.`,
       options: [
-        { id: "build", label: "Build the desalination plant", note: "¤35,000; no more water crises", need: cash(35000),
+        { id: "build", label: "Build the desalination plant", note: "costs ¤35,000, and ends the water crises", need: cash(35000),
           run: (c) => { c.cash(-35000); project(c, "desal", "a desalination plant supplies the arcology's water"); c.like("engineer", 25); c.prosperity(5);
             return { text: `${c.n("engineer")} builds it in four months. It's ugly, loud and runs on a lot of power, but it works. The next time a heatwave hits, ${c.arcology}'s taps keep running while the arcologies around you ration.`, end: "you built a desalination plant" }; } },
-        { id: "sell", label: "Build it, and sell water to your neighbors", note: "¤45,000; pays back every heatwave", need: cash(45000),
+        { id: "sell", label: "Build it, and sell water to your neighbors", note: "costs ¤45,000, and pays for itself every heatwave", need: cash(45000),
           run: (c) => { c.cash(-45000); project(c, "desal", "a desalination plant supplies the arcology's water"); c.set("water_seller", true); c.like("engineer", 30); c.prosperity(6); for (const n of c.s.arcology.neighbours) n.attitude = clamp(n.attitude + 8, -100, 100);
             return { text: `You have ${c.n("engineer")} build it twice as big as you need. Next summer your neighbors will be buying their water from you, and they'll be a lot more polite about it.`, end: "you became the coast's water seller" }; } },
         { id: "skip", label: "Not worth it",
@@ -213,17 +213,17 @@ A woman rows over to your docks under a white sheet. She says her name is ${c.fu
 "We'll work," she says. "We'll do anything. We just need somewhere to land."`;
       },
       options: [
-        { id: "citizens", label: "Take them in as citizens", note: "a lot more people; more crime at first",
+        { id: "citizens", label: "Take them in as citizens", note: "a lot more people, and more crime at first",
           run: (c) => { pop(c, 1400); c.crime(8); c.standing(2); c.like("refugee", 30); c.set("boats_citizens", true); c.cash(-6000);
             return { text: `You let them land. It takes three days to process them all, and your security teams are stretched thin. You house them in the emptiest blocks of the outer ring and put them to work.
 
-The first few weeks are rough: crime goes up, and the established citizens complain. But three thousand people who owe you everything is not a bad thing to have.`, next: "settling", after: 3 }; } },
+The first few weeks are rough. Crime goes up, and the established citizens complain. But three thousand people who owe you everything is not a bad thing to have.`, next: "settling", after: 3 }; } },
         { id: "enslave", label: "Take them in as slaves", note: "the whole flotilla goes to the pens",
           run: (c) => { c.set("boats_enslaved", true); c.like("refugee", -60); c.rep(-200); c.cash(30000);
             for (let i = 0; i < 3; i++) c.addSlave({ seed: `boat${c.week}:${i}`, age: 19 + i * 6, quality: 0.1 + i * 0.1, how: `came on the refugee boats from ${regionName(c, "boats_region")} and was enslaved on the dock`, hostile: true });
             c.addSlave({ seed: `boatleader${c.week}`, name: c.full("refugee"), age: 34, quality: 0.3, how: "spoke for the refugee flotilla, and was enslaved with the rest of them", hostile: true }); c.npc("refugee").status = "owned";
             c.rumor("the owner enslaved the whole refugee flotilla", -1);
-            return { text: `You let them land, and your security teams collar every one of them on the dock. Most are processed and sold on through the market; the proceeds come to ${money(30000)}. You keep the best few, and ${c.n("refugee")} herself.
+            return { text: `You let them land, and your security teams collar every one of them on the dock. Most are processed and sold on through the market. The proceeds come to ${money(30000)}. You keep the best few, and ${c.n("refugee")} herself.
 
 She doesn't fight when they put the collar on her. She just looks at you. Somewhere in ${regionName(c, "boats_region")}, the story of what happens to people who land at ${c.arcology} will be told for years.`, next: "echo", after: 5 }; } },
         { id: "some", label: "Take only the young women, and send the rest on",
@@ -298,7 +298,7 @@ const liberty: ArcDef = {
       title: "Leaflets",
       text: (c) => `Your security chief brings you a leaflet found in the servants' laundry. It's cheaply printed, with a crude drawing of a broken collar and the words "THE DAUGHTERS OF LIBERTY — NO MORE MASTERS."
 
-The Daughters of Liberty are an anti-slavery group from the Old World. They've bombed slave markets in three Free Cities, and they recruit from slaves and from the poor. ${c.flag("boats_enslaved") ? "Your security chief thinks the flotilla you enslaved was the spark: some of the new slaves had family who ended up with the Daughters." : "Your security chief thinks they've been in the arcology for months, waiting."}
+The Daughters of Liberty are an anti-slavery group from the Old World. They've bombed slave markets in three Free Cities, and they recruit from slaves and from the poor. ${c.flag("boats_enslaved") ? "Your security chief thinks the flotilla you enslaved was the spark, because some of the new slaves had family who ended up with the Daughters." : "Your security chief thinks they've been in the arcology for months, waiting."}
 
 There are more leaflets in the dormitories. Someone in your household is passing them around.`,
       options: [
@@ -331,10 +331,10 @@ ${c.n("insurgent")} isn't among them.`, next: "cell", after: 2 }; } },
         { id: "arrest_slave", label: "Arrest the slave who planted it", show: (c) => !!c.flag("lib_watched"),
           pick: { label: "Who did the cameras catch", filter: (p) => read(p).devotion < 30 },
           run: (c, p) => { if (!p) return { text: "" }; p.assignment = "be confined in the cellblock"; c.treat(p, "cruelty", 10, "arrested for the Daughters of Liberty bombing"); c.set("lib_informant", p.id); c.security(4);
-            return { text: `${p.name} is dragged out of the laundry and into the cellblock. She doesn't deny it. After two days she tells you where the cell meets: a disused pump room on the lower levels.`, next: "cell", after: 1 }; } },
+            return { text: `${p.name} is dragged out of the laundry and into the cellblock. She doesn't deny it. After two days she tells you the cell meets in a disused pump room on the lower levels.`, next: "cell", after: 1 }; } },
         { id: "reward", label: "Offer a huge reward for information", note: "¤20,000", need: cash(20000),
           run: (c) => { c.cash(-20000); c.set("lib_reward", true); c.standing(1);
-            return { text: `You put up twenty thousand for information. Within a week three citizens and one of your own slaves come forward with the same address: a disused pump room on the lower levels.`, next: "cell", after: 1 }; } },
+            return { text: `You put up twenty thousand for information. Within a week three citizens and one of your own slaves come forward with the same address, a disused pump room on the lower levels.`, next: "cell", after: 1 }; } },
         { id: "memorial", label: "Hold a memorial for the dead and keep your nerve",
           run: (c) => { c.standing(3); c.rep(300); c.cash(-3000);
             return { text: `You pay for the funerals and speak at the memorial on the concourse. You don't close the arcology or round anyone up. Your citizens are frightened, but they're more angry at the Daughters than at you.`, next: "cell", after: 3 }; } },
@@ -342,7 +342,7 @@ ${c.n("insurgent")} isn't among them.`, next: "cell", after: 2 }; } },
     },
     cell: {
       title: (c) => `${c.n("insurgent")}`,
-      text: (c) => `${c.flag("lib_informant") || c.flag("lib_reward") ? "You know where they are." : "Your security chief finally finds them, after weeks of searching."} The Daughters' cell in ${c.arcology} is five people living in a disused pump room on the lower levels: three escaped slaves, a citizen who used to work at the docks, and their leader, ${c.full("insurgent")}.
+      text: (c) => `${c.flag("lib_informant") || c.flag("lib_reward") ? "You know where they are." : "Your security chief finally finds them, after weeks of searching."} The Daughters' cell in ${c.arcology} is five people living in a disused pump room on the lower levels. They're three escaped slaves, a citizen who used to work at the docks, and their leader, ${c.full("insurgent")}.
 
 She's in her thirties, with a scar across her throat and a slave brand on her shoulder that someone tried to burn off. She was a slave in a Free City once, and she escaped.
 
@@ -355,7 +355,7 @@ Your security teams have the pump room surrounded. They're waiting for your orde
 
 She spits at you. The collar goes on her anyway. The most wanted woman in the region is now a slave in your household.`, end: "you captured the leader of the Daughters of Liberty" }; }
             c.npc("insurgent").status = "gone"; c.standing(-1);
-            return { text: `Your security teams go in, and it goes badly. The Daughters set off a charge in the pump room; two of your guards die, and all five insurgents die with them. At least, everyone assumes all five: nobody can identify what's left of ${c.n("insurgent")}.`, end: "the Daughters' cell was destroyed" }; } },
+            return { text: `Your security teams go in, and it goes badly. The Daughters set off a charge in the pump room. Two of your guards die, and all five insurgents die with them. At least, everyone assumes all five, because nobody can identify what's left of ${c.n("insurgent")}.`, end: "the Daughters' cell was destroyed" }; } },
         { id: "talk", label: "Go in alone and talk to her",
           run: (c) => { c.like("insurgent", 20); c.set("lib_talked", true);
             const kind = household(c).reduce((n, p) => n + read(p).devotion, 0) / Math.max(1, household(c).length) > 30;
@@ -378,7 +378,7 @@ They'll be back.`, next: "strike", after: 6 }; } },
 
 Your household is awake and panicking in the dormitories. Some of them are going to be offered their freedom tonight by women with guns, and you don't know which of them will take it.`,
       options: [
-        { id: "fight", label: "Hold the penthouse", note: (c) => `security ${Math.round(c.s.arcology.security)}; your slaves' loyalty matters`,
+        { id: "fight", label: "Hold the penthouse", note: (c) => `your security is ${Math.round(c.s.arcology.security)}, and your slaves' loyalty matters`,
           run: (c) => { const loyal = household(c).filter((p) => read(p).devotion > 25).length; const strength = c.s.arcology.security + loyal * 6 + (c.s.arcology.mercenaries.hired ? 30 : 0);
             if (strength >= 80) { c.npc("insurgent").status = "dead"; c.standing(3); c.rep(500); c.hope(-2);
               return { text: `The attack breaks on the stairs. Your guards hold, and some of your own slaves block the service doors with furniture and refuse to open them. ${c.n("insurgent")} is killed on the fourteenth floor landing.
@@ -409,12 +409,12 @@ const plague: ArcDef = {
       text: (c) => {
         const reg = worstRegion(c.s, ["plague"]);
         if (reg && !c.flag("plague_region")) c.set("plague_region", reg.name);
-        return `The fever in ${regionName(c, "plague_region")} has reached the coast. Every Free City is quarantining ships from there, and your harbor master has three sitting outside your breakwater: two freighters with your own cargo on them, and a hospital ship.
+        return `The fever in ${regionName(c, "plague_region")} has reached the coast. Every Free City is quarantining ships from there, and your harbor master has three sitting outside your breakwater, which are two freighters with your own cargo on them, and a hospital ship.
 
 The freighters' crews look healthy, but nobody can be sure. The hospital ship is run by ${c.full("doctor")}, who says ${c.he("doctor")} has a treatment that works if it's given early, and needs a port with a clinic to make more of it.`;
       },
       options: [
-        { id: "quarantine", label: "Keep everything out, including your own cargo", note: "safe; expensive",
+        { id: "quarantine", label: "Keep everything out, including your own cargo", note: "safe, but expensive",
           run: (c) => { c.cash(-8000); c.set("plague_sealed", true); c.like("doctor", -10);
             return { text: `You close the port. Your cargo sits offshore for three weeks and a lot of it spoils. ${c.n("doctor")}'s ship moves on to try somewhere else.`, next: "outbreak", after: 3 }; } },
         { id: "cargo", label: "Let the freighters in, and keep the hospital ship out",
@@ -456,7 +456,7 @@ Your trade partners are watching to see whether ${c.arcology} is safe to deal wi
             return { text: `${c.n("doctor")} stays on. Your household is healthier for it within a month.`, end: "the fever doctor stayed on" }; } },
         { id: "reopen", label: "Reopen the port with a big trade fair", note: "¤6,000", need: cash(6000),
           run: (c) => { c.cash(-6000); c.prosperity(5); c.rep(300);
-            return { text: `You throw a trade fair on the docks to show everyone that ${c.arcology} is open for business. It works: ships start coming back within the week.`, end: "you reopened the port after the fever" }; } },
+            return { text: `You throw a trade fair on the docks to show everyone that ${c.arcology} is open for business. It works, and ships start coming back within the week.`, end: "you reopened the port after the fever" }; } },
         { id: "move_on", label: "Get back to business",
           run: () => ({ text: `You put the fever behind you. Trade picks back up slowly.`, end: "the fever passed" }) },
       ],
@@ -480,7 +480,7 @@ In ${c.arcology}, the effect is immediate. Shops on the commercial row are closi
         { id: "hoard", label: "Hold onto your cash and wait",
           run: (c) => { c.set("crash_hoard", true); c.prosperity(-4);
             return { text: `You sit on your cash and let the crash run its course. The commercial row gets quieter every week.`, next: "bargains", after: 2 }; } },
-        { id: "rents", label: "Freeze rents for three months", note: "costs income; buys loyalty",
+        { id: "rents", label: "Freeze rents for three months", note: "costs income, but buys loyalty",
           run: (c) => { c.cash(-10000); c.standing(3); c.hope(2); c.prosperity(2);
             return { text: `You freeze rents across the arcology. It costs you, but the shops stay open and nobody is evicted. Your citizens know who kept a roof over their heads.`, next: "bargains", after: 2 }; } },
         { id: "evict", label: "Evict anyone who can't pay",
@@ -530,15 +530,15 @@ const war: ArcDef = {
       text: (c) => {
         const reg = worstRegion(c.s, ["war"]);
         if (reg && !c.flag("war_region")) c.set("war_region", reg.name);
-        return `The war in ${regionName(c, "war_region")} is filling the slave markets. A broker has come to ${c.arcology} with a whole shipload of prisoners of war: soldiers, officers' wives, a few nurses, sold by whichever side won their last battle.
+        return `The war in ${regionName(c, "war_region")} is filling the slave markets. A broker has come to ${c.arcology} with a whole shipload of prisoners of war, including soldiers, officers' wives and a few nurses, sold by whichever side won their last battle.
 
 Separately, a general on one side of the war, ${c.full("general")}, has sent an envoy. ${c.He("general")} wants to buy weapons and hire mercenaries, and ${c.he("general")}'s paying in gold.`;
       },
       options: [
-        { id: "buy", label: "Buy some of the captives", note: "¤12,000; strong, hostile slaves", need: cash(12000),
+        { id: "buy", label: "Buy some of the captives", note: "costs ¤12,000 for strong, hostile slaves", need: cash(12000),
           run: (c) => { c.cash(-12000); for (let i = 0; i < 2; i++) { const p = c.addSlave({ seed: `pow${c.week}:${i}`, age: 22 + i * 5, quality: 0.3, how: `taken prisoner in the war in ${regionName(c, "war_region")} and sold`, hostile: true }); p.skills.combat = 45 + i * 10; p.body.muscle = 40; }
-            return { text: `You pick out two women from the captives: a soldier and a sergeant, both strong and both furious. They'll take a lot of breaking, but they'll make fine guards or pit fighters when they're broken.`, next: "general", after: 2 }; } },
-        { id: "arms", label: "Sell the general weapons", note: "+¤25,000; makes enemies", need: (c) => (c.s.arcology.policies["arms_trade"] || c.s.arcology.mercenaries.hired ? null : "needs the arms trade policy or mercenaries"),
+            return { text: `You pick out two women from the captives, a soldier and a sergeant, both strong and both furious. They'll take a lot of breaking, but they'll make fine guards or pit fighters when they're broken.`, next: "general", after: 2 }; } },
+        { id: "arms", label: "Sell the general weapons", note: "brings in ¤25,000, but makes enemies", need: (c) => (c.s.arcology.policies["arms_trade"] || c.s.arcology.mercenaries.hired ? null : "needs the arms trade policy or mercenaries"),
           run: (c) => { c.cash(25000); c.like("general", 25); c.set("war_armed", true); c.rep(-200);
             return { text: `You sell ${c.n("general")} two containers of rifles and ammunition through a middleman. The gold arrives the same day. The other side of the war will find out who armed their enemy, eventually.`, next: "general", after: 2 }; } },
         { id: "neutral", label: "Stay out of it",
@@ -548,13 +548,13 @@ Separately, a general on one side of the war, ${c.full("general")}, has sent an 
     general: {
       title: (c) => `${c.n("general")} wants more`,
       text: (c) => c.flag("war_armed")
-        ? `${c.n("general")} won the battle your weapons were for, and now ${c.he("general")} wants more: another shipment, and your mercenaries on loan for a month. In exchange, ${c.he("general")} offers you the pick of the prisoners from the city ${c.he("general")} just took, including the old governor's daughters.`
+        ? `${c.n("general")} won the battle your weapons were for, and now ${c.he("general")} wants more, meaning another shipment and your mercenaries on loan for a month. In exchange, ${c.he("general")} offers you the pick of the prisoners from the city ${c.he("general")} just took, including the old governor's daughters.`
         : `${c.n("general")} has lost a battle and is on the run. ${c.He("general")} has turned up at your docks with a fortune in gold and a dozen bodyguards, asking for asylum. The other side is demanding you hand ${c.him("general")} over.`,
       options: [
         { id: "deal", label: "Take the deal", show: (c) => !!c.flag("war_armed"),
           run: (c) => { c.cash(20000); c.s.arcology.mercenaries.loyalty = clamp(c.s.arcology.mercenaries.loyalty - 10, 0, 100); for (let i = 0; i < 2; i++) c.addSlave({ seed: `governor${c.week}:${i}`, age: 19 + i * 2, quality: 0.8, how: `a governor's daughter, taken when ${regionName(c, "war_region")}'s capital fell`, hostile: true }); c.rep(-300);
-            return { text: `The weapons ship out, and two terrified young women ship in: the governor's daughters, well-educated and very pretty, and completely unprepared for what's going to happen to them.`, end: "you armed a warlord and took his prizes" }; } },
-        { id: "no_more", label: "Refuse; one shipment was enough", show: (c) => !!c.flag("war_armed"),
+            return { text: `The weapons ship out, and two terrified young women ship in. They're the governor's daughters, well-educated and very pretty, and completely unprepared for what's going to happen to them.`, end: "you armed a warlord and took his prizes" }; } },
+        { id: "no_more", label: "Refuse, because one shipment was enough", show: (c) => !!c.flag("war_armed"),
           run: (c) => { c.like("general", -20);
             return { text: `You tell ${c.n("general")} you're out. ${c.He("general")} isn't happy, but ${c.he("general")} has a war to fight and can't do much about it.`, end: "you got out of the war trade" }; } },
         { id: "asylum", label: "Give the general asylum, and keep the gold", show: (c) => !c.flag("war_armed"),
@@ -585,9 +585,9 @@ ${c.full("engineer")} has been hired by half the arcologies on the coast. ${c.He
         { id: "wall", label: "Build the sea wall", note: "¤40,000", need: cash(40000),
           run: (c) => { c.cash(-40000); project(c, "sea_wall", "a sea wall now protects the arcology"); c.like("engineer", 30); c.prosperity(4);
             return { text: `${c.n("engineer")} starts work the next week. It takes six months, and you'll be paying for it for longer, but when it's done ${c.arcology} will be dry when the arcologies around it are flooding.`, end: "you built a sea wall against the rising water" }; } },
-        { id: "slaves", label: "Build it with slave labor", note: "¤15,000; your household does the work", need: cash(15000),
+        { id: "slaves", label: "Build it with slave labor", note: "costs ¤15,000, and your household does the work", need: cash(15000),
           run: (c) => { c.cash(-15000); project(c, "sea_wall", "a sea wall now protects the arcology"); for (const p of household(c)) { p.health.health = clamp(p.health.health - 12, -100, 100); p.health.energy = 10; } c.household("cruelty", 4, "made to build the sea wall"); c.like("engineer", 5);
-            return { text: `${c.n("engineer")} designs it, and your household builds it: months of hauling concrete in the wind and the cold. Your slaves are exhausted and bruised by the end of it. The wall is solid, though.`, end: "your slaves built the sea wall" }; } },
+            return { text: `${c.n("engineer")} designs it, and your household builds it, hauling concrete for months in the wind and the cold. Your slaves are exhausted and bruised by the end of it. The wall is solid, though.`, end: "your slaves built the sea wall" }; } },
         { id: "abandon", label: "Abandon the lowest levels to the sea",
           run: (c) => { pop(c, -250); c.prosperity(-5); c.standing(-2);
             return { text: `You seal off the lowest levels of the outer ring and let the sea have them. Two hundred and fifty people have to find somewhere else to live. Most of them leave the arcology.`, end: "you let the sea have the lower levels" }; } },
@@ -609,10 +609,10 @@ const smog: ArcDef = {
 
 Your foremen want to know whether to shut the gates. Your accountant wants to remind you how much the Works earn.`,
       options: [
-        { id: "scrubbers", label: "Fit air scrubbers to the Works", note: "¤22,000; pollution falls for good", need: cash(22000),
+        { id: "scrubbers", label: "Fit air scrubbers to the Works", note: "costs ¤22,000, and pollution falls for good", need: cash(22000),
           run: (c) => { c.cash(-22000); project(c, "scrubbers", "air scrubbers cut your pollution"); const w = worldOf(c.s); w.pollution = Math.max(0, w.pollution - 25); c.standing(3);
             return { text: `You go out to the gates and tell the marchers that scrubbers are going in. They're installed within a month, and the air on the lower levels starts clearing.`, end: "you cleaned up the air" }; } },
-        { id: "cut", label: "Cut production at the Works", note: "less income; cleaner air",
+        { id: "cut", label: "Cut production at the Works", note: "less income, but cleaner air",
           run: (c) => { const w = worldOf(c.s); w.pollution = Math.max(0, w.pollution - 20); c.prosperity(-3); c.standing(2); c.cash(-4000);
             return { text: `You cut the Works to half shifts. The smog thins out, the marchers go home, and your industrial income drops.`, end: "you cut production at the Works" }; } },
         { id: "disperse", label: "Disperse the march", need: secure(35),

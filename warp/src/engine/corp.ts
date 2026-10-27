@@ -22,8 +22,8 @@ export type Division = "capture" | "training" | "surgery" | "arcade" | "dairy" |
 export const DIVISIONS: Record<Division, { name: string; note: string; build: number; revenue: number; cost: number; needs?: Division }> = {
   capture: { name: "Acquisition", note: "buys up debtors and war refugees, and takes the ones nobody will miss", build: 20000, revenue: 2600, cost: 1500 },
   training: { name: "Training", note: "breaks and trains what acquisition brings in", build: 25000, revenue: 3200, cost: 1700, needs: "capture" },
-  surgery: { name: "Surgery", note: "implants and alterations; everything else sells for more", build: 30000, revenue: 1800, cost: 1400 },
-  arcade: { name: "Arcade", note: "slaves nobody wanted, locked in walls; cheap and steady", build: 18000, revenue: 2400, cost: 1100, needs: "capture" },
+  surgery: { name: "Surgery", note: "implants and alterations, so everything else sells for more", build: 30000, revenue: 1800, cost: 1400 },
+  arcade: { name: "Arcade", note: "slaves nobody wanted, locked in walls, which is cheap and steady", build: 18000, revenue: 2400, cost: 1100, needs: "capture" },
   dairy: { name: "Dairy", note: "milk in bulk, sold across the Free Cities", build: 22000, revenue: 2500, cost: 1300, needs: "capture" },
   export: { name: "Export", note: "sells trained slaves to other Free Cities at the best prices", build: 28000, revenue: 3800, cost: 1600, needs: "training" },
 };
@@ -62,12 +62,12 @@ function market(s: SaveState): { supply: number; price: number; mood: string } {
   const moods: string[] = [];
   if (w) {
     const bad = Object.values(w.regions).filter((r) => r.state === "war" || r.state === "collapse").length;
-    if (bad) { supply += bad * 0.2; moods.push(`${bad} region${bad === 1 ? "" : "s"} at war or collapsing: cheap bodies`); }
+    if (bad) { supply += bad * 0.2; moods.push(`${bad} region${bad === 1 ? "" : "s"} at war or collapsing, so bodies are cheap`); }
     const ph = w.economy.phase;
     price = ph === "boom" ? 1.3 : ph === "slump" ? 0.85 : ph === "crash" ? 0.65 : 1;
     if (ph !== "steady") moods.push(`the Free Cities economy is in a ${ph}`);
   }
-  return { supply, price, mood: moods.join("; ") || "a steady market" };
+  return { supply, price, mood: moods.join(", and ") || "a steady market" };
 }
 
 export function corpValue(s: SaveState, c = s.corp): number {
@@ -207,7 +207,7 @@ const CORP_EVENTS: EventDef[] = [
     id: "corp_raid", severity: "notable", endogenous: false,
     candidates: (s) => (s.corp && (s.corp.divisions.capture ?? 0) >= 2 ? [{}] : []),
     weight: () => 1.2,
-    seed: (s) => `A rival company from the arcology across the strait has been raiding ${s.corp!.name}'s acquisition teams on the coast road: two convoys lost this month, drivers and cargo. Your acquisition director wants to know what you want done.`,
+    seed: (s) => `A rival company from the arcology across the strait has been raiding ${s.corp!.name}'s acquisition teams on the coast road. Two convoys were lost this month, drivers and cargo. Your acquisition director wants to know what you want done.`,
     options: [
       { id: "arm", label: "Arm the convoys", note: "¤8,000 from the treasury",
         resolve: (s) => { s.corp!.cash -= 8000; return `The next convoy goes out with twelve armed guards and a machine gun on the lead truck. The raiders take one look and let it pass. Nobody touches ${s.corp!.name}'s convoys again.`; } },

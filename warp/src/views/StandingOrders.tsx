@@ -92,7 +92,7 @@ export function MannerCard({ person }: { person: string }) {
       ) : <div className="text-[12px] dim mb-2">Nothing yet. When a scene settles how she is with someone (another of yours, or anyone else), it's kept here and she stays that way with them. You can write one below.</div>}
       <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); add(); }}>
         <input className="w-28 min-w-0" value={who} onChange={(e) => setWho(e.target.value)} placeholder="who" />
-        <input className="flex-1 min-w-[10rem]" value={how} onChange={(e) => setHow(e.target.value)} placeholder="e.g. subservient to him alone; talks to him gently" />
+        <input className="flex-1 min-w-[10rem]" value={how} onChange={(e) => setHow(e.target.value)} placeholder="e.g. subservient to him alone, and talks to him gently" />
         <Button size="sm" kind="primary" disabled={!who.trim() || !how.trim()} onClick={add}>Keep</Button>
       </form>
     </Card>

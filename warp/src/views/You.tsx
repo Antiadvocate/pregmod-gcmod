@@ -4,7 +4,8 @@ import { useGame } from "../lib/game";
 import { Button, Card, Field, Meter, Section, Stat, cx } from "../lib/ui";
 import { genderWord } from "../engine/you";
 import { selfProfile } from "../engine/self";
-import { buyTraining, householdRead, PLAYER_SKILLS, TIERS, trainingCost, type Tier } from "../engine/player";
+import { addCustomSkill, allSkills, buyTraining, householdRead, PLAYER_SKILLS, removeCustomSkill, skillWord, TIERS, trainingCost, type Tier } from "../engine/player";
+import { endowment, enlarge, enlargeCost, menace, talkOfIt, undoEnlarge } from "../engine/endowment";
 import { useState } from "react";
 import { unrest } from "../engine/security";
 import { read } from "../engine/obedience";
@@ -71,6 +72,7 @@ export default function You() {
 
       <Section title="Your body">
         <YourBody />
+        <WhatTheySay />
       </Section>
 
       <Section title="What you are good at">
@@ -110,36 +112,96 @@ function Skills() {
   const { save, mutate } = useGame();
   const [open, setOpen] = useState<string | null>(null);
   const [said, setSaid] = useState("");
+  const [name, setName] = useState("");
+  const [does, setDoes] = useState("");
   const t = save.player.training;
+  const social = new Set(["charisma", "seduction", "intimidation", "insight"]);
+  const groups: [string, { id: string; name: string; does: string; custom?: boolean }[]][] = [
+    ["With people", PLAYER_SKILLS.filter((x) => social.has(x.id))],
+    ["Running things", PLAYER_SKILLS.filter((x) => !social.has(x.id))],
+    ["Your own", (save.player.custom_skills ?? []).map((c) => ({ ...c, custom: true }))],
+  ];
+  const row = (sk: { id: string; name: string; does: string; custom?: boolean }) => (
+    <div key={sk.id} className="skill-row">
+      <button className="w-full text-left" onClick={() => setOpen(open === sk.id ? null : sk.id)}>
+        <Meter value={save.player.skills[sk.id] ?? 0} label={`${sk.name} · ${Math.round(save.player.skills[sk.id] ?? 0)} · ${skillWord(save.player.skills[sk.id] ?? 0)}`} />
+      </button>
+      <div className="text-[11px] dim mt-0.5">{sk.custom ? `"${sk.does}"` : sk.does}</div>
+      {open === sk.id ? (
+        <div className="mt-2 space-y-1.5 fade-in">
+          {(Object.keys(TIERS) as Tier[]).map((tier) => {
+            const cost = trainingCost(save, sk.id, tier);
+            const busy = !!TIERS[tier].weeks && !!t;
+            return (
+              <button key={tier} className="choice" disabled={busy || save.arcology.cash < cost} onClick={() => { let r = { ok: false, line: "" }; mutate((s) => { r = buyTraining(s, sk.id, tier); }); setSaid(r.line); setOpen(null); }}>
+                <span className="block text-[13.5px] leading-snug">{TIERS[tier].name} · ¤{cost.toLocaleString()}{TIERS[tier].weeks ? ` · ${TIERS[tier].weeks} weeks` : " · today"}</span>
+                <span className="block text-[11.5px] dim mt-0.5">{TIERS[tier].note} About +{TIERS[tier].gain}, less the better you already are.</span>
+              </button>
+            );
+          })}
+          {sk.custom ? <Button size="sm" kind="ghost" onClick={() => { mutate((s) => removeCustomSkill(s, sk.id)); setOpen(null); }}>forget this skill</Button> : null}
+        </div>
+      ) : null}
+    </div>
+  );
   return (
     <Card>
-      {t ? <div className="text-[12.5px] acc mb-3">{TIERS[t.tier].name} in {PLAYER_SKILLS.find((x) => x.id === t.skill)?.name.toLowerCase()}: {t.left} week{t.left === 1 ? "" : "s"} to go.</div> : null}
+      {t ? <div className="text-[12.5px] acc mb-3">{TIERS[t.tier].name} in {allSkills(save).find((x) => x.id === t.skill)?.name.toLowerCase()}: {t.left} week{t.left === 1 ? "" : "s"} to go.</div> : null}
       {said ? <div className="text-[12.5px] mid mb-3">{said}</div> : null}
-      <div className="space-y-3">
-        {PLAYER_SKILLS.map((sk) => (
-          <div key={sk.id}>
-            <button className="w-full text-left" onClick={() => setOpen(open === sk.id ? null : sk.id)}>
-              <Meter value={save.player.skills[sk.id] ?? 0} label={`${sk.name} · ${Math.round(save.player.skills[sk.id] ?? 0)}`} />
-            </button>
-            <div className="text-[11px] dim mt-0.5">{sk.does}</div>
-            {open === sk.id ? (
-              <div className="mt-2 space-y-1.5 fade-in">
-                {(Object.keys(TIERS) as Tier[]).map((tier) => {
-                  const cost = trainingCost(save, sk.id, tier);
-                  const busy = !!TIERS[tier].weeks && !!t;
-                  return (
-                    <button key={tier} className="choice" disabled={busy || save.arcology.cash < cost} onClick={() => { let r = { ok: false, line: "" }; mutate((s) => { r = buyTraining(s, sk.id, tier); }); setSaid(r.line); setOpen(null); }}>
-                      <span className="block text-[13.5px] leading-snug">{TIERS[tier].name} · ¤{cost.toLocaleString()}{TIERS[tier].weeks ? ` · ${TIERS[tier].weeks} weeks` : " · today"}</span>
-                      <span className="block text-[11.5px] dim mt-0.5">{TIERS[tier].note} About +{TIERS[tier].gain}, less the better you already are.</span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
+      <div className="skill-groups">
+        {groups.map(([title, list]) => (
+          <div key={title} className="skill-group">
+            <div className="text-[10.5px] uppercase tracking-[.12em] dim mb-2">{title}</div>
+            <div className="space-y-3">
+              {list.map(row)}
+              {title === "Your own" ? (
+                <div className="card-2 p-3">
+                  <div className="text-[12px] mid mb-2">Make up a skill of your own. Every scene, event and story is told what it is and how good you are. You get better by using it (say its name when you do), or by paying.</div>
+                  <input className="mb-2" value={name} maxLength={40} placeholder="Name, e.g. Hypnosis" onChange={(e) => setName(e.target.value)} />
+                  <textarea rows={2} value={does} maxLength={300} placeholder="What it lets you do, in your words, e.g. I can put people under with my voice and they do what I say." onChange={(e) => setDoes(e.target.value)} />
+                  <Button size="sm" kind="primary" className="mt-2" disabled={!name.trim() || !does.trim()} onClick={() => {
+                    let ok = false;
+                    mutate((s) => { ok = !!addCustomSkill(s, name, does, 20); });
+                    setSaid(ok ? `${name.trim()} is yours now, at 20.` : "You already have a skill by that name.");
+                    if (ok) { setName(""); setDoes(""); }
+                  }}>Add it</Button>
+                </div>
+              ) : null}
+            </div>
           </div>
         ))}
       </div>
-      <div className="text-[11px] dim mt-3">Tap a skill to pay for training. You also get better at each by doing it.</div>
+      <div className="text-[11px] dim mt-3">Tap a skill to pay for training. You also get better at each by doing it, charm by talking, seduction in bed, intimidation by punishing, insight by finding things out.</div>
+    </Card>
+  );
+}
+
+/** What the city says about your cock, and the one thing money can do about it. */
+function WhatTheySay() {
+  const { save, mutate } = useGame();
+  const [said, setSaid] = useState("");
+  const e = endowment(save);
+  if (e.dick === null) return null;
+  const talk = talkOfIt(save);
+  const m = menace(save);
+  const cost = enlargeCost(save);
+  return (
+    <Card className="mt-3">
+      <div className="text-[13px] mb-1">What they say about it</div>
+      <p className="text-[12.5px] mid">
+        {e.bought ? "It was made bigger, and everyone who knew it before knows it was bought. The jokes are about the surgery now."
+          : e.big ? "Nobody laughs. People who've seen it talk about it the other way."
+          : e.small ? (talk < 10 ? "Only the women you've had know, so far. They'll talk." : m >= 0.55 ? "Everyone knows, and nobody dares say it to you. You can tell from the silences." : "Everyone knows, and they joke about it where you can hear.")
+          : "Nothing worth repeating."}
+      </p>
+      {e.small ? <div className="mt-2"><Meter value={talk} label="how far it's got around" /></div> : null}
+      {e.small ? <div className="text-[11px] dim mt-1">{m >= 0.55 ? "You're feared, so it stays whispered." : m >= 0.3 ? "People are careful about it, mostly." : "Nobody's afraid of you enough to keep quiet."}</div> : null}
+      {said ? <div className="text-[12.5px] acc mt-2">{said}</div> : null}
+      <div className="flex gap-2 mt-2.5 flex-wrap">
+        {(e.dick ?? 0) < 7 ? <Button size="sm" disabled={save.arcology.cash < cost} onClick={() => { let r = { ok: false, line: "" }; mutate((s) => { r = enlarge(s); }); setSaid(r.line); }}>Have it enlarged · ¤{cost.toLocaleString()}</Button> : null}
+        {e.bought ? <Button size="sm" kind="ghost" onClick={() => { mutate((s) => undoEnlarge(s)); setSaid("Back to how you were born."); }}>have it reversed</Button> : null}
+      </div>
+      <div className="text-[11px] dim mt-2">Medicine makes it cheaper. The size you set in the body editor is what you were born with.</div>
     </Card>
   );
 }
@@ -150,7 +212,7 @@ function WhoYouAre() {
   const read = selfProfile({ ...save, player: { ...save.player, self: "" } });
   return (
     <Card>
-      <Field label="In your own words" hint="How you are with people, how you talk, what you're like with the ones you defer to. Every scene writes you this way; it wins over the record below.">
+      <Field label="In your own words" hint="How you are with people, how you talk, what you're like with the ones you defer to. Every scene writes you this way, and it wins over the record below.">
         <textarea rows={3} value={save.player.self ?? ""} placeholder="e.g. Quiet and courteous with everyone. Generous with the household. With Sabine I'm hers: I ask permission and I mean it."
           onChange={(e) => mutate((s) => { s.player.self = e.target.value || undefined; })} />
       </Field>

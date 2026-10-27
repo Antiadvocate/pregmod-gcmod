@@ -247,7 +247,7 @@ import { GOV_VOICE } from "../src/engine/talk.ts";
   lockUp(s, other, "locked in a cell");
   endWeek(s);
   check("a cell works with no cellblock built", other.assignment === "be confined in the cellblock" && s.reports.at(-1)!.ledger.length > 0);
-  check("every prompt says the owner's threats land", /AFRAID of it/.test(HOUSE_STYLE) && /never shrugs it off/.test(GOV_VOICE));
+  check("every prompt says the owner's threats land", /should be genuinely frightened/.test(HOUSE_STYLE) && /never shrugs it off/.test(GOV_VOICE));
   check("a governor is still a slave to the owner", /Governing a city doesn't change that/.test(GOV_VOICE));
 }
 

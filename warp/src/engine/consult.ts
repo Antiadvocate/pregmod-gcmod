@@ -23,14 +23,15 @@ import { condition } from "./prompts";
 import { describeGenitals, describeFeet } from "./genitals";
 import { romanceOf } from "./romance";
 import { recall } from "./memory";
+import { sentences } from "./style";
 
 const SYSTEM = `You are playing one slave in Free Cities, an adult text game about owning an arcology. Her owner is asking her a question in private. Answer as her, in first person, the way she would actually talk.
 
-She only knows what is on her card: her memories, what she has been told, what she believes. If she doesn't know something, she says so, or dodges. How honest she is with her owner is on the card too. She may lie or refuse if that is what she would do.
+She only knows what is on her card, meaning her memories, what she has been told, and what she believes. If she doesn't know something, she says so, or dodges. How honest she is with her owner is on the card too. She may lie or refuse if that is what she would do.
 
-Nobody is arguing about whether slavery is right; it is her life. If the question is crude, she answers it plainly. Never break character or mention the game, and never use its stat words ("devotion", "trust", "bond").
+Nobody is arguing about whether slavery is right, because it's her life. If the question is crude, she answers it plainly. Never break character or mention the game, and never use its stat words, like "devotion", "trust" or "bond".
 
-Answer in one or two short paragraphs of ordinary speech. Answer the question that was asked. No sayings, no dramatic one-word lines, no describing her own gestures.`;
+Answer in one or two short paragraphs of ordinary speech, and answer the question that was asked. Don't use sayings or dramatic one-word lines, and don't describe her own gestures.`;
 
 /** How much she will actually give you, in one line for the prompt. */
 function openness(s: SaveState, p: Person): string {
@@ -58,24 +59,24 @@ export async function askHer(s: SaveState, personId: string, question: string): 
     system: SYSTEM,
     user: [
       `YOU ARE: ${p.name}${p.surname ? " " + p.surname : ""}, ${p.age}, ${p.origin.nationality}. You were a ${p.origin.career}. ${p.origin.background}`,
-      `YOUR BODY (described the way others see it): ${p.body.appearance_facts} ${describeGenitals(p)} ${describeFeet(p)}`,
+      `YOUR BODY, described the way others see it: ${p.body.appearance_facts} ${describeGenitals(p)} ${describeFeet(p)}`,
       `YOUR VOICE: ${p.persona.speech_pattern}`,
       p.persona.voice?.example_lines?.length ? `THINGS ONLY YOU WOULD SAY: ${p.persona.voice.example_lines.map((l) => `"${l}"`).join(" ")}` : "",
-      p.persona.voice?.never_says?.length ? `YOU NEVER SAY: ${p.persona.voice.never_says.join("; ")}` : "",
-      `YOUR PERSONALITY: ${p.persona.core_traits.join("; ")}`,
-      `WHAT YOU CARE ABOUT: ${p.persona.values.join("; ")}`,
-      p.persona.texture.length ? `LIKES AND DISLIKES: ${p.persona.texture.join("; ")}` : "",
+      p.persona.voice?.never_says?.length ? `YOU NEVER SAY: ${p.persona.voice.never_says.join(", ")}` : "",
+      `YOUR PERSONALITY: ${p.persona.core_traits.join(", ")}`,
+      `WHAT YOU CARE ABOUT: ${p.persona.values.join(", ")}`,
+      p.persona.texture.length ? `LIKES AND DISLIKES: ${p.persona.texture.join(", ")}` : "",
       `HOW YOU ARE RIGHT NOW: ${condition(p)}, ${p.psyche.mood}.${p.psyche.active_states.length ? ` You are holding: ${p.psyche.active_states.join(", ")}.` : ""}`,
       `HOW OPEN YOU ARE WITH THE OWNER: ${openness(s, p)}`,
-      mannerLines(p).length ? `HOW YOU ARE WITH PARTICULAR PEOPLE (this is settled; if you talk about them, it shows): ${mannerLines(p).join("; ")}` : "",
+      mannerLines(p).length ? `HOW YOU ARE WITH PARTICULAR PEOPLE. This is settled, and if you talk about them, it shows.\n${mannerLines(p).join("\n")}` : "",
       `WHERE YOU STAND WITH THE OWNER: ${rom.standing}.`,
-      powerBetween(s, p).replace(/^THE POWER BETWEEN YOU: /, "THE POWER BETWEEN YOU AND THE OWNER (\"you\" below is the owner, \"she\" is you): "),
+      powerBetween(s, p).replace(/^THE POWER BETWEEN YOU\. /, "THE POWER BETWEEN YOU AND THE OWNER. Below, \"you\" is the owner and \"she\" is you. "),
       `YOUR JOB: ${p.assignment}${p.facility ? ` in the ${s.arcology.facilities[p.facility]?.name}` : ""}.`,
       relevant.length ? `WHAT YOU REMEMBER THAT BEARS ON THIS: ${relevant.map((m) => `${m.content} (week ${m.week})`).join(" | ")}` : "",
       mem?.beliefs.length ? `WHAT YOU HAVE CONCLUDED: ${mem.beliefs.map((b) => `"${b.text}"`).join(" ")}` : "",
-      mem?.facts.length ? `THINGS YOU HAVE BEEN TOLD: ${mem.facts.slice(-6).map((f) => f.text).join("; ")}` : "",
+      mem?.facts.length ? `THINGS YOU HAVE BEEN TOLD: ${sentences(mem.facts.slice(-6).map((f) => f.text))}` : "",
       `THE PLACE: ${s.arcology.name}, week ${s.arcology.week}.`,
-      genomeBrief(s) ? `WHAT THE OWNER HAS DONE TO THE CITY'S DNA (you see it every day):\n${genomeBrief(s)}` : "",
+      genomeBrief(s) ? `WHAT THE OWNER HAS DONE TO THE CITY'S DNA, which you see every day:\n${genomeBrief(s)}` : "",
       ``,
       `HE ASKS YOU: ${question}`,
     ].filter(Boolean).join("\n"),

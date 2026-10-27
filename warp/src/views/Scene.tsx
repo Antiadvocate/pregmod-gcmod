@@ -30,9 +30,9 @@ import { goTo, openPlaces, placeOf } from "../engine/places";
 import { SlaveHead } from "./SlaveArt";
 
 const MODES: { id: ActionMode; label: string; hint: string }[] = [
-  { id: "do", label: "do", hint: "you act; the world resolves it" },
+  { id: "do", label: "do", hint: "you act, and the world resolves it" },
   { id: "say", label: "say", hint: "spoken aloud, exactly as typed" },
-  { id: "think", label: "think", hint: "silent; nobody in the room hears it" },
+  { id: "think", label: "think", hint: "silent, so nobody in the room hears it" },
   { id: "story", label: "direct", hint: "a note to the narrator, never on the page" },
 ];
 
@@ -227,7 +227,7 @@ export default function Scene() {
             className="resize-none font-prose text-[15px]"
           />
           {busy && stopper.current ? (
-            <Button kind="danger" onClick={() => stopper.current?.abort()} title="Stop the model; the turn is thrown away">
+            <Button kind="danger" onClick={() => stopper.current?.abort()} title="Stop the model and throw the turn away">
               <Square size={13} /> stop
             </Button>
           ) : (

@@ -58,7 +58,7 @@ function owned(seed: string, asked: boolean, style?: string) {
   tie(f, "her husband", her.id);
   note(s, f, "the owner gave him Ana's hand at the market altar");
   check("someone tied to one of yours is kept", !!f.kept && tiedTo(s, her.id).length === 1);
-  check("her card knows who's in her life", /PEOPLE IN HER LIFE OUTSIDE THE HOUSE: Marco Ruiz, her husband/.test(personCard(s, her)) && /fish market/.test(personCard(s, her)));
+  check("her card knows who's in her life", /CONNECTIONS OUTSIDE THE HOUSEHOLD: Marco Ruiz, her husband/.test(personCard(s, her)) && /fish market/.test(personCard(s, her)));
   const lines = orderDealt(s, "Marco Ruiz", "dead");
   check("you can have them dealt with yourself", f.fate?.fate === "dead" && lines.length > 0);
   check("and every writer knows he's dead", settledBrief(s).includes("Marco Ruiz"));

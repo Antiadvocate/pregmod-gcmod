@@ -67,6 +67,7 @@ import "./owner.test.ts";
 import "./feed.test.ts";
 import "./partner.test.ts";
 import "./living.test.ts";
+import "./ownerlife.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);

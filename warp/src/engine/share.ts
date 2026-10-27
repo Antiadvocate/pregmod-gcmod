@@ -42,7 +42,7 @@ const SHARE_YES: Record<ReignStyle, (n: string) => string> = {
   reluctant: (n) => `${n} says yes before you've finished asking. She looks relieved.`,
   doting: (n) => `${n} says yes. "Of course you can. I'll be watching, that's all."`,
   playful: (n) => `${n} thinks about it and grins. "Fine. But when I say no, it's no."`,
-  stern: (n) => `${n} agrees, on terms: you run things, she checks them, and her word is final.`,
+  stern: (n) => `${n} agrees, on terms. You run things, she checks them, and her word is final.`,
   cruel: (n) => `${n} says yes, and you can tell she's looking forward to overruling you.`,
   vengeful: (n) => `${n} says yes. She doesn't say why, and that worries you more than a no would have.`,
 };
@@ -165,7 +165,7 @@ export function tickHand(s: SaveState, h: Person, r: Reign): string | null {
     if (r.favour < -40 || (recent >= 4 && r.favour < 10) || (r.defied >= 3 && r.defied > r.obeyed * 2)) {
       r.hand = "locked";
       r.locked_since = week;
-      return `${h.name} has taken the keys back. You can still see everything; you just can't change any of it.`;
+      return `${h.name} has taken the keys back. You can still see everything, but you can't change any of it.`;
     }
   } else if (r.hand === "locked" && r.locked_since !== undefined && week - r.locked_since >= 6) {
     if ((r.style === "reluctant" || r.style === "doting") && r.favour >= 30 && wouldShare(s, h, r.style, r.favour)) {
@@ -211,7 +211,7 @@ export function throughHer(s: SaveState, domain: Domain, chosen: { id: string; l
   const hers = yes ? chosen : herPick(s, options) ?? chosen;
   const line = hers.id === chosen.id
     ? `You told ${h.name} what you'd do. She did it.`
-    : `You told ${h.name} what you'd do. She listened, and then did it her way: ${hers.label.replace(/^./, (c) => c.toLowerCase())}.`;
+    : `You told ${h.name} what you'd do. She listened, and then did it her way. ${hers.label.replace(/^./, (c) => c.toLowerCase())}.`;
   r.favour = clamp(r.favour + (hers.id === chosen.id ? 1 : 0), -100, 100);
   return { id: hers.id, line };
 }
@@ -222,6 +222,6 @@ export function ownedBrief(s: SaveState): string {
   const h = keeperOf(s);
   if (hand === "owner" || !h) return "";
   return hand === "shared"
-    ? `THE PLAYER IS ${h.name.toUpperCase()}'S SLAVE, AND STILL HAS A HAND IN RUNNING THINGS: things come to the player as they always did, but everyone knows ${h.name} can overrule them, and some people go to her instead. Between the two of them she decides; she tells the player, she doesn't ask them.`
-    : `THE PLAYER IS ${h.name.toUpperCase()}'S SLAVE AND RUNS NOTHING: ${h.name} owns the arcology and decides. Things reach the player because people hope the player can reach her (they ask the player to put in a word), or because ${h.name} asks the player what they think, or because the player hears about it after. Write it that way: the player's choices are what they tell her, ask her, or do with what little they have. When ${h.name} has decided something, she tells the player; she doesn't ask their opinion or their permission for what's hers to decide, and she doesn't need them to agree. The player's choice is how they take it.`;
+    ? `THE PLAYER IS ${h.name.toUpperCase()}'S SLAVE, AND STILL HAS A HAND IN RUNNING THINGS. Things come to the player as they always did, but everyone knows ${h.name} can overrule them, and some people go to her instead. Between the two of them she decides, and she tells the player rather than asking them.`
+    : `THE PLAYER IS ${h.name.toUpperCase()}'S SLAVE AND RUNS NOTHING. ${h.name} owns the arcology and decides. Things reach the player because people hope the player can reach her and ask them to put in a word, or because ${h.name} asks the player what they think, or because the player hears about it after. Write it that way, so the player's choices are what they tell her, what they ask her, or what they do with what little they have. When ${h.name} has decided something, she tells the player. She doesn't ask their opinion or their permission for what's hers to decide, and she doesn't need them to agree. The player's choice is how they take it.`;
 }

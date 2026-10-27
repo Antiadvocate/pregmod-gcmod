@@ -79,7 +79,7 @@ export function tickSecurity(s: SaveState): SecurityWeek {
       }
     }
   }
-  if (u > 75) lines.push({ tone: "bad", weight: 9, text: `Your household is at ${Math.round(u)} unrest. Guards won't fix it; it's about how you've treated them.` });
+  if (u > 75) lines.push({ tone: "bad", weight: 9, text: `Your household is at ${Math.round(u)} unrest. Guards won't fix it, because it's about how you've treated them.` });
 
   /* ── the neighbours ───────────────────────────────────────────────────────────────────────── */
   for (const n of arc.neighbours) {

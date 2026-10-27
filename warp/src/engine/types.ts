@@ -1024,6 +1024,14 @@ export interface Player {
   /** Career before the arcology; sets starting skills and how citizens read you. */
   career: string;
   skills: Record<string, number>;
+  /** Skills the player made up for themselves; their numbers live in `skills` under the same id. See engine/player. */
+  custom_skills?: import("./player").CustomSkill[];
+  /** What surgery has done to the owner's body, so the city can tell a bought size from a born one. */
+  surgery?: { dick_from?: number; dick_week?: number };
+  /** How the world reads a small household: the owner who keeps only one or two. See engine/fewslaves. */
+  few?: import("./fewslaves").FewState;
+  /** A marriage the owner wrote the terms of themselves. See engine/marriage. */
+  marriage?: import("./marriage").Marriage;
   /** How the player describes themselves, for the narrator. Wins over what's read from the record. See engine/self. */
   self?: string;
   /** A course of study you paid for, while it runs. See engine/player. */

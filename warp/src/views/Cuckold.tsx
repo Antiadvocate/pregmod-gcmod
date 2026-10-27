@@ -216,7 +216,7 @@ export default function Cuckold({ id, onClose }: { id: string; onClose: () => vo
         ) : null}
         {c?.ended && last?.text ? (
           <div className="text-[12px] dim">
-            {c.ended.ending === "shared" || c.ended.ending === "his" ? `She still goes to ${c.bull?.short ?? "him"}; the week report counts the nights.` : "It's over. You could start this again with another woman, from her page."}
+            {c.ended.ending === "shared" || c.ended.ending === "his" ? `She still goes to ${c.bull?.short ?? "him"}, and the week report counts the nights.` : "It's over. You could start this again with another woman, from her page."}
           </div>
         ) : null}
       </div>

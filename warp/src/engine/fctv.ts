@@ -18,32 +18,32 @@ import { appeal } from "./economy";
 export type Channel = "news" | "doctrine" | "porn" | "training" | "sport" | "home";
 
 export const CHANNELS: Record<Channel, { name: string; note: string; shows: string[] }> = {
-  news: { name: "FCNN", note: "the Free Cities' news; citizens feel informed and a little safer", shows: [
+  news: { name: "FCNN", note: "the Free Cities' news, which makes citizens feel informed and a little safer", shows: [
     "FCNN runs a week of coverage of {region}, with drone footage of the refugee columns.",
     "FCNN's evening anchor interviews an owner from the Gulf about the price of security.",
-    "FCNN has a special on the weather: another bad year for the Old World's farms.",
+    "FCNN has a special on the weather, and another bad year for the Old World's farms.",
   ] },
   doctrine: { name: "Future Society Hour", note: "pushes the doctrines you've adopted", shows: [
     "Future Society Hour follows a household that lives by {doctrine}, from breakfast to bedtime.",
     "A panel of owners argues about {doctrine} for an hour, and the audience votes.",
     "A documentary about the first arcology to adopt {doctrine}, told by its slaves.",
   ] },
-  porn: { name: "Hot Pursuit", note: "the Free Cities' porn channel; citizens spend more and think less", shows: [
+  porn: { name: "Hot Pursuit", note: "the Free Cities' porn channel, so citizens spend more and think less", shows: [
     "Hot Pursuit runs a marathon of its most-watched scenes, all week, uncut.",
     "Hot Pursuit's new series follows a slave through her first week in a brothel.",
     "Hot Pursuit airs a live competition between two arcologies' best whores.",
   ] },
-  training: { name: "Slave Training Today", note: "how-to shows; your citizens' slaves behave better and yours learn by watching", shows: [
+  training: { name: "Slave Training Today", note: "how-to shows, so your citizens' slaves behave better and yours learn by watching", shows: [
     "Slave Training Today shows how to correct a slave who won't make eye contact.",
     "A trainer from the Gulf breaks a new girl on camera, in six episodes.",
-    "Slave Training Today's call-in show: owners describe their problem slaves.",
+    "On Slave Training Today's call-in show, owners describe their problem slaves.",
   ] },
-  sport: { name: "Pit Fights Live", note: "fights from every arcology's pit; the crowd is harder, and crime goes down", shows: [
+  sport: { name: "Pit Fights Live", note: "fights from every arcology's pit, which makes the crowd harder and crime go down", shows: [
     "Pit Fights Live broadcasts a championship bout from an arcology up the coast.",
     "A week of undercard fights, and one that goes badly wrong on air.",
     "Pit Fights Live runs a retrospective of the season's knockouts.",
   ] },
-  home: { name: "Home and Hearth", note: "cooking, gardens and happy households; the gentler doctrines like it", shows: [
+  home: { name: "Home and Hearth", note: "cooking, gardens and happy households, which the gentler doctrines like", shows: [
     "Home and Hearth visits a paternalist household where the slaves cook for the owners' children.",
     "A cooking show hosted by a pair of slave chefs who used to run a restaurant in the Old World.",
     "Home and Hearth does a week of gardening in the arcologies' hydroponic farms.",

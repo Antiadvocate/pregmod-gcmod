@@ -463,3 +463,79 @@ button.list-row:active { background: var(--ink-1); }
 .walk-in { animation: walk-in 0.9s cubic-bezier(.2,.7,.2,1); }
 @keyframes walk-in { 0% { transform: translateX(140%); opacity: 0; } 60% { opacity: 1; } 70% { transform: translateX(-4%) translateY(-2px); } 85% { transform: translateX(1%) translateY(0); } 100% { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .walk-in { animation: none; } }
+
+/* ── layout: side by side ──────────────────────────────────────────────────────────────────
+   Every screen used to be one column down the middle of whatever window it was in. Now its cards
+   flow: into columns when there's room, or into a strip of panels that scrolls sideways. A
+   screen's own wrapper (`pb-24` and friends) steps aside with display: contents so its cards are
+   what flows, and the things that only make sense full-width (the stat bands, a sub-tab bar) span. */
+.flow > :is(.pb-24, .pb-20, .flow-through) { display: contents; }
+
+.flow-columns { column-gap: 20px; padding-bottom: 96px; }
+@media (min-width: 1100px) { .flow-columns { column-count: 2; } }
+@media (min-width: 1620px) { .flow-columns { column-count: 3; } }
+.flow-columns > *, .flow-columns > :is(.pb-24, .pb-20, .flow-through) > * { break-inside: avoid; }
+.flow-columns > :is(.grid, .strip, .sticky, .span-all),
+.flow-columns > :is(.pb-24, .pb-20, .flow-through) > :is(.grid, .strip, .sticky, .span-all) { column-span: all; }
+.flow-columns section, .flow-columns .card { break-inside: avoid; }
+
+/* The strip is the same flow turned on its side: columns of a fixed width down the height of the
+   window, as many as the content needs, scrolled sideways like a broadsheet. Cards stay whole;
+   a heading stays with what's under it. */
+.flow-strip {
+  height: 100%; column-width: 400px; column-gap: 22px; column-fill: auto;
+  overflow-x: auto; overflow-y: hidden; padding-bottom: 14px; overscroll-behavior-x: contain;
+}
+.flow-strip > *, .flow-strip > :is(.pb-24, .pb-20, .flow-through) > * { break-inside: avoid; }
+.flow-strip :is(h2, h3, header, .foldhead) { break-after: avoid; }
+.flow-strip > :is(.grid, .strip) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.flow-strip > .sticky { position: static; }
+.flow-strip :empty:not(input, textarea, img, svg *, br, hr, .meter > div) { break-inside: auto; }
+.strip-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 25;
+  width: 36px; height: 36px; border-radius: 99px; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ink-2) 88%, transparent); border: 1px solid var(--line-strong);
+  color: var(--text-hi); box-shadow: 0 6px 20px rgba(0,0,0,.45); backdrop-filter: blur(6px);
+  transition: background .15s, transform .15s;
+}
+.strip-arrow:hover { background: var(--accent-soft); color: var(--accent); }
+.strip-arrow.left { left: 2px; } .strip-arrow.right { right: 2px; }
+@media (hover: none) { .strip-arrow { display: none; } }
+
+/* The families across the top, when the rail is off. */
+.topnav-btn {
+  display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0;
+  padding: 6px 11px; border-radius: 99px; font: 500 13px var(--font-sans); color: var(--text-lo);
+  border: 1px solid transparent; transition: background .15s, color .15s, border-color .15s;
+}
+.topnav-btn:hover { color: var(--text-hi); background: var(--ink-2); }
+.topnav-btn.on { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-glow); }
+@media (min-width: 768px) { .nav-top .endweek { left: 0; } }
+
+/* ── polish ────────────────────────────────────────────────────────────────────────────────── */
+.card { box-shadow: 0 1px 0 rgba(255,255,255,.025) inset, 0 10px 30px -18px rgba(0,0,0,.7); transition: border-color .18s, box-shadow .18s, transform .18s; }
+.card:hover { border-color: var(--line-strong); }
+section > header h2 { display: flex; align-items: center; gap: 8px; }
+section > header h2::before { content: ""; width: 3px; height: 13px; border-radius: 2px; background: var(--accent); opacity: .75; }
+.choice, .actbtn, .btn, .chip, .seg { transition: background .15s, border-color .15s, color .15s, transform .14s; }
+:focus-visible { outline: 2px solid var(--accent-glow); outline-offset: 2px; border-radius: 8px; }
+* { scrollbar-width: thin; scrollbar-color: var(--ink-3) transparent; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-thumb { background: var(--ink-3); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+*::-webkit-scrollbar-thumb:hover { background-color: var(--accent-glow); }
+*::-webkit-scrollbar-track { background: transparent; }
+.meter > div { background-image: linear-gradient(90deg, rgba(255,255,255,.0), rgba(255,255,255,.14)); }
+.marriage-card { border-color: var(--accent-glow); background: linear-gradient(160deg, var(--accent-soft), var(--ink-1) 55%); }
+
+/* Your skills, three families side by side when there's room. */
+.skill-groups { display: grid; gap: 18px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .skill-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* With her, on a desk: her on the left, what happened in the middle, what you can do on the right. */
+@media (min-width: 900px) {
+  .interact-body { flex-direction: row; }
+  .interact-body > .interact-stage { height: auto !important; width: 34%; max-width: 440px; border-right: 1px solid var(--line); }
+  .interact-body > .interact-controls { width: 380px; border-top: 0; border-left: 1px solid var(--line); overflow-y: auto; display: flex; flex-direction: column; }
+  .interact-body > .interact-controls .interact-tray { max-height: none !important; flex: 1; }
+  .interact-body > .interact-controls .no-scrollbar { flex-wrap: wrap; overflow: visible; }
+}

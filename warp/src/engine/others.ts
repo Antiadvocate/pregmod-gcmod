@@ -83,11 +83,11 @@ export function record(s: SaveState, f: Face): string {
   const toward = f.toward === undefined ? "" : f.toward >= 50 ? "fond of the player" : f.toward >= 15 ? "well disposed to the player" : f.toward > -15 ? "careful with the player" : f.toward > -50 ? "dislikes the player" : "hates the player";
   const bits = [
     f.what ? `${f.what}` : f.role ? `${f.role.replace(/_/g, " ")}` : "",
-    ties.length ? `${ties.join("; ")}` : "",
+    ties.length ? `${ties.join(", ")}` : "",
     toward,
     f.likes ? `likes ${f.likes}` : "",
     f.dislikes ? `can't stand ${f.dislikes}` : "",
   ].filter(Boolean);
   const mem = (f.notes ?? []).slice(-3).map((n) => `week ${n.week}: ${n.text.replace(/^week \d+:\s*/i, "")}`);
-  return `${bits.length ? `. ${bits.join("; ")}` : ""}${mem.length ? `. Remembers: ${mem.join(" | ")}` : ""}`;
+  return `${bits.length ? `. ${bits.join(", ")}` : ""}${mem.length ? `. Remembers: ${mem.join(" | ")}` : ""}`;
 }

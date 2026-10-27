@@ -18,7 +18,7 @@ import { romanceOf } from "../src/engine/romance.ts";
   for (let i = 0; i < 3; i++) applyDeed(s, { id: `d${i}`, week: 1, person: a.id, summary: "You were gentle with her.", tags: ["tenderness"], public: false, witnesses: [], effects: [], source: "test" });
   applyDeed(s, { id: "k", week: 1, person: a.id, summary: "You knelt to her.", tags: ["owner_submitted"], public: false, witnesses: [], effects: [], source: "test" });
   const prof = selfProfile(s).join("\n");
-  check("a gentle record makes a gentle owner", /mostly with care/.test(prof), prof);
+  check("a gentle record makes a gentle owner", /mostly treat people with care/.test(prof), prof);
   check("and deferring to her is part of who you are", /deferred to a slave's authority by choice/.test(prof), prof);
   applyDeed(s, { id: "b", week: 1, person: a.id, summary: "You knelt to her feet and let her fuck you.", tags: ["bottomed"], public: false, witnesses: [], effects: [], source: "test" });
   const prof2 = selfProfile(s).join("\n");
@@ -29,9 +29,9 @@ import { romanceOf } from "../src/engine/romance.ts";
 
   check("an owned slave doesn't tell her owner off", /as a slave to her owner, always/.test(powerBetween(s, b)) && /doesn't contradict you/.test(powerBetween(s, b)));
   romanceOf(a).dominion = 60;
-  check("one who holds the power leads", /she holds it/.test(powerBetween(s, a)));
+  check("one who holds the power leads", /She holds it/.test(powerBetween(s, a)));
   check("you defer to her, by the record", selfProfile(s).some((l) => l.includes("defer to") && l.includes(a.name)));
-  check("and her card says so", personCard(s, a, "").includes("THE POWER BETWEEN YOU: she holds it"));
+  check("and her card says so", personCard(s, a, "").includes("THE POWER BETWEEN YOU. She holds it"));
 }
 
 // A slave speaks as a slave however close she is, until you loosen it.
@@ -43,7 +43,7 @@ import { romanceOf } from "../src/engine/romance.ts";
   const r = rng("speech");
   const lines = Array.from({ length: 30 }, () => say(s, p, "open", r));
   check("and she uses your title", lines.every((l) => l.includes(s.player.address || "Master")), lines);
-  check("trust doesn't loosen her card", /HOW SHE SPEAKS TO YOU: as a slave/.test(personCard(s, p, "")));
+  check("trust doesn't loosen her card", /HOW SHE SPEAKS TO YOU\. She speaks as a slave/.test(personCard(s, p, "")));
   p.bond.resentment = 70; p.bond.bond = -40;
   check("resentful, she keeps the forms", registerOf(p) === "resentful" && Array.from({ length: 20 }, () => say(s, p, "open", r)).every((l) => !/What\.|Get on with it|You again/.test(l)));
   p.bond.resentment = 0; p.bond.bond = 90;

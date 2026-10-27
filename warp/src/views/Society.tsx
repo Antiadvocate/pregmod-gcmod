@@ -187,7 +187,7 @@ function OwnLaw() {
     <Card className="mt-2.5">
       <div className="text-[11px] uppercase tracking-wider dim mb-1">Your own law</div>
       <div className="text-[11.5px] dim mb-2">
-        Write it in your words; choose what it does. Needs {need.toLocaleString()} reputation (you have {Math.round(save.arcology.rep).toLocaleString()}), and more for every law of yours in force. The city repeals it through the court if it turns hard enough against it.
+        Write it in your words and choose what it does. Needs {need.toLocaleString()} reputation (you have {Math.round(save.arcology.rep).toLocaleString()}), and more for every law of yours in force. The city repeals it through the court if it turns hard enough against it.
       </div>
       <input className="mb-2" value={name} onChange={(e) => setName(e.target.value)} placeholder="Its name, e.g. The Kneeling Act" maxLength={60} />
       <textarea className="mb-2" rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="What it says, e.g. Every citizen kneels when a slave of the owner's household passes." maxLength={300} />
@@ -241,7 +241,7 @@ function Propaganda({ say }: { say: (fn: (s: ReturnType<typeof useGame>["save"])
         <button className="chip !text-[11px]" onClick={() => setAmount(cash)}>all of it</button>
       </div>
       <div className="text-[11.5px] dim mb-2">
-        {pv.norms.length ? pv.norms.map((n) => `${NORMS[n.norm].name} ${Math.round(n.from)} → ${Math.round(n.to)}`).join("; ") : "This law pushes no habit; the money buys goodwill only"}{`; goodwill → +${Math.round(pv.goodwill)}.`}
+        {pv.norms.length ? pv.norms.map((n) => `${NORMS[n.norm].name} ${Math.round(n.from)} → ${Math.round(n.to)}`).join("; ") : "This law pushes no habit, and the money buys only goodwill"}{`. Goodwill → +${Math.round(pv.goodwill)}.`}
       </div>
       <Button size="sm" kind="primary" disabled={amount < 1000 || amount > cash} onClick={() => say((s) => propaganda(s, x.id, amount))}>Run it · ¤{amount.toLocaleString()}</Button>
     </Card>
@@ -264,7 +264,7 @@ function Shape() {
       <div className="grid gap-2.5 sm:grid-cols-2">
         <Card>
           <div className="text-[11px] uppercase tracking-wider dim mb-1">Speak from the balcony</div>
-          <div className="text-[11.5px] dim mb-2">{canSpeak(save) ? "Free, once every two weeks. Moves one habit a little; pushing hard against the city costs standing." : `You spoke in week ${save.last_speech}. Next speech in week ${(save.last_speech ?? 0) + 2}.`}</div>
+          <div className="text-[11.5px] dim mb-2">{canSpeak(save) ? "Free, once every two weeks. It moves one habit a little, and pushing hard against the city costs standing." : `You spoke in week ${save.last_speech}. Next speech in week ${(save.last_speech ?? 0) + 2}.`}</div>
           <div className="space-y-1">
             {NORM_IDS.map((n) => (
               <div key={n} className="flex items-center gap-1.5 text-[12.5px]">
@@ -277,7 +277,7 @@ function Shape() {
         </Card>
         <Card>
           <div className="text-[11px] uppercase tracking-wider dim mb-1">Campaigns ({running.length} of {MAX_CAMPAIGNS})</div>
-          <div className="text-[11.5px] dim mb-2">Paid every week; each pushes one habit steadily until you stop it.</div>
+          <div className="text-[11.5px] dim mb-2">Paid every week. Each one pushes one habit steadily until you stop it.</div>
           {running.map((k) => { const c = CAMPAIGN_BY_ID[k.id]; return c ? (
             <div key={k.id} className="flex items-center gap-2 mb-1.5 text-[12.5px]">
               <span className="flex-1"><span className="acc">{c.name}</span> <span className="dim">· since week {k.since} · ¤{c.cost.toLocaleString()}/wk</span></span>
@@ -299,7 +299,7 @@ function Shape() {
             <div className="font-prose text-[13px] mb-1">{law.text}</div>
             <div className="text-[11.5px] dim mb-2">{NORMS[law.norm].name}: the city is {Math.round(Math.abs(cityMargin(save, law)))} {cityMargin(save, law) >= 0 ? "past" : "short of"} it.</div>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" kind="primary" title="Your word is law: it takes effect now. The further the city is from it, the more it costs your standing and reputation" onClick={() => say((s) => decreeLaw(s, law.id))}>Make it law{decreeCost(save, law).standing || decreeCost(save, law).rep ? ` · −${decreeCost(save, law).rep} rep${decreeCost(save, law).standing ? `, −${decreeCost(save, law).standing} standing` : ""}` : ""}</Button>
+              <Button size="sm" kind="primary" title="Your word is law, so it takes effect now. The further the city is from it, the more it costs your standing and reputation" onClick={() => say((s) => decreeLaw(s, law.id))}>Make it law{decreeCost(save, law).standing || decreeCost(save, law).rep ? ` · −${decreeCost(save, law).rep} rep${decreeCost(save, law).standing ? `, −${decreeCost(save, law).standing} standing` : ""}` : ""}</Button>
             </div>
           </> : <div className="text-[12px] dim">Every law is already in force.</div>}
         </Card>

@@ -29,7 +29,7 @@ const has = (n: number | null | undefined): n is number => typeof n === "number"
 export const DRUGS: DrugDef[] = [
   {
     id: "penis enhancement", name: "Penis enhancement", cost: 150,
-    note: "grows her cock a size at a time, up to awe-inspiring (10); grows a clit if she has no cock",
+    note: "grows her cock a size at a time, up to awe-inspiring (10), or grows a clit if she has no cock",
     conflicts: ["penis atrophiers"],
     can: (p) => !has(p.body.dick) && p.body.vagina === null ? "she has nothing for it to grow" : has(p.body.dick) && p.body.dick >= 10 ? "her cock is as big as normal drugs can make it" : !has(p.body.dick) && p.body.clit >= 5 ? "her clit is as big as it gets" : null,
     tick: (p, roll) => {
@@ -46,7 +46,7 @@ export const DRUGS: DrugDef[] = [
   },
   {
     id: "hyper penis enhancement", name: "Hyper penis enhancement", cost: 400, hyper: true,
-    note: "grows her cock without limit, far past anything natural; hard on her health, and past size 15 it gets in the way of walking",
+    note: "grows her cock without limit, far past anything natural. It's hard on her health, and past size 15 it gets in the way of walking",
     conflicts: ["penis atrophiers", "penis enhancement"],
     can: (p) => !has(p.body.dick) ? "she has no cock" : p.body.dick >= 30 ? "it can't get any bigger" : null,
     tick: (p, roll) => {
@@ -59,7 +59,7 @@ export const DRUGS: DrugDef[] = [
   },
   {
     id: "penis atrophiers", name: "Penis atrophiers", cost: 120,
-    note: "shrinks her cock a size at a time, down to tiny; shrinks a clit if she has no cock",
+    note: "shrinks her cock a size at a time, down to tiny, or shrinks a clit if she has no cock",
     conflicts: ["penis enhancement", "hyper penis enhancement"],
     can: (p) => has(p.body.dick) ? (p.body.dick <= 1 ? "it's already tiny" : null) : p.body.vagina !== null && p.body.clit > 0 ? null : "there's nothing to shrink",
     tick: (p, roll) => {
@@ -82,7 +82,7 @@ export const DRUGS: DrugDef[] = [
   },
   {
     id: "hyper testicle enhancement", name: "Hyper testicle enhancement", cost: 400, hyper: true,
-    note: "grows her balls without limit; past size 20 they drag and make walking hard, past 37 she can barely move, past 50 she can't",
+    note: "grows her balls without limit. Past size 20 they drag and make walking hard, past 37 she can barely move, and past 50 she can't",
     conflicts: ["testicle atrophiers", "testicle enhancement"],
     can: (p) => !has(p.body.balls) ? "she has no balls" : p.body.balls >= 60 ? "they can't get any bigger" : null,
     tick: (p, roll) => {
@@ -125,7 +125,7 @@ export const DRUGS: DrugDef[] = [
   },
   {
     id: "female hormones", name: "Female hormones", cost: 80,
-    note: "grows her breasts and softens her body; slowly shrinks her balls, and makes erections hard for her unless her balls are big",
+    note: "grows her breasts and softens her body, slowly shrinks her balls, and makes erections hard for her unless her balls are big",
     conflicts: ["male hormones"],
     can: () => null,
     tick: (p, roll) => {
@@ -138,7 +138,7 @@ export const DRUGS: DrugDef[] = [
   },
   {
     id: "male hormones", name: "Male hormones", cost: 80,
-    note: "adds muscle and hardens her body; slowly grows her cock and balls a little",
+    note: "adds muscle and hardens her body, and slowly grows her cock and balls a little",
     conflicts: ["female hormones"],
     can: () => null,
     tick: (p, roll) => {
@@ -157,7 +157,7 @@ export const DRUGS: DrugDef[] = [
   },
   {
     id: "hormone blockers", name: "Hormone blockers", cost: 60,
-    note: "suppresses her hormones; she can't get hard at all",
+    note: "suppresses her hormones, so she can't get hard at all",
     can: () => null,
     tick: () => null,
   },

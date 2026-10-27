@@ -89,7 +89,7 @@ const LEAD: Record<Register, string[]> = {
   eager: [
     "{name} looks up when you come in and smiles, and puts down what she was doing.",
     "{name} is sitting on the bed, and she's on her feet the moment she sees it's you.",
-    "{name} has been waiting for you; she comes over and stands close.",
+    "{name} has been waiting for you. She comes over and stands close.",
   ],
   bratty: [
     "{name} is sprawled across the bed and only lifts her head when you come in.",
@@ -307,7 +307,7 @@ const ACT_TEXT: Record<string, ActText> = {
   "public use": {
     core: [
       "You bend her over a rail on the concourse and fuck her in front of the evening crowd. Somebody films it. Somebody claps.",
-      "You take her against a pillar outside the shops. People slow down to watch; a few stop.",
+      "You take her against a pillar outside the shops. People slow down to watch, and a few stop.",
     ],
     yours: ["You finish inside her and leave her there, legs shaking, for whoever's still looking."],
     nocock: {
@@ -377,8 +377,8 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   "take charge": {
     core: [
-      "You lie back and tell her it's hers. She doesn't ask twice: she pins your wrists over your head, takes what she wants from you at her own pace, and tells you exactly what to do with your mouth.",
-      "You give her control and she takes it like it was always hers: she shoves you flat, climbs up and sits on your face, and rides you until she's done with you, not before.",
+      "You lie back and tell her it's hers. She doesn't ask twice. She pins your wrists over your head, takes what she wants from you at her own pace, and tells you exactly what to do with your mouth.",
+      "You give her control and she takes it like it was always hers. She shoves you flat, climbs up and sits on your face, and rides you until she's done with you, not before.",
     ],
   },
   "drain her": {
@@ -395,7 +395,7 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   "worship her": {
     core: [
-      "You spend an hour on her: hands, mouth, every inch, and you don't ask for anything back.",
+      "You spend an hour on her with your hands and mouth, every inch of her, and you don't ask for anything back.",
       "You kiss your way down her body and back up and down again, taking your time over every part of her.",
     ],
   },
@@ -571,12 +571,12 @@ const ACT_TEXT: Record<string, ActText> = {
   pedicure: {
     core: [
       "You soak her feet in warm water, scrub {soles} smooth, rub lotion into them, and paint her toenails while she watches.",
-      "You sit her down, put {feet} in your lap, and give her a full pedicure: filing, lotion, and fresh polish on every toenail.",
+      "You sit her down, put {feet} in your lap, and give her a full pedicure, with filing, lotion, and fresh polish on every toenail.",
     ],
   },
   "sleeping together": {
     core: [
-      "You tell her she's sleeping in your bed tonight. She strips and climbs in beside you, and you pull her against you under the covers. You don't fuck her; you just go to sleep with your arm around her. In the morning she's still there, warm and pressed against your side.",
+      "You tell her she's sleeping in your bed tonight. She strips and climbs in beside you, and you pull her against you under the covers. You don't fuck her. You just go to sleep with your arm around her. In the morning she's still there, warm and pressed against your side.",
       "At the end of the night you take her to your bed and tell her to get in. She lies down next to you stiffly, expecting to be used. When nothing happens she slowly relaxes, and falls asleep with her head on your shoulder. She wakes before you and stays where she is until you get up.",
       "You let her sleep in your bed tonight. She curls up against your back under the covers. You talk for a little while in the dark, and then you both fall asleep. You don't touch her except to hold her.",
     ],
@@ -589,8 +589,104 @@ const ACT_TEXT: Record<string, ActText> = {
   },
   talk: {
     core: [
-      "You sit down with her and ask about her life before she was enslaved: her family, her job, what she misses. She talks for a while, and you listen.",
+      "You sit down with her and ask about her life before she was enslaved, about her family, her job, and what she misses. She talks for a while, and you listen.",
       "You pour two drinks and ask her how she's finding life in the arcology. It takes her a while to give you an honest answer.",
+    ],
+  },
+  "worship armpits": {
+    core: [
+      "She lifts her arm over her head and you put your face in her armpit. She hasn't washed since this morning, and you breathe her in before you start to lick.",
+      "You kiss the soft hollow under her arm, then the other one, slowly, until she's laughing and squirming and holding your head there anyway.",
+    ],
+  },
+  "smell her": {
+    core: [
+      "She comes straight from her shift, sweaty, and you take your time with her neck, under her arms, the backs of her knees, her feet, and last between her legs. You tell her what you smell.",
+      "You make her stand still while you smell her all over. She goes red, and then she stops being embarrassed and starts pushing herself into your face.",
+    ],
+  },
+  "ass worship": {
+    core: [
+      "You kneel behind her and kiss your way across {ass}, then spread her and use your tongue where she reaches back and points.",
+      "She bends over the arm of the couch and you worship {ass} with your hands and mouth until her knees are shaking.",
+    ],
+  },
+  facesit: {
+    core: [
+      "You lie back and she climbs up and sits on your face, all her weight, thighs closed over your ears. She grinds slowly and lifts off when she decides you can breathe.",
+      "She straddles your head facing your feet and lowers herself onto your mouth. She stays down a long time and doesn't hurry for anyone.",
+    ],
+  },
+  "peg you": {
+    core: [
+      "She buckles on the strap-on and bends you over the bed. She's slow at first, then not, and she tells you exactly how you look taking it.",
+      "She lubes the strap-on in front of you, taking her time, and then she fucks you on your back with your knees pushed up, watching your face.",
+    ],
+  },
+  "lock you": {
+    core: [
+      "She locks the little steel cage onto your cock herself, tugs it to check, and hangs the key on a chain around her neck. She pats it and smiles at you.",
+      "You hand her the cage and the key. She takes her time fitting it, enjoys the click, and tells you she'll think about when you can come.",
+    ],
+  },
+  spit: {
+    core: [
+      "You kneel with your mouth open. She gathers it, takes aim and spits, then does it again on your cheek, and watches you swallow.",
+      "She holds your chin up and spits in your mouth, then tells you to say thank you, and does it again when you do.",
+    ],
+  },
+  ballbust: {
+    core: [
+      "You stand with your legs apart and your hands behind your back. She takes her time, then knees you, and watches you fold.",
+      "She cups your balls almost gently, then squeezes, slowly, watching your face until you make the noise she wanted.",
+    ],
+  },
+  "mock your cock": {
+    core: [
+      "She looks at your cock for a long moment, holds her hand up next to it, and starts laughing. Then she tells you exactly what she thinks of it.",
+      "She gets her favourite toy out of the drawer and holds it against you for comparison. She doesn't need to say anything. She does anyway.",
+    ],
+  },
+  footstool: {
+    core: [
+      "You kneel on all fours and she puts her feet up on your back, crossed at the ankle, and picks up a book. An hour goes by. She doesn't look at you once.",
+      "She rests her drink on the small of your back and her bare feet on your shoulders, and talks to someone on the phone as if you were furniture.",
+    ],
+  },
+  "watch her": {
+    core: [
+      "One of your guards is in your bed with her and you're in the chair in the corner. She looks over his shoulder at you the whole time, and afterwards she tells you how much bigger he was.",
+      "She takes the guard by the hand past you and leaves the door open. You watch all of it. When he's gone she lies back and tells you about it, slowly, in detail.",
+    ],
+  },
+  "choked by her": {
+    core: [
+      "She straddles you and puts her hand around your throat. She squeezes, lets go, squeezes, and watches your face going red with real interest.",
+      "She rides you with one hand on your throat, and decides when you breathe.",
+    ],
+  },
+  tribute: {
+    core: [
+      "She holds her hand out and names a number. You count it into her palm, and thank her for taking it, and she makes you say it again.",
+      "You transfer the money while she watches the screen. She smiles when it lands and tells you to kiss her foot for the privilege.",
+    ],
+  },
+  "choke her": {
+    core: [
+      "You put her on her back and your hand around her throat while you use her, and you decide when she breathes.",
+      "You hold her down by the throat. Her eyes go wide, then heavy, and her hands grip your wrist without pulling it away.",
+    ],
+  },
+  "leash her": {
+    core: [
+      "You clip the leash to her collar, put the ears on her and walk her round the suite on her hands and knees. You pet her head when she's good.",
+      "She crawls beside you on the leash through your rooms, and sits when you tell her to, and you scratch behind her ear.",
+    ],
+  },
+  "tickle her": {
+    core: [
+      "You pin her wrists over her head and tickle her ribs and under her arms until she's shrieking, then crying with laughter, then begging.",
+      "You hold her down and dig your fingers into her sides. She thrashes, laughing so hard she can't breathe.",
     ],
   },
 };
@@ -647,6 +743,15 @@ const TENDER_LANDED: string[] = [
   "She relaxes and leans into you.",
   "She's grateful, and it shows.",
 ];
+
+/** She's on top of you, not lying back: the femdom acts get her taking it. */
+const DOMMED_LANDED: Record<ActOutcome["landing"], string[]> = {
+  wanted: ["She's flushed and {wet} by the end, and she looks down at you like she owns the room.", "She's breathing hard and grinning, and she doesn't want it to be over.", "Her voice drops and her eyes go dark. This is the thing she's been wanting."],
+  willing: ["She gets into it more than she expected to.", "She's careful at first, then less careful, and she likes that."],
+  endured: ["She does it because you asked, and keeps glancing at you to check you really mean it.", "She goes through with it, stiffly, not sure what you want from her."],
+  hated: ["She does it, but she can't look at you, and her hands are shaking.", "She hates being made to do this to you, and it shows."],
+  nothing: ["She does it without much feeling either way.", "She's polite about it, and that's all."],
+};
 
 const SERVED_LANDED: string[] = [
   "She lies back and lets you. Her hand ends up in your hair.",
@@ -729,7 +834,7 @@ function discoveryLine(p: Person, o: ActOutcome, r: Rng): string {
     return `From how she took that, it's clear she's a ${p.persona.quirk?.id}.`;
   }
   if (p.persona.flaw?.known && o.discovered?.includes(p.persona.flaw.id)) {
-    return `She ${p.persona.flaw.id}; it was obvious from her face.`;
+    return `She ${p.persona.flaw.id}, and it was obvious from her face.`;
   }
   return o.discovered ? cap(o.discovered) + "." : "";
 }
@@ -737,7 +842,7 @@ function discoveryLine(p: Person, o: ActOutcome, r: Rng): string {
 function convertedLine(p: Person, o: ActOutcome): string {
   if (!o.converted) return "";
   const [from, to] = o.converted.split(" → ");
-  if (p.persona.paraphilia === to) return `She doesn't just like it any more; she needs it. Her ${from} fetish has become ${to}.`;
+  if (p.persona.paraphilia === to) return `She doesn't just like it any more. She needs it. Her ${from} fetish has become ${to}.`;
   return `She used to be ${from}. Now she's a ${to}.`;
 }
 
@@ -778,7 +883,9 @@ export function writeAct(s: SaveState, p: Person, o: ActOutcome, opts?: { lead?:
   const served = act.group === "hers" || act.tags.includes("worship");
   const pain = act.group === "discipline" && (act.tags.includes("pain") || act.tags.includes("punishment") || act.tags.includes("orders"));
   const shown = act.group === "display";
+  const dommed = act.tags.includes("femdom");
   const react = tender ? r.pick(TENDER_LANDED)
+    : dommed ? r.pick(DOMMED_LANDED[o.landing])
     : served && o.landing !== "hated" ? r.pick(SERVED_LANDED)
     : pain ? r.pick(PAIN_LANDED[o.landing])
     : shown ? r.pick(SHOWN_LANDED[o.landing])
@@ -826,9 +933,9 @@ export function writeAct(s: SaveState, p: Person, o: ActOutcome, opts?: { lead?:
 }
 
 const FORCED: Record<"vagina" | "anus" | "throat" | "other", string[]> = {
-  vagina: ["You push her down and force her legs apart. She fights you the whole way in, then goes still.", "She tries to close her legs; you hold them open and force yourself into her."],
+  vagina: ["You push her down and force her legs apart. She fights you the whole way in, then goes still.", "She tries to close her legs, but you hold them open and force yourself into her."],
   anus: ["You bend her over and hold her there by the back of the neck while you force yourself into her ass. She screams into the cushion.", "She claws at the sheets and begs you to stop as you force your way into her ass."],
-  throat: ["She keeps her mouth shut until you pinch her nose; then you force yourself down her throat while she chokes and slaps at your thighs."],
+  throat: ["She keeps her mouth shut until you pinch her nose, and then you force yourself down her throat while she chokes and slaps at your thighs."],
   other: ["She doesn't want it and fights you, and you make her anyway."],
 };
 const FORCED_LANDED = ["She hates every second of it, and hates you for it.", "She cries the whole time, and doesn't stop when you're done."];
@@ -837,7 +944,7 @@ const FIT_LINE: Record<string, string> = {
   loose: "She's loose around you and barely feels it.",
   fits: "",
   snug: "It's a tight fit, and she feels every inch of it.",
-  struggle: "It's too big for her: it takes a long time and a lot of lube to get it in at all, and it hurts her the whole way.",
+  struggle: "It's too big for her. It takes a long time and a lot of lube to get it in at all, and it hurts her the whole way.",
   damage: "It doesn't fit, and forcing it in tears her.",
 };
 

@@ -47,7 +47,7 @@ export const LAWS: LawDef[] = [
   },
   {
     id: "welfare_code", name: "Slave Welfare Code", norm: "cruelty", dir: -1, at: -35, repealAt: 0,
-    text: "Every slave is owed food, a bed and a doctor; beating one to injury is fined at the court.",
+    text: "Every slave is owed food, a bed and a doctor, and beating one to injury is fined at the court.",
     petitioners: "the clinic doctors and a church group from the lower blocks", pull: { cruelty: -40, personhood: 20 }, opposes: ["public_discipline"],
     weekly: (s, house) => {
       if (!house) return null;
@@ -115,7 +115,7 @@ export const LAWS: LawDef[] = [
   },
   {
     id: "barefoot_statute", name: "Barefoot Statute", norm: "feet", dir: 1, at: 45, repealAt: 10,
-    text: "Slaves go barefoot inside the arcology; shoes are for citizens.",
+    text: "Slaves go barefoot inside the arcology, because shoes are for citizens.",
     petitioners: "the washers of the fountain", pull: { feet: 30 },
     weekly: (s, house) => {
       adopt(s, "podolatry", 0.5);

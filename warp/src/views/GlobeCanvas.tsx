@@ -171,7 +171,7 @@ export default function GlobeCanvas({ places, selected, onSelect, focus }: { pla
   const zoom = (k: number) => { view.current.zoom = Math.max(0.8, Math.min(6, view.current.zoom * k)); };
   return (
     <div ref={box} className="relative w-full" style={{ maxWidth: 720 }}>
-      <canvas ref={cv} style={{ width: size, height: size, touchAction: "none", cursor: "grab", display: "block", margin: "0 auto" }} aria-label="the globe: drag to turn, scroll to zoom, click a place" />
+      <canvas ref={cv} style={{ width: size, height: size, touchAction: "none", cursor: "grab", display: "block", margin: "0 auto" }} aria-label="the globe. Drag to turn it, scroll to zoom, and click a place" />
       <div className="absolute right-1 top-1 flex flex-col gap-1">
         <button className="chip !text-[13px] !px-2" onClick={() => zoom(1.3)} aria-label="zoom in">+</button>
         <button className="chip !text-[13px] !px-2" onClick={() => zoom(1 / 1.3)} aria-label="zoom out">−</button>

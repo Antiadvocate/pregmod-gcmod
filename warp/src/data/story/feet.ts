@@ -65,14 +65,14 @@ The clip ends with ${c.sn} crossing the concourse on an errand. She is barefoot.
             c.treat(p, "recognition", 4, "citizens knelt to kiss her feet on the concourse");
             return { text: `You send ${p.name} down to the concourse the next evening with nothing on her feet and an errand that takes her straight past the fountain.
 
-The crowd sees her coming. By the time she's halfway across, twenty people are kneeling on the stone in two lines, and she has to walk between them. They kiss her feet as she passes: her toes, the tops of her feet, the backs of her heels. A man presses his forehead to the floor in front of her so she has to step around him.
+The crowd sees her coming. By the time she's halfway across, twenty people are kneeling on the stone in two lines, and she has to walk between them. They kiss her feet as she passes, her toes, the tops of her feet and the backs of her heels. A man presses his forehead to the floor in front of her so she has to step around him.
 
 ${d > 30 ? `${p.name} comes back up to the penthouse flushed and giggling. "They were kissing my feet," she keeps saying. "All of them. Did you see?"` : d < -20 ? `${p.name} comes back up shaking and furious. "They were all over me," she says. "Like I was a thing in a church. Don't send me down there again."` : `${p.name} comes back up quiet and a little dazed, and sits on the edge of the couch rubbing the top of one foot where someone's mouth was.`}
 
 The clip of her walk is all over the arcology by morning.`, next: "petition", after: 3 }; } },
         { id: "crush", label: "Have security clear the fountain and ban her from the concourse",
           run: (c) => { c.set("feet_movement", 5); c.set("feet_crushed", true); c.like("prophet", -30); c.standing(-1); c.security(2);
-            return { text: `Your guards clear the fountain that evening. ${c.n("prophet")} doesn't resist; she lets herself be walked out of the concourse with her basin under her arm, and the crowd follows her to the service stairs.
+            return { text: `Your guards clear the fountain that evening. ${c.n("prophet")} doesn't resist. She lets herself be walked out of the concourse with her basin under her arm, and the crowd follows her to the service stairs.
 
 A week later your security chief tells you the meetings haven't stopped. They've moved down into the maintenance levels, where there aren't any cameras.`, next: "petition", after: 5 }; } },
         { id: "ignore", label: "Leave it alone",
@@ -97,12 +97,12 @@ When she's done, ${c.n("prophet")} stays on her knees and looks up at you. "I wa
         { id: "grant", label: "Give her a stall on the promenade, with a basin and water",
           run: (c) => { c.cash(-1500); grow(c, 15); c.like("prophet", 25); c.standing(1);
             c.treat(c.subj, "recognition", 5, "had her feet washed and kissed before a crowd on the concourse");
-            return { text: `You give ${c.n("prophet")} a corner of the promenade with a stone basin plumbed into the water supply. Within a week there is a queue there every evening: citizens bringing their own slaves to have their feet washed, and other citizens waiting to watch and kneel.`, next: "petition", after: 3 }; } },
+            return { text: `You give ${c.n("prophet")} a corner of the promenade with a stone basin plumbed into the water supply. Within a week there is a queue there every evening, with citizens bringing their own slaves to have their feet washed, and other citizens waiting to watch and kneel.`, next: "petition", after: 3 }; } },
         { id: "kneel", label: "Kneel beside her and kiss your slave's feet yourself, in front of everyone",
           run: (c) => { grow(c, 25); c.rep(500); c.set("owner_knelt", true); c.like("prophet", 40);
             c.treat(c.subj, "recognition", 9, "her owner knelt and kissed her feet in front of the whole concourse");
             const p = c.subj; if (p) { p.fame.prestige = Math.max(p.fame.prestige, 1) as 1; p.fame.why = "her owner knelt to kiss her feet on the concourse"; }
-            return { text: `You get down on the wet stone next to ${c.n("prophet")}, take ${c.sn}'s foot from her, and kiss it: the ball of her foot, the arch, the pad of each toe. The crowd makes a sound you've never heard a crowd make.
+            return { text: `You get down on the wet stone next to ${c.n("prophet")}, take ${c.sn}'s foot from her, and kiss it, the ball of her foot, the arch, and the pad of each toe. The crowd makes a sound you've never heard a crowd make.
 
 ${c.sn} is staring down at you with her mouth open. When you stand up, she stays sitting on the fountain as if she's forgotten how to move, and a dozen citizens push forward to kiss her feet after you.
 
@@ -118,14 +118,14 @@ She moves into the slave quarters that night with her basin, and the next mornin
     },
     petition: {
       title: "The barefoot petition",
-      text: (c) => `${movement(c) > 30 || c.flag("owner_knelt") ? "Half the concourse goes barefoot now." : c.flag("feet_crushed") ? "The meetings in the maintenance levels have grown." : "The barefoot crowd at the fountain is bigger every week."} A delegation of citizens comes up to the penthouse with a petition: four thousand names.
+      text: (c) => `${movement(c) > 30 || c.flag("owner_knelt") ? "Half the concourse goes barefoot now." : c.flag("feet_crushed") ? "The meetings in the maintenance levels have grown." : "The barefoot crowd at the fountain is bigger every week."} A delegation of citizens comes up to the penthouse with a petition signed by four thousand names.
 
-They want the arcology to make it law. A slave's feet kept bare and cared for. No slave caned on the soles, no tendons clipped, no slave made to walk on anything that will cut her. A copper basin at every fountain. ${c.flag("feet_crushed") ? `${c.n("prophet")}'s name isn't on it anywhere, but everyone knows she wrote it.` : `${c.n("prophet")} is standing at the back of the delegation, barefoot.`}
+They want the arcology to make it law that a slave's feet are kept bare and cared for, that no slave is caned on the soles or has her tendons clipped, and that no slave is made to walk on anything that will cut her. They want a copper basin at every fountain. ${c.flag("feet_crushed") ? `${c.n("prophet")}'s name isn't on it anywhere, but everyone knows she wrote it.` : `${c.n("prophet")} is standing at the back of the delegation, barefoot.`}
 
 ${c.sn} is serving drinks while they talk. Everyone in the room keeps glancing at her feet.`,
       options: [
-        { id: "adopt", label: "Make it law: adopt Podolatry",
-          need: (c) => (Object.keys(c.s.arcology.doctrines).length >= 4 ? "you already hold four future societies; drop one first" : null),
+        { id: "adopt", label: "Make it law and adopt Podolatry",
+          need: (c) => (Object.keys(c.s.arcology.doctrines).length >= 4 ? "you already hold four future societies, so drop one first" : null),
           run: (c) => { const r = adoptDoctrine(c.s, PODOLATRY.id); if (!r.ok) return { text: r.why ?? "" };
             c.s.arcology.doctrines[PODOLATRY.id].adoption = clamp(15 + movement(c) / 2, 0, 60); c.set("podolatry", true); c.rep(400); c.standing(2); c.out.push("Podolatry adopted");
             return { text: `You sign it at your desk with the delegation watching. It goes out on every screen in the arcology within the hour.
@@ -161,7 +161,7 @@ When the attendant reaches for her ankles, ${c.sn} pulls her feet back up under 
 "No," she says. "Not my feet. ${adopted(c) ? "It's the law now. You made it the law." : "Everyone on the concourse says they're holy. You heard them."}" ${d > 30 ? `She's crying, but she's looking straight at you. "Hit me anywhere else. Please. Anywhere."` : d < -20 ? `She says it loud enough that the people in the atrium hear it, and they're already looking up.` : `Her voice is shaking. Below, a few citizens have stopped walking and are looking up at the window.`}`;
       },
       options: [
-        { id: "honour", label: "Let her keep her feet; punish her another way",
+        { id: "honour", label: "Let her keep her feet, and punish her another way",
           run: (c) => { grow(c, 8); c.rep(250); c.treat(c.subj, "kindness", 5, "you spared her feet from the cane because the arcology holds them sacred"); c.set("feet_spared", true);
             const p = c.subj; if (p) p.bond.fear = clamp(p.bond.fear - 5, 0, 100);
             return { text: `You tell the attendant to put the cane away. ${c.sn} gets six strokes across the backs of her thighs instead, bent over the frame, and she takes them without a sound.
@@ -199,7 +199,7 @@ ${c.arcology} has seen it. ${adopted(c) || movement(c) > 25 ? "People are furiou
           run: (c) => { c.cash(-18000); grow(c, 12); c.rep(500); c.like("rival_owner", -10);
             for (let i = 0; i < 2; i++) { const p = c.addSlave({ seed: `clipped${i}`, age: 19 + i * 3, quality: 0.4, how: `bought from ${c.full("rival_owner")} after ${c.he("rival_owner")} clipped her tendons on camera`, devoted: i === 0 }); feetOf(p).heels_clipped = true; p.health.recovery_weeks = 0; }
             c.out.push("two more of them are too far gone to save and die on the crossing");
-            return { text: `The girls come across the strait on a launch. Two of them die of infection on the way; the wounds weren't dressed. The two who make it are carried off the boat and straight to your clinic.
+            return { text: `The girls come across the strait on a launch. Two of them die of infection on the way, because the wounds weren't dressed. The two who make it are carried off the boat and straight to your clinic.
 
 They'll need the repair surgery, and weeks to learn to walk again. The first one, when she's put down on your penthouse floor, reaches down and touches her own heel as if she can't believe it's still there.`, next: "festival", after: 4 }; } },
         { id: "denounce", label: "Denounce him on every screen in the region",
@@ -207,7 +207,7 @@ They'll need the repair surgery, and weeks to learn to walk again. The first one
             return { text: `You go on the regional feed with ${c.sn} sitting at your feet, barefoot, and you talk about what ${c.n("rival_owner")} did for four minutes. You finish by lifting ${c.sn}'s foot onto your knee and kissing it on camera.
 
 It gets more views than ${c.his("rival_owner")} video did. ${c.n("rival_owner")} doesn't reply.`, next: "festival", after: 4 }; } },
-        { id: "clip", label: "Show him you don't care: clip one of your own", pick: { label: "Whose tendons are cut", filter: (p) => !feetOf(p).heels_clipped },
+        { id: "clip", label: "Show him you don't care by clipping one of your own", pick: { label: "Whose tendons are cut", filter: (p) => !feetOf(p).heels_clipped },
           run: (c, p) => { if (!p) return { text: "" }; feetOf(p).heels_clipped = true; p.health.recovery_weeks = Math.max(p.health.recovery_weeks, 2); grow(c, -35); c.rep(-900); c.standing(-3);
             c.treat(p, "cruelty", 10, "had her tendons clipped to answer a rival's video"); c.set("feet_betrayed", true); c.rumor(`the owner clipped ${p.name}'s tendons to spite the believers`, -1);
             return { text: `You have ${p.name} put under that afternoon and her tendons cut, and you put the video out yourself.
@@ -221,7 +221,7 @@ ${p.name} wakes up and tries to stand, and can't. The believers in the concourse
     festival: {
       title: "The Feast of Soles",
       wait: (c) => adopted(c) || movement(c) >= 20,
-      text: (c) => `The believers want a festival: one day a year when every slave in ${c.arcology} is carried instead of walking, and citizens line the concourse to wash and kiss their feet. ${adopted(c) ? "Your priests of the doctrine have already drawn up the route." : `${c.n("prophet")} has already chosen the day.`}
+      text: (c) => `The believers want a festival, one day a year when every slave in ${c.arcology} is carried instead of walking, and citizens line the concourse to wash and kiss their feet. ${adopted(c) ? "Your priests of the doctrine have already drawn up the route." : `${c.n("prophet")} has already chosen the day.`}
 
 They'd like the owner to lead it. They'd like ${c.sn}, whose feet started all of this, carried at the front.`,
       options: [

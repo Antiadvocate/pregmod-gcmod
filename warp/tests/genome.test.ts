@@ -159,7 +159,7 @@ const slavesOf = (s: ReturnType<typeof newGame>) => Object.values(s.people).filt
   let every = true;
   for (const pl of places(s)) for (let i = 0; i < 5; i++) { s.turn++; if (!/Owl program/.test(walkScene(s, pl))) every = false; }
   check("every walk, everywhere, shows the gene program", every);
-  check("the narrated walk is told to show it at work", /GENE PROGRAMS DID .*show at least one of the changes/.test(walkContext(s)) && /night vision/.test(walkContext(s)));
+  check("the narrated walk is told to show it at work", /GENE PROGRAMS DID[\s\S]*Show at least one of the changes/.test(walkContext(s)) && /night vision/.test(walkContext(s)));
 }
 
 {

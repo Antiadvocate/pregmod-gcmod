@@ -45,19 +45,19 @@ export const PROCEDURES: Procedure[] = [
     id: "male_to_female", name: "Turn her cock into a pussy", group: "genitals",
     what: "her cock and balls are removed and the tissue is used to build a vagina",
     cost: 15000, recovery: 3, damage: -20, takes: -14,
-    can: (p) => p.body.vagina !== null ? "she already has a pussy; use the herm operation to keep both" : !has(p.body.dick) ? "there is no cock to work with; she needs the harder operation" : null,
+    can: (p) => p.body.vagina !== null ? "she already has a pussy, so use the herm operation to keep both" : !has(p.body.dick) ? "there's no cock to work with, so she needs the harder operation" : null,
     apply: (p) => { p.womb.uterus = p.womb.uterus === "anal" ? "anal" : "none"; p.body.vagina = 0; p.body.vagina_lube = 1; p.body.hymen = false; p.body.labia = 1; p.body.clit = 1; p.body.dick = null; p.body.foreskin = null; p.body.balls = null; p.body.scrotum = 0; p.body.prostate = Math.min(1, p.body.prostate) as 0 | 1; },
   },
   {
     id: "none_to_female", name: "Build her a cunt from nothing", group: "genitals",
-    what: "a long operation to build genitals from nothing; recovery is slow",
+    what: "a long operation to build genitals from nothing, and recovery is slow",
     cost: 30000, recovery: 5, damage: -35, takes: -18, needs_upgrade: true,
     can: (p) => p.body.vagina !== null ? "she already has one" : has(p.body.dick) ? "use the ordinary operation" : null,
     apply: (p) => { p.womb.uterus = p.womb.uterus === "anal" ? "anal" : "none"; p.body.vagina = 0; p.body.vagina_lube = 0; p.body.labia = 0; },
   },
   {
     id: "herm", name: "Give her both", group: "genitals",
-    what: "she keeps her cock and gets a pussy under it; expensive",
+    what: "she keeps her cock and gets a pussy under it, and it's expensive",
     cost: 40000, recovery: 4, damage: -30, takes: -12, needs_upgrade: true,
     can: (p) => !has(p.body.dick) ? "she has no cock to keep" : p.body.vagina !== null ? "she already has both" : null,
     apply: (p) => { p.womb.uterus = p.womb.uterus === "anal" ? "anal" : "none"; p.body.vagina = 0; p.body.vagina_lube = 1; p.body.labia = 1; },
@@ -85,7 +85,7 @@ export const PROCEDURES: Procedure[] = [
   },
   {
     id: "circumcise", name: "Circumcise her", group: "genitals",
-    what: "she is circumcised; a quick operation with a sore couple of weeks after",
+    what: "she's circumcised, which is a quick operation followed by a sore couple of weeks",
     cost: 3000, recovery: 1, damage: -6, takes: -10,
     can: (p) => !has(p.body.dick) ? "there is nothing there" : p.body.foreskin === 0 ? "already done" : null,
     apply: (p) => { p.body.foreskin = 0; },
@@ -100,14 +100,14 @@ export const PROCEDURES: Procedure[] = [
 
   {
     id: "add_penis", name: "Give her a cock", group: "genitals",
-    what: "a cock grown from her own cells is grafted on above her pussy; without balls she won't get hard",
+    what: "a cock grown from her own cells is grafted on above her pussy, but without balls she won't get hard",
     cost: 25000, recovery: 4, damage: -25, takes: -8,
     can: (p) => has(p.body.dick) ? "she already has one" : null,
     apply: (p) => { p.body.dick = 2; p.body.foreskin = 2; if (!p.body.prostate) p.body.prostate = 1; },
   },
   {
     id: "add_balls", name: "Give her balls", group: "genitals",
-    what: "testicles grown from her own cells are implanted in a new scrotum; she'll produce cum, and hormones to match",
+    what: "testicles grown from her own cells are implanted in a new scrotum, so she'll produce cum, and hormones to match",
     cost: 22000, recovery: 3, damage: -20, takes: -6,
     can: (p) => has(p.body.balls) ? "she already has them" : null,
     apply: (p) => { p.body.balls = 2; p.body.scrotum = 2; p.body.vasectomy = false; if (!p.body.prostate) p.body.prostate = 1; },
@@ -116,7 +116,7 @@ export const PROCEDURES: Procedure[] = [
     id: "penis_enlarge", name: "Enlarge her cock", group: "genitals",
     what: "implants and grafts make her cock one size bigger",
     cost: 9000, recovery: 2, damage: -12, takes: -3,
-    can: (p, s) => !has(p.body.dick) ? "she has no cock" : p.body.dick >= (s?.content?.hyper === false ? 10 : 20) ? "it can't be made any bigger surgically; try growth drugs" : null,
+    can: (p, s) => !has(p.body.dick) ? "she has no cock" : p.body.dick >= (s?.content?.hyper === false ? 10 : 20) ? "it can't be made any bigger surgically, so try growth drugs" : null,
     apply: (p) => { p.body.dick = (p.body.dick ?? 0) + 1; if (p.body.foreskin) p.body.foreskin += 1; },
   },
   {
@@ -130,7 +130,7 @@ export const PROCEDURES: Procedure[] = [
     id: "balls_enlarge", name: "Enlarge her balls", group: "genitals",
     what: "testicular implants make her balls one size bigger and her loads heavier",
     cost: 8000, recovery: 2, damage: -12, takes: -4,
-    can: (p, s) => !has(p.body.balls) ? "she has no balls" : p.body.balls >= (s?.content?.hyper === false ? 10 : 20) ? "they can't be made any bigger surgically; try growth drugs" : null,
+    can: (p, s) => !has(p.body.balls) ? "she has no balls" : p.body.balls >= (s?.content?.hyper === false ? 10 : 20) ? "they can't be made any bigger surgically, so try growth drugs" : null,
     apply: (p) => { p.body.balls = (p.body.balls ?? 0) + 1; if ((p.body.scrotum ?? 0) > 0) p.body.scrotum = Math.max(p.body.scrotum ?? 0, p.body.balls - 1); },
   },
   {
@@ -142,7 +142,7 @@ export const PROCEDURES: Procedure[] = [
   },
   {
     id: "scrotum_tuck", name: "Move her balls inside", group: "genitals",
-    what: "her testicles are moved inside her body and the scrotum is removed; her crotch looks smooth",
+    what: "her testicles are moved inside her body and the scrotum is removed, so her crotch looks smooth",
     cost: 9000, recovery: 2, damage: -14, takes: -10,
     can: (p) => !has(p.body.balls) ? "she has no balls" : p.body.scrotum === 0 ? "they're already internal" : p.body.balls > 4 ? "they're too big to fit inside her" : null,
     apply: (p) => { p.body.scrotum = 0; },
@@ -170,7 +170,7 @@ export const PROCEDURES: Procedure[] = [
   },
   {
     id: "clit_enlarge", name: "Enlarge her clit", group: "genitals",
-    what: "her clit is enlarged one step; at the top it's a little cock of its own",
+    what: "her clit is enlarged one step, and at the top it's a little cock of its own",
     cost: 5000, recovery: 1, damage: -8, takes: -4,
     can: (p) => p.body.vagina === null ? "she has no pussy" : p.body.clit >= 5 ? "it's as big as it gets" : null,
     apply: (p) => { p.body.clit = Math.min(5, p.body.clit + 1); },
@@ -207,7 +207,7 @@ export const PROCEDURES: Procedure[] = [
   /* ── what she can do ─────────────────────────────────────────────────────────────────────── */
   {
     id: "sterilise", name: "Sterilise her", group: "fertility",
-    what: "her ovaries are removed; she is permanently sterile",
+    what: "her ovaries are removed, and she's permanently sterile",
     cost: 6000, recovery: 2, damage: -14, takes: -35, extreme: true,
     can: (p) => p.womb.sterile ? "she already cannot" : p.womb.uterus === "none" || (p.womb.uterus === undefined && p.body.vagina === null) ? "she has no womb" : null,
     apply: (p) => { p.womb.sterile = true; p.womb.fertility = 0; },
@@ -216,47 +216,47 @@ export const PROCEDURES: Procedure[] = [
     id: "restore_fertility", name: "Restore her fertility", group: "fertility",
     what: "new ovaries grown from her own cells are implanted",
     cost: 22000, recovery: 3, damage: -16, takes: 12, needs_upgrade: true,
-    can: (p) => !p.womb.sterile ? "she is already fertile" : p.womb.uterus === "none" || (p.womb.uterus === undefined && p.body.vagina === null) ? "she has no womb; implant one first" : null,
+    can: (p) => !p.womb.sterile ? "she is already fertile" : p.womb.uterus === "none" || (p.womb.uterus === undefined && p.body.vagina === null) ? "she has no womb, so implant one first" : null,
     apply: (p) => { p.womb.sterile = false; p.womb.fertility = 60; },
   },
   {
     id: "womb_implant", name: "Implant a womb behind her pussy", group: "fertility",
     what: "a womb grown from her own cells is placed behind her pussy, so she can carry",
     cost: 35000, recovery: 4, damage: -24, takes: -4, needs_upgrade: true, extreme: true,
-    can: (p) => p.body.vagina === null ? "she has no pussy for it to open into; the anal version does without" : p.womb.uterus === "natal" ? "she already has one" : p.womb.fetuses.length ? "not while she's carrying" : null,
+    can: (p) => p.body.vagina === null ? "she has no pussy for it to open into, but the anal version does without one" : p.womb.uterus === "natal" ? "she already has one" : p.womb.fetuses.length ? "not while she's carrying" : null,
     apply: (p) => { p.womb.uterus = "natal"; p.womb.sterile = false; p.womb.fertility = Math.max(p.womb.fertility, 55); },
   },
   {
-    id: "anal_womb", name: "Anal pregnancy: implant a womb in her ass", group: "fertility",
-    what: "a womb is implanted and opened into her rectum; she can be bred through her ass and delivers by caesarean",
+    id: "anal_womb", name: "Anal pregnancy, by implanting a womb in her ass", group: "fertility",
+    what: "a womb is implanted and opened into her rectum, so she can be bred through her ass, and she delivers by caesarean",
     cost: 45000, recovery: 5, damage: -30, takes: -16, needs_upgrade: true, extreme: true,
     can: (p) => p.womb.uterus === "anal" ? "she already has one" : p.womb.uterus === "natal" || (p.womb.uterus === undefined && p.body.vagina !== null) ? "she already has a womb" : null,
     apply: (p) => { p.womb.uterus = "anal"; p.womb.sterile = false; p.womb.fertility = Math.max(p.womb.fertility, 50); p.womb.cycle_day = 0; },
   },
   {
     id: "hysterectomy", name: "Remove her womb", group: "fertility",
-    what: "her womb is taken out; she will never carry",
+    what: "her womb is taken out, and she'll never carry a child",
     cost: 8000, recovery: 2, damage: -16, takes: -30, extreme: true,
     can: (p) => p.womb.uterus === "none" || (p.womb.uterus === undefined && p.body.vagina === null) ? "she has no womb" : p.womb.fetuses.length ? "not while she's carrying" : null,
     apply: (p) => { p.womb.uterus = "none"; p.womb.sterile = true; p.womb.fertility = 0; },
   },
   {
     id: "penile_implant", name: "Fit her a penile implant", group: "genitals",
-    what: "an inflatable implant in her shaft; she gets fully hard on command, at any size",
+    what: "an inflatable implant goes in her shaft, so she gets fully hard on command, at any size",
     cost: 14000, recovery: 2, damage: -10, takes: -3, needs_upgrade: true,
     can: (p) => !has(p.body.dick) ? "she has no cock" : p.body.penile_implant ? "already fitted" : null,
     apply: (p) => { p.body.penile_implant = true; },
   },
   {
     id: "vasectomy", name: "Cut her off", group: "fertility",
-    what: "a vasectomy; she can still cum but can't get anyone pregnant",
+    what: "with a vasectomy she can still cum, but she can't get anyone pregnant",
     cost: 2000, recovery: 1, damage: -4, takes: -8,
     can: (p) => !has(p.body.balls) ? "there is nothing there" : p.body.vasectomy ? "already done" : null,
     apply: (p) => { p.body.vasectomy = true; },
   },
   {
     id: "undo_vasectomy", name: "Reverse her vasectomy", group: "fertility",
-    what: "her vasectomy is reversed; her cum can get people pregnant again",
+    what: "her vasectomy is reversed, so her cum can get people pregnant again",
     cost: 6000, recovery: 1, damage: -6, takes: 4,
     can: (p) => !p.body.vasectomy ? "she hasn't had one" : null,
     apply: (p) => { p.body.vasectomy = false; },
@@ -272,7 +272,7 @@ export const PROCEDURES: Procedure[] = [
   /* ── the body ────────────────────────────────────────────────────────────────────────────── */
   {
     id: "fuckable_nipples", name: "Open her nipples", group: "body",
-    what: "her nipples are enlarged into holes that can be fucked; this is permanent",
+    what: "her nipples are enlarged into holes that can be fucked, and it's permanent",
     cost: 18000, recovery: 3, damage: -22, takes: -20, needs_upgrade: true, extreme: true,
     can: (p) => p.body.boobs < 400 ? "there is not enough breast to work with" : p.body.nipples === "fuckable" ? "already done" : null,
     apply: (p) => { p.body.nipples = "fuckable"; },
@@ -286,7 +286,7 @@ export const PROCEDURES: Procedure[] = [
   },
   {
     id: "lactation_implant", name: "Start her lactating", group: "body",
-    what: "lactation implants; she starts producing milk within a week and never stops",
+    what: "with lactation implants she starts producing milk within a week, and never stops",
     cost: 10000, recovery: 2, damage: -12, takes: -8,
     can: (p) => p.body.lactation ? "she already is" : p.body.boobs < 300 ? "there is nothing to work with" : null,
     apply: (p) => { p.body.lactation = 1; p.body.lactation_weeks = 0; },
@@ -316,14 +316,14 @@ export const PROCEDURES: Procedure[] = [
   /* ── her feet ────────────────────────────────────────────────────────────────────────────── */
   {
     id: "clip_tendons", name: "Clip her Achilles tendons", group: "feet",
-    what: "her Achilles tendons are cut; she can't stand flat any more and has to walk in heels or crawl",
+    what: "her Achilles tendons are cut, so she can't stand flat any more and has to walk in heels or crawl",
     cost: 5000, recovery: 2, damage: -15, takes: -30, extreme: true,
     can: (p) => feetOf(p).heels_clipped ? "already done" : null,
     apply: (p) => { feetOf(p).heels_clipped = true; },
   },
   {
     id: "repair_tendons", name: "Repair her tendons", group: "feet",
-    what: "her clipped tendons are repaired; she can walk normally again",
+    what: "her clipped tendons are repaired, so she can walk normally again",
     cost: 12000, recovery: 4, damage: -12, takes: 14, needs_upgrade: true,
     can: (p) => !feetOf(p).heels_clipped ? "her tendons are intact" : null,
     apply: (p) => { feetOf(p).heels_clipped = false; },
@@ -351,7 +351,7 @@ export const PROCEDURES: Procedure[] = [
   },
   {
     id: "sensitize_soles", name: "Sensitize her soles", group: "feet",
-    what: "nerve work makes her soles hypersensitive; the lightest touch sets her squealing",
+    what: "nerve work makes her soles hypersensitive, so the lightest touch sets her squealing",
     cost: 6000, recovery: 1, damage: -6, takes: -8,
     can: (p) => feetOf(p).ticklish >= 3 ? "they're as sensitive as they get" : null,
     apply: (p) => { feetOf(p).ticklish = 3; },

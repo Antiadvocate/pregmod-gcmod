@@ -12,6 +12,7 @@
  * How she is with you is the standing orders' job (engine/agreements), not this.
  */
 import type { Person, SaveState } from "./types";
+import { sentences } from "./style";
 
 export interface Manner {
   /** Who it's toward, by the name the scene used. */
@@ -71,10 +72,10 @@ export function mannerBrief(s: SaveState, p: Person): string {
   const first = (n: string) => n.trim().split(/\s+/)[0].toLowerCase();
   const known = new Set([...Object.values(s.people).map((x) => first(x.name)), ...Object.values(s.faces ?? {}).map((f) => first(f.name))]);
   const hers = mannerOf(p).filter((m) => (m.id && s.people[m.id]) || known.has(first(m.toward))).map((m) => `${m.toward}: ${m.how}`);
-  if (hers.length) out.push(`HOW SHE IS WITH PARTICULAR PEOPLE (settled; whenever one of them is in the scene or comes up, she is like this with them, until a scene changes it): ${hers.join("; ")}.`);
+  if (hers.length) out.push(`HOW SHE IS WITH PARTICULAR PEOPLE. This is settled. Whenever one of them is in the scene or comes up, she's like this with them, until a scene changes it. ${sentences(hers)}`);
   const theirs = Object.values(s.people)
     .filter((x) => x.id !== p.id && (x.status === "owned" || x.status === "indentured"))
     .flatMap((x) => mannerOf(x).filter((m) => m.id === p.id).map((m) => `${x.name} with her: ${m.how}`));
-  if (theirs.length) out.push(`HOW OTHERS ARE WITH HER: ${theirs.join("; ")}.`);
+  if (theirs.length) out.push(`HOW OTHERS ARE WITH HER. ${sentences(theirs)}`);
   return out.join("\n");
 }

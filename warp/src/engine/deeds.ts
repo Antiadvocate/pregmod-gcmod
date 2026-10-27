@@ -113,7 +113,7 @@ export const DEED_TAGS: Record<string, TagDef> = {
   },
   owner_submitted: {
     label: "you deferred to her",
-    when: "the player handed her AUTHORITY: obeyed a decision of hers outside sex, asked her permission for something that is the owner's to decide, let her decide something about the household, the city or other people, or backed down to her in an argument. Never sex or worship: kneeling to her feet, being fucked or used by her, begging in bed, or giving her free use of the owner's body is bottomed, not this",
+    when: "the player handed her AUTHORITY, by obeying a decision of hers outside sex, asking her permission for something that's the owner's to decide, letting her decide something about the household, the city or other people, or backing down to her in an argument. It's never sex or worship. Kneeling to her feet, being fucked or used by her, begging in bed, or giving her free use of the owner's body counts as bottomed, not this",
     apply: (c) => {
       if (!c.p) return;
       shiftDominion(c.s, c.p, 12, c.d.summary);
@@ -127,7 +127,7 @@ export const DEED_TAGS: Record<string, TagDef> = {
   },
   bottomed: {
     label: "you submitted to her in bed",
-    when: "the player was sexually submissive with her: knelt to worship her feet or body, let her top, fuck or use them, begged in bed, or gave her free use of their body. The owner's taste, chosen and stopped by the owner; it gives her no say over anything else",
+    when: "the player was sexually submissive with her, by kneeling to worship her feet or body, letting her top, fuck or use them, begging in bed, or giving her free use of their body. It's the owner's taste, started and stopped by the owner, and it gives her no say over anything else",
     // Submissive is not subservient: she's wanted, and that's all it is. No dominion moves.
     apply: (c) => { treat(c, "recognition", 2, c.d.summary); },
   },
@@ -140,11 +140,11 @@ export const DEED_TAGS: Record<string, TagDef> = {
     label: "you promised her freedom", when: "the player promised to free her, someday or on a condition",
     household: { kind: "recognition", size: 1 },
     apply: (c) => { if (!c.p) return; c.p.bond.hope = clamp(c.p.bond.hope + 20, 0, 100); c.out.push(`${nm(c.p)} is counting on it`); },
-    echo: { after: [4, 8], situation: (s, d, p) => `${nm(p)} brings it up again, quietly, while she's dressing you: "${d.summary.replace(/^You /, "you ")}" — she remembers exactly what you said. She wants to know when.`,
+    echo: { after: [4, 8], situation: (s, d, p) => `${nm(p)} brings it up again, quietly, while she's dressing you. "${d.summary.replace(/^You /, "you ")}," she says, and she remembers exactly what you said. She wants to know when.`,
       options: [{ label: "Keep your word", effect: "promise_kept", value: 9 }, { label: "Tell her not yet", effect: "recognition", value: 2 }, { label: "Tell her you never meant it", effect: "promise_broken", value: 10 }] },
   },
   promise_made: {
-    label: "you promised her something", when: "the player promised her anything short of freedom: a gift, a day off, protection, to come back",
+    label: "you promised her something", when: "the player promised her anything short of freedom, like a gift, a day off, protection, or to come back",
     apply: (c) => { if (!c.p) return; c.p.bond.hope = clamp(c.p.bond.hope + 8, 0, 100); },
     echo: { after: [2, 4], situation: (s, d, p) => `${nm(p)} hasn't forgotten what you promised her. She mentions it in passing, trying not to make it sound like she's keeping score.`,
       options: [{ label: "Do it now", effect: "promise_kept", value: 6 }, { label: "Put it off", effect: "promise_broken", value: 3 }, { label: "Deny you ever said it", effect: "promise_broken", value: 7 }] },
@@ -180,7 +180,7 @@ export const DEED_TAGS: Record<string, TagDef> = {
       options: [{ label: "Confront her", effect: "coercion", value: 5 }, { label: "Let it go", effect: "recognition", value: 2 }, { label: "Punish her for it publicly", effect: "cruelty", value: 7 }] },
   },
   she_confided: {
-    label: "she told you a secret", when: "she told the player something she had been hiding: her past, a plan, a feeling, who she really is",
+    label: "she told you a secret", when: "she told the player something she had been hiding, like her past, a plan, a feeling, or who she really is",
     apply: (c) => { if (c.p) moveEdge(c.s.edges, c.p.id, "owner", { trust: 5 }); treat(c, "recognition", 2, "you listened when she told you"); },
   },
   elevated: {
@@ -239,7 +239,7 @@ export const DEED_TAGS: Record<string, TagDef> = {
     apply: (c) => { treat(c, "recognition", 3, c.d.summary); doctrine(c, "podolatry", c.d.public ? 4 : 1); if (c.s.story && c.s.story.flags["feet_movement"] !== undefined) c.s.story.flags["feet_movement"] = clamp(Number(c.s.story.flags["feet_movement"]) + (c.d.public ? 5 : 1), 0, 100); },
   },
   breeding: {
-    label: "you decided she'll carry your child", when: "the player decided to get HER pregnant or keep her pregnancy; never when she is the one breeding the player",
+    label: "you decided she'll carry your child", when: "the player decided to get HER pregnant or keep her pregnancy, but never when she's the one breeding the player",
     // She can only be taken off contraceptives if there's a womb for them to protect.
     apply: (c) => { if (!c.p || !hasWomb(c.p)) return; c.p.womb.contraceptives = false; doctrine(c, "repopulation", 2); c.out.push(`${nm(c.p)} is off contraceptives`); },
   },
@@ -261,22 +261,22 @@ export function deedsOf(s: SaveState): Deed[] {
 
 export const CONSEQUENCE_SYSTEM = `You read a finished scene from Free Cities, an adult text game about owning an arcology, and record what it changed. Reply with JSON only.
 
-{"summary":"one sentence, past tense, second person, what the player did and what she did, naming her: e.g. You knelt and gave yourself to Halyna as her slave, and she locked your collar.",
- "tags":["ids from the TAGS list that happened, most important first, 1 to 4 of them"],
+{"summary":"one sentence, in the past tense and the second person, saying what the player did and what she did, and naming her, for example You knelt and gave yourself to Halyna as her slave, and she locked your collar.",
+ "tags":["1 to 4 ids from the TAGS list that happened, most important first"],
  "public":false,
  "witnesses":["names of other people who were there, if any"],
- "her_memory":"one sentence, in her own first person (I, me, my), with the player as 'the owner', what she will remember, with who did what to whom exactly as the scene had it: if the owner served her, the owner is the one serving",
+ "her_memory":"one sentence in her own first person (I, me, my), with the player as 'the owner', saying what she'll remember, with who did what to whom exactly as the scene had it, so if the owner served her, the owner is the one serving",
  "lasting_fact":"one sentence that is now true of the world because of this, or empty",
- "sold":["names of the player's slaves the player actually had sold or taken away to be sold in this scene: an order carried out, not a threat; empty if none"],
- "threatened":["names of OTHER people in the scene (not her) the player threatened to sell, exile or punish; empty if none"],
- "ways":["0 to 2 lines: a way the player and SHE do things together that this scene set up, confirmed or repeated (a ritual, how they talk to each other, what she calls him, what always happens), written so a later scene can keep it, e.g. 'he talks to her soles, never her face, and she answers through them'. Empty if the scene didn't settle anything"],
- "outsiders":[{"name":"full name of someone in the scene who is neither the player nor one of the player's slaves, and who mattered in it","what":"what they do, a few words","remembers":"one sentence from their side of what happened, with the player as 'the owner'","toward":"warmer|colder|same, toward the owner after this","likes":"something the scene showed they like, or empty","dislikes":"something the scene showed they can't stand, or empty","tie":{"with":"name of one of the player's slaves, or 'the owner'","what":"what they are to them now if that formed or changed in the scene (her husband, her regular, owes the owner ¤20,000), or empty"}}],
- "dealt_with":[{"name":"full name of someone who is NOT the player's slave","fate":"dead|ruined|exiled|jailed|bought","how":"one plain sentence: who did it and how"}],
- "follow_up":{"weeks":2,"situation":"3-6 sentences, present tense: a moment that many weeks later that happens BECAUSE of this scene. Not a summary of how people feel: somebody named, in the room with the player, doing and saying something in their own voice. End where the player has to decide","options":[{"label":"what the player does, 2-8 words","effect":"one EFFECT id","value":"optional"}]}}
+ "sold":["names of the player's slaves that the player actually had sold or taken away to be sold in this scene, as an order carried out rather than a threat, or empty if none"],
+ "threatened":["names of OTHER people in the scene (not her) whom the player threatened to sell, exile or punish, or empty if none"],
+ "ways":["0 to 2 lines about a way the player and SHE do things together that this scene set up, confirmed or repeated, like a ritual, how they talk to each other, what she calls him or what always happens, written so a later scene can keep it, for example 'he talks to her soles, never her face, and she answers through them'. Leave it empty if the scene didn't settle anything"],
+ "outsiders":[{"name":"full name of someone in the scene who is neither the player nor one of the player's slaves, and who mattered in it","what":"what they do, in a few words","remembers":"one sentence from their side of what happened, with the player as 'the owner'","toward":"warmer|colder|same, toward the owner after this","likes":"something the scene showed they like, or empty","dislikes":"something the scene showed they can't stand, or empty","tie":{"with":"name of one of the player's slaves, or 'the owner'","what":"what they are to them now, if that formed or changed in the scene, like her husband, her regular, or someone who owes the owner ¤20,000, or empty"}}],
+ "dealt_with":[{"name":"full name of someone who is NOT the player's slave","fate":"dead|ruined|exiled|jailed|bought","how":"one plain sentence saying who did it and how"}],
+ "follow_up":{"weeks":2,"situation":"3-6 sentences in the present tense about a moment that many weeks later which happens BECAUSE of this scene. It isn't a summary of how people feel. It's somebody named, in the room with the player, doing and saying something in their own voice. End where the player has to decide","options":[{"label":"what the player does, 2-8 words","effect":"one EFFECT id","value":"optional"}]}}
 
-In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to and serve their slaves; never swap who served whom. Submissive is not subservient: an owner who kneels to her feet, lets her fuck or use him, or gives her his body is bottomed, and still owns her; owner_submitted is only for handing her authority outside sex. Only tag what actually happened in the scene. The TAGS are about HER, the woman the scene is with; what the player did to anyone else in the room goes in sold or threatened, never in her tags. owner_enslaved means the player really gave themself to her; a player saying she does NOT own them is the opposite, and is never owner_enslaved. Tag the player's actions, not what they considered. dealt_with is for people outside the household the player had killed, ruined, thrown out, locked up or paid off: done in the scene, or ordered and agreed to by someone in it who can do it (a guard, a governor, the security chief, a slave sent to do it). The owner's orders get carried out, so an order agreed to counts as done. A threat, a wish or a "maybe" is not dealt_with. Empty if none. public is true only if citizens, guests or other slaves saw it or will obviously hear. Write the summary, memory and follow-up in plain crude words (cock, pussy, ass, cum, fuck, piss…), never euphemisms or flowery phrasing. The follow-up must follow from this scene specifically, and give 3 or 4 different options, one of them a way to back out.
+In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to their slaves and serve them, so never swap who served whom. Submissive is not subservient. An owner who kneels to her feet, lets her fuck or use him, or gives her his body is bottomed, and he still owns her. owner_submitted is only for handing her authority outside sex. Only tag what actually happened in the scene. The TAGS are about HER, the woman the scene is with, and what the player did to anyone else in the room goes in sold or threatened, never in her tags. owner_enslaved means the player really gave themself to her. A player saying she does NOT own them is the opposite, and is never owner_enslaved. Tag the player's actions, not what they considered. dealt_with is for people outside the household whom the player had killed, ruined, thrown out, locked up or paid off, whether it was done in the scene or ordered and agreed to by someone in it who can do it, like a guard, a governor, the security chief or a slave sent to do it. The owner's orders get carried out, so an order agreed to counts as done. A threat, a wish or a "maybe" is not dealt_with. Empty if none. public is true only if citizens, guests or other slaves saw it or will obviously hear. Write the summary, memory and follow-up in plain crude words (cock, pussy, ass, cum, fuck, piss and so on), and never in euphemisms or flowery phrasing. The follow-up must follow from this scene specifically, and give 3 or 4 different options, with one of them a way to back out.
 
-Each turn of the game is a week. The follow-up happens "weeks" weeks after the scene (1 to 8), not straight after it: the scene is over, the people in it have gone back to their lives, and what happened has had that long to sink in. Write where things stand THEN: what it changed, what she has done about it since, what people have said. Set it somewhere and at a time that fits that later day; do not put it back in the scene's room, mid-act, or the same night. Only if the scene itself sets up something for the very next day (a promise for tomorrow morning, an appointment, a hangover) use "weeks":0 and write it as the next day.`;
+Each turn of the game is a week. The follow-up happens "weeks" weeks after the scene (1 to 8), not straight after it. The scene is over, the people in it have gone back to their lives, and what happened has had that long to sink in. Write where things stand THEN, meaning what it changed, what she has done about it since, and what people have said. Set it somewhere and at a time that fits that later day, and don't put it back in the scene's room, in the middle of the act, or on the same night. Only if the scene itself sets up something for the very next day, like a promise for tomorrow morning, an appointment or a hangover, should you use "weeks":0 and write it as the next day.`;
 
 /** For reading the consequences: everything the player said (that's what the deed is made of),
  *  and the prose only from the last few beats. */
@@ -629,5 +629,5 @@ export function deedsBrief(s: SaveState, personId?: string): string {
   if (!list.length) return "";
   const weighty = list.filter((d) => d.public || d.tags.length >= 2 || d.tags.some((t) => ["owner_enslaved", "freed_her", "married_her", "cruelty", "promise_broken"].includes(t)));
   const pick = [...new Set([...weighty.slice(-6), ...list.slice(-4)])].slice(-8);
-  return dedupeLines(pick.filter((d) => !inventsLaw(s, d.summary)).map((d) => `week ${d.week} (${weeksAgo(d.week, s.arcology.week)}): ${d.summary}${d.where ? ` (on a walk through ${d.where === "concourse" ? "the concourse" : `the ${d.where} district`}; the people and places in it belong there)` : ""}${d.public ? " (everyone knows)" : ""}`)).map((l) => `· ${l}`).join("\n");
+  return dedupeLines(pick.filter((d) => !inventsLaw(s, d.summary)).map((d) => `week ${d.week} (${weeksAgo(d.week, s.arcology.week)}): ${d.summary}${d.where ? ` (this was on a walk through ${d.where === "concourse" ? "the concourse" : `the ${d.where} district`}, and the people and places in it belong there)` : ""}${d.public ? " (everyone knows)" : ""}`)).map((l) => `· ${l}`).join("\n");
 }

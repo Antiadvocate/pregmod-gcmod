@@ -46,12 +46,12 @@ function lawScenes(s: SaveState, r: ReturnType<typeof rng>): Candidate[] {
     const custom = l.id.startsWith("custom_");
     if (k > 30) {
       out.push({ key: `law-kept:${l.id}`, where, w: custom ? 4.5 : 1.5, text: r.pick([
-        `A tourist asks a shopkeeper why everyone does it. "It's the ${l.name}," she says, as if that explains everything, and points at the brass plaque by the door: ${q}`,
+        `A tourist asks a shopkeeper why everyone does it. "It's the ${l.name}," she says, as if that explains everything, and points at the brass plaque by the door, which says ${q}`,
         `The ${l.name} is kept so completely that nobody remembers arguing about it. A schoolteacher on the ${where.toLowerCase().replace(/^the /, "")} uses it as her example of a good law.`,
-        `A man from the Old World breaks the ${l.name} without knowing it exists. Three citizens correct him at once, politely, and one of them reads it out to him: ${q}`,
+        `A man from the Old World breaks the ${l.name} without knowing it exists. Three citizens correct him at once, politely, and one of them reads it out to him. It says ${q}`,
       ]) });
     } else if (k > 0) {
-      out.push({ key: `law-grudge:${l.id}`, where, w: custom ? 4.5 : 1.5, text: `Two neighbours argue about the ${l.name} over the railing. One says it's the owner's business; the other says it's hers. They both keep it: ${q}` });
+      out.push({ key: `law-grudge:${l.id}`, where, w: custom ? 4.5 : 1.5, text: `Two neighbours argue about the ${l.name} over the railing. One says it's the owner's business, and the other says it's hers. They both keep it anyway. It says ${q}` });
     } else {
       out.push({ key: `law-broken:${l.id}`, where, w: custom ? 5 : 2, text: `A patrol catches a man openly breaking the ${l.name} in front of a crowd. It says ${q} He says he's never heard of it. The patrol looks up at your cameras, waiting.`,
         options: [
@@ -69,7 +69,7 @@ function dressScene(s: SaveState, r: ReturnType<typeof rng>): Candidate[] {
   const d = household(yours).dress;
   if (!d || !d.because.length) return [];
   return [{ key: `dress:${d.code.id}`, where: WHERE.concourse, w: 1.5, text: r.pick([
-    `The tailors on the commercial ring are doing a roaring trade in ${d.code.name.toLowerCase()}: ${d.code.look.charAt(0).toLowerCase()}${d.code.look.slice(1)} A buyer from a neighbouring arcology is taking notes.`,
+    `The tailors on the commercial ring are doing a roaring trade in ${d.code.name.toLowerCase()}. ${d.code.look} A buyer from a neighbouring arcology is taking notes.`,
     `A girl just off the boat from the Old World stands on the concourse in the wrong clothes, staring. A woman takes her by the elbow to a shop that sells what people wear here.`,
   ]) }];
 }
@@ -100,10 +100,10 @@ function geneScenes(s: SaveState, r: ReturnType<typeof rng>): Candidate[] {
     // And what they look like now, when the program changed that.
     const looks = [e.spec.skin && `${e.spec.skin} skin`, e.spec.hair && `${e.spec.hair} hair`, e.spec.eyes && `${e.spec.eyes} eyes`, e.spec.height && (e.spec.height > 0 ? "the extra height" : "the lost height")].filter(Boolean) as string[];
     if (looks.length) out.push({ key: `gene-look:${e.id}`, where: WHERE.concourse, w: 1.5, text: r.pick([
-      `The ${e.name} program's ${looks.join(" and ")} are everywhere on the concourse now; the newcomers without them are the ones people look at twice.`,
-      `A children's drawing competition on the concourse: every family in the pictures has the ${looks.join(" and ")} of the ${e.name} program.`,
+      `The ${e.name} program's ${looks.join(" and ")} are everywhere on the concourse now, and the newcomers without them are the ones people look at twice.`,
+      `There's a children's drawing competition on the concourse, and every family in the pictures has the ${looks.join(" and ")} of the ${e.name} program.`,
     ]) });
-    if (e.target !== "slaves" && c < 0.8) out.push({ key: `gene-wait:${e.id}`, where: WHERE.clinics, w: 2, text: `There's a queue outside the gene clinic: newcomers who arrived after the ${e.name} program ran, asking how they get it. The receptionist has a price list, and most of them read it and leave.`,
+    if (e.target !== "slaves" && c < 0.8) out.push({ key: `gene-wait:${e.id}`, where: WHERE.clinics, w: 2, text: `There's a queue outside the gene clinic of newcomers who arrived after the ${e.name} program ran, asking how they can get it. The receptionist has a price list, and most of them read it and leave.`,
       options: [
         { id: "free", label: "A free clinic day, on the city", outcome: "The queue goes round the block. It's the most popular thing you've done in months.", do: { cash: -6000, standing: 0.8 } },
         { id: "price", label: "Keep the price", outcome: "The queue thins out. The ones who pay are the ones who'll stay.", do: { rep: 50 } },
@@ -118,7 +118,7 @@ function menialScenes(s: SaveState, r: ReturnType<typeof rng>): Candidate[] {
   const out: Candidate[] = [];
   if (m.jobs.farms) out.push({ key: "men-farms", where: WHERE.farms, w: 1.5, text: `${m.jobs.farms.toLocaleString()} of your menials are on the hydroponic racks from before dawn. The overseer calls them by the numbers on their wrists, and the tomatoes are in the market by nine.` });
   if (m.jobs.lease) out.push({ key: "men-lease", where: WHERE.residential, w: 1.5, text: r.pick([
-    `A citizen's leased menial walks his children to school, a step behind, carrying their bags. He's had her for a year and still doesn't know her name; the number on her wrist is enough.`,
+    `A citizen's leased menial walks his children to school, a step behind, carrying their bags. He's had her for a year and still doesn't know her name. The number on her wrist is enough.`,
     `The households that lease your menials complain about the price and renew anyway. There's a waiting list for the ones who can cook.`]) });
   if (m.treatment === "harsh" && m.owned > 50) out.push({ key: "men-harsh", where: WHERE.works, w: 2.5, text: `A menial in the labour gang collapses at the end of a double shift and doesn't get up. The overseer wants to know whether to send her to the clinic or to the incinerator.`,
     options: [
@@ -135,7 +135,7 @@ const WORK_SCENES: Record<string, string> = {
   scrubbers: "The scrubber towers hum all night. A child in the verge sees a clear sky for the first time and asks her mother what it is.",
   police: "A new police station opens on the residential floors. The shopkeepers bring the officers coffee for the first week.",
   housing: "Families move into the new prefab blocks with everything they own on their backs. By Friday there are curtains in every window.",
-  amenities: "The new park is full on Sunday: picnics, a string quartet, a slave walking a citizen's dogs.",
+  amenities: "The new park is full on Sunday, with picnics, a string quartet, and a slave walking a citizen's dogs.",
   civic_media: "The civic media office's evening bulletin is on every screen. People quote its jingle without meaning to.",
   hospital: "Your household's hospital wing has a waiting room with flowers in it. Nobody quite believes it.",
   comforts: "The servants' quarters have hot water now. The slaves take turns in the showers and come out singing.",
@@ -162,7 +162,7 @@ function worldScenes(s: SaveState, r: ReturnType<typeof rng>): Candidate[] {
   }
   const tech = globeOf(s).tech;
   if (tech.solar_skin?.done) out.push({ key: "tech-solar", where: WHERE.spire, w: 1, text: "The solar skin on the spire catches the sunrise and turns the whole arcology gold for a minute. Ships at sea use it to find the harbour." });
-  if (tech.fusion?.done) out.push({ key: "tech-fusion", where: WHERE.works, w: 1, text: "A tour group from a neighbouring arcology is shown round the fusion hall and told nothing. Their engineer takes a photograph anyway; security takes the camera." });
+  if (tech.fusion?.done) out.push({ key: "tech-fusion", where: WHERE.works, w: 1, text: "A tour group from a neighbouring arcology is shown round the fusion hall and told nothing. Their engineer takes a photograph anyway, and security takes the camera." });
   const hostile = s.arcology.neighbours.filter((n) => n.attitude <= -30);
   if (hostile.length) out.push({ key: `hostile:${hostile[0].id}`, where: WHERE.docks, w: 1.2, text: `Customs finds a crate from ${hostile[0].name} with a false bottom and nothing in it but a camera. Someone over there wants to know what you're building.` });
   return out;
@@ -190,20 +190,20 @@ type Life = { key: string; where: string; when?: (s: SaveState) => boolean; text
 const rich = (s: SaveState) => s.arcology.prosperity >= 90;
 const poor = (s: SaveState) => s.arcology.prosperity < 45;
 const LIFE: Life[] = [
-  { key: "spire-lift", where: WHERE.spire, text: (s) => `The express lift to the spire is booked solid with people who want a word with the owner's staff. Most of them want a permit; one wants to sell ${s.arcology.name} a racehorse.` },
+  { key: "spire-lift", where: WHERE.spire, text: (s) => `The express lift to the spire is booked solid with people who want a word with the owner's staff. Most of them want a permit, and one wants to sell ${s.arcology.name} a racehorse.` },
   { key: "spire-party", where: WHERE.spire, when: rich, text: () => "A party two floors below the penthouse goes on until the sun comes up over the sea. The noise complaints are filed, politely, in the morning." },
   { key: "spire-cleaners", where: WHERE.spire, text: () => "Window cleaners hang off the spire in harnesses all morning. From the plaza they look like beads on a string." },
   { key: "spire-view", where: WHERE.spire, text: (s) => `On a clear evening you can see ${s.arcology.neighbours[0]?.name ?? "the next arcology"} from the observation deck. Couples go up there to argue about which city is better.` },
   { key: "conc-busker", where: WHERE.concourse, text: (_s, r) => `A busker by the fountain plays ${r.pick(["an Old World love song", "a cello suite", "something on a steel drum", "a song about the owner, not entirely kind"])}. The hat in front of her fills slowly.` },
   { key: "conc-sale", where: WHERE.concourse, when: (s) => !poor(s), text: () => "A shoe shop on the concourse has a sale, and the queue at nine in the morning goes past the fountain." },
   { key: "conc-closed", where: WHERE.concourse, when: poor, text: () => "Two more shopfronts on the concourse are papered over this week. The landlord's notice on the door is already curling." },
-  { key: "conc-rumour", where: WHERE.concourse, when: (s) => s.rumors.length > 0, text: (s) => { const r = [...s.rumors].sort((a, b) => b.salience - a.salience)[0]; return `Everyone on the concourse is saying the same thing this week: ${r.content.replace(/^"|"$/g, "")}. Nobody's sure who said it first.`; } },
+  { key: "conc-rumour", where: WHERE.concourse, when: (s) => s.rumors.length > 0, text: (s) => { const r = [...s.rumors].sort((a, b) => b.salience - a.salience)[0]; return `Everyone on the concourse is saying the same thing this week, that ${r.content.replace(/^"|"$/g, "")}. Nobody's sure who said it first.`; } },
   { key: "conc-slave-errand", where: WHERE.concourse, text: () => "A slave carrying a cake box through the lunchtime crowd keeps it perfectly level the whole way. Several people stop to watch her do it." },
   { key: "res-noise", where: WHERE.residential, text: (_s, r) => `A dispute on the ${r.int(20, 80)}th floor about a neighbour's music has reached its third week and its fourth written complaint. Both households' slaves are friends.` },
   { key: "res-wedding", where: WHERE.residential, text: () => "A wedding party fills the corridor of the residential floors with rice and paper flowers. The cleaners, slaves, are still sweeping at midnight." },
   { key: "res-crime", where: WHERE.residential, when: (s) => s.arcology.crime >= 35, text: () => "Someone has been breaking into storage lockers on the residential floors. Residents have started padlocking their doors from the outside when they go to work." },
   { key: "res-safe", where: WHERE.residential, when: (s) => s.arcology.crime < 20, text: () => "A woman on the residential floors leaves her door open all afternoon while she airs the flat. Nobody thinks anything of it." },
-  { key: "res-crowded", where: WHERE.residential, when: (s) => s.arcology.population > 1500, text: (s) => `The lifts on the residential floors are full every morning now: ${Math.round(s.arcology.population).toLocaleString()} people and not enough cars. A man has started selling coffee in the queue.` },
+  { key: "res-crowded", where: WHERE.residential, when: (s) => s.arcology.population > 1500, text: (s) => `The lifts on the residential floors are full every morning now, with ${Math.round(s.arcology.population).toLocaleString()} people and not enough cars. A man has started selling coffee in the queue.` },
   { key: "verge-market", where: WHERE.verge, text: () => "The night market in the verge sells fried squid, second-hand phones and Old World cigarettes. Half the arcology comes down after midnight and pretends not to." },
   { key: "verge-kids", where: WHERE.verge, text: () => "Children in the verge have chalked a hopscotch grid the length of a service corridor. The maintenance crew steps around it." },
   { key: "verge-poor", where: WHERE.verge, when: poor, text: () => "The soup kitchen in the verge runs out by eleven this week. The ones at the back of the queue go and stand outside the next one." },
@@ -273,16 +273,16 @@ export function cityProseBrief(s: SaveState, week: number): { system: string; us
   if (!rep) return null;
   const laws = lawsOf(s).map((x) => LAW_BY_ID[x.id]).filter((l): l is LawDef => !!l);
   return {
-    system: "You write the weekly city column of a Free City arcology in a dark future where slavery is legal: ordinary life, told plainly and specifically, in the present tense. Every character is an adult except children, who appear only as children and never in anything sexual. The laws are binding and literal; never invent a law or a clause. Show every change the gene programs made (traits, abilities, colouring, height) as it matters in ordinary life, not just the visible ones. No moralising, no summary at the end.",
+    system: "You write the weekly city column of a Free City arcology in a dark future where slavery is legal. It's about ordinary life, told plainly and specifically in the present tense. Every character is an adult except children, who appear only as children and never in anything sexual. The laws are binding and literal, so never invent a law or a clause. Show every change the gene programs made (traits, abilities, colouring, height) as it matters in ordinary life, not just the visible ones. Don't moralise, and don't sum up at the end.",
     user: [
-      `THE ARCOLOGY: ${s.arcology.name}, week ${week}. Population ${Math.round(s.arcology.population).toLocaleString()}; prosperity ${Math.round(s.arcology.prosperity)}; crime ${Math.round(s.arcology.crime)}.`,
+      `THE ARCOLOGY: ${s.arcology.name}, week ${week}. Population ${Math.round(s.arcology.population).toLocaleString()}, prosperity ${Math.round(s.arcology.prosperity)}, crime ${Math.round(s.arcology.crime)}.`,
       laws.length ? `LAWS IN FORCE, WORD FOR WORD:\n${laws.map((l) => `- The ${l.name}: "${l.text}" (${compliance(s, l).total > 30 ? "kept willingly" : compliance(s, l).total > 0 ? "kept, grudgingly" : "often broken"})`).join("\n")}` : "",
       `THE CITY:\n${cultureBrief(s)}`,
-      `THIS WEEK, AS THE GAME SAW IT (keep these facts; tell them better, and add the small ordinary moments around them):`,
+      `THIS WEEK, AS THE GAME SAW IT. Keep these facts, tell them better, and add the small ordinary moments around them:`,
       ...(rep.city ?? []).map((c) => `- ${c.where}: ${c.text}${c.result ? ` (What the owner decided: ${c.result})` : ""}`),
       `ALSO THIS WEEK: ${rep.lines.slice(0, 8).map((l) => l.text).join(" | ")}`,
       ``,
-      `Write 450 to 650 words: one short section for each place above, each headed with the place's name on its own line.`,
+      `Write 450 to 650 words, with one short section for each place above, each headed with the place's name on its own line.`,
     ].filter(Boolean).join("\n"),
   };
 }

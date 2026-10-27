@@ -68,7 +68,7 @@ function cityBrief(s: SaveState): string {
   const a = s.arcology;
   const docs = Object.entries(a.doctrines).map(([id, d]) => `${DOCTRINE_BY_ID[id]?.noun ?? id} (${Math.round(d.adoption)}%)`);
   return [
-    `THE ARCOLOGY: ${a.name}, in ${a.region}. Week ${a.week}. Population ${a.population.toLocaleString()}, prosperity ${Math.round(a.prosperity)}, crime ${Math.round(a.crime)}, security ${Math.round(a.security)}, reputation ${Math.round(a.rep)}, cash ¤${Math.round(a.cash).toLocaleString()}. The city's mood toward the owner: ${a.public_standing.toFixed(1)} on -10..10.`,
+    `THE ARCOLOGY: ${a.name}, in ${a.region}. Week ${a.week}. Population ${a.population.toLocaleString()}, prosperity ${Math.round(a.prosperity)}, crime ${Math.round(a.crime)}, security ${Math.round(a.security)}, reputation ${Math.round(a.rep)}, cash ¤${Math.round(a.cash).toLocaleString()}. The city's mood toward the owner is ${a.public_standing.toFixed(1)} on -10..10.`,
     docs.length ? `ITS BELIEFS: ${docs.join(", ")}.` : "",
     cultureBrief(s) ? `HOW PEOPLE BEHAVE: ${cultureBrief(s).replace(/\n/g, " ")}` : "",
     lawsBrief(s) ? `LAWS IN FORCE: ${lawsBrief(s).replace(/\n/g, " ")}` : "",
@@ -102,22 +102,22 @@ function eventContext(s: SaveState, e: PendingEvent): { text: string; keys: stri
   return { text: out.join("\n\n"), keys };
 }
 
-const WRITE_SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. The game has already decided WHAT is happening (THE FACTS) and what each of the player's choices DOES. Your job is to write it so it is about these people, in this city, this week: who is there, what they say, what it looks like, why it is happening now. Build on WHAT HAS ALREADY HAPPENED: if the same person, power or law has come up before, this is the next chapter, and people remember.
+const WRITE_SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. The game has already decided WHAT is happening (THE FACTS) and what each of the player's choices DOES. Your job is to write it so it's about these people, in this city, this week, which means who is there, what they say, what it looks like and why it's happening now. Build on WHAT HAS ALREADY HAPPENED. If the same person, power or law has come up before, this is the next chapter, and people remember.
 
 Rules:
-- Keep every fact: names, numbers, amounts, who did what. Add detail; do not change what happened.
-- Second person, present tense, as long as LENGTH says and no longer. It doesn't have to be someone coming to see the player: often the narrator just tells the player what happened and what it did to people, the way the original game's events do. If THE FACTS read like a status report, say what actually happened instead.
-- A stranger gets one detail, not a description of their hair, coat and posture. Nobody gives a speech about themself.
-- When it's about one of the owner's own people: ${NOT_PAPERWORK}
-- Never invent a named person. You may name the people in the context (the player's own people, a power's ruler, anyone on file); anyone else stays unnamed: an envoy, a letter, a trader.
-- Don't end with someone asking the player what they'll do ("So. What do you tell him?"). End on the situation; the choices are the question.
-- Relabel every choice in the player's voice so it fits the scene you wrote (2 to 9 words). Each label must still be the same action with the same result as the original.
-- You may add up to two extra choices from EXTRA EFFECTS when they genuinely fit the scene; most of the time add none.
+- Keep every fact, including names, numbers, amounts and who did what. Add detail, but don't change what happened.
+- Write in the second person and the present tense, as long as LENGTH says and no longer. It doesn't have to be someone coming to see the player. Often the narrator just tells the player what happened and what it did to people, the way the original game's events do. If THE FACTS read like a status report, say what actually happened instead.
+- Give a stranger one detail, rather than a description of their hair, coat and posture. Nobody gives a speech about themself.
+- When it's about one of the owner's own people, follow this. ${NOT_PAPERWORK}
+- Never invent a named person. You may name the people in the context, meaning the player's own people, a power's ruler and anyone on file. Anyone else stays unnamed, like an envoy, a letter or a trader.
+- Don't end with someone asking the player what they'll do ("So. What do you tell him?"). End on the situation, because the choices are the question.
+- Relabel every choice in the player's voice so it fits the scene you wrote, in 2 to 9 words. Each label must still be the same action with the same result as the original.
+- You may add up to two extra choices from EXTRA EFFECTS when they genuinely fit the scene, but most of the time you should add none.
 
 ${HOUSE_STYLE}
 
 Output ONE strict JSON object and nothing else:
-{"title":"2-5 words","situation":"the scene","choices":[{"id":"the original choice id","label":"new label"}],"extra":[{"label":"...","note":"a few plain words for the player, like \"she won't forget it\" or \"costs you ¤2,000\"; never the effect's description","effect":"effect id","value":"optional"}]}`;
+{"title":"2-5 words","situation":"the scene","choices":[{"id":"the original choice id","label":"new label"}],"extra":[{"label":"...","note":"a few plain words for the player, like \"she won't forget it\" or \"costs you ¤2,000\", and never the effect's description","effect":"effect id","value":"optional"}]}`;
 
 /** Rewrite one pending event. Mutates it in place; returns whether it was written. */
 export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Promise<boolean> {
@@ -136,7 +136,7 @@ export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Prom
     user: [
       snap,
       ctx.text,
-      `## THE FACTS (the game's own version; rewrite it)\n${e.seed}`,
+      `## THE FACTS\nThis is the game's own version. Rewrite it.\n${e.seed}`,
       // Business and the outside world get a few lines; the people in your house get room.
       `## LENGTH\n${e.person ? "One or two short paragraphs." : "Two to four sentences. It's a decision, not a story."}`,
       stockLine(s),
@@ -216,7 +216,7 @@ export async function readOwnChoice(s: SaveState, situation: string, opts: { id:
   return r.stopped ? { error: "stopped" } : { id: r.option.id, orders: r.orders };
 }
 
-const OUTCOME_SYSTEM = `You write what happens next in Free Cities, an adult text game about owning an arcology where slavery is legal. The player was shown a situation and made a choice. If the choice is in the player's own words, play out exactly what they said and did, in those words. The game has decided what came of it (WHAT CAME OF IT). Write it playing out: the scene, what people say and do, how they take it. Keep every fact and every number; do not add consequences the game didn't decide. One to three short paragraphs, second person, present tense. Stop where it could carry on if the player wants to play it out further.
+const OUTCOME_SYSTEM = `You write what happens next in Free Cities, an adult text game about owning an arcology where slavery is legal. The player was shown a situation and made a choice. If the choice is in the player's own words, play out exactly what they said and did, in those words. The game has decided what came of it (WHAT CAME OF IT). Write it playing out, with the scene, what people say and do, and how they take it. Keep every fact and every number, and don't add consequences the game didn't decide. Write one to three short paragraphs in the second person and the present tense. Stop at a point where it could carry on, if the player wants to play it out further.
 
 ${HOUSE_STYLE}`;
 
@@ -248,7 +248,7 @@ export async function narrateOutcome(s: SaveState, o: { person?: string; others?
   return text;
 }
 
-const PULSE_SYSTEM = `You write the lines of an arcology's weekly report about how its citizens are living with its laws, for Free Cities, an adult game about owning an arcology. For each law you get its text, how well it's kept (a number: above 30 kept willingly, 0 to 30 kept grudgingly, below 0 broken or resisted), the game's own line, and what was said about it in earlier weeks. Only write about a law if something specific happened this fortnight because of it: a person, a place, what they did, ideally tied to something in THIS WEEK. Leave out any law where you'd only be saying it's being kept or broken; fewer, better lines. Make it follow on from the earlier weeks (the same people can come back, a quarrel can get worse, a habit can spread). Never repeat an earlier line. Keep any number in the game's line.
+const PULSE_SYSTEM = `You write the lines of an arcology's weekly report about how its citizens are living with its laws, for Free Cities, an adult game about owning an arcology. For each law you get its text, a number for how well it's kept (above 30 means kept willingly, 0 to 30 means kept grudgingly, and below 0 means broken or resisted), the game's own line, and what was said about it in earlier weeks. Only write about a law if something specific happened this fortnight because of it, with a person, a place and what they did, and ideally tied to something in THIS WEEK. Leave out any law where you'd only be saying it's being kept or broken, because fewer, better lines are what's wanted. Make it follow on from the earlier weeks, so the same people can come back, a quarrel can get worse, or a habit can spread. Never repeat an earlier line, and keep any number that's in the game's line.
 
 ${HOUSE_STYLE}
 
@@ -283,14 +283,14 @@ export async function writeLawPulse(s: SaveState, report: WeekReport, snap = "")
   }
 }
 
-const LETTER_SYSTEM = `You write a letter, or a recorded message, from one of the player's slaves to the player, for Free Cities, an adult game about owning an arcology where slavery is legal. The player put her in charge of another city and she runs it for them, completely loyal, entirely as herself. She writes because something happened (it's under WHAT'S GOING WRONG and RECENTLY THERE, or in THIS WEEK): write about THAT, as it happened to her, with the people involved by name, what they said and did, what she did, and how she feels about it. Then what she wants from the player, if anything. First person, to the player as she addresses them, in her own voice from her card. Short: one to three paragraphs.
+const LETTER_SYSTEM = `You write a letter, or a recorded message, from one of the player's slaves to the player, for Free Cities, an adult game about owning an arcology where slavery is legal. The player put her in charge of another city and she runs it for them, completely loyal, entirely as herself. She writes because something happened, which you'll find under WHAT'S GOING WRONG and RECENTLY THERE, or in THIS WEEK. Write about THAT, as it happened to her, with the people involved named, what they said and did, what she did, and how she feels about it. Then say what she wants from the player, if anything. Write it in the first person, to the player as she addresses them, in her own voice from her card. Keep it short, at one to three paragraphs.
 
 ${GOV_VOICE}
 
 ${HOUSE_STYLE}
 
 Output JSON only: {"letter":"the letter","decide":{"question":"what she wants decided, or empty","choices":[{"label":"what the player tells her or sends, 2-8 words","order":"an order id","value":"if it takes one"}]}}
-If she needs something, ask in decide with two or three choices from ORDERS (the support_ orders are help the player sends; the others are things she does). Otherwise leave decide.question empty.`;
+If she needs something, ask in decide with two or three choices from ORDERS. The support_ orders are help the player sends, and the others are things she does. Otherwise leave decide.question empty.`;
 
 /** Every other week, each governor writes. A letter that asks for a decision becomes an event. */
 export async function writeLetters(s: SaveState): Promise<number> {
@@ -359,15 +359,15 @@ function voiceless(s: SaveState): Person[] {
 
 const DESK_SYSTEM = `You are the world desk for Free Cities, an adult game about owning an arcology where slavery is legal. The other powers in the region live their own lives. Below are the real reasons any of them has to approach the player this week, each with its cause and the history between them. Decide whether any of it is worth the player's attention this week, and if so, write that one.
 
-How to decide: most weeks one thing is worth it; some weeks nothing is, and -1 is the right answer then. Prefer what grows out of what has already happened between them, or out of something the player did.
+How to decide: most weeks one thing is worth it, and some weeks nothing is, in which case -1 is the right answer. Prefer what grows out of what has already happened between them, or out of something the player did.
 
 How to write it:
-- It grows out of the cause and WHAT HAS ALREADY HAPPENED with that power: if they've dealt before, this is the next thing, and they remember.
-- How well they know the player decides how they come. One that barely knows the player comes carefully: a letter, a junior envoy, a feeler through a trader, polite and unsure. One that knows the player well comes as itself.
-- The player's weight (army, money, name) is real to them, in proportion to how much they know of it.
+- It grows out of the cause and WHAT HAS ALREADY HAPPENED with that power. If they've dealt with each other before, this is the next thing, and they remember.
+- How well they know the player decides how they come. One that barely knows the player comes carefully, with a letter, a junior envoy or a feeler through a trader, and it's polite and unsure. One that knows the player well comes as itself.
+- The player's weight, meaning their army, money and name, is real to them in proportion to how much they know of it.
 - The only people you may name are the power's ruler, given below, and the player's own people. Anyone else stays unnamed.
-- Two to four sentences. The narrator tells the player what is happening. No visitor fresh in from the weather, no prop, nobody asking the player what they'll do: the choices are the question.
-- Relabel the choices so they fit what you wrote: same ids, same actions.
+- Use two to four sentences, with the narrator telling the player what's happening. Don't bring in a visitor fresh from the weather or a prop, and don't have anybody ask the player what they'll do, because the choices are the question.
+- Relabel the choices so they fit what you wrote, keeping the same ids and the same actions.
 
 ${HOUSE_STYLE}
 
@@ -462,7 +462,7 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
 
 /* ── the end ─────────────────────────────────────────────────────────────────────────────────── */
 
-const END_SYSTEM = `You write the ending of a run of Free Cities, an adult game about owning an arcology where slavery is legal. The run is over. You get the record: how it ended, the game's own summary lines, the people and what became of them, the cities you took and who governs them, and the chronicle of what happened, week by week. Write the ending the way the last chapter of a story is written, about THIS run and nobody else's: what the owner built or wrecked, the women who mattered and what they are to the owner now, the things that were done that can't be undone, and where it all stands on the last day. Name names. Use the real events. Second person. Five to nine short paragraphs, then stop. No moral, no lesson, no summing up what it all meant.
+const END_SYSTEM = `You write the ending of a run of Free Cities, an adult game about owning an arcology where slavery is legal. The run is over. You get the record, which is how it ended, the game's own summary lines, the people and what became of them, the cities that were taken and who governs them, and the chronicle of what happened week by week. Write the ending the way the last chapter of a story is written, about THIS run and nobody else's. Say what the owner built or wrecked, which women mattered and what they are to the owner now, what was done that can't be undone, and where it all stands on the last day. Name names and use the real events. Write it in the second person, in five to nine short paragraphs, and then stop. Don't give a moral or a lesson, and don't sum up what it all meant.
 
 ${HOUSE_STYLE}
 
@@ -475,14 +475,14 @@ export async function writeEnding(s: SaveState): Promise<boolean> {
     .sort((a, b) => (romanceRank(b) - romanceRank(a)) || (b.economics.weeks_owned - a.economics.weeks_owned)).slice(0, 8);
   const cards = people.map((p) => {
     const r = read(p, s.memory[p.id]);
-    return `· ${p.name}, ${p.age}, ${p.origin.nationality}, was a ${p.origin.career}. Status ${p.status}${p.exit_note ? ` (${p.exit_note})` : ""}. ${romanceOf(p).standing}. Devotion ${r.devotion}, trust ${r.trust}, ${Math.round(r.fragility * 100)}% of it fear. ${p.governs ? `Governs ${governorshipOf(s, p.governs)?.name}. ` : ""}Job: ${p.assignment}. ${p.persona.core_traits.slice(0, 2).join("; ")}.`;
+    return `· ${p.name}, ${p.age}, ${p.origin.nationality}, was a ${p.origin.career}. Her status is ${p.status}${p.exit_note ? ` (${p.exit_note})` : ""}, and she stands as ${romanceOf(p).standing} to the owner. Her devotion is ${r.devotion} and her trust ${r.trust}, and ${Math.round(r.fragility * 100)}% of it is fear. ${p.governs ? `She governs ${governorshipOf(s, p.governs)?.name}. ` : ""}Her job is ${p.assignment}. ${p.persona.core_traits.slice(0, 2).map((t) => t.replace(/[.;]\s*$/, "")).join(", and ")}.`;
   });
   const gov = activeGovernors(s).map((g) => `· ${g.name}, governed by ${s.people[g.person]?.name}: ${g.doctrines.map((d) => DOCTRINE_BY_ID[d]?.noun ?? d).join(", ")}, prosperity ${Math.round(g.prosperity)}.`);
   const events = chronicleOf(s).filter((e, i, xs) => e.week >= 0 && (i >= xs.length - 40 || /war|governor|deal|married|freed|died|sold/i.test(e.text))).slice(-60);
   const res = await call({
     system: END_SYSTEM,
     user: [
-      `HOW IT ENDED: ${end.kind === "lost" ? "it was lost" : "the run ran its course"}, week ${end.week}. The game's title: ${end.title}.`,
+      `HOW IT ENDED: ${end.kind === "lost" ? "it was lost" : "the run ran its course"}, in week ${end.week}. The game called it "${end.title}".`,
       `THE GAME'S SUMMARY:\n${end.lines.map((l) => `· ${l}`).join("\n")}`,
       cityBrief(s),
       cards.length ? `THE PEOPLE:\n${cards.join("\n")}` : "",

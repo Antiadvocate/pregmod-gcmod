@@ -89,7 +89,7 @@ export const DISTRICTS: DistrictDef[] = [
     found: 16000, step: 13000, bulk: 0.38, hue: "#7d8578", cap: 5,
     yields: { security: 7, rep: 18, prosperity: 1 },
     favoured_by: ["paternalist", "chattel_religion"],
-    household: "Standing orders work better; the police flag problems for you.",
+    household: "Standing orders work better, and the police flag problems for you.",
   },
   {
     kind: "docks", name: "Docks", blurb: "The docks, where all imports arrive. Embargoes hit here first.",

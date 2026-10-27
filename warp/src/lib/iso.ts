@@ -20,7 +20,7 @@ export type Era = "ruin" | "salvage" | "freecity" | "ascendant";
 export type Finish = "grit" | "rebuilt" | "gleaming";
 
 export const FINISHES: Record<Finish, { name: string; note: string }> = {
-  grit: { name: "Wasteland grit", note: "Leave the scars showing: salvage, patches and rust stay longer." },
+  grit: { name: "Wasteland grit", note: "Leave the scars showing, so salvage, patches and rust stay longer." },
   rebuilt: { name: "Rebuilt", note: "Each block looks as well as it's kept." },
   gleaming: { name: "Gleaming", note: "Tear the salvage down and build in glass as soon as you can." },
 };

@@ -61,7 +61,7 @@ check("a failed batch still counts as a try", (feedOf(s).last ?? 0) >= (before ?
   const src = sources(t);
   check("the owner's slaves are people the city has noticed", src.some((x) => x.id === `slave:${girl.id}` && x.text.includes(girl.name)));
   const pr = feedPrompt(t);
-  check("the writer is given the crude voice and told no euphemisms", /IT'S A PORN GAME/.test(pr.system) && /Never a euphemism/.test(pr.system));
+  check("the writer is given the crude voice and told no euphemisms", /IT'S A PORN GAME/.test(pr.system) && /Never use a euphemism/.test(pr.system));
   check("and posters with an angle who take their world for granted", /EVERY POSTER HAS AN ANGLE/.test(pr.system) && /never explain it/.test(pr.system));
   check("and examples of the voice", /EXAMPLES OF THE VOICE/.test(pr.system));
   check("and doesn't read the facts like a report any more", !/LAW IN FORCE|DOCTRINE,|GENE PROGRAM,/.test(pr.user));

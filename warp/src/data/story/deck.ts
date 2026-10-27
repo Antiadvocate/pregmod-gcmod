@@ -20,7 +20,7 @@ const secure = (n: number) => (c: Ctx) => (c.s.arcology.security >= n ? null : `
 function goodPiece(c: Ctx): boolean {
   const house = ownedAdults(c.s);
   const avg = house.length ? house.reduce((n, p) => n + read(p).devotion, 0) / house.length : 0;
-  return c.flag("jour_curated") ? avg > -10 : avg > 20;
+  return c.flag("jour_charmed") ? avg > -25 : c.flag("jour_curated") ? avg > -10 : avg > 20;
 }
 
 /* ── the journalist ─────────────────────────────────────────────────────────────────────────── */
@@ -43,6 +43,9 @@ ${c.He("journalist")}'s last piece was about an arcology in the Sahel. Its owner
         { id: "curated", label: "Give them a tour you've arranged", need: skill("slaving", 25),
           run: (c) => { c.set("jour_curated", true); c.cash(-3000);
             return { text: `You pick the rooms, the women, the hours. The dormitories get new sheets. The arcade is closed for maintenance. ${c.n("journalist")} obviously notices, but doesn't say anything.`, next: "piece", after: 2 }; } },
+        { id: "charm", label: (c) => `Have ${c.him("journalist")} to dinner first, and win ${c.him("journalist")} over`, need: skill("charisma", 35),
+          run: (c) => { c.set("jour_open", true); c.set("jour_charmed", true); c.like("journalist", 25);
+            return { text: `You give ${c.n("journalist")} dinner on the penthouse terrace before the tour, and you're very good company. By the second bottle ${c.he("journalist")}'s laughing at your stories, and by the end of the week ${c.he("journalist")} has stopped asking the questions that end careers and started asking the ones that make profiles.`, next: "piece", after: 2 }; } },
         { id: "refuse", label: "Decline",
           run: (c) => { c.like("journalist", -10);
             return { text: `You decline politely. ${c.n("journalist")} writes the piece anyway, from the outside, using your delivery records and three former citizens. It's unflattering and not very accurate.`, end: "you kept the journalist out" }; } },
@@ -97,7 +100,7 @@ const zealot: ArcDef = {
       title: "A preacher on the lower levels",
       text: (c) => `${c.n("zealot")} preaches from an upturned crate by the water recyclers on the lower levels, where the rent is cheapest. Forty people a night now. Seventy on Sundays.
 
-He doesn't talk about God much. He talks about you: what's on your floors, what you pay for it, and what the people who live under it are worth to you. Your security chief has a recording of him, and he's a very good speaker.`,
+He doesn't talk about God much. He talks about you, what's on your floors, what you pay for it, and what the people who live under it are worth to you. Your security chief has a recording of him, and he's a very good speaker.`,
       options: [
         { id: "listen", label: "Go and listen, in person",
           run: (c) => { c.set("zeal_met", true); c.like("zealot", 5);
@@ -174,6 +177,9 @@ ${c.sn} is in the room. She heard the number.`,
         { id: "no", label: "\"She's not for sale.\"",
           run: (c) => { c.like("collector", -15); c.treat(c.subj, "recognition", 7, "you refused three times her price for her");
             return { text: `"Everything is," ${c.n("collector")} says, and puts the card back in ${c.his("collector")} pocket. ${c.sn} is grateful that you kept her, and that night she comes to your room without being told to.`, next: "theft", after: 5 }; } },
+        { id: "read", label: (c) => `Read ${c.n("collector")}, and name a price ${c.he("collector")} won't pay`, need: skill("insight", 35),
+          run: (c) => { c.like("collector", -5); c.treat(c.subj, "recognition", 6, "you saw the collector off without selling her"); c.set("coll_read", true);
+            return { text: `You've watched ${c.n("collector")} for ten minutes and you know what ${c.he("collector")} is: a man who wants things because other people won't let him have them. You name a number ten times hers, smiling, and ${c.he("collector")} hears it for what it is. "Another time," ${c.he("collector")} says. ${c.He("collector")} doesn't come back. ${c.sn} watched the whole thing, and she's looking at you differently.`, end: "you saw the collector off" }; } },
         { id: "ask", label: "Ask her whether she wants to go",
           run: (c) => { const wants = c.subj ? read(c.subj).devotion < 10 : false; c.set("coll_asked", true);
             if (wants && c.subj) { const v = Math.round(valuePerson(c.s, c.subj) * 3); c.remove(c.subj, "sold", `chose to go to ${c.full("collector")}`, v); c.like("collector", 10);
@@ -191,6 +197,9 @@ Security found a professional's tools on the floor and a cleaning cart with a fa
         { id: "confront", label: "Confront the collector", need: skill("trading", 30),
           run: (c) => { c.like("collector", -10); c.cash(20000);
             return { text: `You send the tools to ${c.n("collector")} in a gift box. ${c.He("collector")} sends back a cheque for twenty thousand with a note: *For the door.* Neither of you mentions it again.`, end: "the collector paid for the door" }; } },
+        { id: "scare", label: (c) => `Make sure ${c.n("collector")} never tries again`, need: skill("intimidation", 35),
+          run: (c) => { c.like("collector", -25); c.treat(c.subj, "recognition", 4, "you frightened off the man who tried to take her");
+            return { text: `You go to see ${c.n("collector")} yourself, with two guards and the contractor's tools. You don't say much. You don't need to. When you leave, ${c.he("collector")} is sitting very still, and the contractor has left the Free Cities.`, end: "you frightened the collector off" }; } },
         { id: "guard", label: "Double the guard on her", note: "¤4,000", need: cash(4000),
           run: (c) => { c.cash(-4000); c.security(4); c.treat(c.subj, "kindness", 3, "you put guards on her door");
             return { text: `There's a guard on her door now. She complains about it, but she's glad of it.`, end: "you kept her from the collector" }; } },
@@ -242,7 +251,7 @@ They're both looking at you.`,
             return { text: `You count it. It's eleven thousand and forty. You give her back the forty. They walk out of the front of the building holding hands, and your whole household watches from the windows.`, end: "the sister bought her free" }; } },
         { id: "full", label: "Demand full price", note: "she can't pay it",
           run: (c) => { c.treat(c.subj, "cruelty", 5, "you wouldn't take what her sister had");
-            return { text: `${c.n("sister")} goes white, then red. She leaves the money belt on the table — "a deposit," she says — and walks out. She promises she'll be back with the rest.`, next: "back", after: 8 }; } },
+            return { text: `${c.n("sister")} goes white, then red. She leaves the money belt on the table, "a deposit," she says, and walks out. She promises she'll be back with the rest.`, next: "back", after: 8 }; } },
         { id: "stay", label: "Offer the sister a job in the building instead",
           run: (c) => { c.set("sis_citizen", true); c.treat(c.subj, "kindness", 6, "her sister lives in the building now"); c.prosperity(1);
             return { text: `She takes a job in the laundry and a room on the ninth floor. She visits every Sunday, and ${c.sn} is much happier for it.`, end: "the sister stayed as a citizen" }; } },
@@ -271,7 +280,7 @@ const plague: ArcDef = {
   beats: {
     dock: {
       title: "A freighter asks to dock",
-      text: (c) => `The *Marisol* has been refused at three ports. She's asking for your berth. Forty women in the hold bound for Doha, and some of them are sick — fever, a cough, nobody's sure what.
+      text: (c) => `The *Marisol* has been refused at three ports. She's asking for your berth. Forty women in the hold bound for Doha, and some of them are sick with a fever and a cough, and nobody's sure what it is.
 
 The ship's doctor, ${c.full("doctor")}, is on the radio. "I've got curatives for a week," ${c.he("doctor")} says. "Then I've got nothing. The captain wants to sell them cheap and go home. I want somebody to let me treat them first."`,
       options: [
@@ -290,7 +299,7 @@ The ship's doctor, ${c.full("doctor")}, is on the radio. "I've got curatives for
     },
     spread: {
       title: "The cough",
-      text: (c) => `Three of the household have the cough now. The spa is full. The girls from the *Marisol* are recovering — all four — and the fever is doing to your own women what it did in the hold.`,
+      text: (c) => `Three of the household have the cough now. The spa is full. The girls from the *Marisol* are recovering, all four of them, and the fever is doing to your own women what it did in the hold.`,
       options: [
         { id: "treat", label: "Buy curatives for everyone", note: "¤8,000", need: cash(8000),
           run: (c) => { c.cash(-8000); for (const p of c.owned()) { p.health.illness = 0; p.health.health = clamp(p.health.health + 10, -100, 100); } c.household("kindness", 2, "you paid to treat everyone");
@@ -304,7 +313,7 @@ The ship's doctor, ${c.full("doctor")}, is on the radio. "I've got curatives for
       title: (c) => `${c.n("doctor")}`,
       text: (c) => `"I'm done with ships," ${c.n("doctor")} says. "I'd work for you. Clinic, rounds, whatever you've got. I want a salary and I want you to not ask me to do anything I'd have to lie about afterwards."`,
       options: [
-        { id: "hire", label: "Hire them", note: "−¤1,000 a week; your people stay healthier",
+        { id: "hire", label: "Hire them", note: "−¤1,000 a week, and your people stay healthier",
           run: (c) => { c.npc("doctor").status = "ally"; c.set("has_doctor", true); for (const p of c.owned()) p.health.health = clamp(p.health.health + 12, -100, 100); c.s.player.skills.medicine = Math.min(100, (c.s.player.skills.medicine ?? 0) + 20); c.out.push("+20 medicine");
             return { text: `${c.He("doctor")} starts on Monday. By Friday the clinic is cleaner than it's been since the building opened, and ${c.he("doctor")}'s already had an argument with your Madam and won.`, end: "the ship's doctor works for you now" }; } },
         { id: "no", label: "\"I'll call you if I need you.\"",
@@ -392,6 +401,9 @@ On the radio: "Movement on the service stairs. One person. Heading down." Then, 
         { id: "let", label: "Step aside",
           run: (c) => { if (c.subj) c.remove(c.subj, "gone", "you let her go in the blackout"); c.hope(10); c.rumor("the owner let one of them walk out in the blackout", 1);
             return { text: `She doesn't believe you at first. Then she runs down the stairs and you hear the fire door at the bottom bang open. You never see her again. Your slaves talk about it for months.`, end: "you let her go" }; } },
+        { id: "talk", label: "Talk her round, there on the stairs", need: skill("charisma", 40),
+          run: (c) => { c.treat(c.subj, "promise_kept", 6, "talked round on the stairs in the blackout"); if (c.subj) c.subj.bond.hope = clamp(c.subj.bond.hope + 10, 0, 100);
+            return { text: `You sit down on the step below her in the dark and talk. You don't threaten her. You talk about what she'd be running to, and what you'd change if she stayed. It takes an hour. At the end of it she walks back up beside you, and she isn't afraid of you any more, which you didn't expect.`, end: "you talked her round on the stairs" }; } },
         { id: "back", label: "Take her back upstairs without a word",
           run: (c) => { c.treat(c.subj, "kindness", 3, "brought back without punishment");
             return { text: `You walk her back up fourteen floors in the dark. Neither of you says anything. She's at work the next morning as if nothing happened, and neither of you ever brings it up.`, end: "you brought her back and said nothing" }; } },
@@ -426,7 +438,7 @@ const auction: ArcDef = {
   beats: {
     catalogue: {
       title: "A lot in the catalogue",
-      text: (c) => `The Grand Exchange's spring catalogue comes on real paper. Lot one is a woman the catalogue doesn't bother to describe past her name, because everybody already knows it: a former prima ballerina of the Mariinsky, twenty-six, sold by a bankrupt oligarch's estate.
+      text: (c) => `The Grand Exchange's spring catalogue comes on real paper. Lot one is a woman the catalogue doesn't bother to describe past her name, because everybody already knows it. She's a former prima ballerina of the Mariinsky, twenty-six, sold by a bankrupt oligarch's estate.
 
 ${c.full("auctioneer")} calls personally. "Reserve is forty thousand. ${c.full("rival_owner")}'s bidding. I thought you'd want to know."`,
       options: [
@@ -487,9 +499,9 @@ const flame: ArcDef = {
             return { text: `${c.n("flame")} cries, then asks if ${c.he("flame")} can stay a few days. ${c.He("flame")} stays three weeks, and leaves you a grateful letter.`, end: "you paid your old flame's debts" }; } },
         { id: "stay", label: "Offer them a room and a job instead",
           run: (c) => { c.like("flame", 20); c.npc("flame").status = "ally"; c.prosperity(1);
-            return { text: `${c.He("flame")} takes the room. The job, it turns out, ${c.he("flame")}'s good at — ${c.he("flame")} runs your front of house by the end of the month, and the men from Kestrel don't come into your building.`, end: "your old flame works for you now" }; } },
+            return { text: `${c.He("flame")} takes the room. The job, it turns out, ${c.he("flame")}'s good at, and ${c.he("flame")} runs your front of house by the end of the month, and the men from Kestrel don't come into your building.`, end: "your old flame works for you now" }; } },
         { id: "collar", label: "Buy the debt, and them with it", show: (c) => c.he("flame") === "she", need: cash(30000),
-          run: (c) => { c.cash(-30000); const p = c.addSlave({ seed: "flame", name: c.full("flame"), age: 36, quality: 0.5, how: "an old flame; you bought her debt, and her with it" }); c.npc("flame").status = "owned"; c.npc("flame").person = p.id; p.bond = { ...p.bond, bond: 20, resentment: 40 };
+          run: (c) => { c.cash(-30000); const p = c.addSlave({ seed: "flame", name: c.full("flame"), age: 36, quality: 0.5, how: "an old flame, whose debt you bought, and her with it" }); c.npc("flame").status = "owned"; c.npc("flame").person = p.id; p.bond = { ...p.bond, bond: 20, resentment: 40 };
             return { text: `You buy the paper from the men in Kestrel and put it in front of her. She reads it twice before she understands. "You were always like this," she says. "I just never had anything you wanted."`, end: "your old flame wears your collar" }; } },
         { id: "no", label: "Send them away", run: (c) => { c.like("flame", -30);
           return { text: `${c.He("flame")} picks up the suitcase and leaves. A month later you hear ${c.he("flame")} was found dead in the water near the Kestrel causeway.`, end: "you sent your old flame away" }; } },

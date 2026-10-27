@@ -213,7 +213,8 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
   const vp = useVisibleViewport();
   const [typing, setTyping] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [figure, setFigure] = useState(() => { try { return localStorage.getItem("warp-with-figure") === "1"; } catch { return false; } });
+  // On a desk there's room for her beside the scene, so she's shown unless you've said otherwise.
+  const [figure, setFigure] = useState(() => { try { const v = localStorage.getItem("warp-with-figure"); return v === null ? !!window.matchMedia?.("(min-width: 900px)").matches : v === "1"; } catch { return false; } });
   const toggleFigure = () => setFigure((f) => { try { localStorage.setItem("warp-with-figure", f ? "0" : "1"); } catch { /* private mode */ } return !f; });
 
   // Keep the newest thing in view. This is the whole reason the screen exists.
@@ -280,7 +281,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     }
     if (res.written?.tags.length) entries.push({ k: "tags", tags: res.written.tags, tone: o.landing });
     const refused = res.notes.find((n) => /refused/.test(n));
-    if (refused) entries.push({ k: "note", text: `${refused.replace(/^the narrator did not answer \((.*)\)$/, "$1")}; this is the game's own version. Pick a different narrator model in Settings.` });
+    if (refused) entries.push({ k: "note", text: `${refused.replace(/^the narrator did not answer \((.*)\)$/, "$1")}, so this is the game's own version. Pick a different narrator model in Settings.` });
     setLog((l) => [...l, ...entries]);
     record([{ role: "you", text: act.name }, { role: "scene", text: entries.filter((e) => e.k === "prose" || e.k === "said").map((e) => ("text" in e ? e.text : "")).join("\n\n") }]);
     setReplies([]);
@@ -328,6 +329,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
   }
 
   const knownFetish = p.persona.fetishes.filter((f) => f.known && f.name !== "none");
+  const wide = typeof window !== "undefined" && window.matchMedia?.("(min-width: 900px)").matches;
 
   return (
     <div className="fixed left-0 right-0 z-[60] flex flex-col" style={{ background: "var(--ink-0)", top: vp.top, height: vp.height }}>
@@ -347,8 +349,9 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
         </div>
       </header>
 
-      {/* her, when you want to see her */}
-      {figure && !typing ? <div className="stage-room shrink-0 relative flex justify-center" style={{ height: tray ? "24dvh" : "32dvh", transition: "height .25s ease" }}>
+      <div className="interact-body flex-1 min-h-0 flex flex-col">
+      {/* her, when you want to see her (on a desk she stays while you type: there's no keyboard to make room for) */}
+      {figure && (!typing || wide) ? <div className="interact-stage stage-room shrink-0 relative flex justify-center" style={{ height: tray ? "24dvh" : "32dvh", transition: "height .25s ease" }}>
         <RoomBackdrop place={place.id} />
         <div className={cx("h-full relative", rx)} onAnimationEnd={() => setRx("")}>
           <SlaveArt person={p} height="100%" pose={pose} moment={moment} />
@@ -374,14 +377,14 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
       </div>
 
       {/* what you do next */}
-      <div className="shrink-0 hairline-top" style={{ background: "var(--ink-1)", paddingBottom: typing ? 6 : "env(safe-area-inset-bottom)" }}>
+      <div className="interact-controls shrink-0 hairline-top" style={{ background: "var(--ink-1)", paddingBottom: typing ? 6 : "env(safe-area-inset-bottom)" }}>
         {ended ? (
           <div className="p-3 flex gap-2">
             <button className="btn btn-primary flex-1" onClick={onClose}>Leave her be</button>
             <button className="btn" onClick={() => setEnded(false)}>Call her back</button>
           </div>
         ) : null}
-        {!ended && replies.length && !busy && !typing ? (
+        {!ended && replies.length && !busy && (!typing || wide) ? (
           <div className="flex flex-col gap-1.5 px-3 pt-3">
             {replies.map((r) => <button key={r} className="choice !py-2" onClick={() => void carryOn(r)}><span className="block text-[13.5px] leading-snug">{r}</span></button>)}
           </div>
@@ -395,13 +398,13 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
           }}>
             <input ref={inputRef} className="flex-1 min-w-0" value={said} disabled={busy} onChange={(e) => setSaid(e.target.value)} onFocus={() => setTyping(true)} onBlur={() => setTyping(false)} placeholder={`Say or do something to ${p.name}`} />
             {busy && stopper.current
-              ? <button type="button" className="btn btn-sm btn-danger" onClick={() => stopper.current?.abort()} title="Stop the model; this reply is thrown away"><Square size={12} /> stop</button>
+              ? <button type="button" className="btn btn-sm btn-danger" onClick={() => stopper.current?.abort()} title="Stop the model and throw this reply away"><Square size={12} /> stop</button>
               : <button className="btn btn-sm btn-primary" disabled={busy || !said.trim()} onMouseDown={(e) => e.preventDefault()}>Go</button>}
             {!busy && lastCall.current ? <button type="button" className="btn btn-sm" onClick={retry} title="Throw away that response and ask the model again"><RotateCcw size={12} /> retry</button> : null}
-            {mid && engaged.current ? <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void endHere()} title="End the scene; what you did in it starts to count">Done</button> : null}
+            {mid && engaged.current ? <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void endHere()} title="End the scene, and what you did in it starts to count">Done</button> : null}
           </form>
         ) : null}
-        {!ended && next.length && !typing ? (
+        {!ended && next.length && (!typing || wide) ? (
           <div className="flex flex-wrap gap-2 px-3 pt-3">
             {next.map((f) => (
               <button key={f.id} disabled={busy} onClick={() => doFollow(f)}
@@ -409,7 +412,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
             ))}
           </div>
         ) : null}
-        {ended || typing ? null : <>
+        {ended || (typing && !wide) ? null : <>
         <div className="flex gap-1.5 px-3 pt-3 pb-2 overflow-x-auto no-scrollbar">
           {groups.map((g) => (
             <button key={g.id} onClick={() => { if (group === g.id) setTray((t) => !t); else { setGroup(g.id); setTray(true); } }}
@@ -418,7 +421,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
             </button>
           ))}
         </div>
-        {tray ? <div className="px-3 pb-3 overflow-y-auto" style={{ maxHeight: "30dvh" }}>
+        {tray || wide ? <div className="interact-tray px-3 pb-3 overflow-y-auto" style={{ maxHeight: "30dvh" }}>
           {group === "talk" ? (
             <div className="grid grid-cols-1 gap-1.5">
               {TOPICS.map((t) => (
@@ -447,6 +450,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
           )}
         </div> : null}
         </>}
+      </div>
       </div>
     </div>
   );

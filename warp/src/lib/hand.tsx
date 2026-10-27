@@ -72,7 +72,7 @@ export function Held({ domain, children, soft }: { domain: Domain; children: Rea
     <>
       <div className="card-2 p-3 mb-4 text-[12.5px]" style={{ borderColor: hand === "locked" ? "var(--warn)" : undefined }}>
         {hand === "locked"
-          ? <>{her?.name ?? "She"} runs {DOMAIN_WORDS[domain]} now. You can see what she's doing with it; you can't change any of it.</>
+          ? <>{her?.name ?? "She"} runs {DOMAIN_WORDS[domain]} now. You can see what she's doing with it, but you can't change any of it.</>
           : <>You still run {DOMAIN_WORDS[domain]}, with {her?.name ?? "her"} watching. She can stop anything you do here.</>}
       </div>
       {hand === "locked" && !soft

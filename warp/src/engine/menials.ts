@@ -41,16 +41,16 @@ export const JOBS: Record<MenialJob, { name: string; each: string }> = {
   labour: { name: "Labour", each: "about ¤40 a week each, more in a richer city" },
   farms: { name: "The farms", each: "14 food a week each" },
   sanitation: { name: "Sanitation", each: "pollution down 0.03 a week each (up to 6), the city a little richer" },
-  lease: { name: "Leased to citizens", each: "¤22 a week each; they serve citizen households" },
+  lease: { name: "Leased to citizens", each: "¤22 a week each, and they serve citizen households" },
   public: { name: "Public use", each: "reputation, and the city a little more open" },
   construction: { name: "Construction crews", each: "public works 1% cheaper per 20 (up to 30%)" },
 };
 export const JOB_IDS = Object.keys(JOBS) as MenialJob[];
 
 export const TREATMENT: Record<Treatment, { name: string; upkeep: number; output: number; attrition: number; note: string }> = {
-  harsh: { name: "Harsh", upkeep: 6, output: 1.2, attrition: 0.012, note: "cheap and productive; about 1 in 80 lost a week; the city gets crueller" },
-  standard: { name: "Standard", upkeep: 12, output: 1, attrition: 0.005, note: "about 1 in 200 lost a week" },
-  decent: { name: "Decent", upkeep: 22, output: 0.9, attrition: 0.002, note: "costly; about 1 in 500 lost a week; the city sees slaves as people a little more" },
+  harsh: { name: "Harsh", upkeep: 6, output: 1.2, attrition: 0.012, note: "cheap and productive, but about 1 in 80 are lost a week, and the city gets crueller" },
+  standard: { name: "Standard", upkeep: 12, output: 1, attrition: 0.005, note: "about 1 in 200 are lost a week" },
+  decent: { name: "Decent", upkeep: 22, output: 0.9, attrition: 0.002, note: "costly, but only about 1 in 500 are lost a week, and the city sees slaves as people a little more" },
 };
 
 const EMPTY_JOBS = (): Record<MenialJob, number> => ({ labour: 0, farms: 0, sanitation: 0, lease: 0, public: 0, construction: 0 });

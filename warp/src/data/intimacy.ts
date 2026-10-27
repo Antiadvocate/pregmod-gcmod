@@ -16,19 +16,26 @@
 
 /** The base game's fetish list, unchanged. `none` is a real value, not an absence. */
 export type FetishId =
-  | "none" | "boobs" | "buttslut" | "cumslut" | "humiliation" | "submissive" | "dom" | "masochist" | "sadist" | "pregnancy";
+  | "none" | "boobs" | "buttslut" | "cumslut" | "humiliation" | "submissive" | "dom" | "masochist" | "sadist" | "pregnancy"
+  // Past the base game's list: the tastes it never had a word for, most of them hers to enjoy and
+  // a good half of them about being served, worshipped or obeyed.
+  | "armpits" | "musk" | "facesitting" | "assworship" | "goddess" | "pegging" | "keyholder" | "spit" | "ballbusting"
+  | "findom" | "sph" | "cuckoldress" | "petplay" | "breathplay" | "voyeur" | "tickling" | "furniture";
 
 /** Its paraphilias — a fetish that has gone past appetite into need. */
 export type ParaphiliaId =
-  | "abusive" | "anal addict" | "attention whore" | "breast growth" | "breeder" | "cum addict" | "malicious" | "neglectful" | "self hating";
+  | "abusive" | "anal addict" | "attention whore" | "breast growth" | "breeder" | "cum addict" | "malicious" | "neglectful" | "self hating"
+  | "scent obsessed" | "goddess complex" | "throne" | "keyholder for life" | "humiliatrix" | "cuckqueen" | "pet for life" | "breath addict" | "tribute junkie";
 
 /** Sexual quirks: the good half of a specific taste. */
 export type QuirkId =
-  | "gagfuck queen" | "painal queen" | "strugglefuck queen" | "tease" | "romantic" | "perverted" | "caring" | "unflinching" | "size queen";
+  | "gagfuck queen" | "painal queen" | "strugglefuck queen" | "tease" | "romantic" | "perverted" | "caring" | "unflinching" | "size queen"
+  | "throne queen" | "scent proud" | "edge queen" | "mean girl" | "good pet" | "watcher";
 
 /** Sexual flaws: the thing she will not do gladly, and what it costs to make her. */
 export type FlawId =
-  | "hates oral" | "hates anal" | "hates penetration" | "repressed" | "idealistic" | "shamefast" | "apathetic" | "crude" | "judgemental";
+  | "hates oral" | "hates anal" | "hates penetration" | "repressed" | "idealistic" | "shamefast" | "apathetic" | "crude" | "judgemental"
+  | "fastidious" | "bratty" | "prissy";
 
 export interface FetishDef {
   id: FetishId;
@@ -46,13 +53,30 @@ export const FETISHES: FetishDef[] = [
   { id: "none", name: "no particular thing", note: "She has no particular fetish.", acts: [] },
   { id: "boobs", name: "boobs", note: "She loves having her breasts played with more than anything else.", acts: ["mammary", "tit worship", "oral"], becomes: "breast growth" },
   { id: "buttslut", name: "buttslut", note: "She loves anal and doesn't pretend otherwise.", acts: ["anal", "anal toys", "rimming"], becomes: "anal addict" },
-  { id: "cumslut", name: "cumslut", note: "She loves cum: in her mouth, on her face, anywhere she can taste it.", acts: ["oral", "facial", "swallow", "feet"], becomes: "cum addict" },
+  { id: "cumslut", name: "cumslut", note: "She loves cum in her mouth, on her face, anywhere she can taste it.", acts: ["oral", "facial", "swallow", "feet"], becomes: "cum addict" },
   { id: "humiliation", name: "humiliation", note: "She gets off on being watched and humiliated, the more public the better.", acts: ["public use", "exposure", "degradation"], becomes: "attention whore" },
   { id: "submissive", name: "submissive", note: "She loves being ordered around and held down.", acts: ["restraint", "discipline", "orders"], becomes: "self hating" },
   { id: "dom", name: "dom", note: "She likes being in charge in bed, and she's good at it.", acts: ["penetrative", "domination", "using another", "feet", "hers"], becomes: "abusive" },
   { id: "masochist", name: "masochist", note: "She gets off on pain. Gentle sex does nothing for her.", acts: ["pain", "discipline", "painal"], becomes: "self hating" },
   { id: "sadist", name: "sadist", note: "She enjoys hurting other people and doesn't hide it.", acts: ["domination", "punishing another", "pain on another", "feet"], becomes: "malicious" },
   { id: "pregnancy", name: "pregnancy", note: "She loves being bred and being visibly pregnant.", acts: ["breeding", "belly worship", "vaginal", "pregnancy"], becomes: "breeder" },
+  { id: "armpits", name: "armpit worship", note: "She wants her armpits worshipped, kissed, sniffed and licked clean, with a face buried in them. She stops shaving them for it.", acts: ["armpits", "musk"], becomes: "scent obsessed" },
+  { id: "musk", name: "musk", note: "She gets off on her own smell being wanted, when she's unwashed and sweaty after a shift and someone presses their nose into her.", acts: ["musk", "armpits", "feet", "smother", "facesitting"], becomes: "scent obsessed" },
+  { id: "facesitting", name: "facesitting", note: "She wants to sit on faces. All her weight, her thighs closed around your ears, and you breathing when she lets you.", acts: ["facesitting", "smother", "ass worship"], becomes: "throne" },
+  { id: "assworship", name: "ass worship", note: "She wants her ass worshipped, kissed and licked, with a tongue where she points it and a face where she sits.", acts: ["ass worship", "facesitting", "rimming her"], becomes: "throne" },
+  { id: "goddess", name: "goddess", note: "She wants to be worshipped. Not fucked, worshipped: knelt to, praised, served, her body treated as something holy.", acts: ["worship", "furniture", "tribute", "hers"], becomes: "goddess complex" },
+  { id: "pegging", name: "pegging", note: "She wants to fuck you with a strap-on, and she thinks about it far more than she lets on.", acts: ["pegging"], becomes: "humiliatrix" },
+  { id: "keyholder", name: "keyholder", note: "She wants your cock locked in a cage and the key on a chain around her neck, and to decide when you come, if ever.", acts: ["keyholding", "denial", "teasing"], becomes: "keyholder for life" },
+  { id: "spit", name: "spit", note: "She wants to spit in your open mouth and on your face, and watch you take it.", acts: ["spit"], becomes: "humiliatrix" },
+  { id: "ballbusting", name: "ballbusting", note: "She gets off on hurting balls with a knee, a kick or a slow squeeze, and on the face someone makes.", acts: ["ballbusting", "cbt"], becomes: "malicious" },
+  { id: "findom", name: "findom", note: "Money spent on her because she said so gets her wetter than anything done to her body.", acts: ["tribute"], becomes: "tribute junkie" },
+  { id: "sph", name: "size humiliation", note: "She gets off on laughing at a cock, measuring it, comparing it and telling its owner exactly how little it does for her.", acts: ["sph", "humiliating you"], becomes: "humiliatrix" },
+  { id: "cuckoldress", name: "cuckoldress", note: "She wants you to watch her with someone better, and to be told about it afterwards in detail.", acts: ["cuckold", "humiliating you", "sharing"], becomes: "cuckqueen" },
+  { id: "petplay", name: "petplay", note: "She wants a leash, a bowl, ears, and to be somebody's pet, praised, petted and walked on all fours.", acts: ["petplay", "leash"], becomes: "pet for life" },
+  { id: "breathplay", name: "breathplay", note: "She wants a hand on her throat, or her own hand on yours. The edge of air is where she comes.", acts: ["choking", "smother"], becomes: "breath addict" },
+  { id: "voyeur", name: "voyeur", note: "She gets off watching other people fuck, you with someone else, or anyone who doesn't know she's there.", acts: ["watching", "servicing", "group", "cuckold"], becomes: "attention whore" },
+  { id: "tickling", name: "tickling", note: "Being tickled until she can't breathe does something to her that she can't explain and won't stop asking for.", acts: ["tickle", "ticklish"] },
+  { id: "furniture", name: "human furniture", note: "She wants to use a person as furniture, as a footstool, a seat or a table for her drink, and to forget they're there.", acts: ["furniture", "feet"], becomes: "goddess complex" },
 ];
 
 export const FETISH_BY_ID: Record<string, FetishDef> = Object.fromEntries(FETISHES.map((f) => [f.id, f]));
@@ -76,6 +100,12 @@ export const QUIRKS: QuirkDef[] = [
   { id: "caring", note: "She cares more about her partner getting off than about getting off herself.", acts: ["oral", "servicing", "aftercare", "feet"] },
   { id: "unflinching", note: "Nothing shocks her. She'll do anything without complaint.", acts: ["anything"] },
   { id: "size queen", note: "She loves big cocks and big toys.", acts: ["vaginal", "anal", "toys"] },
+  { id: "throne queen", note: "She likes sitting on faces and is good at it, because she knows how long to stay down.", acts: ["facesitting", "smother", "ass worship"] },
+  { id: "scent proud", note: "She's proud of how she smells after a day's work, and likes a nose in her armpit or under her arch.", acts: ["musk", "armpits", "feet"] },
+  { id: "edge queen", note: "She likes keeping someone on the edge, for hours, and stopping a second before.", acts: ["keyholding", "denial", "teasing"] },
+  { id: "mean girl", note: "She's at her best in bed when she's being mean, laughing, spitting and saying exactly the wrong thing on purpose.", acts: ["sph", "humiliating you", "spit"] },
+  { id: "good pet", note: "She loves being petted, leashed and praised like an animal, and stays in it for hours.", acts: ["petplay", "leash", "orders"] },
+  { id: "watcher", note: "She likes to watch more than to join in, and says so.", acts: ["watching", "cuckold", "servicing"] },
 ];
 
 export interface FlawDef { id: FlawId; note: string; hates: string[]; /** what it becomes if she is worked past it */ softens_to?: QuirkId }
@@ -89,6 +119,9 @@ export const FLAWS: FlawDef[] = [
   { id: "apathetic", note: "She's apathetic in bed and just lies there.", hates: [], softens_to: "caring" },
   { id: "crude", note: "She's crude, and says disgusting things during sex that ruin the mood.", hates: [], softens_to: "perverted" },
   { id: "judgemental", note: "She's judgemental about other people's kinks and says so.", hates: ["unusual", "group"], softens_to: "unflinching" },
+  { id: "fastidious", note: "She's fastidious about bodies, and sweat, spit, smell and feet make her gag.", hates: ["musk", "armpits", "spit", "feet", "watersports"], softens_to: "scent proud" },
+  { id: "bratty", note: "She's a brat. When she's told to do something, she argues, stalls and makes you work for it.", hates: ["orders", "submission", "petplay"], softens_to: "good pet" },
+  { id: "prissy", note: "She's prissy about being on top of anyone, and sitting on a face or standing on a man embarrasses her.", hates: ["facesitting", "furniture", "domination"], softens_to: "throne queen" },
 ];
 
 export const FLAW_BY_ID: Record<string, FlawDef> = Object.fromEntries(FLAWS.map((f) => [f.id, f]));
@@ -206,7 +239,7 @@ export const ACTS: ActDef[] = [
     base: { arousal: -25, relaxation: 1.1, bond: 3.5, resentment: -3, release: 0 } },
   { id: "ride her", name: "Ride her", what: "you put her on her back and ride her cock", group: "hers", tags: ["penetrative", "hers", "domination"], needs: ["dick", "hard"],
     trains: { penetrative: 3.5 }, base: { arousal: 14, relaxation: 0.8, bond: 3, resentment: -1, release: 5 }, wants_devotion: 10 },
-  { id: "take charge", name: "Let her take charge", what: "you lie back and give her control: she decides what happens, pins you down, sits on your face and rides you, and uses you for her own pleasure", group: "hers", tags: ["domination", "hers", "using another"],
+  { id: "take charge", name: "Let her take charge", what: "you lie back and give her control, so she decides what happens, pins you down, sits on your face and rides you, and uses you for her own pleasure", group: "hers", tags: ["domination", "hers", "using another"],
     trains: { vaginal: 1.5, oral: 0.5 }, base: { arousal: 10, relaxation: 0.5, bond: 2.5, resentment: 0, release: 5 }, wants_devotion: 10 },
   { id: "drain her", name: "Empty her", what: "you milk her balls, making her cum over and over until she's dry", group: "hers", tags: ["hers", "oral", "rough", "denial"], needs: ["balls"],
     base: { arousal: -10, relaxation: -0.9, bond: 0.5, resentment: 4, release: 0 } },
@@ -261,7 +294,7 @@ export const ACTS: ActDef[] = [
     base: { arousal: 1, relaxation: -2.0, bond: -3, resentment: 10, release: 3 } },
 
   // ── more of her feet ───────────────────────────────────────────────────────────────────────
-  { id: "tickle feet", name: "Tickle her feet", what: "you pin her ankles in your lap and tickle her bare soles until she's shrieking with laughter and begging you to stop", group: "feet", tags: ["feet", "teasing", "humiliation", "play"], needs: ["feet", "ticklish"],
+  { id: "tickle feet", name: "Tickle her feet", what: "you pin her ankles in your lap and tickle her bare soles until she's shrieking with laughter and begging you to stop", group: "feet", tags: ["feet", "teasing", "humiliation", "play", "tickle"], needs: ["feet", "ticklish"],
     base: { arousal: 4, relaxation: -0.3, bond: 1, resentment: 2, release: 2 } },
   { id: "bastinado", name: "Whip her soles", what: "you tie her ankles up with her soles facing you and cane the soles of her feet, stroke by stroke", group: "discipline", tags: ["feet", "pain", "punishment", "discipline"], needs: ["feet"],
     base: { arousal: 1, relaxation: -1.8, bond: -2.5, resentment: 8, release: 3 } },
@@ -275,6 +308,43 @@ export const ACTS: ActDef[] = [
     base: { arousal: 3, relaxation: 0.1, bond: 0.5, resentment: 1, release: 6 } },
   { id: "pedicure", name: "Give her a pedicure", what: "you soak her feet, rub lotion into her soles and paint her toenails", group: "tenderness", tags: ["feet", "tenderness", "worship"], needs: ["feet"],
     base: { arousal: 2, relaxation: 1.6, bond: 4, resentment: -4, release: 0 } },
+
+  // ── hers to enjoy ──────────────────────────────────────────────────────────────────────────
+  // The tastes the base game never had a word for, and the acts that feed them. Most of these are
+  // her doing something to you, or you serving a part of her nobody else bothers with; `femdom`
+  // marks the ones where she's on top of you, so the page reads her taking it, not lying back.
+  { id: "worship armpits", receives: true, name: "Worship her armpits", what: "you bury your face in her armpits, breathe her in, and kiss and lick them clean while she holds her arm up for you", group: "hers", tags: ["armpits", "musk", "worship", "hers"],
+    base: { arousal: 7, relaxation: 1.0, bond: 3.5, resentment: -2, release: 0 }, wants_devotion: -30 },
+  { id: "smell her", receives: true, name: "Smell her after her shift", what: "she comes to you unwashed at the end of her shift and you smell her all over, armpits, neck, feet and between her legs, slowly, and tell her how she smells", group: "hers", tags: ["musk", "armpits", "feet", "worship", "hers"],
+    base: { arousal: 6, relaxation: 0.8, bond: 2.5, resentment: -1, release: 0 }, wants_devotion: -30 },
+  { id: "ass worship", receives: true, name: "Worship her ass", what: "you kneel behind her and worship her ass with your hands and mouth, and lick wherever she reaches back and points", group: "hers", tags: ["ass worship", "worship", "hers", "rimming her"],
+    base: { arousal: 9, relaxation: 1.0, bond: 3.5, resentment: -2, release: 0 }, wants_devotion: -20 },
+  { id: "facesit", name: "Let her sit on your face", what: "you lie back and she sits on your face with all her weight, thighs closed around your head, and decides when you get to breathe", group: "hers", tags: ["facesitting", "smother", "domination", "hers", "ass worship", "femdom"],
+    base: { arousal: 13, relaxation: 0.8, bond: 3, resentment: -1, release: 2 }, wants_devotion: 0 },
+  { id: "peg you", name: "Let her peg you", what: "she buckles on a strap-on, bends you over, and fucks your ass at her own pace while she tells you how you look", group: "hers", tags: ["pegging", "domination", "hers", "femdom"],
+    trains: { penetrative: 2 }, base: { arousal: 11, relaxation: 0.7, bond: 3, resentment: -1, release: 4 }, wants_devotion: 15 },
+  { id: "lock you", you: "cock", name: "Give her the key", what: "you let her lock your cock in a chastity cage and hang the only key on a chain around her neck, and she decides when, and whether, you come", group: "hers", tags: ["keyholding", "denial", "domination", "hers", "femdom"],
+    base: { arousal: 9, relaxation: 0.6, bond: 3, resentment: -1, release: 0 }, wants_devotion: 10 },
+  { id: "spit", name: "Let her spit in your mouth", what: "you kneel with your mouth open and she spits in it, then on your face, and watches you swallow", group: "hers", tags: ["spit", "domination", "hers", "humiliating you", "femdom"],
+    base: { arousal: 6, relaxation: 0.4, bond: 1.5, resentment: -1, release: 0 }, wants_devotion: 0 },
+  { id: "ballbust", you: "sire", name: "Let her kick your balls", what: "you stand with your legs apart and your hands behind your back while she knees, kicks and squeezes your balls and watches your face", group: "hers", tags: ["ballbusting", "pain on another", "domination", "hers", "femdom"],
+    base: { arousal: 8, relaxation: 0.5, bond: 2, resentment: -1, release: 0 }, wants_devotion: 10 },
+  { id: "mock your cock", you: "cock", name: "Let her laugh at your cock", what: "she looks your cock over, measures it against her hand and her toys, and tells you exactly what she thinks of it", group: "hers", tags: ["sph", "humiliating you", "domination", "hers", "femdom"],
+    base: { arousal: 6, relaxation: 0.5, bond: 1.5, resentment: -1, release: 1 }, wants_devotion: 0 },
+  { id: "footstool", name: "Be her footstool", what: "you kneel on all fours and she uses you as furniture for the evening, with her feet on your back and her drink on you, and she forgets you're there", group: "feet", tags: ["furniture", "feet", "domination", "hers", "femdom"], needs: ["feet"],
+    base: { arousal: 3, relaxation: 1.3, bond: 2.5, resentment: -2, release: 0 }, wants_devotion: -10 },
+  { id: "watch her", name: "Watch her with another man", what: "she has one of your guards in your bed while you sit in the corner and watch, and afterwards she tells you how much bigger and better he was", group: "hers", tags: ["cuckold", "sharing", "humiliating you", "hers", "watching", "femdom"],
+    base: { arousal: 14, relaxation: 0.4, bond: 1, resentment: 0, release: 2 }, wants_devotion: 20 },
+  { id: "choked by her", name: "Let her choke you", what: "she straddles you and wraps her hand around your throat, and squeezes, and lets go, and squeezes, watching your face", group: "hers", tags: ["choking", "domination", "hers", "smother", "femdom"],
+    base: { arousal: 9, relaxation: 0.5, bond: 2, resentment: -1, release: 3 }, wants_devotion: 10 },
+  { id: "tribute", name: "Pay her tribute", what: "you hand her ¤1,500 because she told you to, and thank her for taking it", group: "hers", tags: ["tribute", "worship", "hers", "femdom"],
+    base: { arousal: 6, relaxation: 1.0, bond: 3, resentment: -2, release: 0 }, wants_devotion: 0 },
+  { id: "choke her", name: "Choke her", what: "you hold her down by the throat while you use her, and decide when she breathes", group: "play", tags: ["choking", "rough", "submission"],
+    base: { arousal: 8, relaxation: -0.8, bond: -0.5, resentment: 4, release: 3 } },
+  { id: "leash her", name: "Put her on a leash", what: "you put ears and a collar with a leash on her and walk her around your suite on all fours, and pet her when she's good", group: "play", tags: ["petplay", "leash", "orders", "submission"],
+    base: { arousal: 5, relaxation: -0.2, bond: 0.5, resentment: 3, release: 1 } },
+  { id: "tickle her", name: "Tickle her", what: "you pin her down and tickle her ribs, her sides and under her arms until she's shrieking and can't breathe", group: "play", tags: ["tickle", "teasing", "play"],
+    base: { arousal: 5, relaxation: 0.2, bond: 1.5, resentment: 1, release: 1 } },
 
   // ── tenderness ─────────────────────────────────────────────────────────────────────────────
   { id: "kissing", name: "Kiss her", what: "you kiss her, slowly and properly", group: "tenderness", tags: ["kissing", "slow", "tenderness"],

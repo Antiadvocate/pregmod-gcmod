@@ -15,7 +15,7 @@ export default function FCTVCard() {
     return (
       <Fold id="fctv" title="FCTV">
         <Card>
-          <p className="font-prose text-[14px] leading-relaxed mb-2">Install FCTV receivers across the arcology. What your citizens watch changes what they think: doctrine shows push your doctrines, the news steadies them, the porn channel makes them spend. You can put one of your slaves on the air in a show of her own.</p>
+          <p className="font-prose text-[14px] leading-relaxed mb-2">Install FCTV receivers across the arcology. What your citizens watch changes what they think. Doctrine shows push your doctrines, the news steadies them, the porn channel makes them spend. You can put one of your slaves on the air in a show of her own.</p>
           <Button kind="primary" disabled={save.arcology.cash < RECEIVERS} onClick={() => mutate((s) => { installFCTV(s); })}>Install receivers · ¤{RECEIVERS.toLocaleString()}</Button>
         </Card>
       </Fold>

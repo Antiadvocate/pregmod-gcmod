@@ -8,6 +8,7 @@
  * on the Penthouse, and picks up where it left off. With no model, the written game answers in her
  * voice and still offers you the next thing to say.
  */
+import { practiseFrom } from "./player";
 import { coarsen, REGISTER_TAIL } from "./register";
 import { sentinelsLine } from "./battles";
 import { cultureBrief } from "./culture";
@@ -69,22 +70,22 @@ export const MOMENT_SYSTEM = `You continue a scene in Free Cities, an adult text
 
 ${HOUSE_STYLE}
 
-You are given the slave's card (fact), the world, and the scene so far. Write what happens next, in response to the player's last line. If the last thing in the scene is a short summary of something that just happened, write that moment out in full first: what she does, what she says, how she takes it. How long, and how she talks: HOW A CONVERSATION GOES, below. What the owner does himself happens exactly as the player wrote it. What he tells HER to do happens only as far as HOW SHE TAKES ORDERS on her card allows: a slave who resists stalls, begs, refuses or pulls away, and the reply stops there, for the owner to decide whether to force it, call the guards or punish her. Never make her give in, come round, enjoy it or thank him for something her card says she wouldn't. Write the owner as WHO THE OWNER IS describes them, in their manner and their words, never a stock cold slave-owner; don't write their inner feelings. Everyone treats the owner as their place really allows (THE POWER BETWEEN YOU on each card): an owned slave doesn't talk back or tell the owner off unless her card says she's openly defiant. Do not end the scene; stop at a point where the player can answer. Each turn of the game is a week. What the cards list as past (between you, remembers, what you have done) happened in earlier weeks and is over: it shapes how people act now, but this scene is its own, set where the scene so far puts it. Don't carry on an earlier scene or move this one back into its place.
+You're given the slave's card, which is fact, along with the world and the scene so far. Write what happens next, in response to the player's last line. If the last thing in the scene is a short summary of something that just happened, write that moment out in full first, with what she does, what she says and how she takes it. GUIDELINES FOR SCENES AND DIALOGUE, below, says how long to write and how she talks. Whatever the owner does himself happens exactly as the player wrote it. Whatever he tells HER to do happens only as far as HOW SHE TAKES ORDERS on her card allows. A slave who resists stalls, begs, refuses or pulls away, and the reply stops there, so the owner can decide whether to force it, call the guards or punish her. Never make her give in, come round, enjoy it or thank him for something her card says she wouldn't. Write the owner as WHO THE OWNER IS describes them, in their manner and their words, and never as a stock cold slave-owner. Don't write their inner feelings. Everyone treats the owner as their place really allows, which is under THE POWER BETWEEN YOU on each card, so an owned slave doesn't talk back or tell the owner off unless her card says she's openly defiant. Don't end the scene. Stop at a point where the player can answer. Each turn of the game is a week. What the cards list as past (between you, what she remembers, what you have done) happened in earlier weeks and is over. It shapes how people act now, but this scene is its own, set where the scene so far puts it. Don't carry on an earlier scene, and don't move this one back into its place.
 
 ${CONVERSATION}
 
-Then, on its own line, write OPTIONS: and under it exactly four lines, each starting with "- ", giving four clearly different things the player could say or do next, in the player's voice and under twelve words each: one kind, one harsh, one sexual, and one that moves things along or leaves. When she's resisting, the harsh one forces it or punishes her (holding her down, the guards, the cellblock, a beating).`;
+Then, on its own line, write OPTIONS: and under it write exactly four lines, each starting with "- ". They give four clearly different things the player could say or do next, in the player's voice and in under twelve words each. One is kind, one is harsh, one is sexual, and one moves things along or leaves. When she's resisting, the harsh one forces it or punishes her, by holding her down, calling the guards, sending her to the cellblock, or a beating.`;
 
 /** A scene with nobody of yours in it: a citizen, a trader, an official, a stranger. */
-export const CITY_SCENE_SYSTEM = `You continue a scene in Free Cities, an adult text game about owning an arcology where slavery is legal. The player owns the arcology. This scene is not with one of the player's slaves: it is with whoever the situation is about (citizens, traders, officials, rivals, visitors, strangers).
+export const CITY_SCENE_SYSTEM = `You continue a scene in Free Cities, an adult text game about owning an arcology where slavery is legal. The player owns the arcology. This scene isn't with one of the player's slaves. It's with whoever the situation is about, such as citizens, traders, officials, rivals, visitors or strangers.
 
 ${HOUSE_STYLE}
 
-Write what happens next, in response to the player's last line. If the last thing in the scene is a short summary of something that just happened, write that moment out in full first. Give the people in it names if they have none, and their own voices; they know who the player is and act on it, by what the ARCOLOGY section says about the city, its laws and what people know the player did. How long, and how they talk: HOW A CONVERSATION GOES, below. Follow the player's reply exactly; if they do something, write it happening and how people react. Write the owner as WHO THE OWNER IS describes them, in their manner and their words, never a stock cold slave-owner; don't write their inner feelings. Everyone treats the owner as their place really allows (THE POWER BETWEEN YOU on each card): an owned slave doesn't talk back or tell the owner off unless her card says she's openly defiant. Do not end the scene; stop at a point where the player can answer. Each turn of the game is a week. What the cards list as past (between you, remembers, what you have done) happened in earlier weeks and is over: it shapes how people act now, but this scene is its own, set where the scene so far puts it. Don't carry on an earlier scene or move this one back into its place.
+Write what happens next, in response to the player's last line. If the last thing in the scene is a short summary of something that just happened, write that moment out in full first. Give the people in it names if they have none, and voices of their own. They know who the player is and act on it, going by what the ARCOLOGY section says about the city, its laws and what people know the player did. GUIDELINES FOR SCENES AND DIALOGUE, below, says how long to write and how they talk. Follow the player's reply exactly, and if they do something, write it happening and how people react. Write the owner as WHO THE OWNER IS describes them, in their manner and their words, and never as a stock cold slave-owner. Don't write their inner feelings. Everyone treats the owner as their place really allows, which is under THE POWER BETWEEN YOU on each card, so an owned slave doesn't talk back or tell the owner off unless her card says she's openly defiant. Don't end the scene. Stop at a point where the player can answer. Each turn of the game is a week. What the cards list as past (between you, what she remembers, what you have done) happened in earlier weeks and is over. It shapes how people act now, but this scene is its own, set where the scene so far puts it. Don't carry on an earlier scene, and don't move this one back into its place.
 
 ${CONVERSATION}
 
-Then, on its own line, write OPTIONS: and under it exactly four lines, each starting with "- ", giving four clearly different things the player could say or do next, in the player's voice and under twelve words each: one generous, one hard, one that uses the moment for the player's gain or pleasure, and one that ends it or moves on.`;
+Then, on its own line, write OPTIONS: and under it exactly four lines, each starting with "- ", giving four clearly different things the player could say or do next, in the player's voice and in under twelve words each. One is generous, one is hard, one uses the moment for the player's gain or pleasure, and one ends it or moves on.`;
 
 /* ── what she's been saying too much ─────────────────────────────────────────────────────────
  * A model given a character with habits uses every habit in every reply, and the next reply copies
@@ -146,7 +147,7 @@ export function overused(s: SaveState, p: Person, m: Moment): string {
   // One habit, named once: "if it pleases" goes when "if it pleases you" is there.
   // (Unless the shorter is said at least twice as often on its own: then it's a habit of its own.)
   const named = hits.filter((x, i) => !hits.some((o, j) => j !== i && o.w.length > x.w.length && norm(o.w).includes(norm(x.w)) && o.n * 2 > x.n)).slice(0, 7);
-  return named.length ? `## SHE'S BEEN DOING THESE TOO MUCH LATELY (leave every one of them out of this reply)\n${named.map((x) => `"${x.w}" (${x.n} times in her last few scenes)`).join("; ")}` : "";
+  return named.length ? `## SHE'S BEEN DOING THESE TOO MUCH LATELY\nLeave every one of them out of this reply.\n${named.map((x) => `"${x.w}" (${x.n} times in her last few scenes)`).join(", ")}` : "";
 }
 
 const DEFAULT_OPTIONS = [
@@ -221,7 +222,7 @@ function transcript(m: Moment, keep = 6): string {
   const tail = m.log.slice(-keep);
   const gap = m.log.length - head.length - tail.length;
   const said = m.log.slice(top, -keep).filter((l) => l.role === "you").map((l) => l.text.slice(0, 60));
-  return [...head.map(line), `(${gap} lines later; the player had said: ${said.join(" / ")})`, ...tail.map(line)].join("\n\n");
+  return [...head.map(line), `(${gap} lines later. In between, the player had said: ${said.join(" / ")})`, ...tail.map(line)].join("\n\n");
 }
 
 export function splitOptions(text: string): { prose: string; options: string[] } {
@@ -244,6 +245,7 @@ export async function playMoment(
   if (reply) m.log.push({ role: "you", text: reply });
   // What you tell her about how to treat you outlasts the scene.
   if (reply) captureInstructions(s, reply, [p, ...(m.others ?? []).map((x) => s.people[x])].filter((x): x is Person => !!x));
+  if (reply) practiseFrom(s, reply);
   m.updated = s.arcology.week;
   m.open = true;
 
@@ -326,7 +328,7 @@ export async function playMoment(
   if (p) {
     const book = await call({
       system: BOOKKEEPER_SYSTEM,
-      user: `${bookkeeperContext(s)}\n\n## THE TURN\nWHAT THE OWNER DID OR SAID ("I" here is the owner): ${reply ?? m.title}\n\nTHE PROSE ("you" is the owner):\n${prose}`,
+      user: `${bookkeeperContext(s)}\n\n## THE TURN\nWHAT THE OWNER DID OR SAID. Here "I" is the owner: ${reply ?? m.title}\n\nTHE PROSE. Here "you" is the owner:\n${prose}`,
       model: s.models.bookkeeper_model, fallback: s.models.fallback_model, json: true, signal: opts?.signal,
     });
     const diff = book.ok ? parseJson<Diff>(book.text) : null;
@@ -346,7 +348,7 @@ function cityContext(s: SaveState): string {
   const deeds = (s.deeds ?? []).filter((d) => d.public).slice(-4).map((d) => `· ${d.summary}`).join("\n");
   const rumors = [...s.rumors].filter((r) => !r.where).sort((a, b) => b.salience - a.salience).slice(0, 3).map((r) => `· "${r.content}"`).join("\n");
   return [
-    `## THE ARCOLOGY\n${s.arcology.name}, week ${s.arcology.week}. Reputation ${Math.round(s.arcology.rep)}; the city's opinion of the player is ${s.arcology.public_standing >= 3 ? "good" : s.arcology.public_standing <= -3 ? "poor" : "mixed"}.${s.player.owned_by ? ` The player wears the collar of ${s.people[s.player.owned_by]?.name ?? "a slave"}, and people know it.` : ""}`,
+    `## THE ARCOLOGY\n${s.arcology.name}, week ${s.arcology.week}. The player's reputation is ${Math.round(s.arcology.rep)}, and the city's opinion of the player is ${s.arcology.public_standing >= 3 ? "good" : s.arcology.public_standing <= -3 ? "poor" : "mixed"}.${s.player.owned_by ? ` The player wears the collar of ${s.people[s.player.owned_by]?.name ?? "a slave"}, and people know it.` : ""}`,
     cultureBrief(s) ? `HOW CITIZENS BEHAVE:\n${cultureBrief(s)}` : "",
     lawsLine(s),
     sentinelsLine(s),

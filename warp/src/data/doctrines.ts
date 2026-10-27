@@ -116,7 +116,7 @@ export const DOCTRINES: Doctrine[] = [
   },
   {
     id: "gender_radical", noun: "Gender Radicalism", adj: "Gender Radicalist",
-    creed: "Gender is a matter of choice; dickgirls and surgically altered slaves are welcome.",
+    creed: "Gender is a matter of choice, and dickgirls and surgically altered slaves are welcome.",
     wants: { gender: 1, modification: 0.4 }, excludes: ["gender_fundamentalist"],
     rep: 20, cash: -400, research: 12000,
     look: "ambiguous statuary, mirrored corridors, signage with no pictograms",
@@ -158,7 +158,7 @@ export const DOCTRINES: Doctrine[] = [
   },
   {
     id: "eugenics", noun: "Eugenics", adj: "Eugenicist",
-    creed: "Only the elite should breed; everyone else should be kept from it.",
+    creed: "Only the elite should breed, and everyone else should be kept from it.",
     wants: { breeding: -1, intelligence: 0.6 }, excludes: ["repopulation"],
     rep: 25, cash: 400, research: 18000,
     look: "registry offices, lineage displays, chastity as visible hardware",

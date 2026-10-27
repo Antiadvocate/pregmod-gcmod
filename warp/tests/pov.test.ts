@@ -14,7 +14,7 @@ const s = newGame({ seed: "pov" });
 const p = Object.values(s.people).find((q) => q.status === "owned")!;
 romanceOf(p).standing = "wife"; romanceOf(p).dominion = 50;
 check("the bookkeeper is told who holds power", new RegExp(`${p.name}.*holds the power`).test(bookkeeperContext(s)));
-check("and that 'you' is the owner", /"you" is always the owner/.test(BOOKKEEPER_SYSTEM) && /is the "you" in the prose/.test(bookkeeperContext(s)));
+check("and that 'you' is the owner", /"you" always refers to the owner/.test(BOOKKEEPER_SYSTEM) && /referred to as "you" in the prose/.test(bookkeeperContext(s)));
 shiftDominion(s, p, 12, "You knelt and licked her feet clean.");
 const last = s.memory[p.id]?.episodic.at(-1)?.content ?? "";
 check("a granted ask is filed the right way round", /the owner knelt and licked her feet clean/.test(last) && !/\byou\b/i.test(last), last);
@@ -25,7 +25,7 @@ check("a granted ask is filed the right way round", /the owner knelt and licked 
   const { MOMENT_SYSTEM, CITY_SCENE_SYSTEM } = await import("../src/engine/moments.ts");
   const { WALK_SYSTEM } = await import("../src/engine/walk.ts");
   const { SAGA_SYSTEM } = await import("../src/engine/saga.ts");
-  check("the house style says porn, not literature, and bans euphemism", /PORN GAME, NOT LITERATURE/.test(HOUSE_STYLE) && /"womanhood"/.test(HOUSE_STYLE) && /Flowery/.test(HOUSE_STYLE));
+  check("the house style says porn, not literature, and bans euphemism", /This is an adult game, not literary fiction/.test(HOUSE_STYLE) && /"womanhood,?"/.test(HOUSE_STYLE) && /Flowery/.test(HOUSE_STYLE));
   const all = { NARRATOR_SYSTEM, MOMENT_SYSTEM, CITY_SCENE_SYSTEM, WALK_SYSTEM, SAGA_SYSTEM };
   check("every scene-writer carries it", Object.values(all).every((x) => x.includes(HOUSE_STYLE)), Object.entries(all).filter(([, x]) => !x.includes(HOUSE_STYLE)).map(([k]) => k));
 }

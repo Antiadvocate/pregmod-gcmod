@@ -208,7 +208,7 @@ function SpeaksTo({ id }: { id: string }) {
       </div>
       <div className="text-[11.5px] dim mt-1">
         {now === "slave" ? "By your title, deferring to you, refusals only as pleas, however close she is to you."
-          : now === "latitude" ? "She may speak her mind, disagree respectfully and tease a little; she still uses your title and knows she's yours."
+          : now === "latitude" ? "She may speak her mind, disagree respectfully and tease a little, but she still uses your title and knows she's yours."
           : "She talks to you as she likes, as an equal in words."}
         {!p.latitude && now !== "slave" ? " (from her standing with you)" : ""}
       </div>
@@ -380,7 +380,7 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
       </div>
       {!mine && cuckoldButton(save, id) ? <Button kind="ghost" className="w-full -mt-2 mb-4" onClick={onOther}>{cuckoldButton(save, id)}</Button> : null}
       {!mine ? <SpeaksTo id={id} /> : null}
-      {mine ? <div className="text-[12px] dim -mt-2 mb-4">{isKeeper(save, p) ? "She owns you." : isPartner(save, p) ? "She's free, and your equal." : "She's free now."} You can {isKeeper(save, p) ? "go to" : "be with"} her, ask her things and see how she is; what she wears, where she works and what's done to her body are hers to decide.</div> : null}
+      {mine ? <div className="text-[12px] dim -mt-2 mb-4">{isKeeper(save, p) ? "She owns you." : isPartner(save, p) ? "She's free, and your equal." : "She's free now."} You can {isKeeper(save, p) ? "go to" : "be with"} her, ask her things and see how she is, but what she wears, where she works and what's done to her body are hers to decide.</div> : null}
 
       <div className="flex flex-wrap gap-1 mb-4">
         {(([["read", "how she is"], ["her", "you and her"], ["body", "body"], ["theatre", "surgery"], ["work", "work"], ["history", "history"]] as const).filter(([t]) => !mine || !["theatre", "work"].includes(t))).map(([t, label]) => (
@@ -704,11 +704,11 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
                     <span className="font-mono text-[11px] dim shrink-0">wk {m.week}</span>
                     <span className="text-[12.5px] flex-1" style={{ opacity: 0.4 + m.decay * 0.6 }}>{m.content}</span>
                     <span className="text-[10.5px] dim shrink-0">{m.charge}{m.core ? " · core" : ""}</span>
-                    <button className="text-[11px] dim underline shrink-0" title="Correct what she remembers; she'll remember it this way from now on" onClick={() => {
+                    <button className="text-[11px] dim underline shrink-0" title="Correct what she remembers, and she'll remember it this way from now on" onClick={() => {
                       const t = window.prompt("What she remembers:", m.content);
                       if (t && t.trim() && t.trim() !== m.content) mutate((s) => { const x = s.memory[id]?.episodic.find((e) => e.id === m.id); if (x) x.content = t.trim(); });
                     }}>edit</button>
-                    <button className="text-[11px] dim underline shrink-0" title="She forgets this; it won't come up in scenes again" onClick={() => mutate((s) => { const pm = s.memory[id]; if (pm) pm.episodic = pm.episodic.filter((e) => e.id !== m.id); })}>forget</button>
+                    <button className="text-[11px] dim underline shrink-0" title="She forgets this, and it won't come up in scenes again" onClick={() => mutate((s) => { const pm = s.memory[id]; if (pm) pm.episodic = pm.episodic.filter((e) => e.id !== m.id); })}>forget</button>
                   </div>
                 ))}
               </div>

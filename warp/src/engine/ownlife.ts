@@ -25,7 +25,7 @@ type Life = { does: string[]; wants: string[] };
 
 /** By her personality: matched against her traits, how she talks, her quirk and her flaw. */
 const BY_TRAIT: [RegExp, Life][] = [
-  [/neat|tidy|clean|order|fold|fix|fuss/, { does: ["keeps the toy drawer cleaned and sorted, and gets snippy when anyone puts a plug back in the wrong place"], wants: ["to run the house's bedrooms her way: who sleeps where, and who gets used when"] }],
+  [/neat|tidy|clean|order|fold|fix|fuss/, { does: ["keeps the toy drawer cleaned and sorted, and gets snippy when anyone puts a plug back in the wrong place"], wants: ["to run the house's bedrooms her way, deciding who sleeps where and who gets used when"] }],
   [/nervous|fidget|anxious|jumpy|flinch|scared|frightened|timid/, { does: ["reads the filthiest books she can find under the covers, and blushes at her own pages"], wants: ["to be told she's good in bed by someone who means it"] }],
   [/joke|funny|laugh|giggl|grin|mischie|playful|wit/, { does: ["makes up rude nicknames for every man who's had her and tells the other girls", "draws dirty cartoons of the house on scraps and passes them round the other girls"], wants: ["to make the owner laugh with his cock in her mouth"] }],
   [/suspicious|guarded|evasive|cold|distant|wary|closed|secret/, { does: ["keeps a notebook of who's sleeping with whom in the house, in a code only she can read"], wants: ["to be the one girl in the house nobody can touch without her say-so"] }],
@@ -36,7 +36,7 @@ const BY_TRAIT: [RegExp, Life][] = [
   [/touchy|cuddl|affection|warm|sweet|gentle|kind|caring/, { does: ["curls up with whichever girl is on the couch and lets her hands wander"], wants: ["to have someone to sleep tangled up with every night"] }],
   [/self-conscious|her body|vain|mirror|looks|pretty/, { does: ["tries on lingerie in front of the mirror when she thinks nobody's watching, and practises poses"], wants: ["to be the one men stop and stare at on the concourse"] }],
   [/friendly|sociable|chatty|gossip|outgoing|familiar/, { does: ["trades gossip about who's fucking who, and always knows first"], wants: ["to have her own regulars who ask for her by name"] }],
-  [/lazy|sleepy|bath|comfort|idle/, { does: ["spends her free hour in the bath with the shower head"], wants: ["to be kept: fed, fucked and never made to work"] }],
+  [/lazy|sleepy|bath|comfort|idle/, { does: ["spends her free hour in the bath with the shower head"], wants: ["to be kept, fed, fucked and never made to work"] }],
   [/cook|bak|kitchen|food/, { does: ["bakes things shaped like cocks to make the other girls laugh"], wants: ["to cook for the owner in an apron and nothing else, every night"] }],
   [/strong|tough|fight|hard|athlet/, { does: ["wrestles the other girls for the good blanket, and it doesn't always stay wrestling"], wants: ["to pin the owner down, just once, and see what he does"] }],
   [/crude|perver|dirty|filthy/, { does: ["tells the filthiest jokes in the house at dinner"], wants: ["to try everything at least once, with the owner watching"] }],
@@ -151,14 +151,14 @@ export function ownLifeLines(p: Person): string[] {
   const out: string[] = [];
   const does = p.persona.interests ?? [];
   const wants = p.persona.goals ?? [];
-  if (does.length) out.push(`HER OWN TIME (what she does when she isn't working or with you; she can be in the middle of it, mention it, or ask for time or things for it): ${does.join("; ")}.`);
-  if (wants.length) out.push(`WHAT SHE WANTS FOR HERSELF IN THE LONG RUN (it colours what she hopes for and asks for; she rarely says it outright): ${wants.join("; ")}.`);
+  if (does.length) out.push(`HER OWN TIME. This is what she does when she isn't working or with you. She can be in the middle of it, mention it, or ask for time or things for it: ${does.join(", and ")}.`);
+  if (wants.length) out.push(`WHAT SHE WANTS FOR HERSELF IN THE LONG RUN. It colours what she hopes for and asks for, though she rarely says it outright: ${wants.join(", and ")}.`);
   return out;
 }
 
 /** What the model is asked for, in the forge and the re-reading. */
 export const OWN_LIFE_ASK = {
-  interests: "2 or 3 things she does with her own time, each with a sexual edge and grown out of her personality traits (then her fetishes, then the job she had): things she does, not things she likes, e.g. for an eager-to-please one 'practises her deepthroat on whatever's the right shape in the kitchen', for one who keeps score 'keeps a tally of who's been called to the owner's bed', for a dancer 'practises her lap dance on the bedpost'",
+  interests: "2 or 3 things she does with her own time, each with a sexual edge and grown out of her personality traits first, then her fetishes, then the job she had. They're things she does rather than things she likes. For example, for an eager-to-please one 'practises her deepthroat on whatever's the right shape in the kitchen', for one who keeps score 'keeps a tally of who's been called to the owner's bed', for a dancer 'practises her lap dance on the bedpost'",
   goals: "1 or 2 things she wants for herself in the long run, with sex or desire in them, from her personality, e.g. 'to be called to the owner's bed more than anyone in the house', 'to fuck her way to her freedom papers', 'to have a slave of her own'",
 };
 

@@ -84,7 +84,7 @@ export default function Feed() {
       <div className="flex items-center gap-2 mb-3">
         <div className="text-[12px] dim flex-1 min-w-0">
           {!modelsAvailable() ? "The feed needs a model (Settings)."
-            : save.models.lean_mode ? "Lean mode is on: new posts only when you ask."
+            : save.models.lean_mode ? "Lean mode is on, so there are new posts only when you ask."
             : pace ? `New posts every ${pace} min while the game is open.` : "Background posts are off (Settings)."}
         </div>
         <Button size="sm" kind="ghost" disabled={busy || !modelsAvailable()} onClick={() => void now()}>
@@ -102,7 +102,7 @@ export default function Feed() {
       ) : null}
 
       {!shown.length ? (
-        <Empty>{f.posts.length ? "Nothing on this board yet." : "No posts yet. The city starts talking once a model is set; tap “new posts” to start it now."}</Empty>
+        <Empty>{f.posts.length ? "Nothing on this board yet." : "No posts yet. The city starts talking once a model is set. Tap “new posts” to start it now."}</Empty>
       ) : (
         <div className="space-y-2.5">
           {shown.map((p) => <PostCard key={p.id} p={p} onOpen={() => setOpen(p.id)} onLike={() => mutate((s) => likePost(s, p.id))} />)}

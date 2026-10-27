@@ -92,7 +92,7 @@ export function canGovern(s: SaveState, placeId: string): string | null {
   if (p.atWar) return "you're at war with it";
   if (p.rec.status === "vassal" || p.rec.status === "conquered") return null;
   if (p.kind === "neighbour" && (p.owned ?? 0) >= 55) return null;
-  return "you need to hold it first: win it, make it a vassal, or own 55% of it";
+  return "you need to hold it first, by winning it, making it a vassal, or owning 55% of it";
 }
 
 /** Who could go. Adults of yours who can talk and think, and aren't already governing. */
@@ -135,12 +135,12 @@ export function doctrinesFor(p: Person): string[] {
 export interface Style { id: string; line: string; order: number; prosperity: number; sickness: number; unrest: number }
 
 const STYLES: Record<string, Style> = {
-  iron: { id: "iron", line: "She runs it by fear: public punishments, informers on every floor, a curfew she enforces herself.", order: 1.4, prosperity: -0.4, sickness: 0, unrest: 0.1 },
-  soft: { id: "soft", line: "She runs it gently: amnesties, open kitchens, slaves allowed to bring her their complaints. People take advantage.", order: -1, prosperity: 0.4, sickness: 0, unrest: 0 },
-  vice: { id: "vice", line: "Her city runs on pleasure: the brothels and clubs never close, she sets the fashion, and the money follows the fucking.", order: -0.8, prosperity: 0.9, sickness: 0.1, unrest: 0 },
-  queen: { id: "queen", line: "She rules it like a queen: ceremony, her picture everywhere, citizens kneeling when she passes. The old families hate it.", order: 0.5, prosperity: -0.3, sickness: 0, unrest: 0.05 },
-  lost: { id: "lost", line: "She doesn't really know how to run a city: contracts sit unsigned, the books go unread, and whoever talks to her last gets their way.", order: -0.6, prosperity: -1, sickness: 0.03, unrest: 0.03 },
-  sharp: { id: "sharp", line: "She runs it like a business: she reads every ledger, cuts what doesn't pay, and nobody fools her twice.", order: 0.4, prosperity: 0.8, sickness: 0, unrest: 0 },
+  iron: { id: "iron", line: "She runs it by fear, with public punishments, informers on every floor, and a curfew she enforces herself.", order: 1.4, prosperity: -0.4, sickness: 0, unrest: 0.1 },
+  soft: { id: "soft", line: "She runs it gently, with amnesties, open kitchens, and slaves allowed to bring her their complaints. People take advantage of her.", order: -1, prosperity: 0.4, sickness: 0, unrest: 0 },
+  vice: { id: "vice", line: "Her city runs on pleasure. The brothels and clubs never close, she sets the fashion, and the money follows the fucking.", order: -0.8, prosperity: 0.9, sickness: 0.1, unrest: 0 },
+  queen: { id: "queen", line: "She rules it like a queen, with ceremony, her picture everywhere, and citizens kneeling when she passes. The old families hate it.", order: 0.5, prosperity: -0.3, sickness: 0, unrest: 0.05 },
+  lost: { id: "lost", line: "She doesn't really know how to run a city. Contracts sit unsigned, the books go unread, and whoever talks to her last gets their way.", order: -0.6, prosperity: -1, sickness: 0.03, unrest: 0.03 },
+  sharp: { id: "sharp", line: "She runs it like a business. She reads every ledger and cuts what doesn't pay, and nobody fools her twice.", order: 0.4, prosperity: 0.8, sickness: 0, unrest: 0 },
 };
 
 /** How she governs: one or two styles, from her conscience, her appetites, her pride and her brains. */
@@ -189,19 +189,19 @@ const PROBLEMS: Record<string, ProblemDef> = {
     text: (g, _p, f) => `Raiders came in by the freight lifts at night and cleaned out two of ${g.name}'s warehouses${f ? `. ${f.name}, ${f.role}, lost the most and wants to know where the owner's soldiers are` : ""}. There's nobody there to stop them coming back.` },
   shortage: { need: "cash", hits: "prosperity",
     chance: (_s, g, p, c) => (g.prosperity < 40 ? 0.15 : 0.02) + (c < 0.85 ? 0.08 : 0) + (styleOf(p).some((x) => x.id === "lost") ? 0.05 : 0),
-    text: (g, p, f) => `${g.name} is running short: the food stores were never restocked after ${p.name} moved the money somewhere else${f ? `, and ${f.name}, ${f.role}, has started selling what's left at three times the price` : ""}.` },
+    text: (g, p, f) => `${g.name} is running short, because the food stores were never restocked after ${p.name} moved the money somewhere else${f ? `, and ${f.name}, ${f.role}, has started selling what's left at three times the price` : ""}.` },
   sickness: { need: "cash", hits: "prosperity",
     chance: (_s, _g, p) => 0.02 + styleOf(p).reduce((n, x) => n + x.sickness, 0),
     text: (g, _p, f) => `Something is going round ${g.name}'s brothels and slave pens, a fever and a rash, and the clinic there has run out of everything${f ? `. ${f.name}, ${f.role}, has shut their doors until someone does something` : ""}.` },
   labour: { need: "labour", hits: "prosperity",
     chance: (_s, g) => (g.prosperity > 55 ? 0.07 : 0.01),
-    text: (g, p, f) => `${g.name} is growing faster than it has bodies for: half-built floors, ships waiting at the dock for crews${f ? `, and ${f.name}, ${f.role}, says ${p.name} promised workers she doesn't have` : ""}.` },
+    text: (g, p, f) => `${g.name} is growing faster than it has bodies for, with half-built floors and ships waiting at the dock for crews${f ? `, and ${f.name}, ${f.role}, says ${p.name} promised workers she doesn't have` : ""}.` },
   mess: { need: "advisor", hits: "prosperity",
     chance: (_s, _g, p, c) => (styleOf(p).some((x) => x.id === "sharp") ? 0 : c < 0.8 ? 0.18 : c < 0.95 ? 0.04 : 0),
     text: (g, p, f) => `${p.name} has signed three contracts in ${g.name} that contradict each other, and nobody there knows which one to follow${f ? `. ${f.name}, ${f.role}, read all three and is quietly making money off the gaps` : ""}.` },
   rival: { need: "troops", hits: "order",
     chance: (_s, g) => (live(g).some((f) => f.leaning < -0.3) ? 0.06 : 0),
-    text: (g, p, f) => `${f ? `${f.name}, ${f.role},` : "Someone in the city"} is holding meetings about ${p.name}: who she was before you collared her, and whether ${g.name} has to put up with her.` },
+    text: (g, p, f) => `${f ? `${f.name}, ${f.role},` : "Someone in the city"} is holding meetings about ${p.name}, about who she was before you collared her and whether ${g.name} has to put up with her.` },
   her: { need: "you", hits: "her",
     chance: (s, g, p) => s.player.owned_by === p.id || (s.player.owned_by && s.reign?.hand !== "shared") ? 0 : (p.psyche.relaxation < -2 ? 0.3 : 0) + (s.arcology.week - (g.last_heard ?? g.since) > 5 ? 0.25 : 0) + (p.bond.hope < 25 ? 0.1 : 0),
     text: (g, p) => `${p.name} isn't coping. Her staff in ${g.name} say she's stopped sleeping, snaps at everyone, and spends the evenings alone asking whether you've called.` },
@@ -337,10 +337,10 @@ export function governorLine(s: SaveState, p: Person): string {
   if (!p.governs) return "";
   const g = governorshipOf(s, p.governs);
   if (!g) return "";
-  if (g.person !== p.id) return `SHE IS AWAY IN ${g.name.toUpperCase()}: you sent her to help ${s.people[g.person]?.name ?? "its governor"} run it.`;
+  if (g.person !== p.id) return `SHE IS AWAY IN ${g.name.toUpperCase()}. You sent her to help ${s.people[g.person]?.name ?? "its governor"} run it.`;
   const style = styleOf(p).map((x) => x.line).join(" ");
   const trouble = (g.problems ?? []).map((x) => x.text).join(" ");
-  return `SHE GOVERNS ${g.name.toUpperCase()} FOR YOU (since week ${g.since}): she lives there and runs it in your name, completely loyal to you, entirely in her own way. ${style} Her decrees: ${g.decrees.slice(-3).map((d) => `"${d.text}"`).join(" ")}${trouble ? ` What's going wrong there: ${trouble}` : ""}`;
+  return `SHE GOVERNS ${g.name.toUpperCase()} FOR YOU, and has since week ${g.since}. She lives there and runs it in your name, completely loyal to you and entirely in her own way. ${style} Her latest decrees are ${g.decrees.slice(-3).map((d) => `"${d.text}"`).join(", ")}.${trouble ? ` This is what's going wrong there: ${trouble}` : ""}`;
 }
 
 /** Everything about her city, for a prompt. */
@@ -348,17 +348,17 @@ export function governorBrief(s: SaveState, g: Governorship): string {
   const place = powerById(s, g.place);
   const yourLaws = (place?.rec.laws ?? []).map((id) => LAW_BY_ID[id]?.name).filter(Boolean);
   return [
-    `${g.name.toUpperCase()}, HER CITY. ${place ? `A ${place.kind === "neighbour" ? "neighbouring arcology" : place.kind === "freecity" ? "Free City" : "Old World state"}, strength ${place.strength}.` : ""} She has run it since week ${g.since} (now week ${s.arcology.week}).`,
-    `It believes in: ${g.doctrines.map((d) => `${DOCTRINE_BY_ID[d]?.noun ?? d} (${DOCTRINE_BY_ID[d]?.creed ?? ""})`).join("; ")}.`,
-    `Her decrees: ${g.decrees.map((d) => `"${d.text}" (week ${d.week})`).join(" ")}`,
+    `${g.name.toUpperCase()}, HER CITY. ${place ? `A ${place.kind === "neighbour" ? "neighbouring arcology" : place.kind === "freecity" ? "Free City" : "Old World state"}, strength ${place.strength}.` : ""} She has run it since week ${g.since}, and it's now week ${s.arcology.week}.`,
+    `It believes in ${g.doctrines.map((d) => `${DOCTRINE_BY_ID[d]?.noun ?? d} (${DOCTRINE_BY_ID[d]?.creed ?? ""})`).join(", and ")}.`,
+    `Her decrees are ${g.decrees.map((d) => `"${d.text}" (week ${d.week})`).join(", ")}.`,
     yourLaws.length ? `Your laws it keeps because you told it to: ${yourLaws.join(", ")}.` : "",
     `HOW SHE RUNS IT: ${(g.style ?? []).map((id) => STYLES[id]?.line).filter(Boolean).join(" ")}`,
-    `HOW IT'S GOING: ${g.prosperity > 65 ? "rich and getting richer" : g.prosperity > 45 ? "getting by" : g.prosperity > 25 ? "going downhill" : "in a bad way"}; ${g.order > 65 ? "under control" : g.order > 40 ? "restless" : "close to boiling over"}. Your soldiers there: ${["none", "a company", "a battalion", "a whole garrison"][g.garrison ?? 0]}.${g.deputy && s.people[g.deputy] ? ` Her deputy, sent by you: ${s.people[g.deputy].name}.` : ""}`,
-    live(g).length ? `PEOPLE SHE DEALS WITH THERE: ${live(g).map((f) => `${f.name}, ${f.role} (${f.leaning > 0.3 ? "on her side" : f.leaning < -0.3 ? "against her" : "out for themselves"})${f.after ? `, who took the job after ${f.after} was dealt with` : ""}`).join("; ")}.` : "",
-    (g.faces ?? []).some((f) => f.gone) ? `GONE, AND STAYING GONE: ${(g.faces ?? []).filter((f) => f.gone).map((f) => `${f.name}, who was ${f.role}: ${FATE_WORDS[f.gone!.fate]} in week ${f.gone!.week}`).join("; ")}.` : "",
-    (g.problems ?? []).length ? `WHAT'S GOING WRONG, AND WHAT SHE NEEDS:\n${(g.problems ?? []).map((x) => `· ${x.text} She needs ${NEED_WORDS[x.need]}. (${x.severity >= 7 ? "it's bad now" : x.severity >= 4 ? "getting worse" : "new"}, since week ${x.since})`).join("\n")}` : "Nothing is badly wrong there right now.",
-    (g.news ?? []).length ? `RECENTLY THERE: ${(g.news ?? []).slice(-5).map((n) => `week ${n.week}: ${n.text}`).join(" | ")}` : "",
-    g.letters.length ? `Her last letter (week ${g.letters.at(-1)!.week}), DON'T REPEAT IT: ${g.letters.at(-1)!.text.slice(0, 500)}` : "",
+    `HOW IT'S GOING: it's ${g.prosperity > 65 ? "rich and getting richer" : g.prosperity > 45 ? "getting by" : g.prosperity > 25 ? "going downhill" : "in a bad way"}, and ${g.order > 65 ? "it's under control" : g.order > 40 ? "it's restless" : "it's close to boiling over"}. You have ${["no soldiers", "a company of soldiers", "a battalion", "a whole garrison"][g.garrison ?? 0]} there.${g.deputy && s.people[g.deputy] ? ` Her deputy, whom you sent, is ${s.people[g.deputy].name}.` : ""}`,
+    live(g).length ? `PEOPLE SHE DEALS WITH THERE: ${live(g).map((f) => `${f.name}, ${f.role} (${f.leaning > 0.3 ? "on her side" : f.leaning < -0.3 ? "against her" : "out for themselves"})${f.after ? `, who took the job after ${f.after} was dealt with` : ""}`).join(". ")}.` : "",
+    (g.faces ?? []).some((f) => f.gone) ? `GONE, AND STAYING GONE: ${(g.faces ?? []).filter((f) => f.gone).map((f) => `${f.name}, who was ${f.role}, was ${FATE_WORDS[f.gone!.fate]} in week ${f.gone!.week}`).join(". ")}.` : "",
+    (g.problems ?? []).length ? `WHAT'S GOING WRONG, AND WHAT SHE NEEDS:\n${(g.problems ?? []).map((x) => `· ${x.text} She needs ${NEED_WORDS[x.need]}. It ${x.severity >= 7 ? "is bad now" : x.severity >= 4 ? "is getting worse" : "is new"}, and it started in week ${x.since}.`).join("\n")}` : "Nothing is badly wrong there right now.",
+    (g.news ?? []).length ? `RECENTLY THERE: ${(g.news ?? []).slice(-5).map((n) => `In week ${n.week}, ${n.text.charAt(0).toLowerCase()}${n.text.slice(1)}`).join(" ")}` : "",
+    g.letters.length ? `This is her last letter, from week ${g.letters.at(-1)!.week}, and you mustn't repeat it: ${g.letters.at(-1)!.text.slice(0, 500)}` : "",
   ].filter(Boolean).join("\n");
 }
 
@@ -366,16 +366,16 @@ export interface GovOrder { note: string; run: (s: SaveState, g: Governorship, p
 
 /** What you can tell her to do. Closed: a model on the call picks from these, nothing else. */
 export const GOV_ORDERS: Record<string, GovOrder> = {
-  decree: { note: "she makes a new law in her city; value is the law in plain words", run: (s, g, _p, v) => { const text = String(v ?? "").trim().slice(0, 220); if (!text) return ""; g.decrees.push({ text, week: s.arcology.week }); if (g.decrees.length > 8) g.decrees.shift(); g.order = clamp(g.order + 2, 0, 100); return `New decree in ${g.name}: "${text}"`; } },
-  your_law: { note: "her city adopts one of your laws; value is the law id", run: (s, g, _p, v) => { const l = LAW_BY_ID[String(v)]; const rec = empireOf(s).powers[g.place]; if (!l || !rec) return ""; rec.laws = [...new Set([...(rec.laws ?? []), l.id])]; g.decrees.push({ text: `${l.name}: ${l.text}`, week: s.arcology.week }); s.arcology.rep += 120; return `${g.name} now keeps your ${l.name}.`; } },
-  send_cash: { note: "she sends extra money now; value is the amount, at most what the city can spare", run: (s, g, _p, v) => { const place = powerById(s, g.place); const cap = Math.round((place?.strength ?? 50) * 800 * (g.prosperity / 60)); const n = clamp(Math.round(Number(v) || cap / 2), 1000, Math.max(1000, cap)); s.arcology.cash += n; g.prosperity = clamp(g.prosperity - n / Math.max(4000, (place?.strength ?? 50) * 150), 0, 100); return `${g.name} sends ¤${n.toLocaleString()}.`; } },
-  send_girls: { note: "she sends you women from her city; value is how many, 1 to 3", run: (s, g, p, v) => { const k = clamp(Math.round(Number(v) || 1), 1, 3); const names: string[] = []; for (let i = 0; i < k; i++) { const w = generatePerson({ seed: `gov:${g.place}:${s.arcology.week}:${i}:${g.talk.length}`, week: s.arcology.week, quality: clamp(0.3 + g.prosperity / 200, 0, 0.9) }); w.origin.acquired_how = `sent from ${g.name} by ${p.name}`; w.origin.acquired_week = s.arcology.week; w.economics.price_paid = 0; s.people[w.id] = w; s.memory[w.id] = newMemory(); refresh(w, s.memory[w.id]); names.push(w.name); } g.prosperity = clamp(g.prosperity - 2 * k, 0, 100); return `${names.join(" and ")} arrive from ${g.name}, sent by ${p.name}.`; } },
-  deal_with: { note: "she has one person in her city dealt with, the way the owner said; value is \"Full Name: kill|ruin|exile|jail|buy\"", run: (s, g, p, v) => dealWith(s, g, p, String(v ?? "")) },
-  crackdown: { note: "she clamps down on her city: more order, less prosperity", run: (_s, g) => { g.order = clamp(g.order + 15, 0, 100); g.prosperity = clamp(g.prosperity - 4, 0, 100); return `${g.name} is locked down. It's quiet.`; } },
-  festival: { note: "she throws the city a festival: prosperity and goodwill, at a cost", run: (s, g) => { s.arcology.cash -= 6000; g.prosperity = clamp(g.prosperity + 5, 0, 100); g.order = clamp(g.order - 3, 0, 100); return `${g.name} has a festival in your name. ¤6,000.`; } },
+  decree: { note: "she makes a new law in her city, and the value is the law in plain words", run: (s, g, _p, v) => { const text = String(v ?? "").trim().slice(0, 220); if (!text) return ""; g.decrees.push({ text, week: s.arcology.week }); if (g.decrees.length > 8) g.decrees.shift(); g.order = clamp(g.order + 2, 0, 100); return `New decree in ${g.name}: "${text}"`; } },
+  your_law: { note: "her city adopts one of your laws, and the value is the law id", run: (s, g, _p, v) => { const l = LAW_BY_ID[String(v)]; const rec = empireOf(s).powers[g.place]; if (!l || !rec) return ""; rec.laws = [...new Set([...(rec.laws ?? []), l.id])]; g.decrees.push({ text: `${l.name}: ${l.text}`, week: s.arcology.week }); s.arcology.rep += 120; return `${g.name} now keeps your ${l.name}.`; } },
+  send_cash: { note: "she sends extra money now, and the value is the amount, at most what the city can spare", run: (s, g, _p, v) => { const place = powerById(s, g.place); const cap = Math.round((place?.strength ?? 50) * 800 * (g.prosperity / 60)); const n = clamp(Math.round(Number(v) || cap / 2), 1000, Math.max(1000, cap)); s.arcology.cash += n; g.prosperity = clamp(g.prosperity - n / Math.max(4000, (place?.strength ?? 50) * 150), 0, 100); return `${g.name} sends ¤${n.toLocaleString()}.`; } },
+  send_girls: { note: "she sends you women from her city, and the value is how many, from 1 to 3", run: (s, g, p, v) => { const k = clamp(Math.round(Number(v) || 1), 1, 3); const names: string[] = []; for (let i = 0; i < k; i++) { const w = generatePerson({ seed: `gov:${g.place}:${s.arcology.week}:${i}:${g.talk.length}`, week: s.arcology.week, quality: clamp(0.3 + g.prosperity / 200, 0, 0.9) }); w.origin.acquired_how = `sent from ${g.name} by ${p.name}`; w.origin.acquired_week = s.arcology.week; w.economics.price_paid = 0; s.people[w.id] = w; s.memory[w.id] = newMemory(); refresh(w, s.memory[w.id]); names.push(w.name); } g.prosperity = clamp(g.prosperity - 2 * k, 0, 100); return `${names.join(" and ")} arrive from ${g.name}, sent by ${p.name}.`; } },
+  deal_with: { note: "she has one person in her city dealt with, the way the owner said, and the value is \"Full Name: kill|ruin|exile|jail|buy\"", run: (s, g, p, v) => dealWith(s, g, p, String(v ?? "")) },
+  crackdown: { note: "she clamps down on her city, which brings more order and less prosperity", run: (_s, g) => { g.order = clamp(g.order + 15, 0, 100); g.prosperity = clamp(g.prosperity - 4, 0, 100); return `${g.name} is locked down. It's quiet.`; } },
+  festival: { note: "she throws the city a festival, which brings prosperity and goodwill at a cost", run: (s, g) => { s.arcology.cash -= 6000; g.prosperity = clamp(g.prosperity + 5, 0, 100); g.order = clamp(g.order - 3, 0, 100); return `${g.name} has a festival in your name. ¤6,000.`; } },
   recall: { note: "she comes home and stops governing", run: (s, g) => recallGovernor(s, g.place) },
   imprison: { note: "the owner has her stripped of the city, brought home under guard and locked in a cell", run: (s, g, p) => { recallGovernor(s, g.place, "dragged home and locked up"); return lockUp(s, p, `taken out of ${g.name} and locked up`); } },
-  support_cash: { note: "YOU send her money for her city; value is the amount", run: (s, g, _p, v) => supportGovernor(s, g.place, "cash", Number(v) || 10000) },
+  support_cash: { note: "YOU send her money for her city, and the value is the amount", run: (s, g, _p, v) => supportGovernor(s, g.place, "cash", Number(v) || 10000) },
   support_troops: { note: "YOU send soldiers to her city", run: (s, g) => supportGovernor(s, g.place, "troops") },
   support_labour: { note: "YOU send her workers (menials)", run: (s, g) => supportGovernor(s, g.place, "labour") },
 };
@@ -393,7 +393,7 @@ function dealWith(s: SaveState, g: Governorship, p: Person, v: string): string {
   const styles = (g.style ?? []).join(" ");
   const who = f.name.split(" ")[0];
   const how = {
-    dead: c < 0.7 ? `${p.name} had it done, badly: in daylight, with witnesses, and everyone knows who ordered it` : /fear|cruel/.test(styles) ? `${p.name} had it done where people would see the body` : `${p.name} had it done quietly, and ${who} turned up in the water two days later`,
+    dead: c < 0.7 ? `${p.name} had it done badly, in daylight and with witnesses, and everyone knows who ordered it` : /fear|cruel/.test(styles) ? `${p.name} had it done where people would see the body` : `${p.name} had it done quietly, and ${who} turned up in the water two days later`,
     ruined: `${p.name} took ${who}'s contracts, accounts and good name, and left nothing`,
     exiled: `${p.name}'s guards put ${who} on a boat with one bag`,
     jailed: `${p.name} had ${who} taken at night and put in a cell`,
@@ -403,8 +403,8 @@ function dealWith(s: SaveState, g: Governorship, p: Person, v: string): string {
   if (fate === "bought") f.leaning = 0.6;
   const lines = settle(s, f.name, fate, how, { place: g.place, by: p.name });
   if (fate === "bought") { delete f.gone; f.leaning = 0.6; }
-  remember(s.memory[p.id] ?? (s.memory[p.id] = newMemory()), { content: `the owner told me to deal with ${f.name}, and I did: ${how}`, week: s.arcology.week, importance: 7, charge: "cold" });
-  return `${f.name}, ${f.role}: ${FATE_WORDS[fate]}. ${how}.${lines.length > 1 ? ` ${lines.slice(1).join("; ")}.` : ""}`.replace(/\.\./g, ".");
+  remember(s.memory[p.id] ?? (s.memory[p.id] = newMemory()), { content: `the owner told me to deal with ${f.name}, and I did. ${how}`, week: s.arcology.week, importance: 7, charge: "cold" });
+  return `${f.name}, ${f.role}, was ${FATE_WORDS[fate]}. ${how}.${lines.length > 1 ? ` ${lines.slice(1).join(" ")}` : ""}`.replace(/\.\./g, ".");
 }
 
 /** What sending this would cost, or why you can't. */
@@ -412,7 +412,7 @@ export function supportBlocked(s: SaveState, placeId: string, kind: Need, amount
   const g = governorshipOf(s, placeId);
   if (!g) return "nobody's governing there";
   if (kind === "cash") return s.arcology.cash < amount ? `you don't have ¤${amount.toLocaleString()}` : null;
-  if (kind === "troops") { const cap = troopCap(s); return (g.garrison ?? 0) >= 3 ? "she has a whole garrison already" : (g.garrison ?? 0) >= cap ? `your forces (${forces(s).total}) can't spare more; build up your arsenal` : null; }
+  if (kind === "troops") { const cap = troopCap(s); return (g.garrison ?? 0) >= 3 ? "she has a whole garrison already" : (g.garrison ?? 0) >= cap ? `your forces (${forces(s).total}) can't spare more, so build up your arsenal` : null; }
   if (kind === "labour") return (s.menials?.owned ?? 0) < 20 && s.arcology.cash < 9000 ? "you have no menials to spare and can't buy them (¤9,000)" : null;
   return null;
 }

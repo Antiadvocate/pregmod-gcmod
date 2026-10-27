@@ -11,6 +11,7 @@ import { dickCM, dickWord, inches } from "./genitals";
 import type { Body, Person, Pronouns, SaveState } from "./types";
 import { generatePerson } from "./generate";
 import { buildOf, kgFor } from "./build";
+import { sizeLine } from "./endowment";
 
 export type Kit = "cock" | "pussy" | "both";
 
@@ -124,7 +125,7 @@ export function genderWord(s: SaveState): string {
   const cock = hasCock(s), pussy = hasPussy(s);
   if (pr === "they/them") return cock && pussy ? "a person with both a cock and a pussy" : cock ? "a person with a cock" : "a person with a pussy";
   if (pr === "he/him") return cock && pussy ? "a man who has a pussy as well as a cock" : cock ? "a man" : "a man with a pussy and no cock";
-  return cock && pussy ? "a futanari woman: a woman with a cock and balls as well as a pussy" : pussy ? "a woman" : "a woman with a cock and no pussy";
+  return cock && pussy ? "a futanari woman, which means a woman with a cock and balls as well as a pussy" : pussy ? "a woman" : "a woman with a cock and no pussy";
 }
 
 /**
@@ -154,6 +155,6 @@ export function ownerLine(s: SaveState): string {
   const named = s.player.name && s.player.name !== "you" ? s.player.name : "";
   const name = named ? `${named}, ` : "";
   const title = s.player.address || (pr === "she/her" ? "Mistress" : "Master");
-  const one = `"You", the player, the owner${named ? `, ${named}` : ""} and "${title}" are ONE person, the person reading. Write that person only as "you", in the second person. Never write the owner as a separate character in the third person${named ? ` ("${named} walks in", "${named}'s orders")` : ""}, never put the owner in a cast list, and never ask what the owner${named ? ` or ${named}` : ""} should do: every choice offered is something YOU do. Other characters may say ${named ? `"${named}" or ` : ""}"${title}" aloud when they speak to or about you.`;
-  return `THE OWNER (the player, written as "you"): ${name}${genderWord(s)}. ${one} Pronouns ${pr}: anyone speaking about the owner says ${subj}/${obj}/${pos}. Slaves call the owner "${s.player.address || (pr === "she/her" ? "Mistress" : "Master")}". The owner's body: ${describeYou(s)}. The owner HAS ${has.join(", ")}; the owner DOES NOT HAVE ${hasnt.join(", ") || "anything missing"}. Never give the owner a body part they do not have or take away one they do; every scene, memory and line of dialogue keeps to this.${s.player.body.appearance_facts ? ` ${s.player.body.appearance_facts}` : ""}${s.player.stains?.length ? ` ON THE OWNER RIGHT NOW (still there until it's washed off; people see it): ${marksLine(s, s.player.stains)}.` : ""}${b.dick && (b.dick <= 2 || b.dick >= 5) ? ` The owner's cock is ${dickWord(b.dick)}, and people who see it notice, the way people do: a look, a comment, a comparison, a laugh they try to swallow, or a very careful silence. It's never written as average.` : ""}`;
+  const one = `"You", the player, the owner${named ? `, ${named}` : ""} and "${title}" are ONE person, the person reading. Write that person only as "you", in the second person. Never write the owner as a separate character in the third person${named ? ` ("${named} walks in", "${named}'s orders")` : ""}, never put the owner in a cast list, and never ask what the owner${named ? ` or ${named}` : ""} should do. Every choice offered is something YOU do. Other characters may say ${named ? `"${named}" or ` : ""}"${title}" aloud when they speak to or about you.`;
+  return `THE OWNER. This is the player, written as "you". The owner is ${name}${genderWord(s)}. ${one} The owner's pronouns are ${pr}, so anyone speaking about the owner says ${subj}/${obj}/${pos}. Slaves call the owner "${s.player.address || (pr === "she/her" ? "Mistress" : "Master")}". The owner's body: ${describeYou(s)}. The owner HAS ${has.join(", ")}, and the owner DOES NOT HAVE ${hasnt.join(", ") || "anything missing"}. Never give the owner a body part they do not have or take away one they do. Every scene, memory and line of dialogue keeps to this.${s.player.body.appearance_facts ? ` ${s.player.body.appearance_facts}` : ""}${s.player.stains?.length ? ` ON THE OWNER RIGHT NOW, and still there until it's washed off, where people can see it: ${marksLine(s, s.player.stains)}.` : ""}${sizeLine(s)}`;
 }

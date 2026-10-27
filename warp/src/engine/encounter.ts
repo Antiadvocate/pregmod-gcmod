@@ -19,6 +19,7 @@ import { rng } from "./rng";
 import { say, registerOf, type Register } from "./voice";
 import { FETISH_BY_ID, HOLE_LABEL, type Hole } from "../data/intimacy";
 import { bodyWords } from "./writer";
+import { skill, practise } from "./player";
 
 export interface Beat {
   /** What you did, as the player's line in the log. */
@@ -69,6 +70,12 @@ function whatSheLiked(p: Person): { liked?: string; learned?: string } {
     boobs: "your hands on my tits", buttslut: "when you're in my ass", cumslut: "tasting you",
     humiliation: "when people watch", submissive: "being told", dom: "being the one on top",
     masochist: "when it hurts a bit", sadist: "being mean to you", pregnancy: "thinking about being bred",
+    armpits: "your face under my arm", musk: "you smelling me before I'd washed", facesitting: "sitting on your face",
+    assworship: "your tongue on my ass", goddess: "you on your knees, worshipping me", pegging: "the thought of fucking you",
+    keyholder: "the idea of keeping you locked up", spit: "spitting in your mouth", ballbusting: "the face you make when I knee you",
+    findom: "you paying for it", sph: "laughing at your cock", cuckoldress: "you watching me with someone bigger",
+    petplay: "being your pet", breathplay: "a hand on my throat", voyeur: "watching", tickling: "being tickled till I can't breathe",
+    furniture: "using you as a footstool",
   };
   if (top && top.strength >= 30) {
     const learned = top.known ? undefined : `${p.name} is a ${FETISH_BY_ID[top.name]?.name ?? top.name}.`;
@@ -99,7 +106,7 @@ export function runFollowup(s: SaveState, id: string, fid: string): Beat {
       out = { you: "You pull her in and hold her.", text: r.pick([`${p.name} is stiff at first, then relaxes against you.`, `${p.name} tucks her head under your chin.`, `${p.name} clings to you.`]), said: say(s, p, "hold", r) };
       break;
     case "praise":
-      applyTreatment(p, { kind: "recognition", size: 2, why: "told she did well" }, week);
+      applyTreatment(p, { kind: "recognition", size: 2 + Math.round(skill.charisma(s) * 2), why: "told she did well" }, week);
       out = { you: "You tell her she did well.", said: say(s, p, "praise", r) };
       break;
     case "liked": {
@@ -114,7 +121,8 @@ export function runFollowup(s: SaveState, id: string, fid: string): Beat {
       out = { you: "You tell her it's over.", text: r.pick([`${p.name} is relieved.`, `${p.name} nods.`]), said: r.chance(0.5) ? say(s, p, "hold", r) : undefined };
       break;
     case "thank":
-      applyTreatment(p, { kind: "coercion", size: 2, why: "made to say thank you" }, week);
+      applyTreatment(p, { kind: "coercion", size: Math.max(1, Math.round(2 - skill.intimidation(s) * 1.5)), why: "made to say thank you" }, week);
+      practise(s, "intimidation", 0.2);
       out = { you: "You tell her to thank you for it.", said: say(s, p, "thank", r) };
       break;
     case "mock":
@@ -250,13 +258,19 @@ export function talk(s: SaveState, id: string, topic: string): Beat {
   const r = rng(`talk:${p.id}:${topic}:${s.turn}:${p.counters.talks ?? 0}`);
   p.counters.talks = (p.counters.talks ?? 0) + 1;
   const reg = registerOf(p);
-  const rd = read(p);
+  // Charm buys the trust it would take weeks to earn, for the length of one conversation; reading
+  // people gets past the polite lie. Neither changes what she actually feels about you.
+  const charm = skill.charisma(s) * 25, sees = skill.insight(s);
+  const base = read(p);
+  const rd = { ...base, trust: base.trust + charm };
   const t = TOPICS.find((x) => x.id === topic);
   const you = t?.label ?? "You ask her something.";
   const week = s.arcology.week;
   const opens = rd.trust > -15 || reg === "hollow" || reg === "eager";
   let said: string;
   let learned: string | undefined;
+  /** What you saw that she didn't say: never written into her memory as something she told you. */
+  let noticed: string | undefined;
 
   switch (topic) {
     case "home":
@@ -281,6 +295,8 @@ export function talk(s: SaveState, id: string, topic: string): Beat {
     case "afraid": {
       const afraid = p.bond.fear > 35 || rd.fragility > 0.5;
       const honest = rd.trust > 25 || reg === "bratty" || reg === "crude" || reg === "commanding";
+      // She says no; you can tell.
+      if (afraid && !honest && sees >= 0.4) noticed = `${p.name} says she isn't afraid of you. She's lying, and you can see it.`;
       said = afraid
         ? honest ? hedge(reg, r.pick(["Yes. Obviously.", "Yes. Every time the door opens.", "Some days. Today, a bit."]), r) : r.pick(["No, {you}.", "Of course not."]).replace("{you}", s.player.address || "Master")
         : hedge(reg, r.pick(["No. Should I be?", "Not any more.", "Not of you."]), r);
@@ -308,10 +324,18 @@ export function talk(s: SaveState, id: string, topic: string): Beat {
     default:
       said = say(s, p, "talk_open", r);
   }
+  // Insight notices what she didn't say: the taste she's hiding, or the thing she can't stand.
+  if (!learned && !noticed && sees > 0 && rng(`read:${p.id}:${s.turn}:${topic}`).chance(sees * 0.35)) {
+    const f = p.persona.fetishes.find((x) => !x.known && x.name !== "none" && x.strength >= 30);
+    if (f) { f.known = true; noticed = `The way she talks gives her away: ${p.name} is into ${FETISH_BY_ID[f.name]?.name ?? f.name}.`; }
+    else if (p.persona.flaw && !p.persona.flaw.known) { p.persona.flaw.known = true; noticed = `You can read it in her: ${p.name} ${p.persona.flaw.id}.`; }
+  }
+  if (noticed) practise(s, "insight", 0.6);
+  practise(s, "charisma", 0.2);
   if (learned) learn(s.memory[p.id], `told the owner: ${learned}`, week);
   // Being asked about yourself is a small kindness, at any trust.
   p.bond.bond = clamp(p.bond.bond + (rd.trust > 0 ? 0.8 : 0.3), -100, 100);
   p.bond.weeks_since_kindness = Math.min(p.bond.weeks_since_kindness, 1);
   refresh(p, s.memory[p.id]);
-  return { you, said, learned };
+  return { you, said, learned: learned ?? noticed };
 }

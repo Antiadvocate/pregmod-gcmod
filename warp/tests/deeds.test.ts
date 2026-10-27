@@ -27,7 +27,7 @@ import { digest, personCard } from "../src/engine/prompts.ts";
   check("she holds your collar now", romanceOf(her).standing === "keeper" && s.player.owned_by === her.id, romanceOf(her).standing);
   check("the arcology's deference moves", reversalOf(s).deference > 0);
   check("the story counts it", Number(s.story!.flags["deed_owner_enslaved"]) === 1);
-  check("the narrator is told", digest(s).includes("WHAT YOU HAVE DONE") && personCard(s, her).includes("SHE OWNS YOU"));
+  check("the narrator is told", digest(s).includes("YOUR REPUTATION AND PAST DEEDS") && personCard(s, her).includes("SHE OWNS YOU"));
   check("she remembers it", s.memory[her.id].episodic.some((e) => e.week === s.arcology.week && e.core));
   check("something is scheduled to come of it", !!d?.follow && d.follow.due > s.arcology.week);
   let echoed = false, collar = false;

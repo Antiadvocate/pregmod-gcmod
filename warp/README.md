@@ -47,6 +47,74 @@ waist, hips, ass, cock and balls size, foreskin, pubic hair, face, skin, eyes, h
 the wardrobe. The scenes follow it. Without a cock, penetration is a strap-on and the acts that need
 you to come in or on her are closed; without balls you can't breed anyone.
 
+## What you're good at
+
+The **You** screen has your skills in three groups. **Running things** (trading, slaving, medicine,
+engineering, hacking, command, diplomacy) are the old ones. **With people** are new, and each does
+something in the room:
+
+- **Charisma**: she tells you the truth sooner when you talk to her, praise lands harder, rulers on
+  the line warm to you more and cool less, and some story choices (winning the journalist over,
+  talking a runaway round on the stairs, a speech about your wedding) need it.
+- **Seduction**: every act that isn't meant to hurt lands better, and what she's into shows sooner.
+- **Intimidation**: punishment and cruelty leave less resentment, and some choices (frightening the
+  collector off, making an example) need it.
+- **Insight**: talking to her can give away a fetish or flaw she didn't say out loud, you can see
+  when she's lying about being afraid, and some choices need it.
+
+Each one grows by doing it (charm by talking, seduction in bed, intimidation by punishing, insight
+by finding things out), or by paying for a tutor, a course or an implant. Every model call is told
+how good you are at the ones that stand out, so a scene goes the way a die roll would.
+
+**Your own skill.** Under **Your own**, make one up: a name and what it lets you do, in your words
+("Hypnosis: I can put people under with my voice"). It starts at 20, grows when you use it by name
+in a scene, and can be trained like any other. Every scene, event, ruler and saga is told what it is
+and how reliably it works at your level, and saga choices can require it.
+
+## Your story, from how you live
+
+Three event chains start from you rather than from the world. They're hand-written beats with choices
+(some needing skills); with a model the week, the boards and the sagas build around them.
+
+- **The Only Ones.** Keep only one or two women for a few weeks and they notice what it makes them:
+  every meal, every bed, every decision is theirs. Each builds a sense of your weight on her, falls
+  harder for you, and it starts to leak out: a trader turned away at the door, a citizen corrected in
+  your name, your chair. The world hears about it (headlines at three levels, the boards, the other
+  arcologies' opinion of you), and the chain runs from her asking why there are no others, through
+  her acting in your name and a gossip channel's segment, to her saying she loves you.
+- **The Measure of the Owner.** If your cock is small and you haven't had it fixed, the women you've
+  had talk, and it gets around. How people show it depends on how feared you are: an owner nobody fears
+  hears the joke in bars and reads it on the boards; a feared one only sees it in held glances and
+  conversations that stop when he walks in. Every prompt knows. The chain has the joke reaching you,
+  finding who started it, and a rival's gift. **Have it enlarged** (You → Your body) changes the joke to
+  one about the surgery. Slaves with the new size-humiliation kink love a small one.
+- **Married, on your terms.** On her page, **Marry her, on your terms** skips the ladder. Write how the
+  marriage goes (where, who's watching, what she wears, what she is afterwards, who leads). With a model
+  the wedding is written from your words and you read it before it's true; without one the game reads
+  your words for public or private, whether she keeps her collar, and who leads. The terms are kept as
+  facts: a wife whose terms keep the power with you never drifts toward holding the collar. Afterwards
+  come the city's reaction, the other arcologies' opinions, the first test of the terms, and where it
+  stands months on, plus a saga grown from the marriage itself if a model is set.
+
+## Wider tastes
+
+Seventeen more fetishes, most of them hers to enjoy or about being served: armpit worship, musk,
+facesitting, ass worship, goddess, pegging, keyholding, spit, ballbusting, findom, size humiliation,
+cuckoldress, petplay, breathplay, voyeur, tickling, human furniture. Each has a paraphilia it can
+become, and new acts that feed it (worship her armpits, smell her after her shift, let her sit on your
+face, peg you, take the key, spit, laugh at your cock, be her footstool, pay her tribute, and more).
+New sexual quirks and flaws to match, and a wider set of behavioural flaws (bossy, vain, possessive,
+unwashed, exhibitionist, spiteful, superstitious, gossip, lazy) and odd quirks that are just who she is.
+
+## Layout
+
+Settings → Layout. **Side by side** (the default) flows each screen's cards into as many columns as
+the window has room for. **Scroll sideways** flows them into columns down the height of the window and
+scrolls sideways like a broadsheet; the mouse wheel moves it and there are arrows at the edges. **One
+column** is the old layout. On a wider screen the families go **across the top** by default, or down
+the side as before; a phone keeps the tab bar. **Be with her** on a desk puts her figure on the left,
+the scene in the middle and what you can do on the right.
+
 ## With her
 
 Tap **be with her** on anyone in People. Her figure is at the top, posed and reacting; what happens
@@ -186,6 +254,10 @@ src/engine/       the simulation. Nothing in here imports React.
   rooms.ts          where she sleeps, and what it does to her
   style.ts          the machine-writer tics, named and stripped
   you.ts            your body
+  player.ts         your skills, including the ones you make up
+  endowment.ts      what the city says about your cock, and the surgery
+  fewslaves.ts      a household of one or two, and what it does to them
+  marriage.ts       a marriage on your own terms
   build.ts          one weight scale for the picture, the kilograms and the words
   run.ts            twists, ambitions, endings
   week.ts           the weekly tick, in order

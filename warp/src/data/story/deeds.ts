@@ -40,7 +40,7 @@ const talk: ArcDef = {
         return `It's all over ${c.arcology}: ${quote(d)}. People are repeating it in the bars on the promenade, and a version of it with a lot of details added has already reached the arcology across the strait.
 
 ${k === "submission" ? `The reaction is split down the middle. Some citizens think it's the most shocking thing an owner has ever done in the Free Cities. Others are fascinated, and a few have started asking their own slaves questions they've never asked before. The Owners' Association has sent a short, cold note asking whether the rumors are true.`
-  : k === "cruelty" ? `Plenty of citizens approve; it's what slaves are for, and they like an owner who shows it. But ${c.sn === "she" ? "the slave" : c.sn} is well known on the promenade, and some people who used to smile at her now look at you differently.`
+  : k === "cruelty" ? `Plenty of citizens approve, because it's what slaves are for, and they like an owner who shows it. But ${c.sn === "she" ? "the slave" : c.sn} is well known on the promenade, and some people who used to smile at her now look at you differently.`
   : k === "kindness" ? `Most citizens think it's touching. Some of the harder ones think you've gone soft, and say so in the bars, and one of them wants to know if you'll be freeing the whole household next.`
   : `Nobody agrees on what it means, but everyone has an opinion.`}
 
@@ -51,7 +51,7 @@ ${c.subj ? `${c.sn} has heard what people are saying, and she's watching to see 
           run: (c) => {
             const d = deedOf(c); const k = kind(d);
             if (k === "submission") { const rev = reversalOf(c.s); rev.deference = clamp(rev.deference + 10, 0, 100); rev.association = clamp(rev.association - 10, -100, 100); c.rep(-300); doc(c, "supplication", 8); if (c.subj) shiftDominion(c.s, c.subj, 10, "you told the whole arcology it was true"); c.treat(c.subj, "recognition", 6, "you told the arcology it was true");
-              return { text: `You say it on the arcology feed: yes, it happened, and you meant it. ${c.subj ? `${c.sn} watches it on the screen in the slave quarters with the others around her, and doesn't say anything for a long time.` : ""} The Association doesn't send another note. It doesn't need to.`, end: "you owned it in public" }; }
+              return { text: `You say it on the arcology feed. Yes, it happened, and you meant it. ${c.subj ? `${c.sn} watches it on the screen in the slave quarters with the others around her, and doesn't say anything for a long time.` : ""} The Association doesn't send another note. It doesn't need to.`, end: "you owned it in public" }; }
             if (k === "cruelty") { c.rep(300); doc(c, "degradationist", 6); doc(c, "paternalist", -6); c.household("coercion", 2, "the owner boasted about it in public"); return { text: `You tell anyone who asks that she got what she deserved and the rest of them will too. The harder citizens cheer. Your slaves hear it too.`, end: "you boasted about it" }; }
             c.rep(200); doc(c, "paternalist", 6); c.hope(3); c.treat(c.subj, "recognition", 5, "you stood by it in public");
             return { text: `You stand by it, in public. The citizens who thought you'd gone soft think so even more. Your household takes it the other way.`, end: "you stood by it" };
@@ -87,7 +87,7 @@ const collar: ArcDef = {
 ${jealous ? `${jealous.name} takes it hardest. She comes to you when ${c.sn} isn't there, with her arms folded, and asks you straight out: "Is it true? Does she own you now? Do we belong to her?"` : "Nobody says anything to your face."}`;
       },
       options: [
-        { id: "yes", label: "Tell them yes: she owns you, and so they answer to her",
+        { id: "yes", label: "Tell them yes, she owns you, and so they answer to her",
           run: (c) => { if (c.subj) { const rom = romanceOf(c.subj); rom.dominion = Math.max(rom.dominion, 85); } c.household("coercion", 2, "told they answer to her now"); c.set("collar_known", true);
             return { text: `You tell the household at dinner, with ${c.sn} sitting at the head of the table where you used to sit. Nobody eats much. The next morning they bring their questions to her, and she answers them.`, next: "test", after: 3 }; } },
         { id: "private", label: "Tell them it's between you and her, and nothing changes for them",

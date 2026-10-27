@@ -21,15 +21,15 @@ export interface WeatherDef {
 
 export const WEATHER: Record<WeatherKind, WeatherDef> = {
   clear: { kind: "clear", name: "Clear", line: "Clear skies over the arcology.", effect: "no effect" },
-  hot: { kind: "hot", name: "Hot", line: "Hot and humid; the climate control is working hard.", effect: "power costs up a little; the club sells more drinks" },
-  heatwave: { kind: "heatwave", name: "Heatwave", line: "A heatwave. The outer blocks are sweltering and the power grid is strained.", effect: "power costs up sharply; slaves working outdoors or on the streets lose health and energy; dairy yields drop" },
+  hot: { kind: "hot", name: "Hot", line: "It's hot and humid, and the climate control is working hard.", effect: "power costs go up a little, and the club sells more drinks" },
+  heatwave: { kind: "heatwave", name: "Heatwave", line: "A heatwave. The outer blocks are sweltering and the power grid is strained.", effect: "power costs go up sharply, slaves working outdoors or on the streets lose health and energy, and dairy yields drop" },
   rain: { kind: "rain", name: "Rain", line: "Steady rain.", effect: "street work earns a little less" },
-  storm: { kind: "storm", name: "Storm", line: "A storm is lashing the arcology; the docks are closed.", effect: "trade routes pause; street work stops; minor damage" },
-  superstorm: { kind: "superstorm", name: "Superstorm", line: "A superstorm is hitting the coast.", effect: "serious damage to the outer rings; trade stops; people get hurt" },
-  cold: { kind: "cold", name: "Cold", line: "A cold snap. Heating costs are up.", effect: "heating costs up" },
-  freeze: { kind: "freeze", name: "Hard freeze", line: "A hard freeze. Pipes are bursting in the outer blocks.", effect: "heating costs up sharply; farm output down; outdoor workers get sick" },
-  dust: { kind: "dust", name: "Dust storm", line: "Dust from the dying interior blows in and coats everything.", effect: "farm output down; the air filters struggle" },
-  smog: { kind: "smog", name: "Smog", line: "Smog from your own industry hangs over the lower levels.", effect: "everyone's health suffers a little; prosperity down" },
+  storm: { kind: "storm", name: "Storm", line: "A storm is lashing the arcology, and the docks are closed.", effect: "trade routes pause, street work stops, and there's minor damage" },
+  superstorm: { kind: "superstorm", name: "Superstorm", line: "A superstorm is hitting the coast.", effect: "the outer rings are badly damaged, trade stops, and people get hurt" },
+  cold: { kind: "cold", name: "Cold", line: "A cold snap. Heating costs are up.", effect: "heating costs go up" },
+  freeze: { kind: "freeze", name: "Hard freeze", line: "A hard freeze. Pipes are bursting in the outer blocks.", effect: "heating costs go up sharply, farm output falls, and outdoor workers get sick" },
+  dust: { kind: "dust", name: "Dust storm", line: "Dust from the dying interior blows in and coats everything.", effect: "farm output falls, and the air filters struggle" },
+  smog: { kind: "smog", name: "Smog", line: "Smog from your own industry hangs over the lower levels.", effect: "everyone's health suffers a little, and prosperity falls" },
   fog: { kind: "fog", name: "Fog", line: "Thick sea fog.", effect: "no effect" },
 };
 
@@ -61,7 +61,7 @@ export const HEADLINES = {
     "Plague in {r}: hospitals are overwhelmed and bodies are being burned in the streets.",
   ],
   boom: [
-    "{r} is booming; its markets are hungry for luxuries, including trained slaves.",
+    "{r} is booming, and its markets are hungry for luxuries, including trained slaves.",
     "Money is pouring into {r}. Trade through the region is up sharply.",
   ],
   recover: [
@@ -88,7 +88,7 @@ export const HEADLINES = {
     "{n} is growing fast, and buying up businesses along the coast.",
   ],
   neighborPoor: [
-    "{n} is struggling; there are rumors its owner is selling off slaves to cover debts.",
+    "{n} is struggling, and there are rumors its owner is selling off slaves to cover debts.",
   ],
   climate: [
     "Another coastal city in the Old World has been abandoned to the sea.",
@@ -100,13 +100,13 @@ export const HEADLINES = {
   flavor: [
     "A Free City in the Pacific has legalized the sale of clones.",
     "The Owners' Association is debating a common standard for slave contracts.",
-    "An Old World celebrity has been sold at auction after going bankrupt; the bidding set a record.",
+    "An Old World celebrity has been sold at auction after going bankrupt, and the bidding set a record.",
     "A new line of growth hormones is on the market, promising bigger results in half the time.",
-    "Pirates seized a cargo of slaves off the coast; the ship's owner is offering a reward.",
+    "Pirates seized a cargo of slaves off the coast, and the ship's owner is offering a reward.",
     "An arcology in the south has banned clothing for slaves in public areas.",
     "Old World governments are threatening sanctions against the Free Cities, again. Nobody expects them to follow through.",
     "A famous Old World athlete has signed herself into voluntary enslavement to pay off debts.",
-    "A slave revolt in a small arcology up the coast was put down; the owner has vowed to make examples.",
+    "A slave revolt in a small arcology up the coast was put down, and the owner has vowed to make examples.",
     "The Grand Exchange reports that trained dairy cows are fetching record prices.",
   ],
 };

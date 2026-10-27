@@ -52,7 +52,7 @@ check("an order's wording is read as a fate", asFate("kill") === "dead" && asFat
   check("a second settle does nothing", settle(s, creditor.name, "dead", "again").length <= 1);
 }
 
-check("the house style says people outside know who they're dealing with", /KNOW WHO THEY'RE DEALING WITH/.test(HOUSE_STYLE));
+check("the house style says people outside know who they're dealing with", /OUTSIDERS AND RIVALS/.test(HOUSE_STYLE));
 {
   const s = newGame({ seed: "fates-weight", starting_slaves: 2 } as never);
   check("the owner's weight is written out", /THE OWNER'S WEIGHT/.test(weightBrief(s)));

@@ -46,7 +46,7 @@ check("and a pussy or both means she", inferPronouns("pussy", "Owner") === "she/
   const s = newGame({ seed: "own-call", kit: "pussy", address: "Mistress" });
   setOwnerContext(ownerLine(s));
   const out = withOwner({ system: "You write a scene.", user: "She kneels." });
-  check("every model call is told who the owner is", out.system.includes("THE OWNER (the player") && out.system.includes("HAS a pussy"));
+  check("every model call is told who the owner is", out.system.includes("THE OWNER. This is the player") && out.system.includes("HAS a pussy"));
   const already = withOwner({ system: "x", user: digest(s) });
   check("but not twice when the prompt already says it", already.system === "x");
   setOwnerContext("");

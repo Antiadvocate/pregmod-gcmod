@@ -456,7 +456,7 @@ check("but a person being a person isn't filler", !findFiller("She doesn't look 
   check("the next writer is told", /DON'T WRITE THIS AGAIN/.test(stockLine(s)));
   noteStock(s, "She sucks you off and goes back to work.");
   check("and it's forgotten once someone writes clean", stockLine(s) === "");
-  check("the style is the original game's, not a list of rules", /HOW THIS GAME SOUNDS[\s\S]*tighter-assed slaves/.test(HOUSE_STYLE) && /DON'T MANAGE THE OWNER/.test(HOUSE_STYLE));
+  check("the style is the original game's, not a list of rules", /TONE EXAMPLES FROM THE ORIGINAL GAME[\s\S]*tighter-assed slaves/.test(HOUSE_STYLE) && /Slaves do not manage or boss around the owner/.test(HOUSE_STYLE));
 }
 
 {

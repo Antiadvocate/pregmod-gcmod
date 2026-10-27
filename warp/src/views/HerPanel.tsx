@@ -23,6 +23,7 @@ import RoomCard from "./RoomCard";
 import { governorshipOf, lockUp } from "../engine/governor";
 import { speakToGovernor } from "../engine/talk";
 import Talk from "./Talk";
+import MarriageCard from "./MarriageCard";
 
 export default function HerPanel({ id }: { id: string }) {
   const { save } = useGame();
@@ -104,6 +105,8 @@ export default function HerPanel({ id }: { id: string }) {
         </div>
       </Card>
 
+      <MarriageCard id={id} />
+
       <AskList asks={(save.asks ?? []).filter((a) => a.person === id)} />
       {ask ? null : (
         <Button size="sm" kind="ghost" disabled={busy} onClick={async () => {
@@ -180,7 +183,7 @@ export default function HerPanel({ id }: { id: string }) {
       <KillHer id={id} />
 
       <Card className="text-[11.5px] dim">
-        {r.fragility > 0.5 ? "She obeys you more out of fear than love." : "She obeys you more out of love than fear."} To court her it has to be mostly love; to marry her, almost all of it.
+        {r.fragility > 0.5 ? "She obeys you more out of fear than love." : "She obeys you more out of love than fear."} To court her it has to be mostly love, and to marry her, almost all of it.
       </Card>
     </div>
   );
@@ -204,7 +207,7 @@ function LetHerGo({ id }: { id: string }) {
       </div>
       {open ? (
         <div className="mt-2 space-y-1.5">
-          <div className="text-[12px] dim">She'll live in your city afterwards, off your roster: she takes work in one of your districts, and you'll run into her.</div>
+          <div className="text-[12px] dim">She'll live in your city afterwards, off your roster. She takes work in one of your districts, and you'll run into her.</div>
           {(Object.keys(FREE_HOW) as FreeHow[]).map((how) => {
             const cost = FREE_HOW[how].cost(save);
             return (

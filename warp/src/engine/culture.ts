@@ -19,7 +19,7 @@ export type Norm = "cruelty" | "exposure" | "personhood" | "reversal" | "feet" |
 
 export const NORMS: Record<Norm, { name: string; low: string; high: string; lowLine: string; highLine: string; lowMid: string; highMid: string }> = {
   cruelty: { name: "How slaves are treated", low: "gentle", high: "cruel",
-    lowLine: "Citizens are gentle with their slaves; hitting one in public draws stares.",
+    lowLine: "Citizens are gentle with their slaves, and hitting one in public draws stares.",
     highLine: "Citizens beat their slaves in the street and nobody looks twice.",
     lowMid: "Most owners are gentle in public, and a slap draws a few looks.",
     highMid: "Most owners hit their slaves in public when they feel like it, and only a few people look away." },
@@ -42,17 +42,17 @@ export const NORMS: Record<Norm, { name: string; low: string; high: string; lowL
     lowLine: "Nobody thinks about slaves' feet except to make them walk.",
     highLine: "Citizens kneel to kiss slaves' feet and caning a sole is a scandal.",
     lowMid: "Slaves' feet are for walking, and nobody much cares how they're kept.",
-    highMid: "People notice slaves' feet now: painted toes, bare soles, who washes them." },
+    highMid: "People notice slaves' feet now, their painted toes and bare soles, and who washes them." },
   manumission: { name: "Freeing slaves", low: "never", high: "expected",
-    lowLine: "A slave is a slave for life; freeing one is waste.",
+    lowLine: "A slave is a slave for life, and freeing one is a waste.",
     highLine: "Citizens expect a good slave to earn her freedom eventually.",
     lowMid: "Most citizens think freeing a slave is throwing money away.",
     highMid: "Freeing a good slave after some years is starting to seem decent." },
   modification: { name: "Changing bodies", low: "pure", high: "remade",
-    lowLine: "Implants and surgery are vulgar; natural bodies are prized.",
+    lowLine: "Implants and surgery are vulgar, and natural bodies are prized.",
     highLine: "Nobody keeps the body they were born with if they can afford better.",
     lowMid: "Most citizens think implants look cheap.",
-    highMid: "Implants and surgery are ordinary; an untouched body looks a little old-fashioned." },
+    highMid: "Implants and surgery are ordinary, and an untouched body looks a little old-fashioned." },
   order: { name: "Order in the streets", low: "loose", high: "strict",
     lowLine: "The streets look after themselves, for better and worse.",
     highLine: "Patrols on every corner, curfews, and papers checked at the lifts.",
@@ -210,7 +210,7 @@ export function normLine(n: Norm, v: number): string {
   if (v <= -50) return d.lowLine;
   if (v >= 15) return d.highMid;
   if (v <= -15) return d.lowMid;
-  return "Nobody agrees yet; you see both kinds.";
+  return "Nobody agrees yet, and you see both kinds.";
 }
 
 /** For the narrator and the walks. */

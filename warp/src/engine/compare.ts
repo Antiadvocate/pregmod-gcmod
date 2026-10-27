@@ -249,8 +249,8 @@ export function figureFor(x: Society, role: "citizen" | "slave"): Person | null 
 export function citizenLife(x: Society): string[] {
   const n = x.norms;
   const out: string[] = [];
-  out.push(x.prosperity >= 120 ? "Money is easy. Most citizens have more than they spend." : x.prosperity >= 70 ? "Comfortable, if you work." : x.prosperity >= 40 ? "Getting by; rents are high and wages aren't." : "Poor, and getting poorer.");
-  out.push(x.crime >= 45 ? "You lock your door and carry something in your bag." : x.crime >= 25 ? "Safe on the main concourses; less so at night in the lower blocks." : "Safe at any hour.");
+  out.push(x.prosperity >= 120 ? "Money is easy. Most citizens have more than they spend." : x.prosperity >= 70 ? "Comfortable, if you work." : x.prosperity >= 40 ? "People are getting by, but rents are high and wages aren't." : "Poor, and getting poorer.");
+  out.push(x.crime >= 45 ? "You lock your door and carry something in your bag." : x.crime >= 25 ? "It's safe on the main concourses, but less so at night in the lower blocks." : "Safe at any hour.");
   if (n.order !== 0) out.push(normLine("order", n.order));
   if (x.kind !== "oldworld") out.push(normLine("exposure", n.exposure));
   for (const l of x.laws.slice(0, 4)) out.push(`${l.name}: ${l.text}`);
@@ -290,7 +290,7 @@ export function contrast(yours: Society, other: Society): { theirs: string[]; ou
     if (d > 0) theirs.push(`Their ${who} are ${m.better} (${Math.round(m.score(other))} to your ${Math.round(m.score(yours))}).`);
     else ours.push(`Your ${who} are ${m.better} (${Math.round(m.score(yours))} to their ${Math.round(m.score(other))}).`);
   }
-  if (other.kind === "oldworld") ours.push(`Slavery is legal in ${yours.name}; in the Old World, the people who'd be your slaves are poor instead.`);
+  if (other.kind === "oldworld") ours.push(`Slavery is legal in ${yours.name}, while in the Old World the people who'd be your slaves are poor instead.`);
   for (const nm of other.kind === "oldworld" ? [] : ["reversal", "feet", "modification"] as Norm[]) {
     const d = other.norms[nm] - yours.norms[nm];
     if (Math.abs(d) >= 30) (d > 0 ? theirs : ours).push(`${NORMS[nm].name}: ${d > 0 ? other.name : yours.name} is more ${NORMS[nm].high} (${Math.round(Math.max(other.norms[nm], yours.norms[nm]))} to ${Math.round(Math.min(other.norms[nm], yours.norms[nm]))}).`);
