@@ -30,7 +30,6 @@ import { coarsen } from "./register";
 import { cleanList, OWN_LIFE_ASK, OWN_V } from "./ownlife";
 import { surgeryPast } from "./health";
 import { inBed } from "./sexlife";
-import { NOT_AI_VOICE } from "./style";
 
 /** Weeks between readings of the same woman. */
 const EVERY = 6;
@@ -39,10 +38,12 @@ const EVERY = 6;
  *  ordinary exchanges instead; 3 gives her a life of her own (what she does with her time, what she
  *  wants in the long run) and knows that what's done is done; 4 gives those a sexual edge, from her
  *  personality; 5 is told who she is in bed (fetish, paraphilia, quirk, flaw) and writes her
- *  personality with room for it, after a dom with an abusive streak came out meek; 6 writes her voice
- *  and exchanges without the AI's habits (quips, callbacks, "not X, because Y"), which the narrator
- *  copied into everything she said. */
-export const GROW_V = 6;
+ *  personality with room for it, after a dom with an abusive streak came out meek; 6 flattened every
+ *  voice into the same plain, clumsy speech and was taken back, so 7 is 5 again, and a woman read
+ *  by 6 is read again to get her own voice back. */
+export const GROW_V = 7;
+/** A reading that has to be done again: anything before 5, and 6. */
+const STALE_V = (v: number) => v < 5 || v === 6;
 
 function lastRead(p: Person): number { return p.persona.grown_week ?? p.origin.acquired_week ?? 0; }
 
@@ -59,7 +60,7 @@ function since(s: SaveState, p: Person): number {
 /** Who's due to be read again, most changed first. */
 export function dueToGrow(s: SaveState): Person[] {
   const week = s.arcology.week;
-  const stale = (p: Person) => p.persona.grown_week !== undefined && (p.persona.grown_v ?? 1) < GROW_V;
+  const stale = (p: Person) => p.persona.grown_week !== undefined && STALE_V(p.persona.grown_v ?? 1);
   // No ordinary exchanges yet: her voice has nothing at the length real talk runs to hold it, so
   // she's read as soon as there's a little to read (her third week), not at her sixth.
   const untalked = (p: Person) => !p.persona.exchanges?.length && p.economics.weeks_owned >= 3 && (p.persona.grown_week === undefined || week - p.persona.grown_week >= EVERY);
@@ -74,7 +75,7 @@ const GROW_SYSTEM = `You re-read a woman in Free Cities, an adult text game abou
 Her first card was written the week she arrived; a lot has happened since. What has happened to her, the orders she lives under, where she stands with the owner and how she is with people now are the truth about her: write the real, grounded person all of that has made. A person, not a bundle of quirks.
 
 Rules that matter most:
-- She talks like a real person: mostly plain, ordinary sentences. ${NOT_AI_VOICE} Describe her voice the way you'd describe someone you know (blunt, quiet, quick, warm, dry), not as a list of gimmicks.
+- She talks like a real person: mostly plain, ordinary sentences. Describe her voice the way you'd describe someone you know (blunt, quiet, quick, warm, dry), not as a list of gimmicks.
 - Don't turn a one-off joke, image or number from a scene into who she is. If a scene had her call herself bread, or count to eighty-nine, that was one moment; leave it there.
 - "tics": at most two small, believable habits real people have (a word from her own language when she swears, what she calls the owner, a way she laughs), each something she does only now and then. Leave it empty if nothing fits. Never generic fillers ("like", "just", "honestly", "okay", "I mean").
 - Her body is fact. Where a memory says something her body couldn't have done (a cock far too big for a throat taken all the way down, say), the body wins: it went as far as it physically could, and that's who she is and what she remembers.
