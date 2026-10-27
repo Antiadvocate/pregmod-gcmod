@@ -107,7 +107,7 @@ function brief(s: SaveState, p: Person): string {
   return [
     `## WHO SHE WAS WHEN SHE ARRIVED (week ${p.origin.acquired_week})`,
     `${p.name}, ${p.age}, ${p.origin.nationality}, was a ${p.origin.career}. ${p.persona.background}`,
-    `Her traits then were these: ${p.persona.core_traits.map((t) => t.replace(/[.;]\s*$/, "")).join(", ")}. She talked like this: ${p.persona.speech_pattern}. ${v?.diction ?? ""} Her habits then were ${(v?.tics ?? []).join(", ") || "none in particular"}.`,
+    `Her traits then were these: ${p.persona.core_traits.map((t) => t.replace(/[.;]\s*$/, "")).join(", ")}. She talked like this: ${p.persona.speech_pattern}.${p.persona.speech_own ? " The player set how she talks, so keep it exactly, and write her voice and her lines to match it." : ""} ${v?.diction ?? ""} Her habits then were ${(v?.tics ?? []).join(", ") || "none in particular"}.`,
     p.persona.life_history ? `This is who she'd become the last time she was read, in week ${p.persona.grown_week}: ${p.persona.life_history}` : "",
     `## HER BODY NOW\n${p.body.appearance_facts} ${featureFacts(p)}\nBetween her legs: ${describeGenitals(p)}\nHer feet: ${describeFeet(p)}${p.body.traits?.length ? `\nWhat's been altered: ${p.body.traits.join(", ")}` : ""}`,
     surgeryPast(s, p, 999) ? `## DONE TO HER BODY\nThis is over and in the past.\n${surgeryPast(s, p, 999)}` : "",
@@ -153,7 +153,7 @@ export async function growPersona(s: SaveState, p: Person, signal?: AbortSignal)
   const list = (xs: unknown, k: number, n: number) => (Array.isArray(xs) ? xs : []).map((x) => clip(x, n)).filter(Boolean).slice(0, k);
   const traits = list(out.core_traits, 5, 180);
   if (traits.length) live.persona.core_traits = traits;
-  if (out.speech_pattern) live.persona.speech_pattern = clip(out.speech_pattern, 120);
+  if (out.speech_pattern && !live.persona.speech_own) live.persona.speech_pattern = clip(out.speech_pattern, 120);
   live.persona.voice = {
     diction: clip(out.voice.diction, 300) || live.persona.voice?.diction,
     syntax: clip(out.voice.syntax, 300) || live.persona.voice?.syntax,

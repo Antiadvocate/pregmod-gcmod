@@ -86,3 +86,26 @@ check("but one read just before it keeps her voice and isn't read again", !dueTo
 g.fetch = oldFetch;
 if (hadLS) g.localStorage = oldLS; else delete g.localStorage;
 if (!hadLoc) delete g.location; else g.location = oldLoc;
+
+// The voice: no screenwriter lines, outsiders fold when the owner is angry, and the player's word
+// on how she talks beats the voice the game wrote for her.
+{
+  const { PLAIN_RULES } = await import("../src/engine/style.ts");
+  const { HOUSE_STYLE } = await import("../src/engine/prompts.ts");
+  const { propsAgain } = await import("../src/engine/moments.ts");
+  const { setSpeech } = await import("../src/engine/voice.ts");
+  check("the writer is told nobody talks like a screenwriter", /NOBODY TALKS LIKE A SCREENWRITER/.test(PLAIN_RULES) && /builds to a closing line/.test(PLAIN_RULES));
+  check("and that a threatened outsider is frightened, not brave", /they are frightened/.test(HOUSE_STYLE) && /belongs in a film/.test(HOUSE_STYLE));
+  const replies = [
+    `Chloé turns the gold band on her wrist. "I know what I am," she says.`,
+    `Her fingers stop on the gold band. "I know what I am, Madame."`,
+  ];
+  const again = propsAgain(replies, ["Chloé"]);
+  check("a prop the narration keeps going back to is named", again.includes("gold band"), again);
+  check("but what people say isn't, since that's the plot", !again.some((k) => /know what/.test(k)), again);
+  const girl = Object.values(s.people).find((p) => p.status === "owned")!;
+  girl.persona.voice = { ...(girl.persona.voice ?? {}), diction: "Plain, careful English.", never_says: ["Uses slang like 'like'."], example_lines: ["Yes, Master."] } as never;
+  setSpeech(girl, "Valley girl, talks like a typical eighteen-year-old");
+  const said = personCard(s, girl, "");
+  check("the player's word on how she talks wins on her card", /SPEECH STYLE: Valley girl[^\n]*The player set this/.test(said) && !/Plain, careful English/.test(said) && !/Uses slang like/.test(said), said.match(/SPEECH STYLE[^\n]*/)?.[0]);
+}

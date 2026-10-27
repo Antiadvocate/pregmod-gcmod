@@ -29,6 +29,7 @@ import { applyTreatment, refresh } from "./obedience";
 import { shove } from "./psyche";
 import { concludeMoment } from "./deeds";
 import { captureInstructions } from "./agreements";
+import { captureAllowance } from "./allowance";
 import { WALK_OPTIONS, WALK_SYSTEM, walkContext, walkOffline } from "./walk";
 import { whereLine, type Whereabouts } from "./whereabouts";
 import { rulesLine } from "./houserules";
@@ -124,6 +125,38 @@ function repeatedPhrases(text: string): string[] {
   const hot = [...count].filter(([, n]) => n >= 4).sort((a, b) => b[0].split(" ").length - a[0].split(" ").length || b[1] - a[1]);
   // Overlaps ("little thing" in "the little thing") are settled by the caller, on the full counts.
   return hot.slice(0, 8).map(([k]) => k);
+}
+
+/** Props, gestures and descriptions the writer keeps coming back to from one reply to the next,
+ *  "the gold band", "dimples and all", "the bell down". Only the narration counts: what people say
+ *  is the plot, and naming it would stop the story. A phrase counts once per reply, and two of the
+ *  last three replies is enough to name it. Names are left alone. */
+export function propsAgain(replies: string[], names: string[] = []): string[] {
+  const skip = new Set(names.flatMap((n) => n.toLowerCase().split(/\s+/)));
+  const count = new Map<string, number>();
+  for (const text of replies.slice(-3)) {
+    const told = text.replace(/["“][^"”]*["”]/g, " | ");
+    const w = told.toLowerCase().replace(/[^a-zà-ÿ'| ]+/g, " ").split(/\s+/).filter(Boolean);
+    const seen = new Set<string>();
+    for (const n of [3, 2]) for (let i = 0; i + n <= w.length; i++) {
+      const g = w.slice(i, i + n);
+      if (g.includes("|")) continue;
+      const end = (x: string) => !STOP.has(x) && x.length >= 3 && !skip.has(x.replace(/'s$/, "")) && x !== "master" && x !== "mistress";
+      if (!end(g[0]) || !end(g[n - 1])) continue;
+      seen.add(g.join(" "));
+    }
+    for (const k of seen) count.set(k, (count.get(k) ?? 0) + 1);
+  }
+  const hot = [...count].filter(([, n]) => n >= 2).map(([k]) => k).sort((a, b) => b.split(" ").length - a.split(" ").length);
+  // "the small gold band" and "gold band" are one prop: keep the fuller one.
+  return hot.filter((k, i) => !hot.some((o, j) => j < i && o.includes(k))).slice(0, 8);
+}
+
+/** For any scene, hers or not: what the last few replies have already leaned on. */
+export function againLine(s: SaveState, m: Moment, skip: string[] = []): string {
+  const names = [s.player.name ?? "", ...(m.person ? [s.people[m.person]?.name ?? ""] : []), ...(m.others ?? []).map((id) => s.people[id]?.name ?? "")];
+  const props = propsAgain(m.log.filter((l) => l.role === "scene").map((l) => l.text), names).filter((k) => !skip.some((x) => x.includes(k)));
+  return props.length ? `## ALREADY USED IN THIS SCENE\nThese came up in more than one of the last few replies. Even where a card mentions them, leave them out of this one and move the scene on.\n${props.map((k) => `"${k}"`).join(", ")}` : "";
 }
 
 export function overused(s: SaveState, p: Person, m: Moment): string {
@@ -245,6 +278,7 @@ export async function playMoment(
   if (reply) m.log.push({ role: "you", text: reply });
   // What you tell her about how to treat you outlasts the scene.
   if (reply) captureInstructions(s, reply, [p, ...(m.others ?? []).map((x) => s.people[x])].filter((x): x is Person => !!x));
+  if (reply && p) captureAllowance(s, reply, [p, ...(m.others ?? []).map((x) => s.people[x])].filter((x): x is Person => !!x));
   if (reply) practiseFrom(s, reply);
   m.updated = s.arcology.week;
   m.open = true;
@@ -265,7 +299,8 @@ export async function playMoment(
   const beats: string[] = [];
   const lost = didntFollow(reply);
   if (lost) beats.push(lost);
-  const worn = p ? overused(s, p, m) : "";
+  const habits = p ? overused(s, p, m) : "";
+  const worn = [habits, againLine(s, m, [...habits.matchAll(/"([^"]+)"/g)].map((x) => x[1].toLowerCase()))].filter(Boolean).join("\n\n");
   const card = p ? personCard(s, p, reply ?? m.title) : "";
   const city = !p && !walking;
   const others = (m.others ?? []).map((id) => s.people[id]).filter(Boolean) as Person[];

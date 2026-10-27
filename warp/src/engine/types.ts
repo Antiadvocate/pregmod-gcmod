@@ -210,6 +210,8 @@ export interface Persona {
   core_traits: string[];          // things their hands do, written so a scene could show it
   values: string[];
   speech_pattern: string;
+  /** The player wrote speech_pattern themselves, so it wins over the generated voice. */
+  speech_own?: boolean;
   voice?: {
     diction?: string;
     syntax?: string;
@@ -480,6 +482,9 @@ export interface Person {
   /** How she is made up and dressed beyond the garments themselves. */
   look?: Look;
   chastity: { vagina: boolean; anus: boolean; penis: boolean };
+  /** What the owner pays her a week to spend as she likes, and what she has of it (engine/allowance). */
+  allowance?: number;
+  purse?: number;
   /** Money. Per-person accounting is what makes the ledger legible. */
   economics: {
     price_paid: number;

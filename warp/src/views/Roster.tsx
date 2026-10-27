@@ -19,6 +19,7 @@ import { describeGenitals, describeFeet, mobility, dickCM, ballsWord, vaginaWord
 import { useMemo, useState, useRef } from "react";
 import { Search, X } from "lucide-react";
 import { useGame } from "../lib/game";
+import { allowanceOf, purseOf, setAllowance } from "../engine/allowance";
 import { useHand, toast } from "../lib/hand";
 import { allowed, NOT_ALLOWED } from "../engine/kept";
 import { Button, Card, Chip, Empty, Field, Meter, Money, Section, Sheet, cx } from "../lib/ui";
@@ -664,6 +665,7 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
                 <div><div className="dim">lifetime</div><Money n={p.economics.income_lifetime - p.economics.upkeep_lifetime} sign /></div>
                 <div><div className="dim">paid for her</div><Money n={-p.economics.price_paid} /></div>
               </div>
+              <AllowanceRow id={id} />
             </Card>
           </Section>
 
@@ -740,6 +742,27 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
           </Section>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Her allowance: so much a week from your cash into a purse that's hers to spend (engine/allowance). */
+function AllowanceRow({ id }: { id: string }) {
+  const { save, mutate } = useGame();
+  const p = save.people[id];
+  const [draft, setDraft] = useState(String(allowanceOf(p) || ""));
+  if (p.status !== "owned" && p.status !== "indentured") return null;
+  const set = (n: number) => { mutate((s) => { setAllowance(s.people[id], n); }); setDraft(n ? String(n) : ""); };
+  return (
+    <div className="mt-3 pt-3 border-t text-[12px]" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="dim">allowance a week, hers to spend</span>
+        <input className="!w-28" inputMode="numeric" value={draft} placeholder="0" onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))} />
+        <Button size="sm" onClick={() => set(Number(draft) || 0)}>set</Button>
+        {allowanceOf(p) ? <Button size="sm" kind="ghost" onClick={() => set(0)}>stop it</Button> : null}
+        <span className="ml-auto"><span className="dim">in her purse </span><Money n={purseOf(p)} /></span>
+      </div>
+      <div className="dim mt-1">Paid from your cash every week. She spends it on her own, and you'll hear what on. Saying it in a scene works too, like "I'll give you 100k a week".</div>
     </div>
   );
 }

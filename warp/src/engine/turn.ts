@@ -38,6 +38,7 @@ import { getLocalImage } from "../config";
 import { generateLocalImage, DEFAULT_NEGATIVE } from "../lib/diffusion";
 import { controlPrompt, CONTROL_NEGATIVE } from "../lib/dollrender";
 import { scenePrompt, lockSignature, portraitPrompt, visualSignature } from "./portrait";
+import { captureAllowance, spendPurse } from "./allowance";
 
 export interface Diff {
   summary?: string;
@@ -63,6 +64,8 @@ export interface Diff {
   beat?: { on?: string; what?: string }[];
   /** What the prose did to her holes: sore, stretched or torn. Checked against how she fits (engine/fit). */
   strain?: { id: string; hole?: string; what?: string; by?: string }[];
+  /** What a slave paid for out of her own purse (engine/allowance). */
+  spent?: { id: string; amount?: number; what?: string }[];
 }
 
 export interface TurnResult {
@@ -95,6 +98,7 @@ export async function runTurn(
 
   // Anything you just told them about how to treat you is kept, whatever the narrator does with it.
   if (mode === "say" || mode === "do") notes.push(...captureInstructions(s, action, present(s).filter((p) => p.status !== "free" || s.player.owned_by !== p.id)));
+  if (mode === "say" || mode === "do") { const paid = captureAllowance(s, action, present(s).filter((p) => p.status === "owned" || p.status === "indentured")); if (paid) notes.push(paid); }
   if (mode === "say" || mode === "do") practiseFrom(s, action);
 
   let prose = "";
@@ -468,6 +472,12 @@ export function applyDiff(s: SaveState, d: Diff, prose: string, said?: string): 
   for (const a of d.agreements_drop ?? []) {
     const list = a.id === "household" ? houseRules(s) : s.people[a.id] ? agreementsOf(s.people[a.id]) : null;
     if (list) { const i = list.findIndex((x) => x.rule.toLowerCase().includes(String(a.rule).toLowerCase().slice(0, 20))); if (i >= 0) list.splice(i, 1); }
+  }
+
+  // What she paid for herself, out of her own allowance.
+  for (const x of (d.spent ?? []).slice(0, 3)) {
+    const p = x?.id ? s.people[x.id] : undefined;
+    if (p && Number(x.amount) > 0) spendPurse(p, Number(x.amount));
   }
 
   // How she is with a particular person, kept for every scene after this one.
