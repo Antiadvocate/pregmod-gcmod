@@ -22,6 +22,7 @@ import { ownedBrief } from "./share";
 import { CONVERSATION, HOUSE_STYLE, personCard, BOOKKEEPER_SYSTEM, bookkeeperContext, householdLine } from "./prompts";
 import { didntFollow, finishLast } from "./style";
 import { worldBrief } from "./world";
+import { aroundBrief } from "./snapshot";
 import { applyDiff, salvage, noteStock, stockLine, type Diff } from "./turn";
 import { say } from "./voice";
 import { rng } from "./rng";
@@ -46,6 +47,9 @@ export interface Moment {
   source: string;
   week: number;
   updated: number;
+  /** How long the chronicle was when this scene last moved, so what happened elsewhere since, even
+   *  in the same week, is told to it when it's picked up again. */
+  chron?: number;
   log: MomentLine[];
   options: string[];
   /** Still open: it can be picked up later. */
@@ -207,7 +211,7 @@ export function openMoment(s: SaveState, o: { person?: string; others?: string[]
   if (o.setup?.trim()) log.push({ role: "scene", text: o.setup.trim() });
   if (o.you) log.push({ role: "you", text: o.you });
   if (o.happened) log.push({ role: "scene", text: o.happened });
-  list.push({ id, person: o.person, others: o.others?.filter((x) => x && x !== o.person), title: o.title, source: o.source, week: s.arcology.week, updated: s.arcology.week, log, options: DEFAULT_OPTIONS, open: true, unexpanded: modelsAvailable(), seeded: log.length, ...(o.where ? { where: o.where } : {}) });
+  list.push({ id, person: o.person, others: o.others?.filter((x) => x && x !== o.person), title: o.title, source: o.source, week: s.arcology.week, updated: s.arcology.week, chron: (s.chronicle ?? []).length, log, options: DEFAULT_OPTIONS, open: true, unexpanded: modelsAvailable(), seeded: log.length, ...(o.where ? { where: o.where } : {}) });
   // Keep the list from growing without end: close the oldest finished ones.
   if (list.length > 60) s.moments = list.slice(-60);
   return id;
@@ -280,6 +284,8 @@ export async function playMoment(
   if (reply) captureInstructions(s, reply, [p, ...(m.others ?? []).map((x) => s.people[x])].filter((x): x is Person => !!x));
   if (reply && p) captureAllowance(s, reply, [p, ...(m.others ?? []).map((x) => s.people[x])].filter((x): x is Person => !!x));
   if (reply) practiseFrom(s, reply);
+  // A scene left open and picked up weeks later starts from the world as it is now.
+  const lastMoved = m.updated ?? m.week;
   m.updated = s.arcology.week;
   m.open = true;
 
@@ -322,6 +328,7 @@ export async function playMoment(
     weightBrief(s),
     ownedBrief(s),
     `## THE SCENE SO FAR (${m.title})\n${coarsen(transcript(m))}`,
+    lastMoved < s.arcology.week ? aroundBrief(s, { since: lastMoved, scene: m.title }) : elsewhere(s, m),
     reply ? `## THE PLAYER'S REPLY\n${reply}` : `## WRITE THIS MOMENT OUT IN FULL, then offer the options.`,
     beats.length ? `## THIS TIME\n${beats.join("\n")}` : "",
     worn,
@@ -375,7 +382,16 @@ export async function playMoment(
       refresh(p, s.memory[p.id]);
     }
   }
+  m.chron = (s.chronicle ?? []).length;
   return { ok: true, prose };
+}
+
+/** The same week, but things happened elsewhere after this scene last moved. */
+function elsewhere(s: SaveState, m: Moment): string {
+  if (m.chron === undefined) return "";
+  const fresh = (s.chronicle ?? []).slice(m.chron).slice(-6);
+  if (!fresh.length) return "";
+  return `## WHAT'S HAPPENED ELSEWHERE SINCE THIS SCENE LAST MOVED\nThe player left this scene and did other things before coming back. The people here may have heard, and if it changes things, they act on it. Pick up from where things stand now.\n${fresh.map((e) => `· ${e.text.slice(0, 220)}`).join("\n")}`;
 }
 
 /** What a scene with citizens needs to know: the city, its laws, what you've done, what's said. */

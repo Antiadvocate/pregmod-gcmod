@@ -83,6 +83,42 @@ check("but one read just before it keeps her voice and isn't read again", !dueTo
   check("with the week said once", !/week \d+: week/.test(record(s, f)), record(s, f));
 }
 
+// Nothing happens in isolation: a scene picked up after the world moved is told what happened, and
+// the goings-on don't run on one thread.
+{
+  const { aroundBrief } = await import("../src/engine/snapshot.ts");
+  const { goingsCandidates } = await import("../src/engine/goings.ts");
+  const w = newGame({ seed: "world moves", starting_slaves: 1 } as never);
+  w.models.narrator_model = "test/model";
+  const girl = Object.values(w.people).find((p) => p.status === "owned")!;
+  const mid = openMoment(w, { person: girl.id, title: "At the silk shop", source: "event", happened: "Yvette holds up a bolt of green silk." });
+  w.arcology.week += 2;
+  w.deeds = [...(w.deeds ?? []), { id: "big", week: w.arcology.week - 1, summary: "You had half the lower city burned to the ground.", public: true, tags: [], witnesses: [], effects: [], source: "test" } as never];
+  check("what else is going on is one list, with the big thing in it", /WHAT ELSE IS GOING ON[\s\S]*half the lower city burned/.test(aroundBrief(w)));
+  bodies.length = 0;
+  await playMoment(w, mid, "So, the dress.");
+  const sent = (bodies.find((b) => JSON.stringify(b).includes("You continue a scene")) as { messages: { content: string }[] } | undefined)?.messages[1].content ?? "";
+  check("a scene picked up weeks later is told what happened since", /WHAT'S HAPPENED SINCE THIS SCENE LAST MOVED[\s\S]*half the lower city burned/.test(sent), sent.slice(0, 200));
+  bodies.length = 0;
+  await playMoment(w, mid, "Go on.");
+  const again = (bodies.find((b) => JSON.stringify(b).includes("You continue a scene")) as { messages: { content: string }[] } | undefined)?.messages[1].content ?? "";
+  check("but not every turn after that", !/WHAT'S HAPPENED SINCE/.test(again));
+
+  // Goings: a big thing becomes fallout for her, her interests take turns, and the last outsider sits out.
+  girl.persona.interests = ["sews her own dresses", "plays cards with the guards", "reads trashy novels"];
+  const cands = goingsCandidates(w).filter((c) => c.main.id === girl.id);
+  check("something big becomes an event about how it lands on her", cands.some((c) => c.kind === "fallout" && c.facts.some((f) => /burned/.test(f))));
+  const own1 = cands.find((c) => c.kind === "pursuit")!.facts.join(" ");
+  w.goings_seen = [{ week: w.arcology.week - 1, person: girl.id, key: `own:${girl.id}`, title: "The dress", who: ["Yvette Charron"] }];
+  const own2 = goingsCandidates(w).find((c) => c.main.id === girl.id && c.kind === "pursuit")!.facts.join(" ");
+  check("her own time is one interest at a time, and it changes", /sews her own dresses/i.test(own1) && !/sews/i.test(own2) && /plays cards/i.test(own2), [own1, own2]);
+  w.faces = { "yvette charron": { name: "Yvette Charron", pronoun: "she", age: 38, first: 1, last: 5, seen: 3, ties: [{ what: "her tailor", person: girl.id }] }, "nel coster": { name: "Nel Coster", pronoun: "she", age: 40, first: 1, last: 5, seen: 2, ties: [{ what: "a regular at the baths", person: girl.id }] } } as never;
+  w.deeds.push({ id: "told", week: w.arcology.week - 1, summary: "You told Nel Coster to stop bothering Chloé.", public: false, tags: [], witnesses: [], effects: [], source: "test" } as never);
+  const out = goingsCandidates(w).find((c) => c.main.id === girl.id && c.kind === "outside")!.facts.join(" ");
+  check("the outsider from her last goings-on sits this one out", !/Yvette/.test(out) && /Nel Coster/.test(out), out);
+  check("and what the owner said about the others comes with them", /What the owner did about Nel Coster[^.]*stop bothering/.test(out));
+}
+
 g.fetch = oldFetch;
 if (hadLS) g.localStorage = oldLS; else delete g.localStorage;
 if (!hadLoc) delete g.location; else g.location = oldLoc;

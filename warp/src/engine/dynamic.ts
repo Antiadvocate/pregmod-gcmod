@@ -45,6 +45,7 @@ import { chronicle, chronicleBrief, closeHooks, openHooks } from "./chronicle";
 import { changeRoom, roomLine, roomWish } from "./rooms";
 import { EXTRA_BY_ID } from "../data/rooms";
 import { lockUp } from "./governor";
+import { aroundBrief } from "./snapshot";
 
 /** THE CLOSED TABLE. A generated option may name one of these and nothing else. */
 /** How an act landed, as words: the landing ids are not verbs ("she nothing it"). */
@@ -159,7 +160,7 @@ export function dossier(s: SaveState, p: Person): string {
   return lines.filter(Boolean).join("\n");
 }
 
-const SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. An event is a short situation with one of the player's slaves that ends with the player having to decide what to do.
+export const SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. An event is a short situation with one of the player's slaves that ends with the player having to decide what to do.
 
 Build it from her record, meaning her fetish, her flaw, her job, her body, her room, what has been done to her, what she remembers, how she feels about you, and above all WHAT HAS ALREADY HAPPENED between you. Emergent story is the point. The best event is the next step of something already on her record, like a promise you made, a punishment she hasn't got over, or something left open, with consequences that follow from it. If OPEN THREADS are listed, continue one of them. It should be something that could only happen with her, this week.
 
@@ -185,9 +186,10 @@ export async function generateDynamicEvent(s: SaveState, subject?: Person, hint 
   if (!p) return null;
 
   const hooks = openHooks(s, [p.id]).slice(0, 3);
+  const around = aroundBrief(s);
   const res = await call({
     system: SYSTEM,
-    user: `${dossier(s, p)}${hooks.length ? `\n\nOPEN THREADS. Continue one of these if you can.\n${hooks.map((h) => `· from week ${h.week}: ${h.hook}`).join("\n")}` : ""}${hint ? `\n\nWHAT THE GAME HAS NOTICED THIS WEEK. Use it. ${hint}` : ""}\n\nEFFECT IDS YOU MAY USE:\n${effectList()}\n\nACT IDS (for the "act" effect): ${Object.keys(ACT_BY_ID).join(", ")}\n\nROOM ITEM IDS: ${Object.keys(EXTRA_BY_ID).join(", ")}${p.room?.extras.length ? ` (she has: ${p.room.extras.join(", ")})` : ""}\n\n${PLAIN_RULES}\n\n${REGISTER_TAIL}`,
+    user: `${dossier(s, p)}${around ? `\n\n${around}` : ""}${hooks.length ? `\n\nOPEN THREADS. You can pick one up if it still makes sense after everything that's happened since, but don't just carry it on where it stopped. Mix it with what else is going on, or leave it and start something else. Never follow the same thread week after week.\n${hooks.map((h) => `· from week ${h.week}: ${h.hook}`).join("\n")}` : ""}${hint ? `\n\nWHAT THE GAME HAS NOTICED THIS WEEK. Use it. ${hint}` : ""}\n\nEFFECT IDS YOU MAY USE:\n${effectList()}\n\nACT IDS (for the "act" effect): ${Object.keys(ACT_BY_ID).join(", ")}\n\nROOM ITEM IDS: ${Object.keys(EXTRA_BY_ID).join(", ")}${p.room?.extras.length ? ` (she has: ${p.room.extras.join(", ")})` : ""}\n\n${PLAIN_RULES}\n\n${REGISTER_TAIL}`,
     model: s.models.narrator_model,
     fallback: s.models.fallback_model,
     json: true,
