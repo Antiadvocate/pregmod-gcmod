@@ -66,6 +66,8 @@ export interface Diff {
   strain?: { id: string; hole?: string; what?: string; by?: string }[];
   /** What a slave paid for out of her own purse (engine/allowance). */
   spent?: { id: string; amount?: number; what?: string }[];
+  /** The exchange settled what the scene was about, so carrying on would change nothing. */
+  settled?: boolean;
 }
 
 export interface TurnResult {

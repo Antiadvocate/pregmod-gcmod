@@ -33,7 +33,7 @@ import { romanceOf } from "./romance";
 import { workplaceOf, inPlace } from "./whereabouts";
 import { tiedTo, file, tie, note, partIn } from "./others";
 import { castBrief, facesIn } from "./faces";
-import { aroundBrief } from "./snapshot";
+import { aroundBrief, cityPicture } from "./snapshot";
 import { rng } from "./rng";
 import { betweenEvents, forcedAllowed, rulesLine, sexBetween } from "./houserules";
 import { pairFitLine } from "./fit";
@@ -229,6 +229,7 @@ export async function generateGoing(s: SaveState, g: Going, snapshot = ""): Prom
       `## THE PEOPLE\n${people.map((p, i) => `### ${i === 0 ? "MAIN" : "OTHER"}\n${personCard(s, p, g.facts.join(" "))}`).join("\n\n")}`,
       castBrief(s, g.facts.join("\n")),
       chronicleBrief(s, people.map((p) => p.id), 6),
+      cityPicture(s),
       aroundBrief(s),
       recentFor(s, g.main.id).length ? `## HER RECENT GOINGS-ON\nThis one is about something else.\n${recentFor(s, g.main.id).map((x) => `· week ${x.week}: ${x.title ?? x.topic ?? "something"}${x.who.length ? `, with ${x.who.join(", ")}` : ""}`).join("\n")}` : "",
       `## THE FACTS\n${g.facts.map((f) => `· ${f}`).join("\n")}`,

@@ -32,7 +32,7 @@ import { DYNAMIC_EFFECTS, effectList } from "./dynamic";
 import { ACT_BY_ID } from "../data/intimacy";
 import { EXTRA_BY_ID } from "../data/rooms";
 import { betweenEvents, rulesLine } from "./houserules";
-import { aroundBrief } from "./snapshot";
+import { aroundBrief, cityPicture } from "./snapshot";
 
 export interface Reason { tag: string; why: string; weight: number; /** Happened this week, as opposed to how things have been for a while. */ fresh?: boolean }
 
@@ -181,6 +181,7 @@ export async function generateWant(s: SaveState, p: Person, reasons: Reason[], s
       snapshot,
       `## HER\n${personCard(s, p)}`,
       chronicleBrief(s, [p.id], 8),
+      cityPicture(s),
       aroundBrief(s),
       `## HER REASONS THIS WEEK\n${reasons.slice(0, 6).map((r) => `· ${r.why}`).join("\n")}`,
       rulesLine(s),

@@ -45,7 +45,7 @@ import { chronicle, chronicleBrief, closeHooks, openHooks } from "./chronicle";
 import { changeRoom, roomLine, roomWish } from "./rooms";
 import { EXTRA_BY_ID } from "../data/rooms";
 import { lockUp } from "./governor";
-import { aroundBrief } from "./snapshot";
+import { aroundBrief, cityPicture } from "./snapshot";
 
 /** THE CLOSED TABLE. A generated option may name one of these and nothing else. */
 /** How an act landed, as words: the landing ids are not verbs ("she nothing it"). */
@@ -186,7 +186,7 @@ export async function generateDynamicEvent(s: SaveState, subject?: Person, hint 
   if (!p) return null;
 
   const hooks = openHooks(s, [p.id]).slice(0, 3);
-  const around = aroundBrief(s);
+  const around = [cityPicture(s), aroundBrief(s)].filter(Boolean).join("\n\n");
   const res = await call({
     system: SYSTEM,
     user: `${dossier(s, p)}${around ? `\n\n${around}` : ""}${hooks.length ? `\n\nOPEN THREADS. You can pick one up if it still makes sense after everything that's happened since, but don't just carry it on where it stopped. Mix it with what else is going on, or leave it and start something else. Never follow the same thread week after week.\n${hooks.map((h) => `· from week ${h.week}: ${h.hook}`).join("\n")}` : ""}${hint ? `\n\nWHAT THE GAME HAS NOTICED THIS WEEK. Use it. ${hint}` : ""}\n\nEFFECT IDS YOU MAY USE:\n${effectList()}\n\nACT IDS (for the "act" effect): ${Object.keys(ACT_BY_ID).join(", ")}\n\nROOM ITEM IDS: ${Object.keys(EXTRA_BY_ID).join(", ")}${p.room?.extras.length ? ` (she has: ${p.room.extras.join(", ")})` : ""}\n\n${PLAIN_RULES}\n\n${REGISTER_TAIL}`,
@@ -263,7 +263,9 @@ export function resolveDynamic(s: SaveState, e: PendingEvent, optionId: string):
   const label = e.options.find((x) => x.id === optionId)?.label ?? "";
   const keys = [p?.id, o?.id].filter((x): x is string => !!x);
   if (keys.length) closeHooks(s, keys);
-  chronicle(s, { keys: keys.length ? keys : ["city"], title: e.written?.title, text: `${e.seed.split(/\n/)[0].slice(0, 200)} You chose: ${label}. ${line}.`, hook: e.hook });
+  // Leaving it alone ends the thread. Otherwise it stays open as long as what was done matters.
+  const heavy = ["imprison", "scar", "cruelty", "coercion", "promise_broken", "dominion_up", "dominion_down", "act", "rift", "closer"].includes(effect);
+  chronicle(s, { keys: keys.length ? keys : ["city"], title: e.written?.title, text: `${e.seed.split(/\n/)[0].slice(0, 200)} You chose: ${label}. ${line}.`, hook: effect === "nothing" ? undefined : e.hook, life: heavy || e.severity === "major" ? 6 : 3 });
   s.notifications.push({ id: `n-${e.id}`, week: s.arcology.week, text: p ? `${p.name}: ${line}` : line, kind: "info", person: p?.id, seen: false });
   return line;
 }
