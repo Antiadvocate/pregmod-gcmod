@@ -48,6 +48,10 @@ check("her habits are marked as rare", card.includes("NOW AND THEN SHE"));
 
 her.persona.grown_week = s.arcology.week; her.persona.grown_v = 1; her.economics.weeks_owned = 10;
 check("a woman written by the old reading is read again", GROW_V >= 2 && dueToGrow(s).includes(her));
+her.persona.grown_v = 6;
+check("one whose voice was flattened by the reading that was taken back is read again", dueToGrow(s).includes(her));
+her.persona.grown_v = 5;
+check("but one read just before it keeps her voice and isn't read again", !dueToGrow(s).includes(her));
 
 // Nobody talks in riddles, and "fine about what?" gets a plain answer, not two new mysteries.
 {
@@ -57,12 +61,11 @@ check("a woman written by the old reading is read again", GROW_V >= 2 && dueToGr
   check("everyone who writes a scene is told the player has to follow it", PLAIN_RULES.includes("THE PLAYER HAS TO BE ABLE TO FOLLOW IT") && MOMENT_SYSTEM.includes("THE PLAYER HAS TO BE ABLE TO FOLLOW IT"));
   check("saying you don't follow is heard", !!didntFollow("....what are you asking? I don't understand. Fine about what") && !!didntFollow("what?") && !!didntFollow("What do you mean"));
   check("and ordinary talk isn't mistaken for it", ["Tell me about what happened at the canteen.", "Come here.", "What do you want for dinner?", "Who is she?", "How are you?"].every((x) => !didntFollow(x)));
-  const { finishLast, NOT_AI_VOICE } = await import("../src/engine/style.ts");
-  const { NARRATOR_SYSTEM, FORGE_SYSTEM } = await import("../src/engine/prompts.ts");
-  check("nobody is written talking like an AI: no quips, callbacks or 'not X, because Y'", PLAIN_RULES.includes("PEOPLE DON'T TALK LIKE AN AI") && PLAIN_RULES.includes("Not because X. Because Y.") && MOMENT_SYSTEM.includes("PEOPLE DON'T TALK LIKE AN AI"));
-  check("and her voice isn't forged that way either", FORGE_SYSTEM.includes(NOT_AI_VOICE));
+  const { finishLast } = await import("../src/engine/style.ts");
+  const { NARRATOR_SYSTEM } = await import("../src/engine/prompts.ts");
   check("the narrator doesn't put words in the owner's mouth", NARRATOR_SYSTEM.includes("DON'T TALK FOR THEM") && CONVERSATION.includes("THE PLAYER SPEAKS FOR THEMSELVES"));
-  check("no cute comparisons in the narration", !/winning ticket/.test(NARRATOR_SYSTEM) && NARRATOR_SYSTEM.includes("No comparisons"));
+  check("an act is short", NARRATOR_SYSTEM.includes("under about 250 words"));
+  check("and nobody's voice is flattened into the same plain speech", !PLAIN_RULES.includes("TALK LIKE AN AI") && !/plainer, clumsier/.test(PLAIN_RULES));
   const cut = 'Then, as you finish the fourth nail, she sits up. Her grey eyes come up. "And then I want to be on top of you, and I want to be rough';
   check("a reply cut off mid-sentence ends at its last whole sentence", finishLast(cut).endsWith("Her grey eyes come up."), finishLast(cut));
   check("and a whole one is left alone", finishLast('She laughs. "That tickles."') === 'She laughs. "That tickles."');
