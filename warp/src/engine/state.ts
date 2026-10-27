@@ -32,6 +32,7 @@ import { newRun } from "./run";
 import { ORIGIN_BY_ID } from "../data/story";
 import { settleBody, settlePronouns, type Kit } from "./you";
 import { forgetOwnerAsStranger } from "./saga";
+import { allowanceFromMemory } from "./allowance";
 import { cityOf, cityYield } from "./city";
 
 export interface NewGameOptions {
@@ -226,6 +227,7 @@ export function sanitize(raw: SaveState): SaveState {
     const walks = s.deeds.filter((d) => d.source === "walk");
     for (const r of s.rumors ?? []) if (!r.where) { const d = walks.find((w) => similar(w.summary.replace(/^You /, "the owner "), r.content)); if (d) r.where = d.where ?? "walk"; }
   }
+  for (const p of Object.values(s.people)) if (p.status === "owned" || p.status === "indentured") allowanceFromMemory(s, p);
   s.edges = s.edges ?? [];
   s.rumors = s.rumors ?? [];
   s.history = s.history ?? [];

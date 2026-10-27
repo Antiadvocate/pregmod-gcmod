@@ -83,8 +83,8 @@ export const FETISH_BY_ID: Record<string, FetishDef> = Object.fromEntries(FETISH
 
 /** Strength bands, from the base game: 10+ enjoys, 60+ likes, 95+ loves. Past 100 it is a paraphilia. */
 export function fetishBand(strength: number): string {
-  if (strength >= 95) return "loves";
-  if (strength >= 60) return "likes";
+  if (strength >= 80) return "loves";
+  if (strength >= 50) return "likes";
   if (strength >= 10) return "enjoys";
   return "is indifferent to";
 }

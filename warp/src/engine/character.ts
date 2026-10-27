@@ -15,6 +15,7 @@
 import type { Person } from "./types";
 import { rng, type Rng } from "./rng";
 import { BEHAVIOR_FLAWS, BEHAVIOR_FLAW_BY_ID, BEHAVIOR_QUIRKS, BEHAVIOR_QUIRK_BY_ID } from "../data/behavior";
+import { FETISHES, FETISH_BY_ID } from "../data/intimacy";
 
 const TRAITS = [
   "lies easily and well, and is kind to animals", "proud of her body and ashamed of wanting", "funny when she's scared",
@@ -107,7 +108,12 @@ export function characterLines(p: Person): string[] {
   // One written in by hand (the editor, or a model) isn't in the table: it's shown as written.
   else if (b?.flaw) out.push(`HER FLAW: ${b.flaw}. It shows whenever it can, and being fond of the owner doesn't fix it.`);
   if (quirk) out.push(`HER WAY (${quirk.id}): ${quirk.note}`);
-  else if (b?.quirk) out.push(`HER WAY: ${b.quirk}.`);
+  // One written in by hand: said to be how she is all day, and if it names a kink, what that kink is.
+  else if (b?.quirk) {
+    const k = b.quirk.trim().toLowerCase();
+    const kink = FETISH_BY_ID[k] ?? FETISHES.find((f) => f.name.toLowerCase() === k);
+    out.push(`HER WAY: ${b.quirk}. This is how she is day to day, not only in bed, so it shows in what she does and says in every scene.${kink ? ` ${kink.note}` : ""}`);
+  }
   if (p.persona.talents?.length) out.push(`WHAT SHE'S GOOD AT, BESIDES SEX: ${p.persona.talents.join(", ")}.`);
   return out;
 }

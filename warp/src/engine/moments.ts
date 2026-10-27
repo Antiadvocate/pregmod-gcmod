@@ -29,6 +29,7 @@ import { applyTreatment, refresh } from "./obedience";
 import { shove } from "./psyche";
 import { concludeMoment } from "./deeds";
 import { captureInstructions } from "./agreements";
+import { captureAllowance } from "./allowance";
 import { WALK_OPTIONS, WALK_SYSTEM, walkContext, walkOffline } from "./walk";
 import { whereLine, type Whereabouts } from "./whereabouts";
 import { rulesLine } from "./houserules";
@@ -277,6 +278,7 @@ export async function playMoment(
   if (reply) m.log.push({ role: "you", text: reply });
   // What you tell her about how to treat you outlasts the scene.
   if (reply) captureInstructions(s, reply, [p, ...(m.others ?? []).map((x) => s.people[x])].filter((x): x is Person => !!x));
+  if (reply && p) captureAllowance(s, reply, [p, ...(m.others ?? []).map((x) => s.people[x])].filter((x): x is Person => !!x));
   if (reply) practiseFrom(s, reply);
   m.updated = s.arcology.week;
   m.open = true;

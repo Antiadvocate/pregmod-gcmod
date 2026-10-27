@@ -58,6 +58,7 @@ import { tickPolicies } from "./policies";
 import { tickSecurity, unrest } from "./security";
 import { GARMENT_BY_NAME } from "../data/wardrobe";
 import { refreshPlayer, practise, skill, tickTraining } from "./player";
+import { tickAllowance } from "./allowance";
 import { tickRomance, keeperRunsTheWeek, theKeeper, romanceOf, inHousehold } from "./romance";
 import { collectAsks } from "./asks";
 import { tickReversal } from "./reversal";
@@ -267,6 +268,10 @@ export function endWeek(s: SaveState): WeekReport {
     const room = tickRoom(s, p, meanComfort);
     if (room.upkeep) led.spend("upkeep", `${p.name}'s room`, room.upkeep, p.id);
     if (room.line) push(room.line, "neutral", 4, p.id);
+    // Her allowance, paid into her own purse, and some of it spent.
+    const pay = tickAllowance(s, p);
+    if (pay.paid) led.spend("allowance", `${p.name}'s allowance`, pay.paid, p.id);
+    for (const l of pay.lines) push(l.text, l.tone, 4, p.id);
     tickBond(p);
     lines.push(...tickRomance(s, p));
     refresh(p, mem);

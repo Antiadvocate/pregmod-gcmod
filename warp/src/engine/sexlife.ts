@@ -76,7 +76,7 @@ const FETISH_SHOWS: Record<string, string> = {
   keyholder: "she wants her partner locked up, with the cage, the key on her neck and the begging. She edges him, denies him and decides for him, and letting him come is a gift she rarely gives",
   spit: "she wants to spit in an open mouth or on a face and watch it get swallowed. It's a small thing, and it gets her wetter than it should",
   ballbusting: "she gets off on hurting balls. She uses a knee, a slap or a slow squeeze, and she watches for the face someone makes",
-  findom: "money spent on her because she said so is what gets her wet. She asks, she names a number, and for her the handing over is the sex",
+  findom: "money spent on her because she said so is what gets her wet. She asks for it, names a number, asks for more, keeps count, and makes sure the owner sees what his money bought. For her the handing over is the sex, and she brings it up in ordinary conversation, not only in bed",
   sph: "she gets off on laughing at a cock. She measures it with her fingers, compares it to her toys and to men she's had, and says exactly how little it does for her. A small one delights her",
   cuckoldress: "she wants her partner to watch her with someone bigger and better, and to hear about it afterwards in detail. His face while it happens is the point",
   petplay: "she wants to be a pet, with ears, a collar and a leash, on all fours, praised and petted, with a bowl on the floor. She stays in it for hours",
@@ -136,6 +136,10 @@ function targets(s: SaveState, p: Person): string {
   return "The house rules forbid her from touching the other slaves, and it eats at her. She watches them, and the need comes out on the owner when he lets it.";
 }
 
+/** Kinks that live in the rest of the day too, not only in bed: being paid, being served, using
+ *  someone as furniture. Their line says so, or a model keeps them for the bedroom. */
+const EVERYDAY = new Set(["findom", "goddess", "furniture", "keyholder", "cuckoldress", "petplay", "sph"]);
+
 /** What she wants and hates in bed, known or not, and who she is when sex happens. */
 export function desireLines(p: Person, s?: SaveState): string[] {
   const out: string[] = [];
@@ -143,7 +147,7 @@ export function desireLines(p: Person, s?: SaveState): string[] {
   const fets = p.persona.fetishes.filter((f) => f.name !== "none" && f.strength >= 10 && FETISH_BY_ID[f.name]);
   for (const f of fets) {
     const d = FETISH_BY_ID[f.name];
-    const shows = f.strength >= 30 && FETISH_SHOWS[f.name] ? ` In bed, ${FETISH_SHOWS[f.name]}.` : ` ${d.note}`;
+    const shows = f.strength >= 30 && FETISH_SHOWS[f.name] ? ` ${EVERYDAY.has(f.name) ? "Day to day as much as in bed" : "In bed"}, ${FETISH_SHOWS[f.name]}.` : ` ${d.note}`;
     out.push(`HER FETISH: ${d.name}, and she ${fetishBand(f.strength)} it.${shows}${f.known ? "" : ` ${hide}`}`);
   }
   const para = p.persona.paraphilia;
