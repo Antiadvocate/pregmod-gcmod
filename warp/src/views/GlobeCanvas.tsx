@@ -7,6 +7,7 @@
  * a circle on the sphere, your trade routes as great-circle arcs (dashed when disrupted), and the
  * markers with their names. Anything on the far side of the planet is not drawn.
  */
+import { getGraphics } from "../lib/graphics";
 import { useEffect, useRef, useState } from "react";
 import { geoCircle, geoDistance, geoGraticule10, geoInterpolate, geoOrthographic, geoPath, type GeoPermissibleObjects } from "d3-geo";
 import { feature } from "topojson-client";
@@ -58,11 +59,20 @@ export default function GlobeCanvas({ places, selected, onSelect, focus }: { pla
     const proj = geoOrthographic().clipAngle(90).translate([size / 2, size / 2]);
     const path = geoPath(proj, ctx);
     const grat = geoGraticule10();
-    let raf = 0, t0 = performance.now();
+    let raf = 0, t0 = performance.now(), last = 0, seen = "";
 
     const draw = (now: number) => {
       const v = view.current;
-      if (v.spinning && !v.drag) v.rot = [v.rot[0] + (now - t0) * 0.006, v.rot[1]];
+      // A globe sitting still was redrawn sixty to a hundred and twenty times a second. Now it
+      // redraws when something changed, and while it's spinning or a war is pulsing, at 30 a
+      // second at most. With graphics turned down it doesn't spin or pulse at all.
+      const full = getGraphics() === "full";
+      if (!full) v.spinning = false;
+      const hot = full && placesRef.current.some((p) => p.kind === "region" && (p.state === "war" || p.state === "collapse"));
+      const state = `${v.rot[0].toFixed(2)},${v.rot[1].toFixed(2)},${v.zoom},${selRef.current},${placesRef.current.length}`;
+      if ((state === seen && !hot && !v.spinning) || now - last < 1000 / 30) { raf = requestAnimationFrame(draw); return; }
+      seen = state; last = now;
+      if (v.spinning && !v.drag) v.rot = [v.rot[0] + Math.min(100, now - t0) * 0.006, v.rot[1]];
       t0 = now;
       const r = (size / 2 - 8) * v.zoom;
       proj.scale(r).rotate([v.rot[0], v.rot[1]]);

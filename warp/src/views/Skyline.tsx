@@ -15,6 +15,7 @@ import { useGame } from "../lib/game";
 import { cityOf } from "../engine/city";
 import { hourFrom, layout, neighbourSilhouettes, styleOf, SKY_W, SKY_H, type Detail } from "../lib/cityart";
 import { subscribeClock } from "../lib/clock";
+import { useGraphics } from "../lib/graphics";
 
 /**
  * The frame's height comes from the city's own proportions, so the whole of it is always in view:
@@ -39,6 +40,7 @@ export function Skyline({ onPick, selected, maxHeight = 280 }:
   const towers = useMemo(() => neighbourSilhouettes(arc.neighbours, sky), [arc.neighbours, sky]);
   const svg = useRef<SVGSVGElement>(null);
   const [tip, setTip] = useState<string | null>(null);
+  const gfx = useGraphics();
 
   // The moving parts, written as attributes so none of this re-renders React.
   useEffect(() => {
@@ -97,7 +99,7 @@ export function Skyline({ onPick, selected, maxHeight = 280 }:
         d.setAttribute("transform", `translate(${dir > 0 ? x : SKY_W - x} ${Math.sin(t * 1.4 + p * 20) * 2})`);
       }
     });
-  }, [blocks]);
+  }, [blocks, gfx]);
 
   const lit = sky.lamps > 0.2;
 
