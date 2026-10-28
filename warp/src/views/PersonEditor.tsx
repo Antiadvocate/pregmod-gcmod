@@ -5,8 +5,13 @@
  * adds later shows up here without anyone remembering to wire it. Fields with a fixed set of values
  * get a dropdown; nullable organs get a "none" button; lists can be added to and trimmed; and the
  * raw JSON of the whole record (and her memory) is there for anything the form can't express.
+ *
+ * Text is edited in boxes that grow to fit it, with the label above, because a one-line input
+ * beside a fixed label showed two words of a trait on a phone. Lists of text are one item a line,
+ * since traits have commas in them. "What the model sees" shows her card exactly as a scene gets it,
+ * so you can check an edit landed and find what's arguing with it.
  */
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Person, SaveState } from "../engine/types";
 import { useGame } from "../lib/game";
 import { Button, Card } from "../lib/ui";
@@ -17,6 +22,7 @@ import { refresh } from "../engine/obedience";
 import { setSpeech } from "../engine/voice";
 import { feetOf } from "../engine/genitals";
 import { romanceOf } from "../engine/romance";
+import { personCard } from "../engine/prompts";
 
 type Path = (string | number)[];
 
@@ -109,6 +115,7 @@ export default function PersonEditor({ target }: { target: Person }) {
   const [filter, setFilter] = useState("");
   const [raw, setRaw] = useState<string | null>(null);
   const [rawMem, setRawMem] = useState<string | null>(null);
+  const [card, setCard] = useState(false);
   const [err, setErr] = useState("");
   const id = target.id;
   // Old saves: make sure the records the editor walks exist.
@@ -133,7 +140,14 @@ export default function PersonEditor({ target }: { target: Person }) {
         <input className="flex-1 min-w-[180px]" placeholder="find a field (e.g. dick, fetish, devotion, feet)…" value={filter} onChange={(e) => setFilter(e.target.value)} />
         <Button size="sm" kind="ghost" onClick={() => { setRaw(raw === null ? JSON.stringify(target, null, 2) : null); setErr(""); }}>{raw === null ? "raw JSON" : "close JSON"}</Button>
         <Button size="sm" kind="ghost" onClick={() => { setRawMem(rawMem === null ? JSON.stringify(save.memory[id] ?? {}, null, 2) : null); setErr(""); }}>{rawMem === null ? "memory JSON" : "close memory"}</Button>
+        <Button size="sm" kind="ghost" onClick={() => setCard(!card)}>{card ? "close card" : "what the model sees"}</Button>
       </div>
+      {card ? (
+        <div className="mb-4">
+          <div className="text-[12px] dim mb-1">Her card, exactly as a scene with her gets it, updated as you edit.</div>
+          <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-snug p-2 rounded-lg max-h-[60vh] overflow-y-auto" style={{ background: "var(--ink-2)" }}>{personCard(save, target, "")}</pre>
+        </div>
+      ) : null}
       {err ? <div className="text-[12px] bad mb-2">{err}</div> : null}
 
       {raw !== null ? (
@@ -178,7 +192,7 @@ function Node({ value, path, write, matches, open }: {
     const body = (
       <div className={path.length ? "pl-3 border-l ml-1" : ""} style={{ borderColor: "rgba(255,255,255,0.08)" }}>
         {Array.isArray(value) && value.every((v) => typeof v !== "object") ? (
-          <Leaf label={name} path={path} value={value.join(", ")} kind="list" write={write} />
+          <Leaf label={name} path={path} value={value.join("\n")} kind="list" write={write} />
         ) : children.map(([k, v]) => (
           <div key={String(k)} className="flex items-start gap-1">
             <div className="flex-1 min-w-0"><Node value={v} path={[...path, k]} write={write} matches={matches} open={open} /></div>
@@ -235,9 +249,25 @@ function Leaf({ label, path, value, kind, write }: {
   const [draft, setDraft] = useState<string | null>(null);
   const shown = useMemo(() => (draft ?? String(value)), [draft, value]);
 
+  const save = (text: string) => {
+    if (kind === "number") { const n = Number(text); if (Number.isFinite(n)) write(path, n); }
+    else if (kind === "list") write(path, text.split("\n").map((x) => x.trim()).filter(Boolean));
+    else write(path, text);
+  };
+
+  // Words get a box as wide as the card that grows with them, the label above.
+  if ((kind === "text" || kind === "list") && !options) {
+    return (
+      <div className="py-1">
+        <div className="text-[12px] dim break-all" title={key}>{label}{kind === "list" ? " · one per line" : ""}</div>
+        <AutoText value={shown} onChange={setDraft} onBlur={() => { if (draft !== null) { save(draft); setDraft(null); } }} />
+      </div>
+    );
+  }
+
   let input;
   if (kind === "bool") {
-    input = <input type="checkbox" checked={!!value} onChange={(e) => write(path, e.target.checked)} />;
+    input = <input type="checkbox" className="!w-auto" checked={!!value} onChange={(e) => write(path, e.target.checked)} />;
   } else if (options) {
     input = (
       <select value={String(value)} onChange={(e) => write(path, typeof options[0] === "number" ? Number(e.target.value) : e.target.value)}>
@@ -248,26 +278,33 @@ function Leaf({ label, path, value, kind, write }: {
   } else {
     input = (
       <input
-        type={kind === "number" ? "number" : "text"}
+        type="number"
+        inputMode="decimal"
         step="any"
         value={shown}
         onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => {
-          if (draft === null) return;
-          if (kind === "number") { const n = Number(draft); if (Number.isFinite(n)) write(path, n); }
-          else if (kind === "list") write(path, draft.split(",").map((x) => x.trim()).filter(Boolean));
-          else write(path, draft);
-          setDraft(null);
-        }}
+        onBlur={() => { if (draft !== null) { save(draft); setDraft(null); } }}
         onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
       />
     );
   }
   return (
     <div className="flex items-center gap-2 py-0.5">
-      <span className="text-[12px] w-40 shrink-0 truncate" title={key}>{label}</span>
+      <span className="text-[12px] w-28 sm:w-40 shrink-0 truncate" title={key}>{label}</span>
       <div className="flex-1 min-w-0">{input}</div>
       {nullable ? <button className="chip" onClick={() => write(path, null)}>none</button> : null}
     </div>
   );
+}
+
+/** A text box that's as tall as what's in it. */
+function AutoText({ value, onChange, onBlur }: { value: string; onChange: (v: string) => void; onBlur: () => void }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight + 2}px`;
+  }, [value]);
+  return <textarea ref={ref} rows={1} className="resize-none leading-snug overflow-hidden" value={value} onChange={(e) => onChange(e.target.value)} onBlur={onBlur} />;
 }

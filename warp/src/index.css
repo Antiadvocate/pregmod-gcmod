@@ -259,6 +259,8 @@ input[type="range"]:focus { outline: none; }
 /* Give the scrolling column room past the tab bar on a phone, so the last card is reachable. */
 @media (max-width: 767px) {
   main > div { padding-bottom: 28px; }
+  /* iOS zooms the whole page into any field under 16px when you tap it. */
+  input, select, textarea { font-size: 16px; }
 }
 
 /* ── with her: the interaction screen ─────────────────────────────────────────────────────── */
