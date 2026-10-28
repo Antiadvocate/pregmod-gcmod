@@ -92,3 +92,24 @@ function setup(seed: string, dick: number): { s: SaveState; p: Person } {
   applyDiff(s, { strain: [{ id: p.id, hole: "vagina", what: "sore" }] } as never, "", "");
   check("the prose calling her sore from it doesn't make her sore", !(p.health.sore?.vagina !== undefined && p.health.sore.vagina >= s.arcology.week), p.health.sore);
 }
+
+// The owner's own words say his cock is limp and can't go in anything: that beats the sizes.
+{
+  const { s, p } = setup("fit-limp", 1);
+  s.player.self = "Tiny limp penis, unable to get hard, cannot penetrate anything.";
+  const card = fitLines(s, p).join(" ");
+  check("a limp owner's card says nothing of his goes in", /YOUR COCK, which is a fact in the owner's own words: it's limp/.test(card) && !/fits comfortably|slides in/.test(card), card);
+  const o = resolveAct(s, p, "anal");
+  check("and an anal act leaves her a virgin, with no strain", !("error" in o) && !o.strain && p.body.anus === 0, "error" in o ? o.error : o.strain);
+  check("and the act is told it doesn't go in", !("error" in o) && /it can't go into anything/.test(actDirective(s, p, o)), "");
+  applyDiff(s, { strain: [{ id: p.id, hole: "anus", what: "stretched" }] } as never, "", "");
+  check("and prose saying it went in changes nothing", p.body.anus === 0);
+  delete s.player.self;
+}
+
+// Her cock too big for him: when he asks, she gives him what fits instead of refusing.
+{
+  const { s, p } = setup("fit-hers", 2);
+  p.body.dick = 16;
+  check("a cock too big for him is never a reason to refuse him", /never a reason for her to refuse him/.test(herFitLine(s, p)), herFitLine(s, p));
+}

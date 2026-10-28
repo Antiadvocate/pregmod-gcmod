@@ -48,7 +48,7 @@ const NATURE: Record<string, Nature> = {
   assworship: { is: "She's vain about her ass. She checks it in reflections, wears what shows it, and wants it noticed.", aim: "presenting her ass to you and telling you where to put your mouth" },
   goddess: { is: "She expects to be treated as special. She waits to be served, likes to be praised, and doesn't do small chores.", aim: "expecting you to kneel, praise her and serve her, as if it's her due" },
   pegging: { is: "She has a forward, take-charge streak. She jokes about turning the tables and likes being the one doing it.", aim: "pushing you face down and reaching for the strap-on" },
-  keyholder: { is: "She's possessive about other people's pleasure and likes making them wait. She plays with the key on her neck without thinking, keeps track of how long it's been, and flirts with other men where her partner can see.", aim: "checking your lock, teasing you through the cage until you strain, making you ask, and telling you no" },
+  keyholder: { is: "She's possessive about other people's pleasure. She decides when they get to come, makes them wait and ask, and ruins it when she feels like it. Whoever is hers she wants locked in a cage with the key on her neck, and until he is, she brings it up, shops for one and asks for it.", aim: "deciding when you get to come, making you ask and telling you no, stopping you right at the edge, treating an orgasm you had without her say-so as hers you wasted, and checking your cage, or, if you aren't locked yet, telling you you will be" },
   spit: { is: "She's crude and physical. She spits, wipes her mouth on her hand, and likes a reaction.", aim: "spitting in your mouth or on your face" },
   ballbusting: { is: "She's rough in play. She shoves, knees, flicks, and laughs when it lands where it hurts.", aim: "kneeing or squeezing your balls and watching you double over" },
   findom: { is: "Money is personal to her. She asks for things, names prices, keeps a count of every coin spent on her, and makes sure you see what your money bought.", aim: "naming a number and expecting you to pay it, there and then" },
@@ -72,7 +72,7 @@ const NATURE: Record<string, Nature> = {
   "scent obsessed": { is: "She won't wash. She's proud of her smell, makes people notice it, and is hurt when they don't want it.", aim: "pushing your face into her armpit or between her legs after a day's work" },
   "goddess complex": { is: "She expects worship from everyone. Service, praise and kneeling are her due, and she's icy when she doesn't get them.", aim: "expecting you on your knees, praising and serving her" },
   throne: { is: "She has to be above people. She takes the high seat, perches on people and stands over them.", aim: "sitting on your face whenever you're lying down" },
-  "keyholder for life": { is: "She needs someone locked. The key never leaves her neck, she knows to the day how long it's been, and she takes other lovers as a matter of course, because the one who's locked doesn't get to.", aim: "keeping you locked, teasing and hurting you through the cage, and making you watch or clean up after the men she has instead" },
+  "keyholder for life": { is: "She needs someone locked. If she has him, the key never leaves her neck, she knows to the day how long it's been, and she takes other lovers as a matter of course, because the one who's locked doesn't get to. If she hasn't, getting him into a cage is what she's working on.", aim: "keeping you locked, teasing and hurting you through the cage and making you watch or clean up after the men she has instead, or, if you aren't locked yet, getting you there, and never letting you come on your own" },
   humiliatrix: { is: "She has to cut people down. She laughs at them, belittles them and makes them small.", aim: "laughing at you, spitting on you and telling you what you are" },
   cuckqueen: { is: "She has to make her partner jealous. She flirts in front of him and tells him about it.", aim: "making you watch her with someone else, and telling you you aren't enough" },
   "pet for life": { is: "She's more pet than person. She curls up at feet, nuzzles for attention and has trouble being a woman with opinions.", aim: "curling up at your feet and begging to be petted" },
@@ -142,7 +142,7 @@ export function reachOf(s: SaveState, p: Person, strength: number): Reach {
 
 function reachLine(reach: Reach, aim: string, allowed: boolean): string {
   switch (reach) {
-    case "takes": return `With you, she does it without asking, like ${aim}. It's who she is with you now, and she doesn't wait for permission. She stops if you really stop her.`;
+    case "takes": return `With you, she does it without asking, like ${aim}. It's who she is with you now, and she doesn't wait for permission. How she's told to speak to you doesn't stop it: she can use your title and still do it. She stops if you really stop her.`;
     case "slips": return allowed
       ? `With you it comes out when she feels like it, like ${aim}, and since you've given her the room, she doesn't back off.`
       : `Now and then it slips out on you before she thinks, like ${aim}. The moment she catches herself she backs off at once, scared, knowing she's overstepped, and apologises.`;

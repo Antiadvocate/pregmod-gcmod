@@ -22,7 +22,7 @@
  * Nothing here writes prose. It writes the facts the prose has to honour.
  */
 import { actDesireLine, actSkillLine, fed } from "./sexlife";
-import { fitWords, holeFor, ownerSize, penetrate, type Strain } from "./fit";
+import { fitWords, holeFor, LIMP_LINE, ownerLimp, ownerSize, penetrate, type Strain } from "./fit";
 import { forced, obeys, type Stance } from "./compliance";
 import { footAct } from "./podolatry";
 import { sane, recoveryNote } from "./health";
@@ -176,7 +176,7 @@ export function resolveAct(s: SaveState, p: Person, actId: string, opts?: { publ
   const made = !!stance && forced(stance) && !act.receives;
   // What goes in her, and what it does to her body: sizes are real (engine/fit).
   const hole = act.receives ? undefined : holeFor(p, actId);
-  const strain = hole ? penetrate(s, p, hole, ownerSize(s).size, { forced: made }) : undefined;
+  const strain = hole && !ownerLimp(s) ? penetrate(s, p, hole, ownerSize(s).size, { forced: made }) : undefined;
   const willing = act.wants_devotion === undefined || r.devotion >= act.wants_devotion;
 
   // AROUSAL. Wanting it is most of it; a body that is already wound up needs less.
@@ -347,6 +347,7 @@ export function actDirective(s: SaveState, p: Person, out: ActOutcome): string {
   if (skill) lines.push(skill);
   const want = actDesireLine(s, p, out.act);
   if (want) lines.push(want);
+  if (!out.strain && holeFor(p, out.act) && ownerLimp(s)) lines.push(LIMP_LINE);
   if (out.strain) {
     lines.push(`HOW IT FITS, which is a fact: ${fitWords(out.strain.fit, ownerSize(s).what, p)}`);
     if (out.strain.after) lines.push(`WHAT IT DOES TO HER: ${out.strain.after}. This is a fact, so show it, and show it afterwards too.`);

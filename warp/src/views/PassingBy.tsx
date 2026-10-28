@@ -24,7 +24,7 @@ import { modelsAvailable } from "../config";
 export default function PassingBy() {
   const { save, mutate } = useGame();
   const [turn, setTurn] = useState(0);
-  const [done, setDone] = useState<{ text: string; chips: Chip[]; act: string } | null>(null);
+  const [done, setDone] = useState<{ text: string; full?: string; chips: Chip[]; act: string } | null>(null);
   const [mid, setMid] = useState<string | null>(null);
   const x = passingBy(save, turn);
   if (!x) return null;
@@ -43,7 +43,10 @@ export default function PassingBy() {
       // No lead-in: she was walking past, you stopped her, and this is what you did.
       const w = writeAct(s, her, o, { lead: false });
       const body = w.paragraphs.join(" ");
-      out = { text: [body.length > 240 ? `${body.slice(0, 220).replace(/\s+\S*$/, "")}…` : body, w.said ? `"${w.said}"` : ""].filter(Boolean).join(" "), chips: chipsBetween(before, takeStats(s, [her.id])), act: ACT_BY_ID[id]?.name ?? id };
+      // A stock line in a voice the player wrote for her is somebody else talking, so it's left out.
+      const said = w.said && !her.persona.speech_own ? `"${w.said}"` : "";
+      // The card shows a cut; the scene that goes on from it gets all of it, not a sentence ending in "…".
+      out = { text: [body.length > 240 ? `${body.slice(0, 220).replace(/\s+\S*$/, "")}…` : body, said].filter(Boolean).join(" "), full: [body, said].filter(Boolean).join(" "), chips: chipsBetween(before, takeStats(s, [her.id])), act: ACT_BY_ID[id]?.name ?? id };
     });
     setDone(out);
   };
@@ -103,7 +106,7 @@ export default function PassingBy() {
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
-          <Reaction key={`${p.id}-${turn}-${done.act}`} seed={{ person: p.id, title: done.act, source: "passing", you: `You stop ${p.name.split(" ")[0]} in the hall: ${done.act}.`, happened: done.text }} />
+          <Reaction key={`${p.id}-${turn}-${done.act}`} seed={{ person: p.id, title: done.act, source: "passing", you: `You stop ${p.name.split(" ")[0]} in the hall: ${done.act}.`, happened: done.full ?? done.text }} />
           <Button size="sm" kind="ghost" className="mt-3" onClick={next}>next</Button>
         </div>
       )}

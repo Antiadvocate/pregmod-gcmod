@@ -60,6 +60,16 @@ export function ownerSize(s: SaveState): { size: number; what: string } {
   return d > 0 ? { size: d, what: `your ${dickWord(d)} cock (about ${inches(dickCM(d))})` } : { size: 4, what: "the strap-on (large)" };
 }
 
+/** The owner's own words say his cock is limp or can't go in anything ("tiny limp penis, unable
+ *  to get hard, cannot penetrate anything"). The sizes alone said a two-inch cock "fits
+ *  comfortably" in a virgin's ass, the narrator wrote it going in, and the owner had to tell the
+ *  scene it hadn't. His words win: nothing of his goes in, and nothing in her is changed by it. */
+const LIMP = /\b(limp|impoten\w*|(can'?t|cannot|can not|unable to|never) (get|gets|stay|stays) (hard|erect)|(can'?t|cannot|can not|unable to|never) penetrate|never (gets )?hard)\b/i;
+export function ownerLimp(s: SaveState): boolean {
+  return (playerBody(s).dick ?? 0) > 0 && LIMP.test(s.player.self ?? "");
+}
+export const LIMP_LINE = "YOUR COCK, which is a fact in the owner's own words: it's limp, it never gets hard, and it can't go into anything, not her ass, not her mouth, not even the tip. Pressed against a hole it bends and squashes flat, and it never goes in, whatever anyone tries. She can tell it didn't, and so can he.";
+
 export function fitOf(p: Person, hole: Hole, size: number, s?: SaveState): Fit {
   const cap = capacity(p, hole, s);
   const over = +(size - cap).toFixed(1);
@@ -168,9 +178,10 @@ export function fitLines(s: SaveState, p: Person): string[] {
   const out: string[] = [];
   const { size, what } = ownerSize(s);
   const holes: Hole[] = [...(p.body.vagina !== null ? ["vagina" as const] : []), "anus", "throat"];
-  const fits = holes.map((h) => fitOf(p, h, size, s));
+  if (ownerLimp(s)) out.push(LIMP_LINE);
+  const fits = ownerLimp(s) ? [] : holes.map((h) => fitOf(p, h, size, s));
   const bits = fits.map((f) => fitWords(f, what, p));
-  out.push(fits.some((f) => f.over > 0)
+  if (fits.length) out.push(fits.some((f) => f.over > 0)
     ? `HOW YOU FIT HER. This is a fact, so where it's too big, write the difficulty, the time, the lube, the pain and the aftermath it takes, and never a smooth slide past what fits. Where it fits, it doesn't hurt. ${bits.join(" ")}`
     : `HOW YOU FIT HER. This is a fact. Nothing of yours is a strain for her, so your size never makes her wince, ache, bleed, get sore or ask you to go slow. If she's frightened, that's fear, not your cock. ${bits.join(" ")}`);
   const week = s.arcology.week;
@@ -199,7 +210,8 @@ export function herFitLine(s: SaveState, p: Person): string {
   const word = (where: string, over: number) => (over <= 0 ? `In ${where} it fits.` : over <= 1.5 ? `In ${where} it's a tight fit that aches.` : over <= 3 ? `It's too big for ${where}, so it takes time and lube, it hurts, and you can't take all of it.`
     : where === "your throat" ? "It's far too big for your throat. You choke and retch on the head and the first few inches, and the rest of it stays outside you." : `It doesn't fit ${where}. Only the head and a little more go in, and forcing more would tear you.`);
   const huge = caps.some(([, c]) => d - c > 3);
-  return `HER COCK IN YOU. Her cock is ${dickWord(d)}, about ${inches(dickCM(d))}, and this is a fact, so write what that size actually allows and never the whole length going in. ${caps.map(([w, c]) => word(w, d - c)).join(" ")}${huge ? " If anything from earlier on this card says more of it went in, like all of it or balls on your chin, that was impossible. It went as far as this allows and no further, and that's how it's remembered and done now." : ""}`;
+  const big = caps.some(([, c]) => d - c > 0);
+  return `HER COCK IN YOU. Her cock is ${dickWord(d)}, about ${inches(dickCM(d))}, and this is a fact, so write what that size actually allows and never the whole length going in. ${caps.map(([w, c]) => word(w, d - c)).join(" ")}${huge ? " If anything from earlier on this card says more of it went in, like all of it or balls on your chin, that was impossible. It went as far as this allows and no further, and that's how it's remembered and done now." : ""}${big ? " When he asks for it, she gives him what fits, there and then, and it hurts him as much as it does. The size is how far it goes, never a reason for her to refuse him, argue about it or talk him out of it." : ""}`;
 }
 
 /** One of your women's cock in another's holes, for a scene with both of them in it. */
