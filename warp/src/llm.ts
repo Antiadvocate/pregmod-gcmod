@@ -154,9 +154,15 @@ let ownerContext = "";
 export function setOwnerContext(text: string): void { ownerContext = text; }
 const OWNER_MARK = "THE OWNER. This is the player";
 
+/** A prompt that already says who the owner is (the scene digest does) still gets the rest of what
+ *  follows it: the owner's skills, the small household, the marriage. Those used to be dropped with
+ *  the owner's description whenever the prompt carried its own, so the narrator never heard them. */
 export function withOwner<T extends { system: string; user: string }>(raw: T): T {
-  return ownerContext && !raw.system.includes(OWNER_MARK) && !raw.user.includes(OWNER_MARK)
-    ? { ...raw, system: `${raw.system}\n\n${ownerContext}` } : raw;
+  if (!ownerContext) return raw;
+  const has = raw.system.includes(OWNER_MARK) || raw.user.includes(OWNER_MARK);
+  if (!has) return { ...raw, system: `${raw.system}\n\n${ownerContext}` };
+  const rest = ownerContext.split(/\n\n+/).filter((part) => !part.includes(OWNER_MARK) && !raw.system.includes(part.slice(0, 60)) && !raw.user.includes(part.slice(0, 60)));
+  return rest.length ? { ...raw, system: `${raw.system}\n\n${rest.join("\n\n")}` } : raw;
 }
 
 export async function call(raw: CallOptions): Promise<LLMResult> {

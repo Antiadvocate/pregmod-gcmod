@@ -49,6 +49,10 @@ check("and a pussy or both means she", inferPronouns("pussy", "Owner") === "she/
   check("every model call is told who the owner is", out.system.includes("THE OWNER. This is the player") && out.system.includes("HAS a pussy"));
   const already = withOwner({ system: "x", user: digest(s) });
   check("but not twice when the prompt already says it", already.system === "x");
+  // The rest of what follows the owner (their skills) still goes, when the prompt only had the owner.
+  setOwnerContext([ownerLine(s), "THE OWNER'S SKILLS. Their charisma is 70 (strong), so people warm to them."].join("\n\n"));
+  const both = withOwner({ system: "x", user: digest(s) });
+  check("a prompt that already describes the owner still gets the owner's skills", /THE OWNER'S SKILLS/.test(both.system) && !both.system.includes("THE OWNER. This is the player"), both.system.slice(0, 200));
   setOwnerContext("");
 }
 
