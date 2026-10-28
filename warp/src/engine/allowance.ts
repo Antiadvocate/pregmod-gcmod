@@ -126,6 +126,6 @@ export function purseLine(p: Person): string {
   const a = allowanceOf(p), have = purseOf(p);
   if (!a && !have) return "";
   const paid = a ? `The owner pays her an allowance of ¤${a.toLocaleString()} a week, hers to spend however she likes, and nobody can tell her what to spend it on.` : "She has money of her own the owner gave her.";
-  const findom = likesBeingPaid(p) ? " Being paid is her kink, not just her income. She names numbers, asks for more, keeps count of every coin, and the owner paying because she said so is what gets her wet, in bed and out of it." : "";
+  const findom = likesBeingPaid(p) ? " Being paid is her kink as well as her income. She puts a price on things and expects it paid, and being paid because she said so turns her on. She never says that's why. It shows in how she asks, how she takes the money and how her mood turns." : "";
   return `HER MONEY. ${paid} She has about ¤${have.toLocaleString()} of it right now and pays for her own things out of it, like clothes, gifts and treats.${findom}`;
 }

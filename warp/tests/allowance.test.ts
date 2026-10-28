@@ -49,6 +49,8 @@ check("but a price isn't an allowance", readAllowance("That dress cost 100k.") =
   check("findom reads as day to day, not only bed", /HER FETISH: findom[^\n]*Day to day as much as in bed/.test(card));
   check("a quirk written in by hand says what it means", /HER WAY: Findom\. This is how she is day to day[^\n]*wetter than anything/.test(card));
   check("and being paid is her kink on the money line too", /HER MONEY[^\n]*Being paid is her kink/.test(card));
+  check("but she never says that's why", /HER MONEY[^\n]*She never says that's why/.test(card) && !/brings it up in ordinary conversation/.test(card));
+  check("and her nature is for showing, not saying", /HER NATURE, below, is for you to show[^\n]*never names it/.test(card));
 }
 
 // Her kinks as who she is, and how far they reach you: strength against ease, fear and room.

@@ -105,7 +105,7 @@ export const QUIRKS: QuirkDef[] = [
   { id: "edge queen", note: "She likes keeping someone on the edge, for hours, and stopping a second before.", acts: ["keyholding", "denial", "teasing"] },
   { id: "mean girl", note: "She's at her best in bed when she's being mean, laughing, spitting and saying exactly the wrong thing on purpose.", acts: ["sph", "humiliating you", "spit"] },
   { id: "good pet", note: "She loves being petted, leashed and praised like an animal, and stays in it for hours.", acts: ["petplay", "leash", "orders"] },
-  { id: "watcher", note: "She likes to watch more than to join in, and says so.", acts: ["watching", "cuckold", "servicing"] },
+  { id: "watcher", note: "She likes to watch more than to join in, and hangs back.", acts: ["watching", "cuckold", "servicing"] },
 ];
 
 export interface FlawDef { id: FlawId; note: string; hates: string[]; /** what it becomes if she is worked past it */ softens_to?: QuirkId }

@@ -189,6 +189,7 @@ if (!hadLoc) delete g.location; else g.location = oldLoc;
   const { setSpeech } = await import("../src/engine/voice.ts");
   check("the writer is told nobody talks like a screenwriter", /NOBODY TALKS LIKE A SCREENWRITER/.test(PLAIN_RULES) && /builds to a closing line/.test(PLAIN_RULES));
   check("and that a threatened outsider is frightened, not brave", /they are frightened/.test(HOUSE_STYLE) && /belongs in a film/.test(HOUSE_STYLE));
+  check("nobody announces their own kink or recites the arrangement", /NOBODY ANNOUNCES WHO THEY ARE/.test(PLAIN_RULES) && /I like the paying more than I should/.test(PLAIN_RULES) && /you always/.test(PLAIN_RULES));
   const replies = [
     `Chloé turns the gold band on her wrist. "I know what I am," she says.`,
     `Her fingers stop on the gold band. "I know what I am, Madame."`,

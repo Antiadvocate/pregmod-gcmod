@@ -76,7 +76,7 @@ const FETISH_SHOWS: Record<string, string> = {
   keyholder: "she wants her partner locked up, with the cage, the key on her neck and the begging. She edges him, denies him and decides for him, and letting him come is a gift she rarely gives",
   spit: "she wants to spit in an open mouth or on a face and watch it get swallowed. It's a small thing, and it gets her wetter than it should",
   ballbusting: "she gets off on hurting balls. She uses a knee, a slap or a slow squeeze, and she watches for the face someone makes",
-  findom: "money spent on her because she said so is what gets her wet. She asks for it, names a number, asks for more, keeps count, and makes sure the owner sees what his money bought. For her the handing over is the sex, and she brings it up in ordinary conversation, not only in bed",
+  findom: "money spent on her because she said so is what gets her wet. She puts a price on things, holds out her hand and waits, and makes sure the owner sees what his money bought. The handing over does more for her than being touched, and it shows in her face and her mood, never in her explaining it",
   sph: "she gets off on laughing at a cock. She measures it with her fingers, compares it to her toys and to men she's had, and says exactly how little it does for her. A small one delights her",
   cuckoldress: "she wants her partner to watch her with someone bigger and better, and to hear about it afterwards in detail. His face while it happens is the point",
   petplay: "she wants to be a pet, with ears, a collar and a leash, on all fours, praised and petted, with a bowl on the floor. She stays in it for hours",
