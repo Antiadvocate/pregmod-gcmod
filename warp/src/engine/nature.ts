@@ -146,8 +146,8 @@ function reachLine(reach: Reach, aim: string, allowed: boolean): string {
     case "slips": return allowed
       ? `With you it comes out when she feels like it, like ${aim}, and since you've given her the room, she doesn't back off.`
       : `Now and then it slips out on you before she thinks, like ${aim}. The moment she catches herself she backs off at once, scared, knowing she's overstepped, and apologises.`;
-    case "held": return "Around you she buries it, because she's too afraid or too wound up to let it show. It comes out on other people, or when she's alone.";
-    default: return "With you she knows her place, so it only shows in small ways, like a look, what she asks for, or what she reaches for when she's allowed.";
+    case "held": return "Around you she buries it, because she's too afraid or too wound up to let it show, and it comes out on other people or when she's alone. But if you order it, or it's one of her standing orders, she does exactly that, at once and properly, because she's afraid not to.";
+    default: return "With you she knows her place, so on her own it only shows in small ways, like a look, what she asks for, or what she reaches for when she's allowed. When you order it, she does it.";
   }
 }
 

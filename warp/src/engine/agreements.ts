@@ -61,7 +61,7 @@ export function readInstructions(text: string): { calls?: string; rules: string[
       if (m.length === 2) rule = re.source.startsWith("\\bdon") ? `never ${asHers(m[1])}` : asHers(m[1]);
       else rule = `${m[1].toLowerCase().startsWith("every") ? `${m[1].toLowerCase()}, ` : `${m[1].toLowerCase()} `}${asHers(m[2])}`;
       rule = rule.replace(/^(always|never) (always|never) /, "$2 ");
-      if (rule.length >= 6 && !/call(?:s)? you\b/i.test(rule) && !rules.includes(rule)) rules.push(rule.slice(0, 140));
+      if (rule.length >= 6 && !/call(?:s)? you\b/i.test(rule) && !rules.includes(rule)) rules.push(clipRule(rule));
     }
   }
   return { calls, rules: rules.slice(0, 3), household: HOUSEHOLD.test(t) };
@@ -98,6 +98,14 @@ export function captureInstructions(s: SaveState, text: string, to: Person[]): s
 }
 
 /** What she calls you, all rules considered. */
+/** An order kept whole: long enough for the player's own sentence, and if it must be cut, cut at a
+ *  word with no "and" or "while" left hanging. One was kept as "…and only cuckolds him, while". */
+export function clipRule(rule: string, max = 320): string {
+  const t = rule.replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t.replace(/[,;]?\s+(and|but|while|or|then|so|because|when)$/i, "");
+  return t.slice(0, max).replace(/\s+\S*$/, "").replace(/[,;]?\s+(and|but|while|or|then|so|because|when|the|a|an|to|of|with)$/i, "").replace(/[,;]$/, "");
+}
+
 export function calledBy(s: SaveState, p?: Person): string {
   const own = p ? [...agreementsOf(p)].reverse().find((a) => a.calls && a.by === "you") : undefined;
   return own?.calls ?? s.player.address ?? "Master";

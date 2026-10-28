@@ -54,3 +54,27 @@ import { resolveDynamic } from "../src/engine/dynamic.ts";
   check("in a cruel city, cruelty earns standing and kindness costs it", rep("cruelty", 80) > 0 && rep("kindness", 80) < 0, [rep("cruelty", 80), rep("kindness", 80)]);
   check("in a gentle city, the other way round", rep("cruelty", -80) < 0 && rep("kindness", -80) > 0, [rep("cruelty", -80), rep("kindness", -80)]);
 }
+
+// Svetlana: a narrator's misfire became "she keeps her feet on the stone" in her ways, the owner
+// punished her for it, and the next scene kept it anyway. Terror didn't beat the leave he'd given
+// her, fear told her to bury the very thing she was ordered to do, and her order was cut off.
+{
+  const { obeys } = await import("../src/engine/compliance.ts");
+  const { powerBetween } = await import("../src/engine/self.ts");
+  const { addWays, dropWays } = await import("../src/engine/ways.ts");
+  const { clipRule } = await import("../src/engine/agreements.ts");
+  const { natureLines } = await import("../src/engine/nature.ts");
+  const s = newGame({ seed: "svetlana", starting_slaves: 1 } as never);
+  const her = Object.values(s.people).find((p) => p.status === "owned")!;
+  her.romance = { ...((her.romance ?? {}) as object), standing: "wife", dominion: 40 } as never;
+  Object.assign(her.bond, { bond: -100, fear: 100, resentment: 100, hope: 20 });
+  refresh(her, s.memory[her.id]);
+  check("with a gun to her head, the say he gave her is gone and she obeys out of terror", obeys(s, her).stance === "terrified", obeys(s, her).stance);
+  check("and when he speaks as her owner the lead is his, with no lecturing", /the lead is yours again[^"]*doesn't argue, correct or lecture you/.test(powerBetween(s, her)));
+  her.romance = { ...((her.romance ?? {}) as object), standing: "property", dominion: -50 } as never;
+  her.persona.fetishes = [{ name: "keyholder", strength: 80, known: true }];
+  check("a nature fear buries still does what she's ordered", /if you order it, or it's one of her standing orders, she does exactly that/.test(natureLines(s, her).join(" ")), natureLines(s, her).join(" ").slice(0, 400));
+  addWays(s, her, ["when men rape her in public, she keeps her feet flat on the stone and shows him her slate", "he kneels when she taps her sole twice"]);
+  check("a way he rejected is taken out", dropWays(her, ["when men rape her in public, she keeps her feet flat on the stone and shows him her slate to prove she held them"]) === 1 && her.ways!.length === 1 && /taps her sole/.test(her.ways![0].text));
+  check("and an order isn't left hanging on 'while'", clipRule("always kicks his dick with her feet, and only cuckolds him, while") === "always kicks his dick with her feet, and only cuckolds him" && clipRule("x ".repeat(300)).length <= 320);
+}

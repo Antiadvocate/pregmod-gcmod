@@ -32,6 +32,15 @@ export function addWays(s: SaveState, p: Person, lines: string[]): string[] {
   return added;
 }
 
+/** Take out ways the player rejected. Matched loosely, since the writer copies them from her card. */
+export function dropWays(p: Person, lines: string[]): number {
+  const gone = lines.map((l) => norm(String(l ?? ""))).filter((n) => n.length >= 12);
+  if (!gone.length || !p.ways?.length) return 0;
+  const before = p.ways.length;
+  p.ways = p.ways.filter((w) => { const n = norm(w.text); return !gone.some((g) => n === g || n.includes(g.slice(0, 30)) || g.includes(n.slice(0, 30))); });
+  return before - p.ways.length;
+}
+
 /** Replace the whole list, from a reading of everything between you. */
 export function setWays(s: SaveState, p: Person, lines: string[]): void {
   p.ways = [];

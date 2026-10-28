@@ -57,14 +57,19 @@ export function obeys(s: SaveState, p: Person): Obeys {
   const r = read(p, s.memory[p.id]);
   const lat = latitudeOf(p);
   let stance: Stance;
+  // Leave to say no is something he gave her. With a gun to her head it's gone: a woman held by
+  // terror obeys like it, whatever latitude or say she had before.
+  // Hatred isn't something holding her in place, so a woman who hates him and is terrified of him
+  // is held by the terror alone.
+  const terror = p.bond.fear >= 60 && (r.fragility >= 0.5 || p.bond.bond <= 0);
   if (p.psyche.state === "broken") stance = "hollow";
-  else if (lat === "free") stance = "free";
+  else if (lat === "free" && !terror) stance = "free";
   else {
     const fear = p.bond.fear;
     // Fear raises the devotion reading (it buys compliance), so terror is read first: a woman whose
     // obedience is mostly fear obeys like it, however devoted the number looks. (Warp's trust falls
     // with resentment, not only with fear, so it's fear itself that's read here.)
-    const terrified = fear >= 60 && r.fragility >= 0.5;
+    const terrified = terror || (fear >= 60 && r.fragility >= 0.5);
     const dev = r.devotion;
     if (terrified) stance = "terrified";
     else if (dev >= 50) stance = "eager";
