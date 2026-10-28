@@ -117,5 +117,5 @@ export function agreementsBrief(s: SaveState, p: Person): string {
   const house = houseRules(s).filter((a) => !a.calls || !mine.some((m) => m.calls));
   const all = [...house, ...mine];
   if (!all.length) return "";
-  return `STANDING ORDERS. She agreed to these, and she keeps to them in every scene from now on without being reminded, unless she's openly defying you, in which case the defiance is the point of the scene. ${sentences(all.map((a) => (/^(you|she|her|the|no|every|all|a|an|if|when|only|never|always)\b/i.test(a.rule) ? a.rule : `she ${a.rule}`)))}`;
+  return `STANDING ORDERS. She agreed to these, and she keeps to them in every scene from now on without being reminded, every part of each, unless she's openly defying you, in which case the defiance is the point of the scene. They come before any habit listed under HOW YOU TWO DO THINGS. ${sentences(all.map((a) => (/^(you|she|her|the|no|every|all|a|an|if|when|only|never|always)\b/i.test(a.rule) ? a.rule : `she ${a.rule}`)))}`;
 }

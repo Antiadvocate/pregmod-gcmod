@@ -78,3 +78,20 @@ import { resolveDynamic } from "../src/engine/dynamic.ts";
   check("a way he rejected is taken out", dropWays(her, ["when men rape her in public, she keeps her feet flat on the stone and shows him her slate to prove she held them"]) === 1 && her.ways!.length === 1 && /taps her sole/.test(her.ways![0].text));
   check("and an order isn't left hanging on 'while'", clipRule("always kicks his dick with her feet, and only cuckolds him, while") === "always kicks his dick with her feet, and only cuckolds him" && clipRule("x ".repeat(300)).length <= 320);
 }
+
+// Laws are law in a scene, every part of them, and a habit gives way to a law or a standing order.
+{
+  const { lawsLine } = await import("../src/engine/lawlife.ts");
+  const { enact } = await import("../src/engine/court.ts").catch(() => ({ enact: undefined }));
+  const { waysBrief, addWays } = await import("../src/engine/ways.ts");
+  const { agreementsBrief } = await import("../src/engine/agreements.ts");
+  const s = newGame({ seed: "laws are law", starting_slaves: 1 } as never);
+  const her = Object.values(s.people).find((p) => p.status === "owned")!;
+  (s.laws ??= []).push({ id: "public_discipline", week: s.arcology.week } as never);
+  void enact;
+  const laws = lawsLine(s);
+  check("a scene is told laws are kept, every part, never 'keep or break where it fits'", !!laws && (/everyone keeps them[^]*every part of it/.test(laws) && !/keep or break/.test(laws)), laws.slice(0, 200));
+  addWays(s, her, ["she keeps her feet flat on the stone when men use her"]);
+  her.agreements = [{ rule: "always kicks his dick with her feet while she's fucked", week: 1, by: "you" }] as never;
+  check("habits give way to laws and standing orders", /the law or the order wins/.test(waysBrief(her)) && /They come before any habit/.test(agreementsBrief(s, her)));
+}
