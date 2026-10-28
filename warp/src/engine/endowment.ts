@@ -75,7 +75,7 @@ export function sizeLine(s: SaveState): string {
   const talk = talkOfIt(s);
   const known = talk >= 30 ? "It's common knowledge in the arcology by now." : talk >= 10 ? "Word has started to get around." : "Only the women who've been with the owner know, so far.";
   const how = m >= 0.55
-    ? "The owner is feared, so nobody ever says it to the owner's face. It shows in a glance held a little too long, a careful blank face, a look exchanged behind the owner's back, a slave biting the inside of her cheek, or a joke three floors down that stops when the owner walks in. Write it that subtly, and only where it fits."
+    ? "The owner is feared, so nobody ever says it to the owner's face. It shows in a glance held a little too long, a careful blank face, a look exchanged behind the owner's back, a slave biting the inside of her cheek, or a joke three floors down that stops when the owner walks in. Use it only where it fits, and rarely. Being careful means fewer words, not code. When someone is caught at it, what they said was plain and crude, like 'his cock is the size of my thumb', and the scene is about how frightened they are now. Never invent a coded joke, a riddle or a metaphor for it (pipes, ladles, small change) that the player would have to decode."
     : m >= 0.3
       ? "People are mostly careful about it. It shows in a smirk caught and wiped off, a comparison made quietly, or a slave who has to look away to keep a straight face. Someone bolder or drunker might say it."
       : "People don't hide that they've noticed. There's a smirk, a comparison, a slave who giggles and has to apologise, a joke at the owner's expense when they think it's safe, and now and then somebody who says it outright.";
@@ -93,7 +93,7 @@ export function sizeSource(s: SaveState): { id: string; label: string; text: str
   return {
     id: "owner:size", label: "the owner's cock",
     text: m >= 0.55
-      ? `Everyone has heard the owner's cock is small (${dickWord(e.dick!)}, about ${inches(dickCM(e.dick!))}), from the slaves. The owner is feared, so nobody posts it plainly. It comes out as in-jokes, a little finger emoji, "you know who", a post deleted an hour later, or somebody asking if anyone else heard the thing about the top floor.`
+      ? `Everyone has heard the owner's cock is small (${dickWord(e.dick!)}, about ${inches(dickCM(e.dick!))}), from the slaves. The owner is feared, so nobody posts it plainly. It comes out as simple in-jokes anyone gets, a little finger emoji, "you know who", a post deleted an hour later, or somebody asking if anyone else heard the thing about the top floor.`
       : `Everyone has heard the owner's cock is small (${dickWord(e.dick!)}, about ${inches(dickCM(e.dick!))}), from the slaves who've had it. People joke about it openly, with nicknames, measurements, a slave's supposed review, and comparisons to the owner across the strait.`,
   };
 }
