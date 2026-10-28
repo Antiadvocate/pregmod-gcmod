@@ -62,7 +62,15 @@ check("fed by her work, she's happier and closer", /happier/.test(fedLine ?? "")
   check("her paraphilia says what the need is", /HER PARAPHILIA: abusive[^\n]*dominate someone and abuse/.test(card));
   check("and it wins over the quieter reading of her personality", /IN BED\. This is a fact\.[^\n]*win over the quieter reading/.test(card));
   check("obeying and wanting control are both true", /IN BED[^\n]*She obeys the owner and she wants control/.test(card), card.match(/IN BED[^\n]*/)?.[0]);
-  check("so she asks for control, and gives no orders until she's handed it", /IN BED[^\n]*only takes charge when he hands it to her[^\n]*no orde/.test(card));
+  check("comfortable with you, it slips out on you and she backs off, or she just takes it", /IN BED[^\n]*(grabs it before she thinks[^\n]*backs off|takes charge of him without waiting)/.test(card), card.match(/IN BED[^\n]*/)?.[0]);
+  // Devotion isn't softness: how much of it lands on you follows her fear, ease and trust.
+  const fearBefore = d.bond.fear, relaxBefore = d.psyche.relaxation;
+  Object.assign(d.bond, { fear: 5, bond: 95, hope: 95 }); d.psyche.relaxation = 7; refresh(d, s.memory[d.id]);
+  check("devoted, relaxed and unafraid, she takes charge of you without waiting", /IN BED[^\n]*devoted to the owner, and with her that doesn't mean gentle[^\n]*without waiting/.test(personCard(s, d)), personCard(s, d).match(/IN BED[^\n]*/)?.[0]);
+  check("and her card says devotion isn't sweetness", /not how she behaves[^\n]*A devoted sadist is still a sadist/.test(personCard(s, d)));
+  Object.assign(d.bond, { fear: 75 }); d.psyche.relaxation = -6; refresh(d, s.memory[d.id]);
+  check("afraid of you, she doesn't take it", !/without waiting to be handed/.test(personCard(s, d)));
+  Object.assign(d.bond, { fear: fearBefore, bond: 48, hope: 90 }); d.psyche.relaxation = relaxBefore; refresh(d, s.memory[d.id]);
   check("alone in the house, the need lands on the owner", /IN BED[^\n]*no other slave in the house/i.test(card));
   const { generatePerson } = await import("../src/engine/generate.ts");
   const other = generatePerson({ seed: "sexlife-other", sex: "female" });
@@ -71,7 +79,7 @@ check("fed by her work, she's happier and closer", /happier/.test(fedLine ?? "")
   check("with others and the default rules, she may not touch them", /IN BED[^\n]*forbid her from touching/.test(personCard(s, d)));
 
   const used = resolveAct(s, d, "vaginal");
-  if (!("error" in used)) check("used, she'd rather be on top, and may ask, but gives no orders", /SHE'D RATHER BE ON TOP[^\n]*ask to be on top[^\n]*no orders/.test(actDirective(s, d, used)));
+  if (!("error" in used)) check("used, she'd rather be on top, and her nature decides how far she takes it", /SHE'D RATHER BE ON TOP[^\n]*(grabs it before she thinks|without waiting to be handed|ask to be on top)/.test(actDirective(s, d, used)), actDirective(s, d, used).match(/SHE'D[^\n]*/)?.[0]);
   const pampered = resolveAct(s, d, "pedicure");
   if (!("error" in pampered)) {
     const dir = actDirective(s, d, pampered);

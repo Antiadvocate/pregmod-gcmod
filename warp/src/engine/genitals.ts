@@ -185,8 +185,7 @@ export function describeGenitals(p: Person): string {
   if (u === "anal") out.push("She has an implanted womb that opens into her rectum, so she can be bred through her ass.");
   else if (u === "none" && b.vagina !== null) out.push("Her pussy was built by a surgeon. There is no womb behind it, and she cannot get pregnant.");
   else if (u === "none") out.push("She has no womb and cannot get pregnant.");
-  const locked = [p.chastity.penis ? "cock" : "", p.chastity.vagina ? "pussy" : "", p.chastity.anus ? "ass" : ""].filter(Boolean);
-  if (locked.length) out.push(`Her ${locked.join(" and ")} ${locked.length > 1 ? "are" : "is"} locked in chastity.`);
+  out.push(...chastityLines(p));
   const m = mobility(p);
   if (m.level && m.note && !p.body.feet?.heels_clipped) out.push(`Because of her size, ${m.note}.`);
   return out.join(" ");
@@ -327,6 +326,22 @@ export function anatomyLock(p: Person): string {
   if (not.length) out.push(`She does NOT have ${not.join(". She does NOT have ")}.`);
   if (hasCock) { const e = erectionWhy(p); if (e.state !== "full") out.push(`Her cock ${e.state === "partial" ? "only gets half-hard" : "stays soft"}, because ${e.why}.`); }
   return out.join(" ");
+}
+
+/**
+ * WHAT'S LOCKED, AND WHAT ISN'T. "Her ass is locked in chastity" read as a cock cage to a model with
+ * cages elsewhere on the card, and nothing said what was still free. So: each device named for what
+ * it is, where it is and what it stops, and every hole that isn't locked said to be open.
+ */
+export function chastityLines(p: Person): string[] {
+  const c = p.chastity, b = p.body;
+  const hasCock = !!b.dick, hasPussy = b.vagina !== null;
+  const locked: string[] = [], free: string[] = [];
+  if (hasCock) (c.penis ? locked.push("her cock is locked in a chastity cage, so she can't get hard or touch it, and nothing can be done with it until it's unlocked") : free.push("her cock, which is NOT caged, so she can get hard and come"));
+  if (hasPussy) (c.vagina ? locked.push("a locked chastity belt covers her pussy, so nothing goes into it and she can't touch her clit") : free.push("her pussy"));
+  (c.anus ? locked.push("a locked anal shield (a belt with a guard over her asshole) covers her ass, so nothing goes into her ass, not a cock, a finger or a toy") : free.push("her ass"));
+  if (!locked.length) return [];
+  return [`CHASTITY, which is a fact. ${locked.map((x) => `${x.charAt(0).toUpperCase()}${x.slice(1)}.`).join(" ")}${free.length ? ` What's NOT locked, and free to use: ${free.join(", and ")}.` : ""} The key is the owner's.`];
 }
 
 /** Put right anything on her record that contradicts her body (after surgery, editing, old saves). */

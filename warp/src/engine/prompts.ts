@@ -112,6 +112,28 @@ ${PLAIN_RULES}`;
  * Lists everyone currently owned or indentured in the household so the model doesn't invent
  * random slaves out of thin air.
  */
+/** Her breasts as the scene should use them: fuckable nipples and milk are things you can do
+ *  something with, so the card says so, rather than one bare word. */
+export function breastsLine(p: Person): string {
+  const b = p.body;
+  const bits: string[] = [];
+  if (b.nipples === "fuckable") bits.push("Her nipples are fuckable. They've been surgically enlarged and opened, so a cock, fingers or a toy can go inside her breast, and they can be fucked like any other hole");
+  if (b.lactation) bits.push(b.lactation >= 2
+    ? "She's lactating heavily. Her breasts are swollen and heavy with milk, they leak through whatever she wears, they ache if she isn't milked, and milk sprays when they're squeezed or fucked. She can be milked by hand or with a pump, or nursed from"
+    : "She's lactating. Her breasts are full and tender, a squeeze brings milk, and she can be milked or nursed from");
+  if (!bits.length) return "";
+  return `BREASTS, which is a fact. ${bits.join(". ")}. Let it show and let it be used when her breasts come into a scene.`;
+}
+
+/** How much other people's pain registers with her, when it's far from ordinary. Low conscience is
+ *  coldness, not brokenness, and it shows in small things as much as big ones. */
+export function conscienceLine(p: Person): string {
+  const c = p.persona.conscience ?? 0.5;
+  if (c <= 0.3) return `CONSCIENCE, which is low. Other people's pain and feelings barely register with her. She lies easily, takes what she wants, hurts people without guilt and is puzzled or bored when they're upset. It shows in small callous things all day, like a joke at the wrong moment, not looking up when someone cries, or using someone and forgetting them, as much as in anything cruel.`;
+  if (c >= 0.8) return `CONSCIENCE, which is strong. Other people's suffering weighs on her. She notices who's hurt, feels guilty easily, and finds cruelty hard to watch, let alone do.`;
+  return "";
+}
+
 export function householdLine(s: SaveState): string {
   const mine = Object.values(s.people).filter((x) => x.status === "owned" || x.status === "indentured");
   if (!mine.length) return "";
@@ -242,13 +264,16 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   const distinct = featuresLine(p);
   if (distinct) lines.push(distinct);
   if (p.womb.fetuses.length) lines.push(`PREGNANT: ${p.womb.weeks} weeks along with ${p.womb.fetuses.length > 1 ? `${p.womb.fetuses.length} babies` : "one baby"}.`);
-  if (p.body.lactation) lines.push(`LACTATING.`);
+  const chest = breastsLine(p);
+  if (chest) lines.push(chest);
   if (p.health.health < -20) lines.push(`HEALTH: unwell (${p.health.health}). ${p.health.injuries.filter((i) => !i.healed_week).map((i) => i.what).join("; ")}`);
   lines.push(`ASSIGNMENT: ${p.assignment}.`);
   const money = purseLine(p);
   if (money) lines.push(money);
   lines.push(`PAST LIFE: ${p.origin.career}; ${p.origin.background}`);
   lines.push(`PERSONALITY: ${p.persona.core_traits.join("; ")}`);
+  const cold = conscienceLine(p);
+  if (cold) lines.push(cold);
   const v = p.persona.voice;
   lines.push(p.persona.speech_own
     ? `SPEECH STYLE: ${p.persona.speech_pattern}. The player set this, so it's exactly how she talks, and it wins over anything else here about her voice and over the general advice on filler words.`
@@ -260,7 +285,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (p.persona.voice?.never_says?.length) lines.push(`PHRASES SHE NEVER USES: ${p.persona.voice.never_says.join("; ")}`);
   // Express relationship metrics as descriptive words so the model doesn't parrot raw numbers in dialogue.
   if (s.player.owned_by === p.id) lines.push(`HOW SHE FEELS ABOUT YOU: ${r.trust_label}${r.devotion > 40 ? ", and genuinely attached to you" : r.devotion < -15 ? ", and holds no affection for you" : ""}. Note that this is her internal feeling—how she actually treats you is governed by HOW SHE KEEPS YOU, so attachment doesn't automatically make her gentle unless stated there.`);
-  else lines.push(`ATTITUDE TOWARD YOU: ${r.label}, ${r.trust_label}.${r.fragility > 0.6 ? " Most of her obedience comes from fear." : ""}`);
+  else lines.push(`ATTITUDE TOWARD YOU: ${r.label}, ${r.trust_label}.${r.fragility > 0.6 ? " Most of her obedience comes from fear." : ""} This is how attached she is and how safe she feels with you, not how she behaves. It never makes her sweet or gentle by itself. A devoted sadist is still a sadist, and she's cruel to the one she loves, because that's how she loves. How she treats you comes from her nature (HER NATURE, IN BED and THE POWER BETWEEN YOU), and her devotion decides how much of it is aimed at you.`);
   const orders = obeysLine(s, p);
   if (orders) lines.push(orders);
   lines.push(...characterLines(p));

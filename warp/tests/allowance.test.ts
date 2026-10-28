@@ -108,3 +108,21 @@ check("but a price isn't an allowance", readAllowance("That dress cost 100k.") =
   check("and the cuckolding that goes with it", /HER FETISH: keyholder[^\n]*other men while he's locked[^\n]*clean up/.test(card));
   check("and it's who she is outside bed too", /HER NATURE \(keyholder\)[^\n]*key on her neck/.test(card));
 }
+
+// What's locked and what isn't, her breasts as something to use, and a cold conscience.
+{
+  const { chastityLines } = await import("../src/engine/genitals.ts");
+  const { breastsLine, conscienceLine } = await import("../src/engine/prompts.ts");
+  const s = newGame({ seed: "body facts", starting_slaves: 1 } as never);
+  const her = Object.values(s.people).find((p) => p.status === "owned")!;
+  her.body.dick = 4; her.body.vagina = 2;
+  her.chastity = { vagina: false, anus: true, penis: false };
+  const lock = chastityLines(her).join(" ");
+  check("an anal shield is an anal shield, not a cock cage", /anal shield[^.]*covers her ass/.test(lock) && !/cock is locked/.test(lock), lock);
+  check("and what isn't locked is said to be free", /What's NOT locked, and free to use: her cock, which is NOT caged, so she can get hard and come, and her pussy\./.test(lock), lock);
+  check("and her card carries it", /CHASTITY, which is a fact\. A locked anal shield/.test(personCard(s, her, "")));
+  her.body.nipples = "fuckable"; her.body.lactation = 2;
+  check("fuckable nipples and milk are on her card as things to use", /BREASTS, which is a fact\. Her nipples are fuckable[^\n]*lactating heavily[^\n]*milked/.test(personCard(s, her, "")), breastsLine(her));
+  her.persona.conscience = 0.15;
+  check("a low conscience shows as coldness", /CONSCIENCE, which is low[^\n]*without guilt/.test(personCard(s, her, "")), conscienceLine(her));
+}

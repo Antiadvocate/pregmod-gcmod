@@ -17,6 +17,7 @@ import { takeStats, chipsBetween, type Chip } from "../lib/delta";
 import PassingBy from "./PassingBy";
 import { STYLE_NOTE } from "../engine/reign";
 import { useRef, useState, type ReactNode } from "react";
+import type { SaveState } from "../engine/types";
 import { AlertTriangle, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import type { Route } from "../App";
 import { useGame } from "../lib/game";
@@ -43,11 +44,28 @@ import { read } from "../engine/obedience";
 import { band, wear } from "../engine/psyche";
 import { modelsAvailable } from "../config";
 
+/** An answered event's card: what's kept in the save, plus what this page is doing with it now. */
+type Outcome = NonNullable<SaveState["outcomes"]>[number] & { writing?: boolean; concluding?: boolean };
+
 export default function Penthouse({ go }: { go: (r: Route) => void }) {
-  const [outcomes, setOutcomes] = useState<{ id: string; setup?: string; chose: string; text: string; person?: string; others?: string[]; moment?: string; writing?: boolean; facts?: string; auto?: boolean; chips?: Chip[]; own?: boolean; concluding?: boolean; deed?: string }[]>([]);
+  const { save, mutate } = useGame();
+  // Answered events stay in the save until you close them: going to another page, or reloading,
+  // used to throw away the card, and with it what came of the event, after the event itself was
+  // already gone. Only "still writing" and "working it out" live here, since they're about this page.
+  const flagsRef = useRef<Record<string, { writing?: boolean; concluding?: boolean }>>({});
+  const [, bump] = useState(0);
+  const outcomes: Outcome[] = (save.outcomes ?? []).map((o) => ({ ...o, ...flagsRef.current[o.id] }));
+  const setOutcomes = (fn: (xs: Outcome[]) => Outcome[]) => {
+    const flags: Record<string, { writing?: boolean; concluding?: boolean }> = {};
+    mutate((s) => {
+      const next = fn((s.outcomes ?? []).map((o) => ({ ...o, ...flagsRef.current[o.id] })));
+      s.outcomes = next.slice(-12).map(({ writing, concluding, ...rest }) => { if (writing || concluding) flags[rest.id] = { writing, concluding }; return rest; });
+    });
+    flagsRef.current = flags;
+    bump((n) => n + 1);
+  };
   // Whether each event's answer gets written out by the model; off just applies it.
   const [writeOff, setWriteOff] = useState<Record<string, boolean>>({});
-  /** Done: the card goes, and a scene played out under it ends where it is. */
   // Done: with a scene still open, it's written up first and what it changed is shown on the card,
   // which stays until you close it. With nothing to write up, the card goes.
   const finish = async (o: { id: string; moment?: string }) => {
@@ -59,7 +77,6 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
     setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, concluding: false, deed: d?.id ?? "" } : x)));
   };
   const dismiss = (id: string) => setOutcomes((xs) => xs.filter((x) => x.id !== id));
-  const { save, mutate } = useGame();
   const [running_, setRunning] = useState(false);
   const [inventing, setInventing] = useState(false);
   const [cuckOpen, setCuckOpen] = useState(false);
@@ -278,7 +295,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
           {o.setup ? <Setup text={o.setup} /> : null}
           <div className="player-line !mt-0 !mb-3">{o.chose}</div>
           <div className="space-y-3">
-            {o.writing ? <div className="flex items-center gap-2 dim text-[12px]"><Loader2 size={13} className="animate-spin" /> writing what happens</div> : null}
+            {o.writing || (!o.text && o.deed === undefined) ? <div className="flex items-center gap-2 dim text-[12px]"><Loader2 size={13} className="animate-spin" /> writing what happens</div> : null}
             {o.text.split(/\n\n+/).map((para, i) => <p key={i} className="font-prose text-[15px] leading-relaxed">{para}</p>)}
             {o.facts ? <p className="text-[12px] dim">{o.facts.split(/\n\n+/)[0]}</p> : null}
             {o.chips?.length ? <div className="flex flex-wrap gap-1">{o.chips.map((c, i) => <span key={i} className={`chip ${c.good ? "good" : "bad"}`}>{c.text}</span>)}</div> : null}
