@@ -95,3 +95,16 @@ check("but a price isn't an allowance", readAllowance("That dress cost 100k.") =
   check("and loading clears it out", !(her.ways ?? []).some((w) => /not the same as/.test(w.text)));
 }
 
+
+// Keyholder means the whole dynamic: the cage and the key, denial and ruined release, teasing and
+// hurting through the cage, and other men while he's locked.
+{
+  const s = newGame({ seed: "keyholder", starting_slaves: 1 } as never);
+  const her = Object.values(s.people).find((p) => p.status === "owned")!;
+  her.persona.fetishes = [{ name: "keyholder", strength: 85, known: true }];
+  her.persona.paraphilia = undefined; her.persona.quirk = undefined; her.persona.flaw = undefined;
+  const card = personCard(s, her, "");
+  check("a keyholder's card has the cage, the key and the denial", /HER FETISH: keyholder[^\n]*only key on a chain[^\n]*ruins it/.test(card));
+  check("and the cuckolding that goes with it", /HER FETISH: keyholder[^\n]*other men while he's locked[^\n]*clean up/.test(card));
+  check("and it's who she is outside bed too", /HER NATURE \(keyholder\)[^\n]*key on her neck/.test(card));
+}

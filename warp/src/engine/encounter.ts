@@ -72,7 +72,7 @@ function whatSheLiked(p: Person): { liked?: string; learned?: string } {
     masochist: "when it hurts a bit", sadist: "being mean to you", pregnancy: "thinking about being bred",
     armpits: "your face under my arm", musk: "you smelling me before I'd washed", facesitting: "sitting on your face",
     assworship: "your tongue on my ass", goddess: "you on your knees, worshipping me", pegging: "the thought of fucking you",
-    keyholder: "the idea of keeping you locked up", spit: "spitting in your mouth", ballbusting: "the face you make when I knee you",
+    keyholder: "keeping you locked up while other men have me", spit: "spitting in your mouth", ballbusting: "the face you make when I knee you",
     findom: "you paying for it", sph: "laughing at your cock", cuckoldress: "you watching me with someone bigger",
     petplay: "being your pet", breathplay: "a hand on my throat", voyeur: "watching", tickling: "being tickled till I can't breathe",
     furniture: "using you as a footstool",
