@@ -211,7 +211,7 @@ export function openMoments(s: SaveState, personId?: string): Moment[] {
 }
 
 /** Start a moment from something that just happened. Returns its id. */
-export function openMoment(s: SaveState, o: { person?: string; others?: string[]; title: string; source: string; setup?: string; you?: string; happened: string; where?: Moment["where"] }): string {
+export function openMoment(s: SaveState, o: { person?: string; others?: string[]; title: string; source: string; setup?: string; you?: string; happened: string; where?: Moment["where"]; ready?: boolean }): string {
   const list = momentsOf(s);
   const id = `mo-${s.arcology.week}-${s.turn}-${list.length}`;
   const log: MomentLine[] = [];
@@ -219,7 +219,7 @@ export function openMoment(s: SaveState, o: { person?: string; others?: string[]
   if (o.setup?.trim()) log.push({ role: "scene", text: o.setup.trim() });
   if (o.you) log.push({ role: "you", text: o.you });
   if (o.happened) log.push({ role: "scene", text: o.happened });
-  list.push({ id, person: o.person, others: o.others?.filter((x) => x && x !== o.person), title: o.title, source: o.source, week: s.arcology.week, updated: s.arcology.week, chron: (s.chronicle ?? []).length, city: citySnap(s), log, options: DEFAULT_OPTIONS, open: true, unexpanded: modelsAvailable(), seeded: log.length, ...(o.where ? { where: o.where } : {}) });
+  list.push({ id, person: o.person, others: o.others?.filter((x) => x && x !== o.person), title: o.title, source: o.source, week: s.arcology.week, updated: s.arcology.week, chron: (s.chronicle ?? []).length, city: citySnap(s), log, options: DEFAULT_OPTIONS, open: true, unexpanded: !o.ready && modelsAvailable(), seeded: log.length, ...(o.where ? { where: o.where } : {}) });
   // Keep the list from growing without end: close the oldest finished ones.
   if (list.length > 60) s.moments = list.slice(-60);
   return id;
