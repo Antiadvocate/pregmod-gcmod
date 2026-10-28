@@ -121,6 +121,7 @@ function drain(s: SaveState, seed: string, holes: string[], seen: Set<string>): 
   const quiet = sizeLine(s);
   check("an owner nobody fears hears it said", /don't hide that they've noticed/.test(loud), loud);
   check("a feared one only sees it in the silences", /nobody ever says it to the owner's face/.test(quiet), quiet);
+  check("and careful means fewer words, never a coded joke", /Never invent a coded joke, a riddle or a metaphor/.test(quiet));
   resolveAct(s, her, "vaginal");
   for (let i = 0; i < 12; i++) tickEndowment(s);
   check("the women you've had talk, and it gets around", talkOfIt(s) > 10, talkOfIt(s));

@@ -192,6 +192,7 @@ if (!hadLoc) delete g.location; else g.location = oldLoc;
   const { soundsLikeAnalysis, RECORD_RULES } = await import("../src/engine/style.ts");
   check("a record written as a relationship contract is caught", soundsLikeAnalysis("When she names a price he pays it or he says no plainly, and neither of them pretends the money was a favour") && soundsLikeAnalysis("Chloé has told you plainly that paying her is the one thing she named and you agreed to, and that being paid for her cock is not the same as being kept."));
   check("and a concrete one isn't", ["he talks to her soles, never her face, and she answers through them", "She tells him exactly what she wants and names the price, and he pays it without blinking", "she pretends to be asleep when he comes in", "he pays her in cash, left on the dresser, before she touches him"].every((x) => !soundsLikeAnalysis(x)));
+  check("jokes land on the first read, and nobody reacts to what wasn't shown", /has to land on the first read/.test(PLAIN_RULES) && /Show what happened before anyone reacts to it/.test(PLAIN_RULES));
   check("and the write-up is told to keep what happened, not what it meant", /HOW TO WRITE WHAT'S KEPT/.test(RECORD_RULES));
   check("nobody announces their own kink or recites the arrangement", /NOBODY ANNOUNCES WHO THEY ARE/.test(PLAIN_RULES) && /I like the paying more than I should/.test(PLAIN_RULES) && /you always/.test(PLAIN_RULES));
   const replies = [
