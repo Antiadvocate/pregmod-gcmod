@@ -126,3 +126,42 @@ check("but a price isn't an allowance", readAllowance("That dress cost 100k.") =
   her.persona.conscience = 0.15;
   check("a low conscience shows as coldness", /CONSCIENCE, which is low[^\n]*without guilt/.test(personCard(s, her, "")), conscienceLine(her));
 }
+
+// A young abusive woman whose old voice says "careful, never slang" under the player's "valley girl":
+// the player's words win, she sounds her age, the meek forge samples go, and her romance and a
+// request to be forced come out as her nature, not as tears or a talk about consent.
+{
+  const { claimSpeech } = await import("../src/engine/voice.ts");
+  const { PLAIN_RULES } = await import("../src/engine/style.ts");
+  const s = newGame({ seed: "young voice", starting_slaves: 1 } as never);
+  const her = Object.values(s.people).find((p) => p.status === "owned")!;
+  her.age = 19;
+  her.persona.speech_pattern = "Valley girl like, and talks in typical 18 year old lingo and language";
+  delete her.persona.speech_own;
+  her.persona.voice = { diction: "Plain, careful English.", rhythm: "Slow and deliberate.", tics: [], never_says: ["Uses slang or filler words like 'like'."], agenda: "", example_lines: ["Upset: 'Yes, Master. I understand, Master.'"] } as never;
+  her.persona.exchanges = [{ you: "Come here.", her: "Yes, Master. (she stops an arm's length away)" }];
+  claimSpeech(her);
+  const card = () => personCard(s, her, "");
+  check("the player's speech wins over a forge voice that bans it", !!her.persona.speech_own && !/careful|PHRASES SHE NEVER USES/.test(card()), card().match(/SPEECH STYLE[^\n]*/)?.[0]);
+  const keep = { ...her.persona, speech_pattern: "stiffly polite", speech_own: undefined, voice: { diction: "Plain, careful English.", never_says: ["slang"] } } as never;
+  const other = { ...her, persona: keep } as typeof her;
+  claimSpeech(other);
+  check("but a forge pattern that agrees with its voice is left alone", !other.persona.speech_own);
+  check("a 19-year-old is told to sound 19", /HER AGE IN HER MOUTH\. She's 19, and she sounds it/.test(card()));
+  her.age = 34;
+  check("and a grown woman isn't", !/HER AGE IN HER MOUTH/.test(card()));
+  her.age = 19;
+  her.persona.exchanges = [{ you: "Come here.", her: "Yes, Master. (she stops an arm's length away)" }];
+  her.persona.paraphilia = undefined; her.persona.fetishes = [];
+  check("a meek woman keeps her meek samples", /SAMPLE EXCHANGE/.test(card()));
+  her.persona.paraphilia = "abusive";
+  her.persona.quirk = { id: "romantic", known: true } as never;
+  her.bond.fear = 5; her.psyche.relaxation = 6; her.rules_exempt = true;
+  refresh(her, s.memory[her.id]);
+  her.bond.read = { devotion: 80, trust: 95, label: "devoted" } as never;
+  const c = card();
+  check("an abusive woman on top loses the forge's meek samples", !/SAMPLE EXCHANGE/.test(c), c.match(/HER NATURE \(abusive[^\n]*/)?.[0]);
+  check("her romance comes out as possession, not tears", /HER NATURE \(romantic\)[^\n]*possession[^\n]*doesn't make her soft, tearful or kneeling/.test(c));
+  check("asked to force him, she takes it without a talk about how he asked", /IF HE ASKS FOR IT\.[^\n]*rape him[^\n]*She doesn't make him ask properly/.test(c));
+  check("and no one in any scene negotiates consent", /NOBODY TALKS ABOUT CONSENT/.test(PLAIN_RULES) && /ask me properly/.test(PLAIN_RULES));
+}

@@ -434,7 +434,9 @@ export function applyDiff(s: SaveState, d: Diff, prose: string, said?: string): 
     const by = x.by && x.by !== "owner" ? s.people[x.by] : undefined;
     const f = fitOf(p, hole, by?.body.dick ? by.body.dick : ownerSize(s).size, s);
     const week = s.arcology.week;
-    if (x.what === "sore" || f.over > 0) (p.health.sore ??= {})[hole] = Math.max(p.health.sore?.[hole] ?? -1, week + (f.word === "damage" ? 2 : 1));
+    // A cock far smaller than the hole can't make it sore, whatever the prose said: that soreness
+    // went on her card and the next scene had her wincing again.
+    if ((x.what === "sore" && f.over > -1.5) || f.over > 0) (p.health.sore ??= {})[hole] = Math.max(p.health.sore?.[hole] ?? -1, week + (f.word === "damage" ? 2 : 1));
     if (x.what === "stretched" && f.over > 0 && hole !== "throat") {
       if (hole === "vagina") { p.body.vagina = Math.min(10, (p.body.vagina ?? 0) + 1); p.body.hymen = false; }
       else p.body.anus = Math.min(4, (p.body.anus ?? 0) + 1);

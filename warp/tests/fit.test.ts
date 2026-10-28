@@ -81,3 +81,14 @@ function setup(seed: string, dick: number): { s: SaveState; p: Person } {
     check("forced, the game's own text writes it forced", /force/.test(w.paragraphs.join(" ")) && !/^Thank you/.test(w.said ?? ""), [w.paragraphs.join(" ").slice(0, 200), w.said]);
   } else check("forced anal runs", false, out);
 }
+
+// A tiny cock in a tight pussy is still small to her: no pain, no soreness, and never "tight around it".
+{
+  const { s, p } = setup("fit-tiny", 1);
+  p.body.vagina = 1; p.body.hymen = false;
+  check("a tiny cock in a tight pussy goes in easily", fitOf(p, "vagina", 1, s).word === "easy", fitOf(p, "vagina", 1, s));
+  const card = fitLines(s, p).join(" ");
+  check("and the card says it can't hurt her, and isn't tight around it", /Nothing of yours is a strain for her/.test(card) && /Never write her tight around it/.test(card) && !/write the difficulty/.test(card), card);
+  applyDiff(s, { strain: [{ id: p.id, hole: "vagina", what: "sore" }] } as never, "", "");
+  check("the prose calling her sore from it doesn't make her sore", !(p.health.sore?.vagina !== undefined && p.health.sore.vagina >= s.arcology.week), p.health.sore);
+}

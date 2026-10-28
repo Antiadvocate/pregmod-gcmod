@@ -70,6 +70,17 @@ export function entriesFor(s: SaveState, keys: string[], n = 8): ChronicleEntry[
 }
 
 /** Open threads: hooks nobody has picked up yet, newest first. */
+/** Whether a thread has anything of sex, bodies or kink in it. This is a porn game: a thread about
+ *  a stolen cake, an onion count or a list of grievances is over once it's been played, however
+ *  much it mattered at the time, or it comes back week after week as the one story in the house. */
+const HEAT = /\b(cock|dick|pussy|cunt|clit|ass|asshole|tits|breasts?|nipples?|cum\w*|fuck\w*|suck\w*|lick\w*|throat|blowjob|feet|foot|toes|soles|armpits?|kneel\w*|naked|nude|strip\w*|spank\w*|whip\w*|collar\w*|cage[ds]?|chastity|orgasm\w*|milk\w*|piss\w*|rape\w*|sex\w*|kiss\w*|worship\w*|grop\w*|horny|aroused|edg(e|ed|ing)|rid(e|es|ing)|thighs?|hips|panties|lingerie|moan\w*|erection|hard-on|bondage|cuff\w*|gag\w*|leash\w*|plug|dildo|toys?|bed|lap|mouth|seduc\w*|flirt\w*|jealous\w*|lust\w*|touch\w*|wet)\b/i;
+export const hasHeat = (text: string): boolean => HEAT.test(text);
+
+/** Open threads with something worth playing in them. */
+export function hotHooks(s: SaveState, keys: string[]): ChronicleEntry[] {
+  return openHooks(s, keys).filter((e) => hasHeat(`${e.hook ?? ""} ${e.text}`));
+}
+
 export function openHooks(s: SaveState, keys: string[]): ChronicleEntry[] {
   const want = new Set(keys);
   return chronicleOf(s).filter((e) => e.hook && !e.closed && e.keys.some((k) => want.has(k)) && stillMatters(s, e)).reverse();

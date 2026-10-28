@@ -20,7 +20,7 @@ import { read } from "./obedience";
 import { romanceOf } from "./romance";
 import { lawsOf } from "./court";
 import { LAW_BY_ID } from "../data/laws";
-import { openHooks } from "./chronicle";
+import { hotHooks } from "./chronicle";
 import { comfort, roomOf } from "./rooms";
 import { generateAsk, type Ask } from "./asks";
 import { call, parseJson } from "../llm";
@@ -118,7 +118,7 @@ export function reasonsOf(s: SaveState, p: Person): Reason[] {
   for (const e of done) add("you", `What you did with her this week: ${e.text.slice(0, 200)}`, 2, true);
 
   // Threads left open between you.
-  for (const h of openHooks(s, [p.id]).slice(0, 2)) add("thread", `Left open from week ${h.week}: ${h.hook}`, 2.5);
+  for (const h of hotHooks(s, [p.id]).slice(0, 2)) add("thread", `Left open from week ${h.week}: ${h.hook}`, 2.5);
 
   return out.sort((a, b) => b.weight - a.weight);
 }

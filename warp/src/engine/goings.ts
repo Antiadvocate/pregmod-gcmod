@@ -200,7 +200,7 @@ How to build it:
 - ${NOT_PAPERWORK}
 - This is an adult game and sex is most of what happens between people in it. Something is actually happening, with a shape, and more often than not it's sexual, like a customer who gets rough, a coworker or her boss with his hands on her, a crowd gathering to watch, or a client who wants her for a whole night. Between two of the owner's own women, only what BETWEEN THEM below allows. It can also be a quarrel, a favour, a dare, a secret found out or a competition, but it doesn't have to stay clean. Their fetishes, bodies and what they're into (on their cards) decide what it is. Write the sex as plainly as the rest. It's not a mood and it's not a status report.
 - People act as their place allows. A slave is a slave to the owner (see THE POWER BETWEEN YOU on her card), and outsiders know who the owner is.
-- An outsider in it who has no name yet gets a name and one detail, and goes under "cast".
+- An outsider in it who has no name yet gets a name and one detail, and goes under "cast". The owner's own women are never outsiders and never go under "cast", and an outsider never has the name of one of them. Everyone is eighteen or older.
 - Write one or two short paragraphs in the second person and the present tense, ending where the owner can step in, with their words in their own voices, short and plain.
 
 Then give three or four really different choices for the owner. Two are ways of getting involved, like joining in, taking one of them, making them do it in front of you, taking a side, using it, putting a stop to it, or making it worse. When it's sexual, at least one of those is the owner getting in on it (effect "act" with an act id, "on" the one he takes, or "both"). At least one choice leaves them to it. Each choice has an effect from EFFECT IDS and an "on", which is "main" for the first of the owner's women in THE PEOPLE, "other" for the second if there is one, or "both". The effects that are about the two of them together land on both whatever "on" says.
@@ -261,6 +261,7 @@ export async function generateGoing(s: SaveState, g: Going, snapshot = ""): Prom
     const name = String(c?.name ?? "").trim();
     if (!name || people.some((p) => p.name.split(" ")[0] === name.split(" ")[0])) continue;
     const f = file(s, name.slice(0, 48), String(c.what ?? "").slice(0, 80) || "someone she knows", c.pronoun === "he" ? "he" : "she");
+    if (!f) continue;
     if (c.to_her) tie(f, String(c.to_her), g.main.id);
     note(s, f, partIn(situation, name));
   }

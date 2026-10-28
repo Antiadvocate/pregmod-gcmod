@@ -348,3 +348,15 @@ export function setSpeech(p: Person, text: string): void {
   if (v) { delete v.diction; delete v.syntax; delete v.rhythm; delete v.never_says; delete v.example_lines; }
   delete p.persona.exchanges;
 }
+
+/** Saves from before the editor marked it. The player typed how she talks, but the forge's voice is
+ *  still on her card and says the opposite, like "careful" diction and never any slang under a
+ *  player's "valley girl". The model splits the difference and she comes out a polished speaker,
+ *  so on load the player's words take over, the same as if they'd been typed today. */
+export function claimSpeech(p: Person): void {
+  const v = p.persona.voice;
+  if (p.persona.speech_own || !v) return;
+  const asks = /slang|lingo|valley|teen|year[- ]old|swear|curs|crude|filler|casual/i.test(p.persona.speech_pattern ?? "");
+  const bans = [...(v.never_says ?? []), v.diction ?? "", v.rhythm ?? ""].some((x) => /slang|filler|swear|curse|careful|formal|deliberate/i.test(x));
+  if (asks && bans) setSpeech(p, p.persona.speech_pattern);
+}

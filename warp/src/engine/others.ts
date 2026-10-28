@@ -10,17 +10,23 @@
  */
 import type { SaveState } from "./types";
 import type { Face } from "./faces";
-
-const keyOf = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
+import { adultText, findFace, giveId, keyOf, oneOfOurs } from "./faceid";
 
 /** Put someone on file who the game made rather than a scene (a governor's dock boss), or find
- *  them if they're there. Kept: they belong to something that's still running. */
-export function file(s: SaveState, name: string, what: string, pronoun: "he" | "she" = "she"): Face {
+ *  them if they're there. Kept: they belong to something that's still running. One of the player's
+ *  own is never filed as an outsider: a slave a model cast into another woman's event under her own
+ *  name came back as a stranger with that name, then a stranger running the kitchens, and the real
+ *  woman was a different person from then on. So that's undefined. Another spelling of someone on
+ *  file (a new surname on the same first name) is the same person. */
+export function file(s: SaveState, name: string, what: string, pronoun: "he" | "she" = "she"): Face | undefined {
+  if (oneOfOurs(s, name)) return undefined;
   const all = (s.faces ??= {});
-  const k = keyOf(name);
   const week = s.arcology.week;
-  const f = (all[k] ??= { name, pronoun, age: 30 + (name.length * 7) % 30, first: week, last: week, seen: 0 });
-  f.what ??= what;
+  const had = findFace(s, name);
+  if (had && keyOf(had.name) !== keyOf(name) && !(had.aliases ?? []).some((a) => keyOf(a) === keyOf(name))) had.aliases = [...(had.aliases ?? []), name].slice(-6);
+  const f = had ?? (all[keyOf(name)] = { name, pronoun, age: 30 + (name.length * 7) % 30, first: week, last: week, seen: 0 });
+  giveId(s, f);
+  f.what ??= adultText(what);
   f.kept = true;
   return f;
 }

@@ -899,7 +899,7 @@ export function writeAct(s: SaveState, p: Person, o: ActOutcome, opts?: { lead?:
   const fear = o.stance === "terrified" && !tender ? r.pick(TERRIFIED) : "";
   paras.push(selfContained ? fill(body, w) : [fear, fill(body, w), fill(made ? r.pick(FORCED_LANDED) : react, w)].filter(Boolean).join(" "));
   // How it fit, and what it did to her (engine/fit).
-  const fitWord = o.strain && !(o.strain.fit.hole === "throat" && o.strain.fit.word === "loose") ? FIT_LINE[o.strain.fit.word] : "";
+  const fitWord = o.strain && !(o.strain.fit.hole === "throat" && (o.strain.fit.word === "loose" || o.strain.fit.word === "easy")) ? FIT_LINE[o.strain.fit.word] : "";
   const fit = o.strain ? [fitWord, o.strain.after ? `${cap(o.strain.after)}.` : ""].filter(Boolean).join(" ") : "";
   if (fit) paras.push(fit);
 
@@ -942,6 +942,7 @@ const FORCED_LANDED = ["She hates every second of it, and hates you for it.", "S
 const TERRIFIED = ["She's shaking before you touch her, and she doesn't say no.", "She does exactly what she's told, fast, with her eyes squeezed shut."];
 const FIT_LINE: Record<string, string> = {
   loose: "She's loose around you and barely feels it.",
+  easy: "It slides in easily, and she hardly feels it.",
   fits: "",
   snug: "It's a tight fit, and she feels every inch of it.",
   struggle: "It's too big for her. It takes a long time and a lot of lube to get it in at all, and it hurts her the whole way.",

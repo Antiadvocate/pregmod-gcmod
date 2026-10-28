@@ -77,7 +77,7 @@ import { tickGlobe } from "./globe";
 import { tickWorks } from "./works";
 import { tickGenome, menialResistance } from "./genome";
 import { tickMenials } from "./menials";
-import { pruneFaces, syncStoryCast } from "./faces";
+import { pruneFaces, settleFaces, syncStoryCast } from "./faces";
 import { tickSagas } from "./saga";
 import { modelsAvailable } from "../config";
 import { cityThisWeek } from "./citylife";
@@ -370,6 +370,8 @@ export function endWeek(s: SaveState): WeekReport {
   syncStoryCast(s);
   for (const l of tickSagas(s, modelsAvailable())) push(l, "warning", 11);
   pruneFaces(s);
+  // Whoever a scene filed this week under a second spelling, or as one of the player's own, is folded back.
+  settleFaces(s);
   tickMarks(s);
   ageMoments(s);
   for (const e of tickDeeds(s)) push(e.text, "warning", 8, e.person);
