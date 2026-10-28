@@ -34,6 +34,7 @@ import { findFace, meet } from "./faces";
 import { note, tie } from "./others";
 import { addWays } from "./ways";
 import { RECORD_RULES, soundsLikeAnalysis } from "./style";
+import { hasHeat } from "./chronicle";
 
 export interface Deed {
   id: string;
@@ -275,7 +276,7 @@ export const CONSEQUENCE_SYSTEM = `You read a finished scene from Free Cities, a
  "dealt_with":[{"name":"full name of someone who is NOT the player's slave","fate":"dead|ruined|exiled|jailed|bought","how":"one plain sentence saying who did it and how"}],
  "follow_up":{"weeks":2,"situation":"3-6 sentences in the present tense about a moment that many weeks later which happens BECAUSE of this scene. It isn't a summary of how people feel. It's somebody named, in the room with the player, doing and saying something in their own voice. End where the player has to decide","options":[{"label":"what the player does, 2-8 words","effect":"one EFFECT id","value":"optional"}]}}
 
-In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to their slaves and serve them, so never swap who served whom. Submissive is not subservient. An owner who kneels to her feet, lets her fuck or use him, or gives her his body is bottomed, and he still owns her. owner_submitted is only for handing her authority outside sex. Only tag what actually happened in the scene. The TAGS are about HER, the woman the scene is with, and what the player did to anyone else in the room goes in sold or threatened, never in her tags. owner_enslaved means the player really gave themself to her. A player saying she does NOT own them is the opposite, and is never owner_enslaved. Tag the player's actions, not what they considered. dealt_with is for people outside the household whom the player had killed, ruined, thrown out, locked up or paid off, whether it was done in the scene or ordered and agreed to by someone in it who can do it, like a guard, a governor, the security chief or a slave sent to do it. The owner's orders get carried out, so an order agreed to counts as done. A threat, a wish or a "maybe" is not dealt_with. Empty if none. public is true only if citizens, guests or other slaves saw it or will obviously hear. Write the summary, memory and follow-up in plain crude words (cock, pussy, ass, cum, fuck, piss and so on), and never in euphemisms or flowery phrasing. The follow-up must follow from this scene specifically, and give 3 or 4 different options, with one of them a way to back out.
+In the scene and the player's lines, "you" and "PLAYER" are the owner. Owners here sometimes kneel to their slaves and serve them, so never swap who served whom. Submissive is not subservient. An owner who kneels to her feet, lets her fuck or use him, or gives her his body is bottomed, and he still owns her. owner_submitted is only for handing her authority outside sex. Only tag what actually happened in the scene. The TAGS are about HER, the woman the scene is with, and what the player did to anyone else in the room goes in sold or threatened, never in her tags. owner_enslaved means the player really gave themself to her. A player saying she does NOT own them is the opposite, and is never owner_enslaved. Tag the player's actions, not what they considered. dealt_with is for people outside the household whom the player had killed, ruined, thrown out, locked up or paid off, whether it was done in the scene or ordered and agreed to by someone in it who can do it, like a guard, a governor, the security chief or a slave sent to do it. The owner's orders get carried out, so an order agreed to counts as done. A threat, a wish or a "maybe" is not dealt_with. Empty if none. public is true only if citizens, guests or other slaves saw it or will obviously hear. Write the summary, memory and follow-up in plain crude words (cock, pussy, ass, cum, fuck, piss and so on), and never in euphemisms or flowery phrasing. The follow-up must follow from this scene specifically, and give 3 or 4 different options, with one of them a way to back out. This is a porn game, so the follow-up has a sexual charge: sex, her body, a kink, or power used on someone's body. If nothing sexual could come of this scene, leave follow_up out.
 
 ${RECORD_RULES}
 
@@ -385,7 +386,9 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
     .map((o) => ({ label: String(o.label).slice(0, 70), effect: String(o.effect), value: o.value }));
   // 0 is the next day and comes up now; otherwise a week is a turn, and it waits that long.
   const wait = Number(fu?.weeks);
-  if (fu?.situation && options.length >= 2) deed.follow = { due: s.arcology.week + clamp(Number.isFinite(wait) ? Math.round(wait) : 2, 0, 8), situation: String(fu.situation).slice(0, 900), options };
+  // A follow-up with nothing sexual in it is how a stolen cake became a month of cake: each one was
+  // played, concluded and wrote the next. Only one with heat in it comes back.
+  if (fu?.situation && options.length >= 2 && hasHeat(String(fu.situation))) deed.follow = { due: s.arcology.week + clamp(Number.isFinite(wait) ? Math.round(wait) : 2, 0, 8), situation: String(fu.situation).slice(0, 900), options };
 
   if (offered) deed.collar = "offered";
   applyDeed(s, deed, r.her_memory);

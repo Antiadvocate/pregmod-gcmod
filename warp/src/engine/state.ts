@@ -35,6 +35,7 @@ import { forgetOwnerAsStranger } from "./saga";
 import { allowanceFromMemory } from "./allowance";
 import { settleFaces } from "./faceid";
 import { claimSpeech } from "./voice";
+import { unsoften } from "./soft";
 import { soundsLikeAnalysis } from "./style";
 import { cityOf, cityYield } from "./city";
 
@@ -231,7 +232,7 @@ export function sanitize(raw: SaveState): SaveState {
     for (const r of s.rumors ?? []) if (!r.where) { const d = walks.find((w) => similar(w.summary.replace(/^You /, "the owner "), r.content)); if (d) r.where = d.where ?? "walk"; }
   }
   for (const p of Object.values(s.people)) if (p.status === "owned" || p.status === "indentured") allowanceFromMemory(s, p);
-  for (const p of Object.values(s.people)) claimSpeech(p);
+  for (const p of Object.values(s.people)) { claimSpeech(p); unsoften(s, p); }
   // Records written as analysis ("neither of them pretends…") taught every later scene to talk like
   // that. Old saves have some; they go.
   for (const p of Object.values(s.people)) if (p.ways) p.ways = p.ways.filter((w) => !soundsLikeAnalysis(w.text));

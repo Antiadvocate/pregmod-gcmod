@@ -30,6 +30,8 @@ import { coarsen } from "./register";
 import { cleanList, OWN_LIFE_ASK, OWN_V } from "./ownlife";
 import { surgeryPast } from "./health";
 import { inBed } from "./sexlife";
+import { conscienceLine } from "./prompts";
+import { hardNature, unsoften } from "./soft";
 
 /** Weeks between readings of the same woman. */
 const EVERY = 6;
@@ -80,6 +82,7 @@ Rules that matter most:
 - "tics" is at most two small, believable habits that real people have, like a word from her own language when she swears, what she calls the owner, or a way she laughs, and each is something she does only now and then. Leave it empty if nothing fits, and never use generic fillers like "like", "just", "honestly", "okay" or "I mean".
 - Her body is fact. Where a memory says something her body couldn't have done, such as taking a cock that's far too big for her throat all the way down, the body wins. It went as far as it physically could, and that's who she is and what she remembers.
 - IN BED is fact. Her core traits, voice and agenda must have room for it and say how it comes out, because a quiet, careful or obedient woman can be a dom or a sadist in bed. Write the contrast, and never write it away.
+- HER NATURE IS FIXED. Her fetishes, her paraphilia and her conscience are the game's, and scenes don't change them. The writer of those scenes sometimes went soft on her, having a sadist stop to check whether he could take it, an abuser pull out because he begged, or a cold woman go pink and apologise. That was the writer's slip, not who she is. Never write checking in, stopping when asked, gentleness, aftercare or apologies into her traits, history or signature when her nature says otherwise.
 - What's done is done. An operation, a punishment, a promise or a scene that already happened is in her past. It can have changed her, but she doesn't count the days since it, wait for it, or bring it up every time she talks. DONE TO HER BODY and the weeks on everything tell you what's over.
 - She has a life of her own besides the owner and what's been done to her. This is a porn game, so it has a sexual edge, and it grows out of her personality traits first, then her fetishes, then the job she had. "interests": ${OWN_LIFE_ASK.interests}. "goals": ${OWN_LIFE_ASK.goals}. Keep the ones on her card that still fit, and change what her weeks here would have changed.
 - "exchanges" is three short, ordinary exchanges with the owner, the kind that happen every day, in the relationship they actually have. THE POWER BETWEEN THEM and her STANDING ORDERS decide how she speaks to him. The owner says something ordinary ("How are you?", "Come here.", "What do you think of the new room?") and she answers in one to three plain sentences, as herself. These set the length and plainness of how she talks, so keep them short and natural.
@@ -112,6 +115,7 @@ function brief(s: SaveState, p: Person): string {
     `## HER BODY NOW\n${p.body.appearance_facts} ${featureFacts(p)}\nBetween her legs: ${describeGenitals(p)}\nHer feet: ${describeFeet(p)}${p.body.traits?.length ? `\nWhat's been altered: ${p.body.traits.join(", ")}` : ""}`,
     surgeryPast(s, p, 999) ? `## DONE TO HER BODY\nThis is over and in the past.\n${surgeryPast(s, p, 999)}` : "",
     `## HER OWN LIFE, AS HER CARD HAS IT NOW\nWhat she does with her time is ${(p.persona.interests ?? []).join(", ") || "nothing written yet"}.\nWhat she wants in the long run is ${(p.persona.goals ?? []).join(", ") || "nothing written yet"}.\nShe ${p.persona.texture.join(", and she ")}.\nShe works as ${p.assignment}. Before she was taken, she was ${p.origin.career}.`,
+    hardNature(s, p) ? `## HER NATURE, WHICH IS FIXED\n${[bed, conscienceLine(p)].filter(Boolean).join("\n")}\nWhatever the memories below say, she is this. Gentleness in them was the writer's, not hers.` : "",
     `## WHERE SHE STANDS WITH THE OWNER (week ${s.arcology.week})\nShe stands as ${rom.standing}. Toward the owner she's ${r.label}, ${r.trust_label}.${bed ? `\nIN BED, which is a fact: ${bed}` : ""}\n${powerBetween(s, p)}`,
     agreementsBrief(s, p),
     mannerLines(p).length ? `## HOW SHE IS WITH OTHER PEOPLE\n${mannerLines(p).join("\n")}` : "",
@@ -159,7 +163,8 @@ export async function growPersona(s: SaveState, p: Person, signal?: AbortSignal)
     syntax: clip(out.voice.syntax, 300) || live.persona.voice?.syntax,
     rhythm: clip(out.voice.rhythm, 300) || live.persona.voice?.rhythm,
     tics: list(out.voice.tics, 2, 160),
-    never_says: list(out.voice.never_says, 4, 80),
+    // The player set how she talks: a list of words she never says can only argue with it.
+    never_says: live.persona.speech_own ? [] : list(out.voice.never_says, 4, 80),
     agenda: clip(out.voice.agenda, 200) || live.persona.voice?.agenda,
     // The old example lines go: the exchanges below show her voice at the length it should run.
     example_lines: list(out.voice.example_lines, 3, 240),
@@ -175,6 +180,7 @@ export async function growPersona(s: SaveState, p: Person, signal?: AbortSignal)
   if (does.length && wants.length) live.persona.own_v = OWN_V;
   live.persona.life_history = clip(out.life_history, 1200);
   if (out.signature) live.persona.signature = clip(out.signature, 240);
+  unsoften(s, live);
   live.persona.grown_week = s.arcology.week;
   live.persona.grown_v = GROW_V;
   return true;

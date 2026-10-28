@@ -64,7 +64,7 @@ export interface Face {
 }
 
 
-import { keyOf, facesOf, findFace, giveId, oneOfOurs } from "./faceid";
+import { adultText, keyOf, facesOf, findFace, giveId, oneOfOurs } from "./faceid";
 export { keyOf, facesOf, findFace, faceKey, settleFaces } from "./faceid";
 
 const NATION_NAMES = NATIONS.map((n) => n.name);
@@ -122,8 +122,8 @@ export function meet(s: SaveState, o: Partial<Face> & { name: string }): Face | 
     return had;
   }
   const f: Face = {
-    name, pronoun: o.pronoun ?? "she", age: o.age ?? 35,
-    nation: o.nation, skin: o.skin, hair: o.hair, hair_style: o.hair_style, eyes: o.eyes, detail: o.detail, short: o.short, role: o.role,
+    name, pronoun: o.pronoun ?? "she", age: Math.max(18, o.age ?? 35),
+    nation: o.nation, skin: o.skin, hair: o.hair, hair_style: o.hair_style, eyes: o.eyes, detail: o.detail && adultText(o.detail), short: o.short, role: o.role,
     first: week, last: week, seen: 1,
   };
   all[k] = f;

@@ -56,25 +56,50 @@ export const faceKey = (s: SaveState, f: Face): string => Object.entries(facesOf
 export function oneOfOurs(s: SaveState, name: string): boolean {
   const k = keyOf(name), fn = firstOf(name);
   const ppl = Object.values(s.people);
-  if (ppl.some((p) => keyOf(p.name) === k)) return true;
+  // A woman's name and surname are kept apart ("Élise", "Girard"), and a scene uses both.
+  if (ppl.some((p) => keyOf(p.name) === k || (p.surname && keyOf(`${p.name} ${p.surname}`) === k))) return true;
   return k === fn && ppl.filter((p) => firstOf(p.name) === fn).length === 1;
+}
+
+/** A model now and then gives a background character a child's age ("scullery slave, seventeen").
+ *  Everyone in this game is an adult, so the age in a description is never under eighteen. */
+export function adultText(text: string): string {
+  return text
+    .replace(/\b(ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)(-year-old| years old)?\b/gi, (_m, _n, tail) => `nineteen${tail ?? ""}`)
+    .replace(/\b(1[0-7])(-year-old| years old|yo)\b/gi, (_m, _n, tail) => `19${tail}`)
+    .replace(/,\s*(1[0-7])\s*(,|$)/g, ", 19$2");
 }
 
 /** Old saves: give every face an id, and fold records that are one person under two spellings
  *  ("Yvette", "Yvette Charron", "Yvette Dubois") into one. The one with a fate wins (the dead stay
- *  dead), then the one the story or the player kept, then the most seen. Two story roles with the
- *  same first name are left alone: the story meant two people. References to the folded keys are
+ *  dead), then the one the story or the player kept, then the most seen. Records with different
+ *  story roles, or a role and none, are left alone: the story meant two people. References to the folded keys are
  *  moved over: sagas, the chronicle. */
 export function settleFaces(s: SaveState): void {
   const all = s.faces;
   if (!all) return;
-  for (const f of Object.values(all)) giveId(s, f);
+  // One of the player's own filed as an outsider is the same woman twice, and the copy drifts: it
+  // got its own job, its own ties and its own fate. The woman in the house is the real one.
+  const gone = new Set<string>();
+  for (const [k, f] of Object.entries(all)) if (oneOfOurs(s, f.name)) { delete all[k]; gone.add(k); }
+  if (gone.size) {
+    for (const x of s.sagas?.list ?? []) { for (const c of x.cast) if (c.face && gone.has(c.face)) delete c.face; if (x.seed?.faces) x.seed.faces = x.seed.faces.filter((k) => !gone.has(k)); }
+    for (const e of s.chronicle ?? []) e.keys = e.keys.filter((k) => !(k.startsWith("face:") && gone.has(k.slice(5))));
+  }
+  for (const f of Object.values(all)) {
+    giveId(s, f);
+    if (f.what) f.what = adultText(f.what);
+    if (f.detail) f.detail = adultText(f.detail);
+    if (f.age < 18) f.age = 19;
+  }
   const groups = new Map<string, string[]>();
   for (const k of Object.keys(all)) { const fn = firstOf(all[k].name); if (fn.length >= 3) groups.set(fn, [...(groups.get(fn) ?? []), k]); }
   const moved = new Map<string, string>();
   for (const keys of groups.values()) {
     if (keys.length < 2) continue;
-    const roles = new Set(keys.map((k) => all[k].role).filter(Boolean));
+    // A story role is a fixed character: a guard who shares a first name with the rival owner is
+    // somebody else. Only records with the same role, or none, are one person.
+    const roles = new Set(keys.map((k) => all[k].role ?? ""));
     if (roles.size > 1) continue;
     const rank = (f: Face) => (f.fate ? 1000 : 0) + (f.role || f.kept ? 100 : 0) + f.seen + f.name.split(" ").length * 0.1;
     const [main, ...rest] = [...keys].sort((a, b) => rank(all[b]) - rank(all[a]));

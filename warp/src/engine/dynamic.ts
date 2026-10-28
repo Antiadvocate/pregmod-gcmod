@@ -41,7 +41,7 @@ import { describeGenitals, describeFeet, anatomyLock } from "./genitals";
 import { worldBrief } from "./world";
 import { HOUSE_STYLE } from "./prompts";
 import { PLAIN_RULES } from "./style";
-import { chronicle, chronicleBrief, closeHooks, openHooks } from "./chronicle";
+import { chronicle, chronicleBrief, closeHooks, hotHooks, openHooks } from "./chronicle";
 import { changeRoom, roomLine, roomWish } from "./rooms";
 import { EXTRA_BY_ID } from "../data/rooms";
 import { lockUp } from "./governor";
@@ -164,6 +164,8 @@ export const SYSTEM = `You write one event for Free Cities, an adult text game a
 
 Build it from her record, meaning her fetish, her flaw, her job, her body, her room, what has been done to her, what she remembers, how she feels about you, and above all WHAT HAS ALREADY HAPPENED between you. Emergent story is the point. The best event is the next step of something already on her record, like a promise you made, a punishment she hasn't got over, or something left open, with consequences that follow from it. If OPEN THREADS are listed, continue one of them. It should be something that could only happen with her, this week.
 
+This is a porn game, and every event has a sexual charge: her body, sex, a kink, desire, or power used on someone's body. A thread with no sex in it, like stolen food, a count that's short, a list or a quarrel about chores, is finished. Don't continue it. If her record only has threads like that, start something sexual from her fetishes, body and nature instead.
+
 ${HOUSE_STYLE}
 
 Do not invent people who are not on the record, except strangers with no name. Everyone is an adult.
@@ -185,7 +187,7 @@ export async function generateDynamicEvent(s: SaveState, subject?: Person, hint 
   const p = subject ?? pickSubject(s);
   if (!p) return null;
 
-  const hooks = openHooks(s, [p.id]).slice(0, 3);
+  const hooks = hotHooks(s, [p.id]).slice(0, 3);
   const around = [cityPicture(s), aroundBrief(s)].filter(Boolean).join("\n\n");
   const res = await call({
     system: SYSTEM,

@@ -21,6 +21,7 @@ import { obeysLine } from "./compliance";
 import { characterLines } from "./character";
 import { desireLines, skillsLine } from "./sexlife";
 import { bossyReach, natureLines } from "./nature";
+import { SOFT, hardNature } from "./soft";
 import { fitLines, herFitLine } from "./fit";
 import { surgeryPast } from "./health";
 import { purseLine } from "./allowance";
@@ -140,7 +141,7 @@ export function breastsLine(p: Person): string {
  *  coldness, not brokenness, and it shows in small things as much as big ones. */
 export function conscienceLine(p: Person): string {
   const c = p.persona.conscience ?? 0.5;
-  if (c <= 0.3) return `CONSCIENCE, which is low. Other people's pain and feelings barely register with her. She lies easily, takes what she wants, hurts people without guilt and is puzzled or bored when they're upset. It shows in small callous things all day, like a joke at the wrong moment, not looking up when someone cries, or using someone and forgetting them, as much as in anything cruel.`;
+  if (c <= 0.3) return `CONSCIENCE, which is low, and it makes her a prick. Other people's pain and feelings barely register with her, the owner's included. She's selfish, mocking and careless with people, lies easily, takes what she wants, hurts people without guilt, and is bored or amused when they're upset. She doesn't check on anyone, apologise, go soft or stop because someone's hurting unless it gets her something. It shows in small callous things all day, like a joke at the wrong moment, not looking up when someone cries, or using someone and forgetting them, as much as in anything cruel.`;
   if (c >= 0.8) return `CONSCIENCE, which is strong. Other people's suffering weighs on her. She notices who's hurt, feels guilty easily, and finds cruelty hard to watch, let alone do.`;
   return "";
 }
@@ -263,6 +264,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (power) lines.push(power);
   const ordersTop = agreementsBrief(s, p);
   if (ordersTop) lines.push(ordersTop);
+  const cold = conscienceLine(p);
+  if (cold) lines.push(cold);
   const now = p.body.appearance_now && !/^wearing\b/i.test(p.body.appearance_now) ? `Right now: ${p.body.appearance_now}. ` : "";
   lines.push(`BODY: ${p.body.appearance_facts} ${now}Wearing ${p.clothes}.`);
   lines.push(`GENITALS (canon—never contradict): ${describeGenitals(p)}`);
@@ -283,8 +286,6 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (money) lines.push(money);
   lines.push(`PAST LIFE: ${p.origin.career}; ${p.origin.background}`);
   lines.push(`PERSONALITY: ${p.persona.core_traits.join("; ")}`);
-  const cold = conscienceLine(p);
-  if (cold) lines.push(cold);
   const v = p.persona.voice;
   lines.push(p.persona.speech_own
     ? `SPEECH STYLE: ${p.persona.speech_pattern}. The player set this, so it's exactly how she talks, and it wins over anything else here about her voice and over the general advice on filler words.`
@@ -297,7 +298,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   const talk = (p.persona.exchanges ?? []).filter((x) => meekOff(x.her));
   if (talk.length) lines.push(`SAMPLE EXCHANGE (match this natural length and tone for casual talk, but do not reuse these exact lines):\n${talk.map((x) => `You: "${x.you}"\n${p.name.split(" ")[0]}: "${x.her}"`).join("\n")}`);
   else if (v?.example_lines?.filter(meekOff).length) lines.push(`VOICE SAMPLES (for tone reference only—do not repeat verbatim, and always defer to THE POWER BETWEEN YOU for how she addresses you): ${v.example_lines.filter(meekOff).slice(0, 3).map((l) => `"${l}"`).join(" / ")}`);
-  if (p.persona.voice?.never_says?.length) lines.push(`PHRASES SHE NEVER USES: ${p.persona.voice.never_says.join("; ")}`);
+  if (p.persona.voice?.never_says?.length && !p.persona.speech_own) lines.push(`PHRASES SHE NEVER USES: ${p.persona.voice.never_says.join("; ")}`);
   // Express relationship metrics as descriptive words so the model doesn't parrot raw numbers in dialogue.
   if (s.player.owned_by === p.id) lines.push(`HOW SHE FEELS ABOUT YOU: ${r.trust_label}${r.devotion > 40 ? ", and genuinely attached to you" : r.devotion < -15 ? ", and holds no affection for you" : ""}. Note that this is her internal feeling—how she actually treats you is governed by HOW SHE KEEPS YOU, so attachment doesn't automatically make her gentle unless stated there.`);
   else lines.push(`ATTITUDE TOWARD YOU: ${r.label}, ${r.trust_label}.${r.fragility > 0.6 ? " Most of her obedience comes from fear." : ""} This is how attached she is and how safe she feels with you, not how she behaves. It never makes her sweet or gentle by itself. A devoted sadist is still a sadist, and she's cruel to the one she loves, because that's how she loves. How she treats you comes from her nature (HER NATURE, IN BED and THE POWER BETWEEN YOU), and her devotion decides how much of it is aimed at you.`);
@@ -325,7 +326,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (ways) lines.push(ways);
   const manner = mannerBrief(s, p);
   if (manner) lines.push(manner);
-  if (between) lines.push(`SHARED HISTORY (events from previous weeks that are over now, though she still remembers them):\n${between}`);
+  if (between) lines.push(`SHARED HISTORY (events from previous weeks that are over now, though she still remembers them):\n${between}${hardNature(s, p) && SOFT.test(between) ? "\nWhere this has her going soft, checking in, apologising or stopping because he asked, those were off nights. They aren't who she is, and she doesn't do them again." : ""}`);
   if (s.player.owned_by === p.id) lines.push(reignCard(s, p) || `SHE OWNS YOU: You willingly gave yourself to her. She holds your collar and acts like your owner.`);
   else if (s.reign && theKeeper(s) && s.reign.keeper !== p.id) lines.push(householdUnderHer(s, p));
   const others = othersBrief(s, p);
