@@ -80,14 +80,14 @@ const NATURE: Record<string, Nature> = {
   "tribute junkie": { is: "She needs to be paid. Gifts, money and tribute handed over because she said so are what she lives for, and she asks for them all the time.", aim: "demanding money or a gift from you and expecting it handed over" },
   // sexual quirks, as a manner
   "gagfuck queen": { is: "She's tough and proud of it, and she likes rough play." },
-  "painal queen": { is: "She's tough and likes things rough, and she says so." },
+  "painal queen": { is: "She's tough and likes things rough." },
   "strugglefuck queen": { is: "She's a fighter. She wrestles, squirms out of grips and likes being caught.", aim: "picking a play-fight with you so you'll pin her" },
   tease: { is: "She's a tease all day. She flirts, withholds, makes people wait and enjoys it.", aim: "teasing you, getting close and pulling away" },
   romantic: { is: "She's a romantic. She wants affection, small gestures and being chosen, and she notices when they're missing." },
   perverted: { is: "She's curious and shameless. She talks about sex like the weather and suggests things nobody asked for." },
   caring: { is: "She looks after people. She notices who's tired or hurt and fusses over them." },
-  unflinching: { is: "Nothing shocks her. She takes things in stride and says so." },
-  "size queen": { is: "She notices size in everything, and she says so out loud." },
+  unflinching: { is: "Nothing shocks her. She takes things in stride." },
+  "size queen": { is: "She notices size in everything, and comments on it." },
   "throne queen": { is: "She likes being above people, on the high seat or the edge of the table.", aim: "settling herself on your face whenever you lie back" },
   "scent proud": { is: "She's proud of how she smells after work and doesn't hide it." },
   "edge queen": { is: "She likes making people wait. She stretches things out, stops just short, and enjoys the asking.", aim: "keeping you on edge and stopping a second before" },
@@ -156,5 +156,5 @@ export function natureLines(s: SaveState, p: Person): string[] {
   if (q && QUIRK_BY_ID[q.id]) add(q.id, `HER NATURE (${q.id})`, 65, !!q.known);
   const fl = p.persona.flaw;
   if (fl && FLAW_BY_ID[fl.id]) add(fl.id, `HER NATURE (${fl.id})`, Math.max(30, 65 - (fl.worn ?? 0) / 2), !!fl.known);
-  return out;
+  return out.length ? ["HER NATURE, below, is for you to show in what she does, wants and reaches for. She never names it, explains it or talks about it as a trait of hers.", ...out] : out;
 }

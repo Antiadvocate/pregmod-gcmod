@@ -41,5 +41,5 @@ export function setWays(s: SaveState, p: Person, lines: string[]): void {
 export function waysBrief(p: Person): string {
   const list = p.ways ?? [];
   if (!list.length) return "";
-  return `HOW YOU TWO DO THINGS. These were settled between you over many scenes. Every scene keeps to them unless the player changes them in this one, and nobody acts like they're new:\n${list.map((w) => `· ${w.text}`).join("\n")}`;
+  return `HOW YOU TWO DO THINGS. These were settled between you over many scenes. Every scene keeps to them unless the player changes them in this one, and nobody acts like they're new. They're how things go between you, so show them happening. Nobody recites them or says "you always…":\n${list.map((w) => `· ${w.text}`).join("\n")}`;
 }
