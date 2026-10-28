@@ -76,6 +76,10 @@ export function selfProfile(s: SaveState): string[] {
   const freed = Object.values(s.people).filter((p) => p.status === "free" && p.free_life).length;
   if (freed) lines.push(`They have freed ${freed} of their slaves.`);
   lines.push(`Their household sees them as ${s.player.household_read?.label ?? "nobody in particular"}.`);
+  // Ruling by fear works, and this is what it costs.
+  const mine = owned(s);
+  const scared = mine.filter((p) => { const r = read(p, s.memory[p.id]); return r.fragility > 0.6 && p.bond.fear >= 40; });
+  if (mine.length >= 2 && scared.length * 2 >= mine.length) lines.push(`Their house runs on fear: ${scared.length} of ${mine.length} are afraid of them. It's obedient and quiet. Nobody steps out of line, nobody surprises them, nobody seeks them out or tells them anything they didn't ask for, and every woman in it is the same woman around them.`);
   const beliefs = Object.entries(s.arcology.doctrines as Record<string, { adoption: number }>).filter(([, d]) => d.adoption >= 30).sort((a, b) => b[1].adoption - a[1].adoption).slice(0, 3).map(([id]) => DOCTRINE_BY_ID[id]?.noun ?? id);
   if (beliefs.length) lines.push(`They have built their city on ${beliefs.join(", ")}.`);
   const words = ownWords(s);

@@ -238,12 +238,25 @@ export function npcEffect(s: SaveState, effect: string, value: string | undefine
     case "rumor": startRumor(s, String(value ?? seed.slice(0, 120))); return "Everyone's heard about it by morning.";
     case "promise_kept": s.arcology.rep += 250; std(1); startRumor(s, `the owner kept their word to ${who}`, { salience: 6, charge: 1 }); return `You kept your word to ${who}, and people hear about it. (+250 reputation)`;
     case "promise_broken": s.arcology.rep = Math.max(0, s.arcology.rep - 300); std(-1); startRumor(s, `the owner went back on their word to ${who}`, { salience: 7, charge: -1 }); return `You went back on your word to ${who}. It gets around. (−300 reputation)`;
-    case "kindness": case "recognition": s.arcology.rep += 120; std(0.5); return `${who} won't forget how you treated them. (+120 reputation)`;
-    case "cruelty": case "coercion": s.arcology.rep = Math.max(0, s.arcology.rep - 100); s.arcology.crime = clamp(s.arcology.crime - 1, 0, 100); return `${who} learns what crossing you costs. People are a little more careful around you.`;
+    // What the city thinks of it is the city's culture, not a rule that kindness always pays: a cruel
+    // city respects cruelty and sneers at softness, a gentle one the other way round.
+    case "kindness": case "recognition": {
+      const n = Math.round(40 - 120 * cityCruelty(s));
+      s.arcology.rep = Math.max(0, s.arcology.rep + n); std(0.5);
+      return `${who} won't forget how you treated them.${n ? ` (${n > 0 ? "+" : ""}${n} reputation${n < 0 ? ": people here take it for softness" : ""})` : ""}`;
+    }
+    case "cruelty": case "coercion": {
+      const n = Math.round(40 + 120 * cityCruelty(s));
+      s.arcology.rep = Math.max(0, s.arcology.rep + n); s.arcology.crime = clamp(s.arcology.crime - 1, 0, 100);
+      return `${who} learns what crossing you costs. People are a little more careful around you.${n ? ` (${n > 0 ? "+" : ""}${n} reputation${n < 0 ? ": people here think it beneath you" : ""})` : ""}`;
+    }
     case "nothing": return "You let it go.";
     default: return `You deal with ${who} and it's done.`;
   }
 }
+
+/** How cruel the city's culture is, −1 (gentle) to 1 (cruel). */
+const cityCruelty = (s: SaveState): number => clamp((s.culture?.norms?.cruelty ?? 10) / 100, -1, 1);
 
 export function resolveDynamic(s: SaveState, e: PendingEvent, optionId: string): string {
   const p = e.person ? s.people[e.person] : undefined;

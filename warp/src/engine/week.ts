@@ -55,7 +55,7 @@ import { rollMarkets, recruitResult } from "./market";
 import { rng } from "./rng";
 import { runHeadGirl, runManager, type ManagerEffect } from "./managers";
 import { tickPolicies } from "./policies";
-import { tickSecurity, unrest, unrestLine } from "./security";
+import { heldDown, tickSecurity, unrest, unrestLine } from "./security";
 import { GARMENT_BY_NAME } from "../data/wardrobe";
 import { refreshPlayer, practise, skill, tickTraining } from "./player";
 import { tickAllowance } from "./allowance";
@@ -272,7 +272,7 @@ export function endWeek(s: SaveState): WeekReport {
     const pay = tickAllowance(s, p);
     if (pay.paid) led.spend("allowance", `${p.name}'s allowance`, pay.paid, p.id);
     for (const l of pay.lines) push(l.text, l.tone, 4, p.id);
-    tickBond(p);
+    tickBond(p, heldDown(s));
     lines.push(...tickRomance(s, p));
     refresh(p, mem);
 
