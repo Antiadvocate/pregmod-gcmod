@@ -20,7 +20,7 @@ import { rulesLine } from "./houserules";
 import { obeysLine } from "./compliance";
 import { characterLines } from "./character";
 import { desireLines, skillsLine } from "./sexlife";
-import { natureLines } from "./nature";
+import { bossyReach, natureLines } from "./nature";
 import { fitLines, herFitLine } from "./fit";
 import { surgeryPast } from "./health";
 import { purseLine } from "./allowance";
@@ -107,6 +107,17 @@ WHAT TO AVOID:
 - Meta/game terminology or therapy-speak. All the mechanics in the prompt (cards, stats, devotion, trust, dominion, standing orders, edges) are background notes for you, never vocabulary for the characters. Nobody in the story talks about their "devotion," "trust levels," "dominion," or "standing orders," and nobody talks like a therapist ("it's a lot to hold," "I'm processing this," "I need you to know where I stand," "this changes the terms"). Real people express their wants and feelings imperfectly—sometimes clumsily, sometimes bluntly, and sometimes by saying nothing at all.
 
 ${PLAIN_RULES}`;
+
+/** A young woman sounds young. The general rule says so, but a card full of careful diction outvotes
+ *  a general rule, so it's said on her card, where it's about her. */
+export function youthLine(p: Person): string {
+  if (p.age > 22) return "";
+  return `HER AGE IN HER MOUTH. She's ${p.age}, and she sounds it. Whatever her style above, it's a ${p.age}-year-old's version of it: everyday words, short bursts and run-ons, and nothing polished. She doesn't have the vocabulary or the distance for a well-made line, a metaphor, or a speech about what the two of you are. Upset, she's messy and blunt, not eloquent.`;
+}
+
+/** Sample lines the forge wrote for a meek new slave. Under a woman whose nature puts her on top of
+ *  the owner they teach the model the wrong woman, so the card leaves them out. */
+const MEEK = /\b(yes|sorry|please),? (master|mistress|sir)\b|p-please|i'm sorry|if you want|i didn't mean to|eyes on the floor|stops an arm's length/i;
 
 /**
  * Lists everyone currently owned or indentured in the household so the model doesn't invent
@@ -278,10 +289,14 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(p.persona.speech_own
     ? `SPEECH STYLE: ${p.persona.speech_pattern}. The player set this, so it's exactly how she talks, and it wins over anything else here about her voice and over the general advice on filler words.`
     : `SPEECH STYLE: ${p.persona.speech_pattern}${v?.diction ? `. ${v.diction}` : ""}${v?.rhythm ? ` ${v.rhythm}` : ""} If anything below about her voice disagrees with the first part of this, the first part wins.`);
+  const young = youthLine(p);
+  if (young) lines.push(young);
+  const bossy = bossyReach(s, p);
+  const meekOff = (x: string) => !((bossy === "takes" || bossy === "slips") && MEEK.test(x));
   if (v?.tics?.length) lines.push(`OCCASIONAL HABITS (use sparingly—never in every reply, and at most once per scene): ${v.tics.join("; ")}.`);
-  const talk = p.persona.exchanges ?? [];
+  const talk = (p.persona.exchanges ?? []).filter((x) => meekOff(x.her));
   if (talk.length) lines.push(`SAMPLE EXCHANGE (match this natural length and tone for casual talk, but do not reuse these exact lines):\n${talk.map((x) => `You: "${x.you}"\n${p.name.split(" ")[0]}: "${x.her}"`).join("\n")}`);
-  else if (v?.example_lines?.length) lines.push(`VOICE SAMPLES (for tone reference only—do not repeat verbatim, and always defer to THE POWER BETWEEN YOU for how she addresses you): ${v.example_lines.slice(0, 3).map((l) => `"${l}"`).join(" / ")}`);
+  else if (v?.example_lines?.filter(meekOff).length) lines.push(`VOICE SAMPLES (for tone reference only—do not repeat verbatim, and always defer to THE POWER BETWEEN YOU for how she addresses you): ${v.example_lines.filter(meekOff).slice(0, 3).map((l) => `"${l}"`).join(" / ")}`);
   if (p.persona.voice?.never_says?.length) lines.push(`PHRASES SHE NEVER USES: ${p.persona.voice.never_says.join("; ")}`);
   // Express relationship metrics as descriptive words so the model doesn't parrot raw numbers in dialogue.
   if (s.player.owned_by === p.id) lines.push(`HOW SHE FEELS ABOUT YOU: ${r.trust_label}${r.devotion > 40 ? ", and genuinely attached to you" : r.devotion < -15 ? ", and holds no affection for you" : ""}. Note that this is her internal feeling—how she actually treats you is governed by HOW SHE KEEPS YOU, so attachment doesn't automatically make her gentle unless stated there.`);

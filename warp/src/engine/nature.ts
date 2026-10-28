@@ -109,7 +109,20 @@ const NATURE: Record<string, Nature> = {
   prissy: { is: "She's prissy and delicate, and doesn't like getting her hands dirty." },
 };
 
-type Reach = "held" | "kept" | "slips" | "takes";
+export type Reach = "held" | "kept" | "slips" | "takes";
+
+/** The kinks and needs that put her on top of someone. */
+export const DOMINANT = new Set(["dom", "sadist", "abusive", "malicious", "facesitting", "pegging", "keyholder", "ballbusting", "sph", "cuckoldress", "goddess", "furniture", "spit", "findom",
+  "throne", "humiliatrix", "keyholder for life", "cuckqueen", "goddess complex", "tribute junkie"]);
+
+/** How strong her dominant streak is: the strongest dominant fetish, or a paraphilia, which is a need. */
+export const dominantStrength = (p: Person): number => Math.max(DOMINANT.has(p.persona.paraphilia ?? "") ? 100 : 0, ...p.persona.fetishes.filter((f) => DOMINANT.has(f.name)).map((f) => f.strength));
+
+/** How far her dominant streak reaches the owner, or null if she hasn't got one worth the name. */
+export function bossyReach(s: SaveState, p: Person): Reach | null {
+  const strength = dominantStrength(p);
+  return strength >= 30 ? reachOf(s, p, strength) : null;
+}
 
 /** How far it reaches the owner, by the game's rules, not the model's. */
 export function reachOf(s: SaveState, p: Person, strength: number): Reach {
@@ -150,11 +163,15 @@ export function natureLines(s: SaveState, p: Person): string[] {
     const reach = n.aim ? ` ${reachLine(reachOf(s, p, strength), n.aim, allowed)}` : "";
     out.push(`${label}. ${how}. ${n.is}${reach}${known ? "" : " The owner doesn't know this about her yet, so show it and never name it."}`);
   };
+  const bossy = bossyReach(s, p);
+  const onTop = bossy === "takes" || bossy === "slips";
   for (const f of p.persona.fetishes) if (f.name !== "none" && FETISH_BY_ID[f.name]) add(f.name, `HER NATURE (${FETISH_BY_ID[f.name].name})`, f.strength, !!f.known);
   if (p.persona.paraphilia) add(p.persona.paraphilia, `HER NATURE (${p.persona.paraphilia}, a need)`, 100, true);
   const q = p.persona.quirk;
   if (q && QUIRK_BY_ID[q.id]) add(q.id, `HER NATURE (${q.id})`, 65, !!q.known);
+  if (q?.id === "romantic" && onTop && out.at(-1)?.startsWith("HER NATURE (romantic)")) out[out.length - 1] += " With a nature like hers it comes out as possession. Being chosen means he's hers, and jealousy makes her claim him harder and rougher. It doesn't make her soft, tearful or kneeling.";
   const fl = p.persona.flaw;
   if (fl && FLAW_BY_ID[fl.id]) add(fl.id, `HER NATURE (${fl.id})`, Math.max(30, 65 - (fl.worn ?? 0) / 2), !!fl.known);
+  if (onTop && out.length) out.push("IF HE ASKS FOR IT. If he asks her to force him, use him, hurt him or rape him, or dares her to, he's offering her what her nature wants. She takes it, there and then, her way. She doesn't make him ask properly, doesn't turn it into a talk about how he asked or what it means, and doesn't refuse to make a point. If she's angry or jealous, it shows in how rough she is.");
   return out.length ? ["HER NATURE, below, is for you to show in what she does, wants and reaches for. She never names it, explains it or talks about it as a trait of hers.", ...out] : out;
 }

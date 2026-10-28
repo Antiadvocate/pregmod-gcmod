@@ -24,7 +24,7 @@ import { FETISH_BY_ID, FLAW_BY_ID, QUIRK_BY_ID, ACT_BY_ID, fetishBand } from "..
 import { clamp, shove } from "./psyche";
 import { obeys, type Stance } from "./compliance";
 import { forcedAllowed, slaveSex } from "./houserules";
-import { reachOf } from "./nature";
+import { DOMINANT, dominantStrength, reachOf } from "./nature";
 
 const SKILL_WORD = (n: number) => (n >= 100 ? "masterful" : n > 60 ? "expert" : n > 30 ? "skilled" : n > 10 ? "basic" : "untrained");
 
@@ -108,8 +108,6 @@ const PARAPHILIA_SHOWS: Record<string, string> = {
   "tribute junkie": "she needs to be paid, with tribute, gifts and money handed over because she said so. It's what she thinks about, and it's what she comes from",
 };
 
-const DOMINANT = new Set(["dom", "sadist", "abusive", "malicious", "facesitting", "pegging", "keyholder", "ballbusting", "sph", "cuckoldress", "goddess", "furniture", "spit", "findom",
-  "throne", "humiliatrix", "keyholder for life", "cuckqueen", "goddess complex", "tribute junkie"]);
 /** The paraphilias that need a victim rather than a partner. */
 const ABUSIVE = new Set(["abusive", "malicious"]);
 
@@ -118,9 +116,6 @@ const ABUSIVE = new Set(["abusive", "malicious"]);
 export function dominantInBed(p: Person): boolean {
   return p.persona.fetishes.some((f) => DOMINANT.has(f.name) && f.strength >= 30) || DOMINANT.has(p.persona.paraphilia ?? "");
 }
-
-/** How strong her dominant streak is: the strongest dominant fetish, or a paraphilia, which is a need. */
-const dominantStrength = (p: Person): number => Math.max(DOMINANT.has(p.persona.paraphilia ?? "") ? 100 : 0, ...p.persona.fetishes.filter((f) => DOMINANT.has(f.name)).map((f) => f.strength));
 
 /** A devoted woman with a dominant streak: devotion isn't softness. How far it reaches the owner is
  *  engine/nature's call (strength against ease, trust, fear and room), the same as on HER NATURE,
