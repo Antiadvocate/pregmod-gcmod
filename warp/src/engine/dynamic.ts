@@ -43,6 +43,7 @@ import { HOUSE_STYLE } from "./prompts";
 import { PLAIN_RULES } from "./style";
 import { chronicle, chronicleBrief, closeHooks, hotHooks, openHooks } from "./chronicle";
 import { isBanned } from "./bans";
+import { hasPending } from "./pending";
 import { changeRoom, roomLine, roomWish } from "./rooms";
 import { EXTRA_BY_ID } from "../data/rooms";
 import { lockUp } from "./governor";
@@ -104,7 +105,7 @@ interface GeneratedEvent {
 /** Who is worth building a situation around this week — the one with the most live material on
  *  her record, rather than a random pick. */
 export function pickSubject(s: SaveState): Person | null {
-  const pool = Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 5);
+  const pool = Object.values(s.people).filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 5 && !hasPending(s, p.id));
   if (!pool.length) return null;
   const score = (p: Person): number => {
     const r = read(p, s.memory[p.id]);
