@@ -1,5 +1,6 @@
 /** SETTINGS — models, saves, and the two dials that change how the world behaves. */
 import { setLayout, setNav, useLayout } from "../lib/layout";
+import { setGraphics, useGraphics } from "../lib/graphics";
 import { useEffect, useState } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Chip, Field, Section, cx } from "../lib/ui";
@@ -33,6 +34,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
   const [local, setLocal] = useState(getLocalEndpoint()?.url ?? "");
   const [theme, setTheme] = useState(document.documentElement.dataset.theme ?? "brass");
   const { layout, nav } = useLayout();
+  const gfx = useGraphics();
   const [img, setImg] = useState<LocalImageEndpoint>(getLocalImage() ?? { url: "", backend: "comfy" });
   const [testing, setTesting] = useState("");
   const [testImg, setTestImg] = useState<string | null>(null);
@@ -226,6 +228,18 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
           <Field label={`Scene history kept in context — ${save.models.history_window} turns`} hint="How many recent turns the narrator sees for continuity. Lower is cheaper.">
             <input type="range" min={2} max={12} value={save.models.history_window} onChange={(e) => mutate((s) => { s.models.history_window = Number(e.target.value); })} />
           </Field>
+        </Card>
+      </Section>
+
+      <Section title="Graphics">
+        <Card>
+          <div className="text-[12px] mid mb-1.5">How much the screen draws. Turn it down if your phone runs hot or the battery drains.</div>
+          <div className="segmented mb-1.5">
+            {([["full", "Full"], ["still", "Still"], ["off", "Off"]] as const).map(([k, label]) => (
+              <button key={k} className={cx("seg", gfx === k && "on")} onClick={() => setGraphics(k)}>{label}</button>
+            ))}
+          </div>
+          <div className="text-[11.5px] dim">{gfx === "full" ? "Portraits breathe and blink, the city moves, the globe spins. Capped at 30 frames a second." : gfx === "still" ? "Portraits are drawn but hold still. No looping effects, no glass blur, and the globe only redraws when you touch it." : "No portraits or drawn art at all, just the words. The lightest it gets."}</div>
         </Card>
       </Section>
 

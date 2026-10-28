@@ -26,6 +26,7 @@ import { redraw, redrawPrompt, svgToPng, toJpeg } from "../lib/imagegen";
 import type { Person } from "../engine/types";
 import { describeFeet, feetOf, idHash, soleDirt } from "../engine/genitals";
 import { rng } from "../engine/rng";
+import { useGraphics } from "../lib/graphics";
 import { SKIN, match, shade } from "../lib/vectorart";
 
 type Pt = [number, number];
@@ -547,7 +548,13 @@ function SideView({ p, g, uid }: { p: Person; g: FootGenes; uid: string }) {
   );
 }
 
+/** Graphics off in Settings: her feet in words. */
 export default function FeetArt({ person }: { person: Person }) {
+  const gfx = useGraphics();
+  return gfx === "off" ? <div className="text-[12.5px] mid leading-snug p-2">{describeFeet(person)}</div> : <FeetArtDrawn person={person} />;
+}
+
+function FeetArtDrawn({ person }: { person: Person }) {
   const { save, mutate } = useGame();
   const f = feetOf(person);
   const box = useRef<HTMLDivElement>(null);

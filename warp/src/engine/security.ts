@@ -3,11 +3,11 @@
  *
  * Two pressures, kept separate because they have different cures. CRIME is the citizens: it rises
  * with poverty and falls with watch, and it costs you money and prosperity. UNREST is your own
- * household: it rises with resentment and with people who have nothing left to lose, and no amount
- * of watch touches it — the only cures are the ones that change what people are carrying.
- *
- * An arcology owner who solves everything with drones discovers this the week the drones are
- * pointing outward and the problem is upstairs.
+ * household: it rises with resentment and with people who have nothing left to lose. Watch doesn't
+ * change how they feel, so only treatment brings the number down. But it changes what they dare:
+ * with a devoted bodyguard, full surveillance and real security, the angriest slave in the house
+ * keeps her head down, and the one who runs is brought back. Unrest at 100 under a full lid is a
+ * house that hates you and does nothing about it. Take the lid off and it all comes out at once.
  */
 import { skill } from "./player";
 import type { Person, ReportLine, SaveState } from "./types";
@@ -31,15 +31,36 @@ export function unrest(s: SaveState): number {
   return clamp(n / household.length, 0, 100);
 }
 
+/** How hard the house is held down: the security level, a devoted bodyguard, mercenaries, and
+ *  cameras in every corridor. */
+export function control(s: SaveState): number {
+  const arc = s.arcology;
+  return arc.security / 50 + guardStrength(s) + (arc.mercenaries.hired ? arc.mercenaries.strength / 40 : 0) + (arc.policies?.["surveillance"] ? 1 : 0);
+}
+
+/** How much of the unrest that would come out, force keeps in: 0 to 1. At 0.9 or more it's a full
+ *  lid, and nobody dares. Maximum security with cameras is about that, and so is a devoted armed
+ *  bodyguard with cameras. */
+export function heldDown(s: SaveState): number {
+  return clamp(control(s) / 3, 0, 1);
+}
+
+/** For the report: the unrest, and what's keeping it from coming out, or not. */
+export function unrestLine(s: SaveState, u = unrest(s)): string {
+  const held = heldDown(s);
+  if (held >= 0.9) return `Household unrest is at ${Math.round(u)}. Your guards and cameras keep a lid on it, so nobody dares act on it, but they feel it all the same, and it comes out if the lid comes off.`;
+  if (held >= 0.45) return `Household unrest is at ${Math.round(u)}. Your security keeps most of it down, but not all of it. More of it (a devoted bodyguard, full surveillance, a higher security level) would hold it, and better treatment would end it.`;
+  return `Household unrest is at ${Math.round(u)}, and there's little to stop them acting on it. A devoted bodyguard, full surveillance or more security would hold it down, and better treatment would end it.`;
+}
+
 export function tickSecurity(s: SaveState): SecurityWeek {
   const arc = s.arcology;
   const r = rng(`security:${arc.week}`);
   const lines: ReportLine[] = [];
   let cash = 0;
 
-  const guard = guardStrength(s);
-  const merc = arc.mercenaries.hired ? arc.mercenaries.strength / 40 : 0;
-  const defence = arc.security / 50 + guard + merc;
+  const defence = control(s);
+  const held = heldDown(s);
 
   /* ── crime ─────────────────────────────────────────────────────────────────────────────────── */
   if (arc.crime > 45 && r.chance(clamp((arc.crime - 45) / 90, 0, 0.5))) {
@@ -57,7 +78,8 @@ export function tickSecurity(s: SaveState): SecurityWeek {
     const worst = household
       .map((p) => ({ p, r: read(p, s.memory[p.id]) }))
       .sort((a, b) => b.p.bond.resentment - a.p.bond.resentment)[0];
-    if (worst && r.chance(clamp((u - 55) / 70, 0, 0.55))) {
+    // Watch doesn't change how she feels, but it changes whether she dares.
+    if (worst && held < 0.9 && r.chance(clamp((u - 55) / 70, 0, 0.55) * (1 - held))) {
       if (worst.r.flight_risk > 0.5 && r.chance(0.5)) {
         const caught = r.chance(clamp(0.35 + defence * 0.2, 0, 0.9));
         if (caught) {
@@ -79,7 +101,7 @@ export function tickSecurity(s: SaveState): SecurityWeek {
       }
     }
   }
-  if (u > 75) lines.push({ tone: "bad", weight: 9, text: `Your household is at ${Math.round(u)} unrest. Guards won't fix it, because it's about how you've treated them.` });
+  if (u > 75) lines.push({ tone: held >= 0.9 ? "warning" : "bad", weight: 9, text: unrestLine(s, u) });
 
   /* ── the neighbours ───────────────────────────────────────────────────────────────────────── */
   for (const n of arc.neighbours) {

@@ -24,6 +24,7 @@ import type { Person } from "../engine/types";
 import { ART_BASE, manly, cropFor, layersFor, styleFor, heightTransform, type Crop, type Layer } from "../lib/vectorart";
 import { frameAt, jointFor, restingPose, transformFor, STILL, type Joint, type Pose } from "../lib/rig";
 import { subscribeClock, stillWanted } from "../lib/clock";
+import { useGraphics, type Graphics } from "../lib/graphics";
 import { expressionOf, ExpressionLayer, type Moment } from "../lib/expression";
 import { blend, blinkAt, cloneFace, mouthPaths, talkAt, MOUTH_BOX, type Box, type FaceParams } from "../lib/face";
 import { MarksLayer, BeatOverlay } from "../lib/marksart";
@@ -77,7 +78,20 @@ async function loadLayer(id: string): Promise<string | null> {
 
 let scopeSeq = 0;
 
-export default function SlaveArt({ person, height = 260, crop = "full", className, pose, animate = true, svgRef, moment, face = true, mood, speaking = false }:
+/** Graphics off in Settings: her name in a box the size she'd have been, and nothing fetched or drawn. */
+export default function SlaveArt(props: Parameters<typeof SlaveArtDrawn>[0]) {
+  const gfx = useGraphics();
+  if (gfx !== "off" || props.svgRef) return <SlaveArtDrawn {...props} gfx={gfx} />;
+  const { person, height = 260, crop = "full", className } = props;
+  const small = typeof height === "number" && height < 80;
+  return (
+    <div className={className} style={{ height, width: crop === "head" ? height : undefined, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--ink-2)", borderRadius: 8, color: "var(--text-lo)", fontSize: small ? 14 : 13, textAlign: "center", padding: small ? 0 : 6 }}>
+      {small ? person.name.slice(0, 1) : person.name}
+    </div>
+  );
+}
+
+function SlaveArtDrawn({ person, height = 260, crop = "full", className, pose, animate = true, svgRef, moment, face = true, mood, speaking = false, gfx = "full" }:
   { person: Person; height?: number | string; crop?: Crop; className?: string; pose?: Pose; animate?: boolean;
     /** A face that moves: brows, eyes and a drawn mouth set to this, easing there from wherever they were. */
     mood?: FaceParams;
@@ -88,7 +102,9 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
     /** Draw the expression layer at all. Off for the ControlNet render, where it would only confuse. */
     face?: boolean;
     /** Handed out so a caller can rasterise exactly what is on screen — see lib/dollrender.ts. */
-    svgRef?: RefObject<SVGSVGElement | null> }) {
+    svgRef?: RefObject<SVGSVGElement | null>;
+    /** The graphics setting, so the moving parts start again when it's turned back up. */
+    gfx?: Graphics }) {
   const held = pose ?? restingPose(person);
   // The save is mutated in place, so the person object is the same one after her clothes change.
   // Key on what would actually be drawn instead of on the object.
@@ -164,7 +180,7 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
 
     if (!animate || stillWanted()) { paint(STILL); return; }
     return subscribeClock((ms) => paint(frameAt(person, held, ms)));
-  }, [markup, person, held, animate, !!expr, stainsKey, beat]);
+  }, [markup, person, held, animate, !!expr, stainsKey, beat, gfx]);
 
   // The face. Same clock, same rule: attributes, not state. It eases from wherever it is to the mood
   // asked for, blinks on its own schedule, and moves its mouth while she is speaking.
@@ -228,7 +244,7 @@ export default function SlaveArt({ person, height = 260, crop = "full", classNam
     paint(performance.now());
     if (!animate || stillWanted()) { Object.assign(cur, cloneFace(target.current!)); last = 0; paint(0); return; }
     return subscribeClock(paint);
-  }, [markup, hasFace, animate, person.id]);
+  }, [markup, hasFace, animate, person.id, gfx]);
 
   const css = styleFor(person, scope) + (finished ? finishCss(scope) : "");
   // Where her marks go in the stack: over the skin they're on, under whatever covers it.

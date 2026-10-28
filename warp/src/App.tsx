@@ -68,6 +68,16 @@ const NAV: { id: Route; label: string; icon: typeof Building2 }[] = [
   { id: "settings", label: "Settings", icon: Cog },
 ];
 
+/** Money in the header: in full while it fits a phone, then 12.4M, 3.1B, 40,001T. A cheated
+ *  fortune printed in full pushed the settings button off the edge of the screen. */
+function shortMoney(n: number): string {
+  const a = Math.abs(n);
+  if (a < 1e7) return Math.round(n).toLocaleString();
+  const [d, u] = a >= 1e12 ? [1e12, "T"] : a >= 1e9 ? [1e9, "B"] : [1e6, "M"];
+  const v = n / d;
+  return `${Math.abs(v) >= 100 ? Math.round(v).toLocaleString() : v.toFixed(1)}${u}`;
+}
+
 export default function App() {
   const [save, setSave] = useState<SaveState | null>(null);
   const [booting, setBooting] = useState(true);
@@ -211,12 +221,12 @@ function Shell({ onSwitch }: { onSwitch: () => void }) {
               <button className="topnav-btn" onClick={onSwitch} title="new game, or load another save">saves</button>
             </nav>
           ) : null}
-          <div className="ml-auto flex items-center gap-3 font-mono text-[13px] shrink-0">
-            <span style={{ color: save.arcology.cash < 0 ? "var(--danger)" : "var(--text-hi)" }}>
-              ¤{Math.round(save.arcology.cash).toLocaleString()}
+          <div className="ml-auto flex items-center gap-3 font-mono text-[13px] min-w-0">
+            <span className="truncate" title={`¤${Math.round(save.arcology.cash).toLocaleString()}`} style={{ color: save.arcology.cash < 0 ? "var(--danger)" : "var(--text-hi)" }}>
+              ¤{shortMoney(save.arcology.cash)}
             </span>
-            <span className="dim">rep {Math.round(save.arcology.rep).toLocaleString()}</span>
-            <button className={cx("iconbtn md:hidden", group.id === "system" && "acc")} aria-label="Settings" onClick={() => setRoute(group.id === "system" ? "penthouse" : last.system ?? "settings")}>
+            <span className="dim truncate">rep {shortMoney(save.arcology.rep)}</span>
+            <button className={cx("iconbtn md:hidden shrink-0", group.id === "system" && "acc")} aria-label="Settings" onClick={() => setRoute(group.id === "system" ? "penthouse" : last.system ?? "settings")}>
               <Cog size={17} strokeWidth={1.8} />
             </button>
           </div>

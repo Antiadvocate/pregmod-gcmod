@@ -11,24 +11,24 @@
  * they took the same jobs equally well, and if you stopped punishing either of them nothing
  * happened, because there was nothing in the number that remembered why it was 60.
  *
- * Here, obedience bought with fear and obedience earned by bond are different values that add up
- * to the same displayed number, and they behave completely differently:
+ * Here, obedience held by fear and obedience held by bond are different values that add up to the
+ * same displayed number, and they behave differently. Neither is the right one. They're two ways of
+ * running a house, with different costs:
  *
- *   · FEAR IS FAST AND BRITTLE. It rises within a week of the cellblock and decays at 15% a week
- *     the moment the pressure comes off. An arcology run entirely on fear needs the pressure
- *     maintained forever, and every week you do not maintain it, you lose ground.
- *   · BOND IS SLOW AND STICKY. It takes months and it survives your absence, a bad week, and being
- *     put in the wrong facility once.
- *   · RESENTMENT IS THE RECEIPT. Everything done to somebody that they have not forgiven sits in
- *     it, and it eats the top off devotion no matter which of the other two is paying for the
- *     compliance. It is the reason a perfectly obedient slave can still be planning something.
- *   · HOPE IS WHAT MAKES A PROMISE WORTH ANYTHING. Nothing in the old game modelled the belief
- *     that things could get better, so nothing was lost when you broke your word.
+ *   · FEAR is quick to build and holds as long as you hold it. Keep the house under control
+ *     (security, a bodyguard, cameras: engine/security) and it stays where you put it. Let control
+ *     slip and it drains away within weeks. Its cost is company. A frightened slave does exactly
+ *     what she's told and nothing else, keeps her own nature hidden from you, and never surprises
+ *     you, seeks you out or tells you what she thinks. A house run on fear is obedient and lonely.
+ *   · BOND is slow to build and lasts without upkeep. Its cost is indulgence. A slave who's only
+ *     ever been given things starts pushing (engine/compliance), and she has opinions.
+ *   · RESENTMENT is what someone hasn't forgiven, and it eats into devotion whichever of the two
+ *     is holding her. What counts as something to forgive is hers. A masochist doesn't resent the
+ *     whip she wanted.
+ *   · HOPE is what makes a promise worth anything, and what's lost when one is broken.
  *
- * `fragility` — fear as a share of everything holding somebody in place — is exported because it
- * is the single most useful thing the player can be told about a slave and no version of this game
- * has ever told them. Two identical devotion readings, one at 0.1 fragility and one at 0.8: the
- * first is a household, the second is a hostage situation with good paperwork.
+ * `fragility` is fear as a share of everything holding somebody in place. It tells the player which
+ * kind of house they have.
  */
 import type { Person, PersonMemory } from "./types";
 import { clamp, wear } from "./psyche";
@@ -95,10 +95,9 @@ export function read(p: Person, mem?: PersonMemory): Reading {
   if (p.psyche.state === "fracturing") devotion -= 8;
 
   let trust = b.bond * 0.55 - b.fear * 0.75 + b.hope * 0.25 - b.resentment * 0.25 + r * 2.2 + carried * 8;
-  // Consistency is most of trust and the old game never modelled it. A stretch with no cruelty in
-  // it is worth more than any single kindness.
-  trust += clamp(b.weeks_since_cruelty * 1.6, 0, 22);
-  trust -= clamp((12 - b.weeks_since_kindness) * 0.4, 0, 6);
+  // Time under the same owner: she knows what to expect from you, whatever it is. (This used to be
+  // weeks since the last cruelty, which made every punishment cost trust twice.)
+  trust += clamp((p.economics?.weeks_owned ?? 0) * 1.6, 0, 22);
 
   devotion = clamp(Math.round(devotion), -100, 100);
   trust = clamp(Math.round(trust), -100, 100);
@@ -151,9 +150,21 @@ export type Treatment =
   | { kind: "neglect"; size: number; why: string }
   | { kind: "recognition"; size: number; why: string };  // being seen, chosen, named, given a post
 
+/** How much she wants to be hurt and used, 0 to 1: her masochism, submission or appetite for
+ *  humiliation, the quirks that crave it, or hating herself enough to ask for it. Cruelty to a woman
+ *  who wants it lands as giving her what she wants, by how much she wants it. */
+export function wantsHurt(p: Person): number {
+  const per = p.persona;
+  const f = Math.max(0, ...per.fetishes.filter((x) => ["masochist", "submissive", "humiliation"].includes(x.name)).map((x) => x.strength));
+  const q = ["painal queen", "gagfuck queen", "strugglefuck queen"].includes(per.quirk?.id ?? "") ? 65 : 0;
+  const need = per.paraphilia === "self hating" ? 100 : 0;
+  return clamp(Math.max(f, q, need) / 100, 0, 1);
+}
+
 export function applyTreatment(p: Person, t: Treatment, week: number): string {
   const b = p.bond;
   const s = clamp(t.size, 0, 10);
+  const w = t.kind === "cruelty" || t.kind === "coercion" ? wantsHurt(p) : 0;
   switch (t.kind) {
     case "kindness":
       b.bond = clamp(b.bond + s * 1.1, -100, 100);
@@ -167,17 +178,19 @@ export function applyTreatment(p: Person, t: Treatment, week: number): string {
       b.weeks_since_kindness = 0;
       break;
     case "cruelty":
-      b.fear = clamp(b.fear + s * 1.6, 0, 100);
-      b.resentment = clamp(b.resentment + s * 1.4, 0, 100);
-      b.bond = clamp(b.bond - s * 0.9, -100, 100);
-      b.hope = clamp(b.hope - s * 1.0, 0, 100);
+      // To a woman who wants it, it's closer to a gift: less fear, little resentment, and it binds her.
+      b.fear = clamp(b.fear + s * 1.6 * (1 - 0.5 * w), 0, 100);
+      b.resentment = clamp(b.resentment + s * 1.4 * (1 - 0.9 * w), 0, 100);
+      b.bond = clamp(b.bond + s * (-0.9 + 1.7 * w), -100, 100);
+      b.hope = clamp(b.hope - s * 1.0 * (1 - w), 0, 100);
       b.weeks_since_cruelty = 0;
       break;
     case "coercion":
-      // Aimed compliance: buys more fear per unit and less resentment than gratuitous cruelty,
-      // because the person can at least see the rule they broke. It is still cruelty.
-      b.fear = clamp(b.fear + s * 2.0, 0, 100);
-      b.resentment = clamp(b.resentment + s * 0.8, 0, 100);
+      // Aimed compliance: buys more fear per unit and less resentment than cruelty for its own
+      // sake, because the person can see the rule they broke.
+      b.fear = clamp(b.fear + s * 2.0 * (1 - 0.4 * w), 0, 100);
+      b.resentment = clamp(b.resentment + s * 0.8 * (1 - 0.9 * w), 0, 100);
+      if (w) b.bond = clamp(b.bond + s * w, -100, 100);
       b.weeks_since_cruelty = 0;
       break;
     case "promise_kept":
@@ -212,15 +225,14 @@ export function applyTreatment(p: Person, t: Treatment, week: number): string {
   return `${t.kind.replace("_", " ")}: ${t.why}`;
 }
 
-/** THE WEEKLY DECAY — where fear-bought obedience quietly goes if you stop paying for it. */
-export function tickBond(p: Person): void {
+/** THE WEEKLY DRIFT. `held` is how hard the house is held down (engine/security heldDown, 0 to 1).
+ *  Under a full lid, fear stays where you put it. With no control at all, it drains 15% a week. */
+export function tickBond(p: Person, held = 0): void {
   const b = p.bond;
   b.weeks_since_kindness++;
   b.weeks_since_cruelty++;
 
-  // Fear decays fast without maintenance. This single line is the difference between the two
-  // arcologies described at the top of this file.
-  if (b.weeks_since_cruelty > 0) b.fear = +(b.fear * 0.85).toFixed(2);
+  if (b.weeks_since_cruelty > 0) b.fear = +(b.fear * (0.85 + 0.15 * clamp(held, 0, 1))).toFixed(2);
   // Bond decays very slowly, and only through neglect.
   if (b.weeks_since_kindness > 3) b.bond = +(b.bond * 0.985).toFixed(2);
   // Resentment cools, but never all the way on its own — some of it has to be answered.

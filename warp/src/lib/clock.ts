@@ -11,26 +11,38 @@
  * The loop stops itself when the last subscriber leaves and restarts when one arrives, so a screen
  * with nothing animated on it costs nothing at all.
  */
+import { getGraphics, subscribeGraphics } from "./graphics";
+
 type Ticker = (ms: number) => void;
 
 const tickers = new Set<Ticker>();
 let running = false;
+let lastTick = 0;
+/** Breathing and blinking don't need the 120 frames a second a newer iPhone screen offers. */
+const FRAME_MS = 1000 / 30;
 
 function pump(ms: number): void {
-  for (const t of tickers) t(ms);
-  if (tickers.size) requestAnimationFrame(pump);
-  else running = false;
+  // Graphics turned down while things were moving: stop here, and start again if it's turned up.
+  if (!tickers.size || stillWanted()) { running = false; return; }
+  if (ms - lastTick >= FRAME_MS) { lastTick = ms; for (const t of tickers) t(ms); }
+  requestAnimationFrame(pump);
 }
+
+function start(): void {
+  if (!running && tickers.size && !stillWanted()) { running = true; requestAnimationFrame(pump); }
+}
+subscribeGraphics(start);
 
 export function subscribeClock(t: Ticker): () => void {
   if (stillWanted()) { t(0); return () => {}; }
   tickers.add(t);
-  if (!running) { running = true; requestAnimationFrame(pump); }
+  start();
   return () => { tickers.delete(t); };
 }
 
 /** Anyone who would rather the page held still gets a page that holds still — and gets one frame
- *  at t=0 so what they see is the composed still, not an unpainted default. */
+ *  at t=0 so what they see is the composed still, not an unpainted default. That's the system's
+ *  reduce-motion setting, or graphics turned down in Settings. */
 export function stillWanted(): boolean {
-  return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return getGraphics() !== "full" || (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches);
 }

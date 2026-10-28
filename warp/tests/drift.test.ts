@@ -54,3 +54,13 @@ import { hasHeat, hotHooks } from "../src/engine/chronicle.ts";
   ] as never;
   check("only the thread with heat in it is offered to the event writer", hotHooks(s, [her.id]).map((h) => h.title).join() === "Key");
 }
+
+// The slave-speech examples use her title for him, not a hard-coded "Master".
+{
+  const { powerBetween } = await import("../src/engine/self.ts");
+  const s = newGame({ seed: "drift sir", starting_slaves: 1 } as never);
+  const her = Object.values(s.people).find((p) => p.status === "owned")!;
+  s.player.address = "Sir";
+  const power = powerBetween(s, her);
+  check("a Sir slave's speech examples say Sir", !/HOW SHE SPEAKS/.test(power) || (/May I say something, Sir\?/.test(power) && !/\bMaster\b/.test(power)), power.slice(0, 300));
+}

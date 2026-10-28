@@ -21,6 +21,7 @@ import { deedsOf } from "./deeds";
 import { read } from "./obedience";
 import { romanceOf } from "./romance";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
+import { calledBy } from "./agreements";
 
 const GENTLE = ["tenderness", "mercy", "gift", "gratitude", "freed_her", "married_her", "confided", "promise_made", "elevated"];
 const HARSH = ["cruelty", "punished", "humiliated_her", "threatened_sale", "promise_broken", "shared_her"];
@@ -75,6 +76,10 @@ export function selfProfile(s: SaveState): string[] {
   const freed = Object.values(s.people).filter((p) => p.status === "free" && p.free_life).length;
   if (freed) lines.push(`They have freed ${freed} of their slaves.`);
   lines.push(`Their household sees them as ${s.player.household_read?.label ?? "nobody in particular"}.`);
+  // Ruling by fear works, and this is what it costs.
+  const mine = owned(s);
+  const scared = mine.filter((p) => { const r = read(p, s.memory[p.id]); return r.fragility > 0.6 && p.bond.fear >= 40; });
+  if (mine.length >= 2 && scared.length * 2 >= mine.length) lines.push(`Their house runs on fear: ${scared.length} of ${mine.length} are afraid of them. It's obedient and quiet. Nobody steps out of line, nobody surprises them, nobody seeks them out or tells them anything they didn't ask for, and every woman in it is the same woman around them.`);
   const beliefs = Object.entries(s.arcology.doctrines as Record<string, { adoption: number }>).filter(([, d]) => d.adoption >= 30).sort((a, b) => b[1].adoption - a[1].adoption).slice(0, 3).map(([id]) => DOCTRINE_BY_ID[id]?.noun ?? id);
   if (beliefs.length) lines.push(`They have built their city on ${beliefs.join(", ")}.`);
   const words = ownWords(s);
@@ -122,7 +127,8 @@ export function powerBetween(s: SaveState, p: Person): string {
   if (lat === "free") return `${own} But you've given her leave to talk to you freely, however she likes, as an equal in words${rom.standing === "wife" ? " (she's your wife)" : ""}. She can call you by name, argue, tease you, refuse you to your face and say what she thinks. She's still yours on paper, and if you speak as her owner she remembers it.`;
   if (lat === "latitude") return `${own} You've given her some latitude${rom.standing === "courted" ? " (you're courting her)" : rom.standing === "betrothed" ? " (she's promised to you)" : ""}. She can speak her mind, disagree respectfully, tease you a little, ask for things freely and say no to small things if she gives a reason. She still calls you by your title, still knows she's yours, and drops back into her place at once if you speak as her owner.${d >= 0 ? " She has a real say with you and uses it." : ""}`;
   if (openlyDefiant(s, p)) return `${own} She's reached open defiance. She may talk back to you, refuse you or curse you, knowing exactly what it can cost her in a city you own. Write the defiance as a slave's defiance, which is a crisis with the fear plainly underneath it, and not banter.`;
-  return `${own} ${SLAVE_SPEECH}${rom.standing !== "property" ? ` She's your ${rom.standing === "favourite" ? "favourite" : "kept woman"}, so she's closer to you than the rest, but she still speaks as a slave.` : ""}`;
+  // The examples are in her title for you, or a "Sir" slave copies "Master" off them.
+  return `${own} ${SLAVE_SPEECH.replace(/\bMaster\b/g, calledBy(s, p))}${rom.standing !== "property" ? ` She's your ${rom.standing === "favourite" ? "favourite" : "kept woman"}, so she's closer to you than the rest, but she still speaks as a slave.` : ""}`;
 }
 
 /** You tell her how she may speak to you. Leave given is something she's glad of; taken back, she
