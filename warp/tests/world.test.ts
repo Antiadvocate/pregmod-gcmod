@@ -19,7 +19,7 @@ import { refresh } from "../src/engine/obedience.ts";
 import { runManager } from "../src/engine/managers.ts";
 import { enact, tickPolicies } from "../src/engine/policies.ts";
 import { Ledger } from "../src/engine/economy.ts";
-import { unrest } from "../src/engine/security.ts";
+import { heldDown, tickSecurity, unrest, unrestLine } from "../src/engine/security.ts";
 import { EVENTS, pressure } from "../src/engine/events.ts";
 import { practise, skill } from "../src/engine/player.ts";
 
@@ -274,7 +274,19 @@ import { practise, skill } from "../src/engine/player.ts";
   const high = unrest(s);
   check("a household carrying that much reads as unrest", high > 50, high);
   s.arcology.security = 100;
-  check("and maximum security does absolutely nothing to it", Math.abs(unrest(s) - high) < 0.01);
+  check("and maximum security doesn't change how they feel", Math.abs(unrest(s) - high) < 0.01);
+  // But it changes what they dare. Ten weeks under a full lid: nobody refuses, nobody runs.
+  s.arcology.policies["surveillance"] = 1;
+  check("security, cameras and the rest keep a lid on it", heldDown(s) >= 0.9 && /keep a lid on it/.test(unrestLine(s)), heldDown(s));
+  let acted = 0;
+  for (let w = 0; w < 10; w++) { s.arcology.week++; acted += tickSecurity(s).lines.filter((l) => /refused an order|ran away|escaped/.test(l.text)).length; }
+  check("so under a full lid the angry house does nothing about it", acted === 0, acted);
+  s.arcology.security = 0; delete s.arcology.policies["surveillance"];
+  check("and with the lid off, the report says there's nothing stopping them", /little to stop them/.test(unrestLine(s)), unrestLine(s));
+  let loose = 0;
+  for (let w = 0; w < 30; w++) { s.arcology.week++; loose += tickSecurity(s).lines.filter((l) => /refused an order|ran away|escaped/.test(l.text)).length; }
+  check("and it comes out", loose > 0, loose);
+  s.arcology.security = 100;
   for (const p of Object.values(s.people)) { p.bond.resentment = 0; p.bond.hope = 70; p.bond.bond = 50; refresh(p, s.memory[p.id]); }
   check("what moves it is what the people are carrying", unrest(s) < 20, unrest(s));
 }
