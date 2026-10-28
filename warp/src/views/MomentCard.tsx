@@ -134,7 +134,9 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
       <div className="space-y-3">
         {lines.map((l, i) => l.role === "you"
           ? <div key={i} className="player-line !my-1">{l.text}</div>
-          : l.text.split(/\n\n+/).map((para, j) => <p key={`${i}-${j}`} className="font-prose text-[15px] leading-relaxed" style={{ color: "#e6dfd1" }}>{para}</p>))}
+          : [...l.text.split(/\n\n+/).map((para, j) => <p key={`${i}-${j}`} className="font-prose text-[15px] leading-relaxed" style={{ color: "#e6dfd1" }}>{para}</p>),
+            // What the narrator still got wrong after being told once (engine/continuity).
+            ...(l.slips?.length ? [<div key={`${i}-slips`} className="text-[11.5px] warn leading-snug">Continuity slip: {l.slips.join(" ")}</div>] : [])])}
         {stream ? <p className="font-prose text-[15px] leading-relaxed mid whitespace-pre-line">{stream}</p> : null}
         {busy && !stream ? <div className="flex items-center gap-2 dim text-[12px]"><Loader2 size={13} className="animate-spin" /> …</div> : null}
         {busy && stopper.current ? <button className="btn btn-sm btn-danger" onClick={() => stopper.current?.abort()} title="Stop the model and throw this reply away"><Square size={12} /> stop</button> : null}
