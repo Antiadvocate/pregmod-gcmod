@@ -23,7 +23,7 @@ import { useGame } from "../lib/game";
 import { Button, Card, Fold, Meter, Money, cx } from "../lib/ui";
 import { endWeek } from "../engine/week";
 import { generateDynamicEvent, dynamicReadiness } from "../engine/dynamic";
-import { choicesOf, liveWeek, narrateOutcome, readOwnAnswer, resolveAny } from "../engine/living";
+import { choicesOf, liveWeek, narrateOutcome, playOwnAnswer, readOwnAnswer, resolveAny } from "../engine/living";
 import { governedPlaces } from "../engine/governor";
 import { AskList } from "./AskCard";
 import StoryCard from "./StoryCard";
@@ -108,11 +108,27 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
   };
 
   /** Answer an event: one of its choices, or your own words read as one of them. */
-  const pick = (e: (typeof save.events)[number], o: { id: string; label: string; note?: string }, orders: Order[] = []) => {
+  const pick = (e: (typeof save.events)[number], o: { id: string; label: string; note?: string }, orders: Order[] = [], own?: string) => {
     let text = "";
     let chips: Chip[] = [];
     // Only what happens to your own people gets written out; business stays the game's line and what changed.
     const write = !!e.person && modelsAvailable() && !save.models.lean_mode && save.models.write_outcomes !== false && !writeOff[e.id];
+    // Your own words, about your own people: what you typed is what happened, and what it changed is
+    // read from it (engine/living playOwnAnswer). Not the nearest choice's canned line and numbers.
+    if (own && write && !e.kind.startsWith("reign_")) {
+      let before: ReturnType<typeof takeStats> | null = null;
+      mutate((s) => { before = takeStats(s, [e.person, e.other]); applyOrders(s, orders); });
+      const card = { id: e.id, setup: e.seed, chose: own, text: "", person: e.person, others: e.other ? [e.other] : undefined, chips: [] as Chip[] };
+      setOutcomes((xs) => [...xs, { ...card, writing: true }]);
+      void playOwnAnswer(save, e, own).then((prose) => {
+        // No model wrote it: fall back to reading your words as the nearest choice.
+        if (!prose) { setOutcomes((xs) => xs.filter((x) => x.id !== e.id)); pick(e, o, []); return; }
+        mutate(() => {});
+        const after = takeStats(save, [e.person, e.other]);
+        setOutcomes((xs) => xs.map((x) => (x.id === e.id ? { ...x, text: prose, chips: before ? chipsBetween(before, after) : [], writing: false } : x)));
+      });
+      return;
+    }
     // Once she holds your collar, what you pick goes through her.
     mutate((s) => {
       const before = takeStats(s, [e.person, e.other]);
@@ -292,7 +308,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
               if (!r.id) return r.error ?? "couldn't do that";
               const live = save.events.find((x) => x.id === e.id);
               if (!live) return "";
-              pick(live, { id: r.id, label: typed }, r.orders ?? []);
+              pick(live, { id: r.id, label: typed }, r.orders ?? [], typed);
               return "";
             }} /> : null}
           </Card>

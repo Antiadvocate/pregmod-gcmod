@@ -27,12 +27,12 @@ import { dueToGrow, growPersona } from "./growth";
 import { pickOption, type Order } from "./ownwords";
 import { regionOf, regionNews, knownWord, bring } from "./region";
 import { powers } from "./power";
-import { noteStock, stockLine } from "./turn";
+import { applyDiff, noteStock, stockLine, type Diff } from "./turn";
 import type { PendingEvent, Person, SaveState, WeekReport } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { coarsen, REGISTER_TAIL } from "./register";
-import { NOT_PAPERWORK, HOUSE_STYLE, personCard } from "./prompts";
+import { NOT_PAPERWORK, HOUSE_STYLE, BOOKKEEPER_SYSTEM, bookkeeperContext, personCard } from "./prompts";
 import { PLAIN_RULES } from "./style";
 import { chronicle, chronicleBrief, chronicleOf } from "./chronicle";
 import { DYNAMIC_EFFECTS, effectList, dossier, npcEffect, resolveDynamic } from "./dynamic";
@@ -54,7 +54,7 @@ import { GOV_VOICE } from "./talk";
 import { writeWeekProse, enrichPerson } from "./forge";
 import { runOf } from "./run";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
-import { read } from "./obedience";
+import { read, refresh } from "./obedience";
 import { romanceOf } from "./romance";
 import { clamp } from "./psyche";
 import { settledBrief, weightBrief } from "./fates";
@@ -247,6 +247,41 @@ export async function narrateOutcome(s: SaveState, o: { person?: string; others?
   const text = coarsen(res.text).trim();
   noteStock(s, text);
   return text;
+}
+
+/**
+ * YOUR OWN WORDS ARE WHAT HAPPENED. Answering an event in your own words used to be read as the
+ * nearest listed choice, and that choice's canned effects and line were applied whatever you did:
+ * put her on her knees and you got "Punish her in private", a coercion, −23 trust, and "you make her
+ * understand" under a scene where she loved it. Now, for an event about your own people, what you
+ * typed is played out as written, and what it changed is read from that prose by the bookkeeper,
+ * the same as a scene. The event is answered, and the chronicle has what you did.
+ * Returns the prose, or "" when no model wrote it (the caller falls back to the nearest choice).
+ */
+export async function playOwnAnswer(s: SaveState, e: PendingEvent, typed: string): Promise<string> {
+  if (!ready(s) || !e.person) return "";
+  const prose = await narrateOutcome(s, {
+    person: e.person, others: e.other ? [e.other] : undefined, setup: e.seed, chose: typed, title: e.written?.title,
+    happened: `The player answered in their own words, and that is exactly what happens, as they wrote it: ${typed}`,
+  });
+  if (!prose) return "";
+  const people = [e.person, e.other].filter((x): x is string => !!x && !!s.people[x]);
+  const book = await call({
+    system: BOOKKEEPER_SYSTEM,
+    user: `${bookkeeperContext(s)}\n\n## THE TURN\nWHAT THE OWNER DID OR SAID. Here "I" is the owner: ${typed}\n\nTHE PROSE. Here "you" is the owner:\n${prose}`,
+    model: s.models.bookkeeper_model, fallback: s.models.fallback_model, json: true,
+  });
+  const diff = book.ok ? parseJson<Diff>(book.text) : null;
+  if (diff) {
+    const before = s.scene.present;
+    s.scene.present = people;
+    applyDiff(s, { ...diff, present_add: [], present_remove: [], location: undefined }, prose, typed);
+    s.scene.present = before;
+    for (const id of people) refresh(s.people[id], s.memory[id]);
+  }
+  s.events = s.events.filter((x) => x.id !== e.id);
+  chronicle(s, { keys: people.length ? people : ["city"], title: e.written?.title, text: `${e.seed.split(/\n/)[0].slice(0, 200)} You answered in your own words: ${typed.slice(0, 200)}` });
+  return prose;
 }
 
 const PULSE_SYSTEM = `You write the lines of an arcology's weekly report about how its citizens are living with its laws, for Free Cities, an adult game about owning an arcology. For each law you get its text, a number for how well it's kept (above 30 means kept willingly, 0 to 30 means kept grudgingly, and below 0 means broken or resisted), the game's own line, and what was said about it in earlier weeks. Only write about a law if something specific happened this fortnight because of it, with a person, a place and what they did, and ideally tied to something in THIS WEEK. Leave out any law where you'd only be saying it's being kept or broken, because fewer, better lines are what's wanted. Make it follow on from the earlier weeks, so the same people can come back, a quarrel can get worse, or a habit can spread. Never repeat an earlier line, and keep any number that's in the game's line.
