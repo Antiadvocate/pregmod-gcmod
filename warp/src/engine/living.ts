@@ -22,6 +22,7 @@
  *
  * Without a model, each of these returns nothing and the game's own text stands.
  */
+import { purgeBanned } from "./bans";
 import { toWrite, writeNext } from "./saga";
 import { dueToGrow, growPersona } from "./growth";
 import { pickOption, type Order } from "./ownwords";
@@ -490,6 +491,8 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
     const e = await generateGoing(s, g, snap);
     if (e) s.events.push(e);
   }
+  // Anything written this week that touches a storyline the player ended goes before they see it.
+  purgeBanned(s);
   // Any request still waiting (a model failed, or it came from her page) is written as a moment too.
   for (const a of s.asks ?? []) { step(`${s.people[a.person]?.name ?? "her"}'s request`); a.text = await voiceAsk(s, a); }
   if (report) { step("the laws"); await writeLawPulse(s, report, snap); }

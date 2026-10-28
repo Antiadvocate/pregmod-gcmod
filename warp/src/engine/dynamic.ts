@@ -42,6 +42,7 @@ import { worldBrief } from "./world";
 import { HOUSE_STYLE } from "./prompts";
 import { PLAIN_RULES } from "./style";
 import { chronicle, chronicleBrief, closeHooks, hotHooks, openHooks } from "./chronicle";
+import { isBanned } from "./bans";
 import { changeRoom, roomLine, roomWish } from "./rooms";
 import { EXTRA_BY_ID } from "../data/rooms";
 import { lockUp } from "./governor";
@@ -201,6 +202,7 @@ export async function generateDynamicEvent(s: SaveState, subject?: Person, hint 
   if (!res.ok) return null;
   const out = parseJson<GeneratedEvent>(coarsen(res.text));
   if (!out?.situation || !Array.isArray(out.options) || out.options.length < 2) return null;
+  if (isBanned(s, `${out.title ?? ""} ${out.situation} ${out.hook ?? ""}`)) return null;
 
   // Everything unrecognised is dropped here rather than trusted anywhere downstream.
   const options = out.options

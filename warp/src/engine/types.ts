@@ -894,6 +894,8 @@ export interface SaveState {
   event_log?: Record<string, number>;
   /** Answered events on the Penthouse, kept in the save until you close them, so leaving the page
    *  or reloading doesn't lose what came of them (views/Penthouse). */
+  /** Storylines and people the player ended for good (engine/bans). */
+  bans?: { id: string; week: number; words: string[]; faces: string[]; what: string }[];
   outcomes?: { id: string; setup?: string; chose: string; text: string; person?: string; others?: string[]; moment?: string; facts?: string; auto?: boolean; chips?: { text: string; good: boolean }[]; own?: boolean; deed?: string }[];
   /** What the last goings-on were about, so the next ones aren't the same thread again (engine/goings). */
   goings_seen?: { week: number; person: string; key: string; title?: string; who: string[]; topic?: string }[];

@@ -61,6 +61,8 @@ export interface Face {
   toward?: number;
   /** Kept on file whatever happens. Set when you pin them, or when they matter to one of yours. */
   kept?: boolean;
+  /** The player ended everything to do with them (engine/bans): never tied, cast or named again. */
+  banned?: boolean;
 }
 
 
@@ -110,6 +112,8 @@ export function meet(s: SaveState, o: Partial<Face> & { name: string }): Face | 
   const k = keyOf(name);
   const week = s.arcology.week;
   const had = (o.id ? findFace(s, o.id) : undefined) ?? findFace(s, name);
+  // Someone the player ended a storyline over doesn't come back under any spelling.
+  if (had?.banned) return undefined;
   if (had) {
     giveId(s, had);
     // Another name for the same person is remembered as one, not filed as somebody new.
@@ -148,7 +152,7 @@ function castFace(s: SaveState, role: string, npc: { name: string; pronoun: "he"
 
 /** Everyone who can be recognised: the faces on file, and the story's cast whether or not it's filed yet. Reads only. */
 export function knownFaces(s: SaveState): Face[] {
-  const out = new Map(Object.entries(s.faces ?? {}));
+  const out = new Map(Object.entries(s.faces ?? {}).filter(([, f]) => !f.banned));
   for (const [role, npc] of Object.entries(s.story?.cast ?? {})) {
     if (!npc || npc.person || out.has(keyOf(npc.name))) continue;
     out.set(keyOf(npc.name), castFace(s, role, npc));

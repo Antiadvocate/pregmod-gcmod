@@ -14,6 +14,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { SaveState } from "../engine/types";
 import { putSave } from "../store";
 import { setOwnerContext } from "../llm";
+import { bansBrief } from "../engine/bans";
 import { ownerLine, settlePronouns } from "../engine/you";
 import { settleSkills, skillsBrief } from "../engine/player";
 import { fewBrief } from "../engine/fewslaves";
@@ -34,7 +35,7 @@ export function GameProvider({ initial, children }: { initial: SaveState; childr
   const ref = useRef<SaveState>(initial);
   const [rev, setRev] = useState(0);
   // Every model call is told who the owner is, from whatever the save says now.
-  useMemo(() => { settlePronouns(ref.current); settleSkills(ref.current); setOwnerContext([ownerLine(ref.current), selfBrief(ref.current), skillsBrief(ref.current), fewBrief(ref.current), marriageBrief(ref.current)].filter(Boolean).join("\n\n")); }, [rev]);
+  useMemo(() => { settlePronouns(ref.current); settleSkills(ref.current); setOwnerContext([ownerLine(ref.current), selfBrief(ref.current), skillsBrief(ref.current), fewBrief(ref.current), marriageBrief(ref.current), bansBrief(ref.current)].filter(Boolean).join("\n\n")); }, [rev]);
   const timer = useRef<number | undefined>(undefined);
 
   const persist = useCallback(() => {

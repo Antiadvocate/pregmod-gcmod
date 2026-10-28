@@ -1,6 +1,7 @@
 /** SETTINGS — models, saves, and the two dials that change how the world behaves. */
 import { setLayout, setNav, useLayout } from "../lib/layout";
 import { setGraphics, useGraphics } from "../lib/graphics";
+import { liftBan } from "../engine/bans";
 import { useEffect, useState } from "react";
 import { useGame } from "../lib/game";
 import { Button, Card, Chip, Field, Section, cx } from "../lib/ui";
@@ -230,6 +231,20 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
           </Field>
         </Card>
       </Section>
+
+      {(save.bans ?? []).length ? (
+        <Section title="Dropped storylines">
+          <Card>
+            <div className="text-[12px] mid mb-2">Storylines and people you ended for good. Nothing about them comes up again until you bring them back.</div>
+            {(save.bans ?? []).map((b) => (
+              <div key={b.id} className="flex items-center gap-2 py-1 hairline-top first:border-0">
+                <div className="flex-1 text-[13px]">{b.what}<span className="dim text-[11.5px]"> · week {b.week}{b.words.length ? ` · ${b.words.join(", ")}` : ""}{b.faces.length ? ` · ${b.faces.length} ${b.faces.length === 1 ? "person" : "people"}` : ""}</span></div>
+                <button className="chip" onClick={() => mutate((s) => liftBan(s, b.id))}>bring back</button>
+              </div>
+            ))}
+          </Card>
+        </Section>
+      ) : null}
 
       <Section title="Graphics">
         <Card>
