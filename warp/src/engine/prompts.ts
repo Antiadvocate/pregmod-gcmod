@@ -55,7 +55,7 @@ import { DOCTRINE_BY_ID } from "../data/doctrines";
 import { threadBrief } from "./threads";
 import { getEdge } from "./social";
 import { ownerLine } from "./you";
-import { PLAIN_RULES } from "./style";
+import { PLAIN_RULES, RECORD_RULES } from "./style";
 import { roomLine } from "./rooms";
 import { governorLine } from "./governor";
 
@@ -198,6 +198,7 @@ manner: Log this whenever the turn establishes an ongoing dynamic between her an
 settled: Set this to true when this turn settled what the scene was about, such as a question answered, a decision made, a quarrel finished, sex over and done, or someone leaving, so that carrying on would only be talk that changes nothing. Otherwise leave it false.
 spent: Log it when a slave pays for something out of her own money (HER MONEY on her card) during this turn, with the amount in ¤ and what she bought. Only her own spending, never the owner's.
 ${MARKS_RULES}
+Memories and facts are read back into later scenes, so record what happened and what's true, concretely, and never an analysis of the relationship. ${RECORD_RULES}
 Only use character IDs provided in your context, and omit any keys that have no updates. Never log invented legal clauses, exemptions, or technicalities as facts, rumors, or memories—laws only say what is explicitly written in their text.`;
 
 /** Translates psyche bands into natural descriptions of how the character is holding up. */

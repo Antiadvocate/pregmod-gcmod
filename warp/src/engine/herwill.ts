@@ -12,7 +12,7 @@ import type { Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { personCard, HOUSE_STYLE } from "./prompts";
-import { PLAIN_RULES } from "./style";
+import { PLAIN_RULES, RECORD_RULES } from "./style";
 import { coarsen } from "./register";
 import { weekSnapshot } from "./snapshot";
 import { LAWS, LAW_BY_ID } from "../data/laws";
@@ -259,6 +259,8 @@ What the player says is true of them, such as where their eyes go, how they talk
 STYLE is one of these: doting (gentle, protective and indulgent), stern (strict and fair, and expects obedience), cruel (enjoys hurting and using the player), playful (owning the player is a game of teasing, toying and showing them off), vengeful (paying the player back for what they did to her), or reluctant (never wanted it, and keeps handing decisions back).
 
 ${PLAIN_RULES}
+
+${RECORD_RULES}
 
 Output ONE strict JSON object and nothing else:
 {"style":"one STYLE","ways":["4 to 10 lines about the particular ways the two of them do things, taken from the evidence and kept exactly as they are between these two, such as rituals, how he talks to her and she to him, what she calls him, what he has to do, what always happens and what never does, so that later scenes don't forget them"],"portrait":"4 to 6 plain sentences, in the second person and the present tense, about how she keeps you. Say what she's like with you in private and in front of people, what she makes you do, what she gives you and what she holds back, what she won't put up with, and where her feelings for you show and where they don't. Make it specific to her and to what has happened between you."}`;

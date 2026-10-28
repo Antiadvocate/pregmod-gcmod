@@ -81,3 +81,17 @@ check("but a price isn't an allowance", readAllowance("That dress cost 100k.") =
   check("with room given, a slip isn't something she backs off from", natureLines(s, her).some((l) => /HER NATURE \(dom\)[^\n]*she doesn't back off/.test(l)));
   check("and her card carries it", /HER NATURE \(dom\)/.test(personCard(s, her, "")));
 }
+
+// What a scene leaves behind: analysis never makes it onto her card, and old saves lose theirs.
+{
+  const { addWays, waysBrief } = await import("../src/engine/ways.ts");
+  const s = newGame({ seed: "records", starting_slaves: 1 } as never);
+  const her = Object.values(s.people).find((p) => p.status === "owned")!;
+  const kept = addWays(s, her, ["When she names a price he pays it or he says no plainly, and neither of them pretends the money was a favour", "he kneels and kisses each of her toes before she'll talk to him"]);
+  check("a way written as analysis isn't kept", kept.length === 1 && /kisses each of her toes/.test(kept[0]), kept);
+  her.ways = [...(her.ways ?? []), { text: "being paid is not the same as being kept, and neither of them pretends otherwise", week: 1 }];
+  check("nor shown, if an old save has one", !/not the same as/.test(waysBrief(her)));
+  sanitize(s);
+  check("and loading clears it out", !(her.ways ?? []).some((w) => /not the same as/.test(w.text)));
+}
+

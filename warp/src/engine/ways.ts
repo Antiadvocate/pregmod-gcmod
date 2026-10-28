@@ -9,6 +9,7 @@
  * rebuilt whole when she's read properly, and it sits near the top of her card in every scene.
  */
 import type { Person, SaveState } from "./types";
+import { soundsLikeAnalysis } from "./style";
 
 const MAX = 10;
 const norm = (x: string) => x.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
@@ -19,7 +20,7 @@ export function addWays(s: SaveState, p: Person, lines: string[]): string[] {
   const added: string[] = [];
   for (const raw of lines.slice(0, 3)) {
     const text = String(raw ?? "").replace(/\s+/g, " ").trim().replace(/[.]+$/, "").slice(0, 200);
-    if (text.length < 8) continue;
+    if (text.length < 8 || soundsLikeAnalysis(text)) continue;
     const n = norm(text);
     const same = list.find((w) => norm(w.text) === n || (n.length > 20 && (norm(w.text).includes(n.slice(0, 24)) || n.includes(norm(w.text).slice(0, 24)))));
     if (same) { same.week = s.arcology.week; continue; }
@@ -39,7 +40,7 @@ export function setWays(s: SaveState, p: Person, lines: string[]): void {
 
 /** For her card. */
 export function waysBrief(p: Person): string {
-  const list = p.ways ?? [];
+  const list = (p.ways ?? []).filter((w) => !soundsLikeAnalysis(w.text));
   if (!list.length) return "";
   return `HOW YOU TWO DO THINGS. These were settled between you over many scenes. Every scene keeps to them unless the player changes them in this one, and nobody acts like they're new. They're how things go between you, so show them happening. Nobody recites them or says "you always…":\n${list.map((w) => `· ${w.text}`).join("\n")}`;
 }
