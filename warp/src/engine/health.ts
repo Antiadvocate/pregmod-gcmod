@@ -264,7 +264,8 @@ export const PROCEDURES: Procedure[] = [
   { id: "eyes", name: "Prosthetic eyes", cost: 14000, recovery: 3, toll: 16, resented: 5,
     apply: (p) => { p.body.eyes = "prosthetic"; p.body.marks.push({ kind: "prosthetic", where: "eyes", what: "prosthetic eyes", week: 0 }); } },
   { id: "voice", name: "Voice surgery", cost: 6000, recovery: 2, toll: 10, resented: 5,
-    apply: (p) => { p.body.voice = 3; } },
+    // Pitch work on a voice she has. One that was cut out needs rebuilding in the theatre.
+    apply: (p) => { if (p.body.voice !== 0) p.body.voice = 3; } },
   { id: "hormones_f", name: "Feminising course", cost: 3000, recovery: 0, toll: 4, resented: 4,
     apply: (p) => { p.body.boobs += 120; p.body.waist = clamp(p.body.waist - 12, -100, 100); p.body.muscle = clamp(p.body.muscle - 8, -100, 100); } },
   { id: "hormones_m", name: "Masculinising course", cost: 3000, recovery: 0, toll: 4, resented: 4,

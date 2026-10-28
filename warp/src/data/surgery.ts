@@ -19,7 +19,7 @@ export interface Procedure {
   name: string;
   /** What the surgeon actually does, one line, in the theatre's own register. */
   what: string;
-  group: "genitals" | "fertility" | "body" | "feet" | "face";
+  group: "genitals" | "fertility" | "body" | "feet" | "face" | "senses";
   cost: number;
   /** Weeks flat on her back afterwards. */
   recovery: number;
@@ -364,5 +364,68 @@ export const PROCEDURES: Procedure[] = [
     apply: (p) => { feetOf(p).ticklish = 0; },
   },
 ];
+
+/* ── her senses, and her voice ──────────────────────────────────────────────────────────────
+ * The original's harshest table: a slave made mute, deaf or blind. Each stays done until it's
+ * undone, and undoing it costs more than doing it. What it does to the rest of the house is in
+ * engine/surgery: everyone hears about it, and every woman in the building is more afraid. */
+PROCEDURES.push(
+  {
+    id: "remove_voice", name: "Cut out her vocal cords", group: "senses", extreme: true,
+    what: "her vocal cords are cut out, and she will never say another word until they're rebuilt",
+    cost: 8000, recovery: 2, damage: -12, takes: -32,
+    can: (p) => p.body.voice === 0 ? "she's already mute" : null,
+    apply: (p) => { if (p.body.voice) p.body.voice_before = p.body.voice; p.body.voice = 0; },
+  },
+  {
+    id: "restore_voice", name: "Rebuild her voice", group: "senses", needs_upgrade: true,
+    what: "her vocal cords are rebuilt from grafts, and she can speak again in her own voice",
+    cost: 25000, recovery: 4, damage: -10, takes: 18,
+    can: (p) => p.body.voice !== 0 ? "she can speak" : null,
+    apply: (p) => { p.body.voice = p.body.voice_before ?? 2; delete p.body.voice_before; },
+  },
+  {
+    id: "deafen", name: "Deafen her", group: "senses", extreme: true,
+    what: "the nerves of her inner ears are destroyed, and she lives in silence",
+    cost: 7000, recovery: 1, damage: -8, takes: -30,
+    can: (p) => p.body.ears === "deaf" ? "she's already deaf" : null,
+    apply: (p) => { p.body.ears = "deaf"; },
+  },
+  {
+    id: "restore_hearing", name: "Give her cochlear implants", group: "senses", needs_upgrade: true,
+    what: "implants are fitted behind her ears, and she hears again",
+    cost: 22000, recovery: 3, damage: -8, takes: 16,
+    can: (p) => p.body.ears !== "deaf" && p.body.ears !== "hard of hearing" ? "she can hear" : null,
+    apply: (p) => { p.body.ears = "prosthetic"; },
+  },
+  {
+    id: "blind", name: "Blind her", group: "senses", extreme: true,
+    what: "her optic nerves are severed, and she'll never see again unless she's given new eyes",
+    cost: 8000, recovery: 2, damage: -10, takes: -38,
+    can: (p) => p.body.eyes === "blind" ? "she's already blind" : null,
+    apply: (p) => { p.body.eyes = "blind"; },
+  },
+  {
+    id: "restore_sight", name: "Give her prosthetic eyes", group: "senses", needs_upgrade: true,
+    what: "her eyes are replaced with prosthetics wired to what's left of her nerves, and she sees again",
+    cost: 30000, recovery: 3, damage: -12, takes: 20,
+    can: (p) => p.body.eyes !== "blind" ? "she can see" : null,
+    apply: (p) => { p.body.eyes = "prosthetic"; },
+  },
+  {
+    id: "pull_teeth", name: "Pull her teeth", group: "senses", extreme: true,
+    what: "every tooth is pulled and she's given dentures that come out, for a mouth that can't bite",
+    cost: 4000, recovery: 1, damage: -6, takes: -22,
+    can: (p) => p.body.teeth === "removable" ? "her teeth are already out" : null,
+    apply: (p) => { p.body.teeth = "removable"; },
+  },
+  {
+    id: "implant_teeth", name: "Give her implanted teeth", group: "senses",
+    what: "titanium implants and a full set of teeth that stay in",
+    cost: 12000, recovery: 2, damage: -6, takes: 10,
+    can: (p) => p.body.teeth !== "removable" ? "she has her teeth" : null,
+    apply: (p) => { p.body.teeth = "fixed"; },
+  },
+);
 
 export const PROCEDURE_BY_ID: Record<string, Procedure> = Object.fromEntries(PROCEDURES.map((x) => [x.id, x]));

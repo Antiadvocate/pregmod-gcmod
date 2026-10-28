@@ -99,6 +99,8 @@ export interface Body {
   eyes: "normal" | "nearsighted" | "blind" | "prosthetic";
   ears: "normal" | "hard of hearing" | "deaf" | "prosthetic";
   voice: 0 | 1 | 2 | 3;  // 0 mute, 1 deep, 2 normal, 3 high
+  /** What her voice was before it was cut out, so restoring it gives her own back. */
+  voice_before?: 1 | 2 | 3;
   teeth: "normal" | "crooked" | "gapped" | "fixed" | "removable" | "pointy" | "baleen";
   /** Everything permanent that was done TO this body, as sentences. The narrator reads these; no
    *  code branches on the strings, so a mod can add a procedure without touching an enum. */

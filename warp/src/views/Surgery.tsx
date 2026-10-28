@@ -17,6 +17,7 @@ const GROUPS: { id: Procedure["group"]; label: string; note: string }[] = [
   { id: "fertility", label: "Fertility", note: "Fertility and sterilization." },
   { id: "body", label: "The body", note: "Other procedures." },
   { id: "feet", label: "Feet", note: "Size, arches, soles, and her tendons." },
+  { id: "senses", label: "Senses and voice", note: "Make her mute, deaf or blind, or pull her teeth. Each stays done until it's undone, and undoing it costs more. The whole house hears about it." },
 ];
 
 export default function Surgery({ id }: { id: string }) {

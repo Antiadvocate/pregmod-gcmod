@@ -129,6 +129,19 @@ export function operate(s: SaveState, p: Person, procId: string): SurgeryResult 
     surgeryDone(mem, proc.name.toLowerCase(), proc.what, week);
   }
 
+  // Her senses or her voice: the whole house hears about it, and every woman in it is more afraid,
+  // because what they take from it is what could be done to them.
+  if (proc.group === "senses" && felt.score < 0) {
+    startRumor(s, `the owner had ${p.name}'s ${proc.id === "remove_voice" ? "vocal cords cut out" : proc.id === "deafen" ? "hearing destroyed" : proc.id === "blind" ? "eyes put out" : "teeth pulled"}`, { about: p.id, salience: 9 });
+    for (const other of Object.values(s.people)) {
+      if (other.id === p.id || (other.status !== "owned" && other.status !== "indentured")) continue;
+      other.bond.fear = clamp(other.bond.fear + 10, 0, 100);
+      shove(other.psyche, -0.6);
+      const om = s.memory[other.id];
+      if (om) remember(om, { content: `the owner had ${p.name} taken to the surgeon, and ${proc.what}`, week, importance: 8, charge: "cold", core: true });
+    }
+  }
+
   // The household finds out. Genital work is the kind of thing everybody in the building knows by
   // Thursday, and what they take from it is what could be done to them.
   if (proc.group === "genitals") {

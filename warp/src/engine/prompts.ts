@@ -139,6 +139,32 @@ export function breastsLine(p: Person): string {
 
 /** How much other people's pain registers with her, when it's far from ordinary. Low conscience is
  *  coldness, not brokenness, and it shows in small things as much as big ones. */
+/** What she can't do: speak, hear or see. A narrator was told "if her card says she is mute" and
+ *  her card never said it, so a woman with her vocal cords cut out talked through every event. */
+export function sensesLine(p: Person): string {
+  const b = p.body, out: string[] = [];
+  if (b.voice === 0) out.push("She is MUTE. She cannot say a single word, so never write her any dialogue: no quoted words, no whispers, nothing mouthed or murmured. She can make wordless sounds (a whimper, a gasp, a hum, a choked noise), nod, shake her head, point, gesture, and write if she's handed something to write with, and that's all");
+  if (b.ears === "deaf") out.push("She is DEAF. She hears nothing, so she doesn't react to what's said unless she sees it, has it written down, or is touched or shown. She can be startled from behind, and she watches faces and hands to follow what's happening");
+  else if (b.ears === "hard of hearing") out.push("She's hard of hearing, so she misses things said quietly or behind her and asks for them again");
+  if (b.eyes === "blind") out.push("She is BLIND. She sees nothing, so she never looks, glances, watches or meets anyone's eyes. She knows the world by touch, sound and smell, and has to be led or told where things are");
+  else if (b.eyes === "nearsighted") out.push("She's nearsighted, so anything past arm's length is a blur to her");
+  if (b.teeth === "removable") out.push("Her teeth have been pulled and she wears dentures that come out, so with them out her mouth is soft gums and she can't bite");
+  return out.length ? `HER SENSES, which are facts. ${out.join(". ")}.` : "";
+}
+
+/** The other women remember what the theatre did to someone, and it's enough to mention it. */
+export function dreadLine(s: SaveState, p: Person): string {
+  const PHRASE: Record<string, string> = { "cut out her vocal cords": "vocal cords cut out", "deafen her": "hearing destroyed", "blind her": "eyes put out", "pull her teeth": "teeth pulled" };
+  const done = Object.values(s.people).filter((x) => x.id !== p.id && (x.status === "owned" || x.status === "indentured" || x.status === "free"))
+    .flatMap((x) => {
+      const cut = x.body.marks.filter((m) => m.where === "senses" && PHRASE[m.what]).map((m) => `${x.name}'s ${PHRASE[m.what]}`);
+      // Silenced some other way (the editor, an old save): her voice is gone all the same.
+      return cut.length || x.body.voice !== 0 ? cut : [`${x.name}'s voice taken`];
+    });
+  if (!done.length || p.psyche.state === "broken") return "";
+  return `WHAT THE SURGEON DID. She knows what you've done to the others (${done.slice(-3).join(", ")}), and that it could be done to her. Any mention of the surgeon, the theatre or what happened to them, even in passing, and she goes quiet, still and obedient at once, and stays that way.`;
+}
+
 export function conscienceLine(p: Person): string {
   const c = p.persona.conscience ?? 0.5;
   if (c <= 0.3) return `CONSCIENCE, which is low, and it makes her a prick. Other people's pain and feelings barely register with her, the owner's included. She's selfish, mocking and careless with people, lies easily, takes what she wants, hurts people without guilt, and is bored or amused when they're upset. She doesn't check on anyone, apologise, go soft or stop because someone's hurting unless it gets her something. It shows in small callous things all day, like a joke at the wrong moment, not looking up when someone cries, or using someone and forgetting them, as much as in anything cruel.`;
@@ -264,6 +290,10 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (power) lines.push(power);
   const ordersTop = agreementsBrief(s, p);
   if (ordersTop) lines.push(ordersTop);
+  const senses = sensesLine(p);
+  if (senses) lines.push(senses);
+  const dread = dreadLine(s, p);
+  if (dread) lines.push(dread);
   const cold = conscienceLine(p);
   if (cold) lines.push(cold);
   const now = p.body.appearance_now && !/^wearing\b/i.test(p.body.appearance_now) ? `Right now: ${p.body.appearance_now}. ` : "";
