@@ -260,7 +260,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (p.persona.voice?.never_says?.length) lines.push(`PHRASES SHE NEVER USES: ${p.persona.voice.never_says.join("; ")}`);
   // Express relationship metrics as descriptive words so the model doesn't parrot raw numbers in dialogue.
   if (s.player.owned_by === p.id) lines.push(`HOW SHE FEELS ABOUT YOU: ${r.trust_label}${r.devotion > 40 ? ", and genuinely attached to you" : r.devotion < -15 ? ", and holds no affection for you" : ""}. Note that this is her internal feeling—how she actually treats you is governed by HOW SHE KEEPS YOU, so attachment doesn't automatically make her gentle unless stated there.`);
-  else lines.push(`ATTITUDE TOWARD YOU: ${r.label}, ${r.trust_label}.${r.fragility > 0.6 ? " Most of her obedience comes from fear." : ""}`);
+  else lines.push(`ATTITUDE TOWARD YOU: ${r.label}, ${r.trust_label}.${r.fragility > 0.6 ? " Most of her obedience comes from fear." : ""} This is how attached she is and how safe she feels with you, not how she behaves. It never makes her sweet or gentle by itself. A devoted sadist is still a sadist, and she's cruel to the one she loves, because that's how she loves. How she treats you comes from her nature (HER NATURE, IN BED and THE POWER BETWEEN YOU), and her devotion decides how much of it is aimed at you.`);
   const orders = obeysLine(s, p);
   if (orders) lines.push(orders);
   lines.push(...characterLines(p));

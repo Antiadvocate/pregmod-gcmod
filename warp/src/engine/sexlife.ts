@@ -24,6 +24,7 @@ import { FETISH_BY_ID, FLAW_BY_ID, QUIRK_BY_ID, ACT_BY_ID, fetishBand } from "..
 import { clamp, shove } from "./psyche";
 import { obeys, type Stance } from "./compliance";
 import { forcedAllowed, slaveSex } from "./houserules";
+import { reachOf } from "./nature";
 
 const SKILL_WORD = (n: number) => (n >= 100 ? "masterful" : n > 60 ? "expert" : n > 30 ? "skilled" : n > 10 ? "basic" : "untrained");
 
@@ -118,8 +119,22 @@ export function dominantInBed(p: Person): boolean {
   return p.persona.fetishes.some((f) => DOMINANT.has(f.name) && f.strength >= 30) || DOMINANT.has(p.persona.paraphilia ?? "");
 }
 
+/** How strong her dominant streak is: the strongest dominant fetish, or a paraphilia, which is a need. */
+const dominantStrength = (p: Person): number => Math.max(DOMINANT.has(p.persona.paraphilia ?? "") ? 100 : 0, ...p.persona.fetishes.filter((f) => DOMINANT.has(f.name)).map((f) => f.strength));
+
+/** A devoted woman with a dominant streak: devotion isn't softness. How far it reaches the owner is
+ *  engine/nature's call (strength against ease, trust, fear and room), the same as on HER NATURE,
+ *  so the bed lines never tell her to wait to be handed control when her nature says she takes it. */
+function devotedDom(s: SaveState, p: Person): string {
+  const reach = reachOf(s, p, dominantStrength(p));
+  if (reach === "takes") return "She's devoted to the owner, and with her that doesn't mean gentle. She takes charge of him without waiting to be handed it. She gives him orders, holds him down, uses him and hurts him the way her nature wants, and how much she loves him shows in how hard she goes. She stops if he really stops her.";
+  if (reach === "slips") return "She obeys the owner and she wants control, both at once. Now and then she grabs it before she thinks, pins him, gives an order or gets rough, and the moment she catches herself she backs off, knowing she's overstepped, unless he lets her carry on. When he hands her control, she uses it hard.";
+  return "";
+}
+
 /** How a dominant streak sits with how she takes orders. */
-function withOrders(stance: Stance): string {
+function withOrders(stance: Stance, devoted = ""): string {
+  if ((stance === "eager" || stance === "obedient") && devoted) return devoted;
   if (stance === "eager" || stance === "obedient") return "She obeys the owner and she wants control, both at once. She asks him for it, drops hints and pushes a little, and she only takes charge when he hands it to her. Until he does she gives him no orders, and if she's told to lie still and take it she does, and it shows as frustration rather than pleasure.";
   if (stance === "reluctant" || stance === "resists" || stance === "fights") return "With an owner she doesn't want, it comes out as a fight. She shoves back, goes for the top, scratches and bites, and the struggle does more for her than she'd ever admit.";
   if (stance === "terrified") return "Fear holds it down when she's with the owner, so it comes out on anyone weaker than her.";
@@ -130,7 +145,9 @@ function withOrders(stance: Stance): string {
 /** Who a need to use or hurt someone can land on, under the house rules. */
 function targets(s: SaveState, p: Person): string {
   const others = Object.values(s.people).filter((x) => x.id !== p.id && x.age >= 18 && (x.status === "owned" || x.status === "indentured"));
-  if (!others.length) return "There's no other slave in the house, so it has nowhere to go but the owner. She's rough with him when he hands her control, and the rest of the time it shows as restlessness.";
+  if (!others.length) return reachOf(s, p, dominantStrength(p)) === "takes"
+    ? "There's no other slave in the house, so it all lands on the owner, and she doesn't wait to be handed control to put it there."
+    : "There's no other slave in the house, so it has nowhere to go but the owner. She's rough with him when he hands her control, and the rest of the time it shows as restlessness.";
   if (forcedAllowed(s)) return "The house rules let her take the other slaves whether they want it or not, and she does.";
   if (slaveSex(s)) return "The house rules let her have the other slaves only if they agree, and what she needs goes past what they'll agree to.";
   return "The house rules forbid her from touching the other slaves, and it eats at her. She watches them, and the need comes out on the owner when he lets it.";
@@ -160,7 +177,7 @@ export function desireLines(p: Person, s?: SaveState): string[] {
   if (strong && p.psyche.state !== "broken") {
     const parts = ["IN BED. This is a fact. When sex happens, or when she's turned on, her fetish and paraphilia above decide what she reaches for, what gets her off and what leaves her cold. They win over the quieter reading of her personality and voice, so a shy, careful or obedient woman can be a dom in bed, and the contrast is the point. Show it in what she does every time sex happens."];
     if (s && dominantInBed(p)) {
-      const how = withOrders(obeys(s, p).stance);
+      const how = withOrders(obeys(s, p).stance, devotedDom(s, p));
       if (how) parts.push(how);
       if (ABUSIVE.has(para ?? "")) parts.push(targets(s, p));
     }
@@ -193,6 +210,8 @@ export function actDesireLine(s: SaveState, p: Person, actId: string): string {
   if (served) return "SHE LIKES BEING SERVED, and this is a fact. You doing this for her suits her, and it shows in how she settles into it and enjoys it, not in her giving you orders.";
   const stance = obeys(s, p).stance;
   if (stance === "terrified") return "SHE'D RATHER BE ON TOP, and this is a fact. Being used isn't what she wants, but she's too afraid of you to show it, and it leaves her cold.";
+  const devoted = (stance === "eager" || stance === "obedient") ? devotedDom(s, p) : "";
+  if (devoted) return `SHE'D RATHER BE ON TOP, and this is a fact. ${devoted}`;
   if (stance === "eager" || stance === "obedient") return "SHE'D RATHER BE ON TOP, and this is a fact. Being used isn't what she wants. She may ask to be on top or push back a little, but if you don't let her she does what you want, and it shows as frustration rather than pleasure. She gives you no orders.";
   return "SHE'D RATHER BE ON TOP, and this is a fact. She fights for control as much as she fights against you, shoving back, going for the top, biting and scratching.";
 }
