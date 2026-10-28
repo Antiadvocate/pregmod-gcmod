@@ -107,6 +107,7 @@ check("but a price isn't an allowance", readAllowance("That dress cost 100k.") =
   check("a keyholder's card has the cage, the key and the denial", /HER FETISH: keyholder[^\n]*only key on a chain[^\n]*ruins it/.test(card));
   check("and the cuckolding that goes with it", /HER FETISH: keyholder[^\n]*other men while he's locked[^\n]*clean up/.test(card));
   check("and it's who she is outside bed too", /HER NATURE \(keyholder\)[^\n]*key on her neck/.test(card));
+  check("and with an owner who isn't locked, she owns when he comes and wants him caged", /HER NATURE \(keyholder\)[^\n]*decides when they get to come[^\n]*until he is, she brings it up/.test(card) && /Until he is, she owns when he comes/.test(card));
 }
 
 // What's locked and what isn't, her breasts as something to use, and a cold conscience.

@@ -106,7 +106,7 @@ export function characterLines(p: Person): string[] {
   const quirk = b?.quirk ? BEHAVIOR_QUIRK_BY_ID[b.quirk] : undefined;
   if (flaw) out.push(`HER FLAW, ${flaw.id}. ${flaw.note} When she's told what to do, ${flaw.friction}. Being fond of the owner doesn't fix it. Only being made to answer for it, again and again, wears it down.`);
   // One written in by hand (the editor, or a model) isn't in the table: it's shown as written.
-  else if (b?.flaw) out.push(`HER FLAW: ${b.flaw}. It shows whenever it can, and being fond of the owner doesn't fix it.`);
+  else if (b?.flaw) out.push(`HER FLAW: ${b.flaw}. It shows whenever it can, and being fond of the owner doesn't fix it. It shows in what she does, expects and reaches for, and she never says it in these words or explains it.`);
   if (quirk) out.push(`HER WAY (${quirk.id}): ${quirk.note}`);
   // One written in by hand: said to be how she is all day, and if it names a kink, what that kink is.
   else if (b?.quirk) {

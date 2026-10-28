@@ -13,7 +13,7 @@
  */
 import { practiseFrom } from "./player";
 import { meet as meetFace } from "./faces";
-import { fitOf, ownerSize } from "./fit";
+import { fitOf, ownerLimp, ownerSize } from "./fit";
 import { applyMarks, marksForAct } from "./marks";
 import { walkIn, walkInLine, misreads, misreadLine } from "./alive";
 import { coarsen, REGISTER_TAIL } from "./register";
@@ -432,6 +432,8 @@ export function applyDiff(s: SaveState, d: Diff, prose: string, said?: string): 
     if (!p || !hole || (hole === "vagina" && p.body.vagina === null)) continue;
     // Whose it was: one of yours with a cock, or the owner.
     const by = x.by && x.by !== "owner" ? s.people[x.by] : undefined;
+    // A limp owner's cock never went in, whatever the prose said.
+    if (!by && ownerLimp(s)) continue;
     const f = fitOf(p, hole, by?.body.dick ? by.body.dick : ownerSize(s).size, s);
     const week = s.arcology.week;
     // A cock far smaller than the hole can't make it sore, whatever the prose said: that soreness
