@@ -6,10 +6,10 @@
  *  decisions of the week a screen and a half down. The end-of-week button floats over all of it
  *  and says how many things are still open. */
 import { applyOrders, type Order } from "../engine/ownwords";
-import { momentsOf } from "../engine/moments";
+import { momentsOf, openMoment } from "../engine/moments";
 import { collarOffered, concludeMoment } from "../engine/deeds";
 import AssistantCard from "./Assistant";
-import { CollarOffer, Reaction as MomentReaction, OpenMoments } from "./MomentCard";
+import MomentCard, { CollarOffer, DeedCard, Reaction as MomentReaction, OpenMoments } from "./MomentCard";
 import { askForHand, askWait, giveHandUp, handOf, throughHer } from "../engine/share";
 import { YourWeek, TalkToHer } from "./YourRoom";
 import { readHer } from "../engine/herwill";
@@ -23,7 +23,7 @@ import { useGame } from "../lib/game";
 import { Button, Card, Fold, Meter, Money, cx } from "../lib/ui";
 import { endWeek } from "../engine/week";
 import { generateDynamicEvent, dynamicReadiness } from "../engine/dynamic";
-import { choicesOf, liveWeek, narrateOutcome, readOwnAnswer, resolveAny } from "../engine/living";
+import { choicesOf, liveWeek, narrateOutcome, playOwnAnswer, readOwnAnswer, resolveAny } from "../engine/living";
 import { governedPlaces } from "../engine/governor";
 import { AskList } from "./AskCard";
 import StoryCard from "./StoryCard";
@@ -44,15 +44,21 @@ import { band, wear } from "../engine/psyche";
 import { modelsAvailable } from "../config";
 
 export default function Penthouse({ go }: { go: (r: Route) => void }) {
-  const [outcomes, setOutcomes] = useState<{ id: string; setup?: string; chose: string; text: string; person?: string; others?: string[]; moment?: string; writing?: boolean; facts?: string; auto?: boolean; chips?: Chip[] }[]>([]);
+  const [outcomes, setOutcomes] = useState<{ id: string; setup?: string; chose: string; text: string; person?: string; others?: string[]; moment?: string; writing?: boolean; facts?: string; auto?: boolean; chips?: Chip[]; own?: boolean; concluding?: boolean; deed?: string }[]>([]);
   // Whether each event's answer gets written out by the model; off just applies it.
   const [writeOff, setWriteOff] = useState<Record<string, boolean>>({});
   /** Done: the card goes, and a scene played out under it ends where it is. */
+  // Done: with a scene still open, it's written up first and what it changed is shown on the card,
+  // which stays until you close it. With nothing to write up, the card goes.
   const finish = async (o: { id: string; moment?: string }) => {
     const m = o.moment ? momentsOf(save).find((x) => x.id === o.moment) : undefined;
-    setOutcomes((xs) => xs.filter((x) => x.id !== o.id));
-    if (m?.open) { await concludeMoment(save, m); mutate(() => {}); }
+    if (!m?.open) { setOutcomes((xs) => xs.filter((x) => x.id !== o.id)); return; }
+    setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, concluding: true } : x)));
+    const d = await concludeMoment(save, m);
+    mutate(() => {});
+    setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, concluding: false, deed: d?.id ?? "" } : x)));
   };
+  const dismiss = (id: string) => setOutcomes((xs) => xs.filter((x) => x.id !== id));
   const { save, mutate } = useGame();
   const [running_, setRunning] = useState(false);
   const [inventing, setInventing] = useState(false);
@@ -108,11 +114,30 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
   };
 
   /** Answer an event: one of its choices, or your own words read as one of them. */
-  const pick = (e: (typeof save.events)[number], o: { id: string; label: string; note?: string }, orders: Order[] = []) => {
+  const pick = (e: (typeof save.events)[number], o: { id: string; label: string; note?: string }, orders: Order[] = [], own?: string) => {
     let text = "";
     let chips: Chip[] = [];
     // Only what happens to your own people gets written out; business stays the game's line and what changed.
     const write = !!e.person && modelsAvailable() && !save.models.lean_mode && save.models.write_outcomes !== false && !writeOff[e.id];
+    // Your own words, about your own people: what you typed is what happened, and what it changed is
+    // read from it (engine/living playOwnAnswer). Not the nearest choice's canned line and numbers.
+    if (own && write && !e.kind.startsWith("reign_")) {
+      let before: ReturnType<typeof takeStats> | null = null;
+      mutate((s) => { before = takeStats(s, [e.person, e.other]); applyOrders(s, orders); });
+      const card = { id: e.id, setup: e.seed, chose: own, text: "", person: e.person, others: e.other ? [e.other] : undefined, chips: [] as Chip[] };
+      setOutcomes((xs) => [...xs, { ...card, writing: true }]);
+      void playOwnAnswer(save, e, own).then((prose) => {
+        // No model wrote it: fall back to reading your words as the nearest choice.
+        if (!prose) { setOutcomes((xs) => xs.filter((x) => x.id !== e.id)); pick(e, o, []); return; }
+        // What you typed was the start of a scene, so it carries straight on from here: no "play it
+        // out", and nothing written again.
+        let mid = "";
+        mutate((s) => { mid = openMoment(s, { person: e.person, others: e.other ? [e.other] : undefined, title: e.written?.title ?? "Your answer", source: "event", setup: e.seed, you: own, happened: prose, ready: true }); });
+        const after = takeStats(save, [e.person, e.other]);
+        setOutcomes((xs) => xs.map((x) => (x.id === e.id ? { ...x, text: prose, chips: before ? chipsBetween(before, after) : [], writing: false, own: true, moment: mid } : x)));
+      });
+      return;
+    }
     // Once she holds your collar, what you pick goes through her.
     mutate((s) => {
       const before = takeStats(s, [e.person, e.other]);
@@ -259,8 +284,15 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
             {o.chips?.length ? <div className="flex flex-wrap gap-1">{o.chips.map((c, i) => <span key={i} className={`chip ${c.good ? "good" : "bad"}`}>{c.text}</span>)}</div> : null}
           </div>
           <div className="flex flex-wrap items-center gap-x-2">
-            {o.person || modelsAvailable() ? <MomentReaction auto={!!o.auto} seed={{ person: o.person, others: o.others, title: o.chose, source: "event", setup: o.setup, you: o.chose, happened: o.text }} onOpen={(mid) => setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, moment: mid } : x)))} /> : null}
-            <Button size="sm" kind="primary" className="mt-3" onClick={() => void finish(o)}>Done</Button>
+            {o.own && o.moment ? <MomentCard id={o.moment} className="basis-full" bare />
+              : o.deed !== undefined ? null
+              : o.person || modelsAvailable() ? <MomentReaction auto={!!o.auto} seed={{ person: o.person, others: o.others, title: o.chose, source: "event", setup: o.setup, you: o.chose, happened: o.text }} onOpen={(mid) => setOutcomes((xs) => xs.map((x) => (x.id === o.id ? { ...x, moment: mid } : x)))} /> : null}
+            {o.concluding ? <div className="flex items-center gap-2 dim text-[12px] mt-3 basis-full"><Loader2 size={13} className="animate-spin" /> working out what it changed</div> : null}
+            {o.deed ? <div className="basis-full"><DeedCard id={o.deed} /></div> : null}
+            {o.deed !== undefined || (o.own && o.moment && !momentsOf(save).find((x) => x.id === o.moment)?.open)
+              ? <Button size="sm" kind="primary" className="mt-3" onClick={() => dismiss(o.id)}>Close</Button>
+              : o.own ? null
+              : <Button size="sm" kind="primary" className="mt-3" disabled={o.writing || o.concluding} onClick={() => void finish(o)}>{o.concluding ? "…" : "Done"}</Button>}
           </div>
         </Card>
       ))}
@@ -292,14 +324,14 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
               if (!r.id) return r.error ?? "couldn't do that";
               const live = save.events.find((x) => x.id === e.id);
               if (!live) return "";
-              pick(live, { id: r.id, label: typed }, r.orders ?? []);
+              pick(live, { id: r.id, label: typed }, r.orders ?? [], typed);
               return "";
             }} /> : null}
           </Card>
         );
       })}
 
-      <div className="mb-2"><OpenMoments title="Left unfinished" /></div>
+      <div className="mb-2"><OpenMoments title="Left unfinished" hide={outcomes.map((o) => o.moment).filter((x): x is string => !!x)} /></div>
 
       {!waitingCount && !outcomes.length && !aftermath ? (
         <div className="text-[13px] dim mb-6">{dyn.ready ? "A quiet week so far." : dyn.note || "A quiet week so far."}</div>

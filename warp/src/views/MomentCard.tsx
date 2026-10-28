@@ -166,10 +166,10 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
 }
 
 /** Her open scenes, or everyone's. */
-export function OpenMoments({ person, title }: { person?: string; title?: string }) {
+export function OpenMoments({ person, title, hide = [] }: { person?: string; title?: string; hide?: string[] }) {
   const { save, mutate } = useGame();
   const [on, setOn] = useState<string | null>(null);
-  const list = momentsOf(save).filter((m) => m.open && m.log.length > 1 && (!person || m.person === person)).slice(-8).reverse();
+  const list = momentsOf(save).filter((m) => m.open && m.log.length > 1 && !hide.includes(m.id) && (!person || m.person === person)).slice(-8).reverse();
   if (!list.length) return null;
   return (
     <div className="space-y-2">

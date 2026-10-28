@@ -176,6 +176,25 @@ check("but one read just before it keeps her voice and isn't read again", !dueTo
   check("a thread about someone gone is over", !openHooks(c, [girl.id]).length);
 }
 
+// Answering an event in your own words: what you typed is what happened, not the nearest choice's
+// canned line and numbers.
+{
+  const { playOwnAnswer } = await import("../src/engine/living.ts");
+  const o = newGame({ seed: "own words", starting_slaves: 1 } as never);
+  o.models.narrator_model = "test/model";
+  const girl = Object.values(o.people).find((p) => p.status === "owned")!;
+  const ev = { id: "cl_discipline-x", kind: "cl_discipline", person: girl.id, seed: `${girl.name} gave the maintenance crew orders all morning.`, options: [{ id: "private", label: "Punish her in private" }], week: o.arcology.week, severity: "notable" } as never;
+  o.events.push(ev);
+  const fear = girl.bond.fear, resent = girl.bond.resentment;
+  reply = "You walk her back through her door and she kneels without a word.";
+  const prose = await playOwnAnswer(o, ev, "She can suck my cock while I talk to the crew.");
+  check("your own words are played out as what happened", prose.includes("kneels"));
+  check("and the event is answered", !o.events.some((e) => e.id === "cl_discipline-x"));
+  check("without the nearest choice's punishment landing on her", girl.bond.fear === fear && girl.bond.resentment === resent, [fear, girl.bond.fear, resent, girl.bond.resentment]);
+  check("and the chronicle has what you actually did", (o.chronicle ?? []).some((c) => /own words: She can suck my cock/.test(c.text)));
+  reply = "\"Bon. Fine, Master,\" she says. Bon. Bon, she puts the cup down.\n\nOPTIONS:\n- Ask more\n- Hold her\n- Kiss her\n- Leave";
+}
+
 g.fetch = oldFetch;
 if (hadLS) g.localStorage = oldLS; else delete g.localStorage;
 if (!hadLoc) delete g.location; else g.location = oldLoc;
