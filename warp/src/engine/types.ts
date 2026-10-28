@@ -890,6 +890,8 @@ export interface SaveState {
   governors?: import("./governor").Governorship[];
   /** When each kind of event last fired, keyed by kind or kind:person. Stops repeats. */
   event_log?: Record<string, number>;
+  /** What the last goings-on were about, so the next ones aren't the same thread again (engine/goings). */
+  goings_seen?: { week: number; person: string; key: string; title?: string; who: string[]; topic?: string }[];
   id: string;
   name: string;
   schema: number;

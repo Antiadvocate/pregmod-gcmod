@@ -159,6 +159,7 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
           </div>
         </>
       ) : null}
+      {!m.open && m.ended ? <div className="text-[12px] dim mt-3">This one's done, because {m.ended}. What happened in it counts, and it can come back up if something it set going matters later.</div> : null}
       {!m.open ? <DeedCard id={m.concluded} onClose={onClose} /> : null}
     </div>
   );

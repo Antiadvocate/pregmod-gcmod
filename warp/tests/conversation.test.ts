@@ -19,16 +19,21 @@ setApiKey("sk-test");
 
 const bodies: Record<string, unknown>[] = [];
 let reply = "\"Bon. Fine, Master,\" she says. Bon. Bon, she puts the cup down.\n\nOPTIONS:\n- Ask more\n- Hold her\n- Kiss her\n- Leave";
+// The bookkeeper writes down that something changed, as a real one would in a scene that's going
+// somewhere; `bookFlat` makes it write down nothing, for the test of a scene that isn't.
+let bookFlat = false;
 g.fetch = async (_u: string, init: { body: string }) => {
   bodies.push(JSON.parse(init.body));
-  return new Response(JSON.stringify({ choices: [{ message: { content: reply } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }), { status: 200 });
+  const book = init.body.includes("You are the Bookkeeper");
+  const content = book ? (bookFlat ? "{}" : JSON.stringify({ treatment: [{ id: "nobody", kind: "kindness", size: 6, why: "test" }] })) : reply;
+  return new Response(JSON.stringify({ choices: [{ message: { content } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }), { status: 200 });
 };
 
 const s = newGame({ seed: "talk", starting_slaves: 4 } as never);
 s.models.narrator_model = "test/model";
 const [her, other] = Object.values(s.people).filter((p) => p.status === "owned" && p.age >= 18);
 const id = openMoment(s, { person: her.id, title: "With her", source: "encounter", happened: "" });
-for (const line of ["How are you?", "Tell me about your day.", "Did you eat?", "What do you think of the new room?", "Come sit.", "What's on your mind?", "Anything you need?", "Good night."]) await playMoment(s, id, line);
+for (const line of ["How are you?", "Tell me about your day.", "Did you eat?", "What do you think of the new room?", "Come sit.", "What's on your mind?", "Anything you need?", "Sleep well, then."]) await playMoment(s, id, line);
 const m = momentsOf(s).find((x) => x.id === id)!;
 check("nobody walks into a private scene", !(m.others ?? []).length && !bodies.some((b) => /SOMEONE WALKS IN|GETS IT WRONG/.test(JSON.stringify(b))), m.others);
 check("other women are never written in", !(m.others ?? []).includes(other.id));
@@ -81,6 +86,94 @@ check("but one read just before it keeps her voice and isn't read again", !dueTo
   const f = { name: "Nel Coster", pronoun: "she", age: 40, first: 1, last: 1, seen: 1 } as never;
   note(s, f, "week 4: she spoke up in the canteen.");
   check("with the week said once", !/week \d+: week/.test(record(s, f)), record(s, f));
+}
+
+// Nothing happens in isolation: a scene picked up after the world moved is told what happened, and
+// the goings-on don't run on one thread.
+{
+  const { aroundBrief } = await import("../src/engine/snapshot.ts");
+  const { goingsCandidates } = await import("../src/engine/goings.ts");
+  const w = newGame({ seed: "world moves", starting_slaves: 1 } as never);
+  w.models.narrator_model = "test/model";
+  const girl = Object.values(w.people).find((p) => p.status === "owned")!;
+  const mid = openMoment(w, { person: girl.id, title: "At the silk shop", source: "event", happened: "Yvette holds up a bolt of green silk." });
+  w.arcology.week += 2;
+  w.deeds = [...(w.deeds ?? []), { id: "big", week: w.arcology.week - 1, summary: "You had half the lower city burned to the ground.", public: true, tags: [], witnesses: [], effects: [], source: "test" } as never];
+  check("what else is going on is one list, with the big thing in it", /WHAT ELSE IS GOING ON[\s\S]*half the lower city burned/.test(aroundBrief(w)));
+  bodies.length = 0;
+  await playMoment(w, mid, "So, the dress.");
+  const sent = (bodies.find((b) => JSON.stringify(b).includes("You continue a scene")) as { messages: { content: string }[] } | undefined)?.messages[1].content ?? "";
+  check("a scene picked up weeks later is told what happened since", /WHAT'S HAPPENED SINCE THIS SCENE LAST MOVED[\s\S]*half the lower city burned/.test(sent), sent.slice(0, 200));
+  bodies.length = 0;
+  await playMoment(w, mid, "Go on.");
+  const again = (bodies.find((b) => JSON.stringify(b).includes("You continue a scene")) as { messages: { content: string }[] } | undefined)?.messages[1].content ?? "";
+  check("but not every turn after that", !/WHAT'S HAPPENED SINCE/.test(again));
+
+  // Goings: a big thing becomes fallout for her, her interests take turns, and the last outsider sits out.
+  girl.persona.interests = ["sews her own dresses", "plays cards with the guards", "reads trashy novels"];
+  const cands = goingsCandidates(w).filter((c) => c.main.id === girl.id);
+  check("something big becomes an event about how it lands on her", cands.some((c) => c.kind === "fallout" && c.facts.some((f) => /burned/.test(f))));
+  const own1 = cands.find((c) => c.kind === "pursuit")!.facts.join(" ");
+  w.goings_seen = [{ week: w.arcology.week - 1, person: girl.id, key: `own:${girl.id}`, title: "The dress", who: ["Yvette Charron"] }];
+  const own2 = goingsCandidates(w).find((c) => c.main.id === girl.id && c.kind === "pursuit")!.facts.join(" ");
+  check("her own time is one interest at a time, and it changes", /sews her own dresses/i.test(own1) && !/sews/i.test(own2) && /plays cards/i.test(own2), [own1, own2]);
+  w.faces = { "yvette charron": { name: "Yvette Charron", pronoun: "she", age: 38, first: 1, last: 5, seen: 3, ties: [{ what: "her tailor", person: girl.id }] }, "nel coster": { name: "Nel Coster", pronoun: "she", age: 40, first: 1, last: 5, seen: 2, ties: [{ what: "a regular at the baths", person: girl.id }] } } as never;
+  w.deeds.push({ id: "told", week: w.arcology.week - 1, summary: "You told Nel Coster to stop bothering Chloé.", public: false, tags: [], witnesses: [], effects: [], source: "test" } as never);
+  const out = goingsCandidates(w).find((c) => c.main.id === girl.id && c.kind === "outside")!.facts.join(" ");
+  check("the outsider from her last goings-on sits this one out", !/Yvette/.test(out) && /Nel Coster/.test(out), out);
+  check("and what the owner said about the others comes with them", /What the owner did about Nel Coster[^.]*stop bothering/.test(out));
+}
+
+// The city a scene opened in, what changed by the time it's picked up, and when a scene is over.
+{
+  const { citySnap, cityDelta } = await import("../src/engine/snapshot.ts");
+  const { LAW_BY_ID } = await import("../src/data/laws.ts");
+  const { openHooks, chronicle } = await import("../src/engine/chronicle.ts");
+  const c = newGame({ seed: "city moves", starting_slaves: 1 } as never);
+  c.models.narrator_model = "test/model";
+  const girl = Object.values(c.people).find((p) => p.status === "owned")!;
+  const law = Object.values(LAW_BY_ID)[0];
+  const before = citySnap(c);
+  c.laws = [...(c.laws ?? []), { id: law.id, week: c.arcology.week, by: "you" }];
+  c.arcology.prosperity = Math.max(1, before.prosperity - 40);
+  const delta = cityDelta(before, citySnap(c));
+  check("what changed in the city is said in the game's terms", delta.some((d) => d.includes(law.name) && /became law/.test(d)) && delta.some((d) => /Prosperity fell/.test(d)), delta);
+
+  const sceneCalls = () => bodies.filter((b) => JSON.stringify(b).includes("You continue a scene")).map((b) => (b as { messages: { content: string }[] }).messages[1].content);
+  c.laws = [];
+  const mid = openMoment(c, { person: girl.id, title: "In her room", source: "event", happened: "She's folding laundry." });
+  bodies.length = 0;
+  await playMoment(c, mid, "How was your day?");
+  check("a scene opens with a picture of the city it's in", /THE CITY WHERE THIS HAPPENS/.test(sceneCalls()[0] ?? ""));
+  c.laws = [{ id: law.id, week: c.arcology.week, by: "you" }] as never;
+  bodies.length = 0;
+  await playMoment(c, mid, "Have you heard the news?");
+  const next = sceneCalls()[0] ?? "";
+  check("and isn't given it again every turn", !/THE CITY WHERE THIS HAPPENS/.test(next));
+  check("but is told exactly what changed since it last moved", new RegExp(`HOW THE CITY HAS CHANGED SINCE THIS SCENE LAST MOVED[\\s\\S]*${law.name}`).test(next), next.slice(0, 300));
+
+  // Over when you walk away, and over when it stops changing anything.
+  const leave = openMoment(c, { person: girl.id, title: "A word", source: "event", happened: "She waits." });
+  await playMoment(c, leave, "Fine. I leave.");
+  const lm = momentsOf(c).find((x) => x.id === leave)!;
+  check("walking away ends the scene", !lm.open && lm.ended === "you left", lm.ended);
+  const flat = openMoment(c, { person: girl.id, title: "Small talk", source: "event", happened: "She hums." });
+  bookFlat = true;
+  for (const line of ["Nice weather.", "Mm.", "Yes."]) await playMoment(c, flat, line);
+  const fm = momentsOf(c).find((x) => x.id === flat)!;
+  check("two turns that change nothing end it, offline", !fm.open && fm.ended === "it stopped going anywhere", [fm.open, fm.ended, fm.flat]);
+  const more = await playMoment(c, flat, "Anyway.");
+  check("and once it's over, it isn't played on", !more.ok && /done/.test(more.error ?? ""));
+  bookFlat = false;
+
+  // Threads left open close when they stop mattering.
+  chronicle(c, { keys: [girl.id], text: "She was caught stealing.", hook: "what she does next", life: 2 });
+  check("a fresh thread is open", openHooks(c, [girl.id]).some((h) => h.hook === "what she does next"));
+  c.arcology.week += 3;
+  check("and closed once its life is up", !openHooks(c, [girl.id]).some((h) => h.hook === "what she does next"));
+  chronicle(c, { keys: [girl.id], text: "She ran.", hook: "where she went" });
+  girl.status = "sold" as never;
+  check("a thread about someone gone is over", !openHooks(c, [girl.id]).length);
 }
 
 g.fetch = oldFetch;

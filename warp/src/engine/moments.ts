@@ -22,6 +22,7 @@ import { ownedBrief } from "./share";
 import { CONVERSATION, HOUSE_STYLE, personCard, BOOKKEEPER_SYSTEM, bookkeeperContext, householdLine } from "./prompts";
 import { didntFollow, finishLast } from "./style";
 import { worldBrief } from "./world";
+import { aroundBrief, citySnap, cityDelta, cityPicture, type CitySnap } from "./snapshot";
 import { applyDiff, salvage, noteStock, stockLine, type Diff } from "./turn";
 import { say } from "./voice";
 import { rng } from "./rng";
@@ -46,6 +47,17 @@ export interface Moment {
   source: string;
   week: number;
   updated: number;
+  /** How long the chronicle was when this scene last moved, so what happened elsewhere since, even
+   *  in the same week, is told to it when it's picked up again. */
+  chron?: number;
+  /** The city when this scene last moved, so picking it up again is told exactly what changed. */
+  city?: CitySnap;
+  /** The city picture has been given once; the scene doesn't need it every turn. */
+  pictured?: boolean;
+  /** Turns in a row that changed nothing. Two and the scene has run its course. */
+  flat?: number;
+  /** Why it ended on its own, when it did: you left, it was settled, it stopped going anywhere. */
+  ended?: string;
   log: MomentLine[];
   options: string[];
   /** Still open: it can be picked up later. */
@@ -207,7 +219,7 @@ export function openMoment(s: SaveState, o: { person?: string; others?: string[]
   if (o.setup?.trim()) log.push({ role: "scene", text: o.setup.trim() });
   if (o.you) log.push({ role: "you", text: o.you });
   if (o.happened) log.push({ role: "scene", text: o.happened });
-  list.push({ id, person: o.person, others: o.others?.filter((x) => x && x !== o.person), title: o.title, source: o.source, week: s.arcology.week, updated: s.arcology.week, log, options: DEFAULT_OPTIONS, open: true, unexpanded: modelsAvailable(), seeded: log.length, ...(o.where ? { where: o.where } : {}) });
+  list.push({ id, person: o.person, others: o.others?.filter((x) => x && x !== o.person), title: o.title, source: o.source, week: s.arcology.week, updated: s.arcology.week, chron: (s.chronicle ?? []).length, city: citySnap(s), log, options: DEFAULT_OPTIONS, open: true, unexpanded: modelsAvailable(), seeded: log.length, ...(o.where ? { where: o.where } : {}) });
   // Keep the list from growing without end: close the oldest finished ones.
   if (list.length > 60) s.moments = list.slice(-60);
   return id;
@@ -274,12 +286,16 @@ export async function playMoment(
 ): Promise<{ ok: boolean; prose: string; error?: string }> {
   const m = momentsOf(s).find((x) => x.id === id);
   if (!m) return { ok: false, prose: "", error: "no such moment" };
+  // Over is over: a scene that ended on its own isn't played on, at a model call a turn.
+  if (m.ended && !m.open) return { ok: false, prose: "", error: `This one's done, because ${m.ended}.` };
   const p = m.person ? s.people[m.person] : undefined;
   if (reply) m.log.push({ role: "you", text: reply });
   // What you tell her about how to treat you outlasts the scene.
   if (reply) captureInstructions(s, reply, [p, ...(m.others ?? []).map((x) => s.people[x])].filter((x): x is Person => !!x));
   if (reply && p) captureAllowance(s, reply, [p, ...(m.others ?? []).map((x) => s.people[x])].filter((x): x is Person => !!x));
   if (reply) practiseFrom(s, reply);
+  // A scene left open and picked up weeks later starts from the world as it is now.
+  const lastMoved = m.updated ?? m.week;
   m.updated = s.arcology.week;
   m.open = true;
 
@@ -322,6 +338,9 @@ export async function playMoment(
     weightBrief(s),
     ownedBrief(s),
     `## THE SCENE SO FAR (${m.title})\n${coarsen(transcript(m))}`,
+    lastMoved < s.arcology.week ? aroundBrief(s, { since: lastMoved, scene: m.title }) : elsewhere(s, m),
+    changedLine(s, m),
+    m.pictured ? "" : cityPicture(s),
     reply ? `## THE PLAYER'S REPLY\n${reply}` : `## WRITE THIS MOMENT OUT IN FULL, then offer the options.`,
     beats.length ? `## THIS TIME\n${beats.join("\n")}` : "",
     worn,
@@ -360,13 +379,14 @@ export async function playMoment(
   m.unexpanded = false;
 
   // The bookkeeper turns the prose into what changed, with the room set to just her.
+  let diff: Diff | null = null;
   if (p) {
     const book = await call({
       system: BOOKKEEPER_SYSTEM,
       user: `${bookkeeperContext(s)}\n\n## THE TURN\nWHAT THE OWNER DID OR SAID. Here "I" is the owner: ${reply ?? m.title}\n\nTHE PROSE. Here "you" is the owner:\n${prose}`,
       model: s.models.bookkeeper_model, fallback: s.models.fallback_model, json: true, signal: opts?.signal,
     });
-    const diff = book.ok ? parseJson<Diff>(book.text) : null;
+    diff = book.ok ? parseJson<Diff>(book.text) : null;
     if (diff) {
       const before = s.scene.present;
       s.scene.present = [p.id, ...others.map((o) => o.id)];
@@ -375,7 +395,56 @@ export async function playMoment(
       refresh(p, s.memory[p.id]);
     }
   }
+  m.chron = (s.chronicle ?? []).length;
+  m.city = citySnap(s);
+  m.pictured = true;
+
+  // Is it over? A scene is worth playing while it changes something. When it's settled, when you
+  // walk away, or when two turns in a row change nothing, it ends and makes its deed, so it stops
+  // costing a model call a turn for talk that leads nowhere. A scene that ran flat ends offline.
+  const turns = m.log.filter((l) => l.role === "you").length;
+  m.flat = (p ? impactOf(diff) < 2 : true) ? (m.flat ?? 0) + 1 : 0;
+  const why = reply && LEAVING.test(reply) ? "you left"
+    : diff?.settled && turns >= 2 ? "it's settled"
+    : p && m.flat >= 2 && turns >= 3 ? "it stopped going anywhere"
+    : !p && turns >= 8 ? "it's run its course"
+    : "";
+  if (why && m.open) {
+    m.ended = why;
+    await concludeMoment(s, m, { offline: why === "it stopped going anywhere" || why === "it's run its course", signal: opts?.signal });
+  }
   return { ok: true, prose };
+}
+
+/** Walking away, in the player's words. */
+const LEAVING = /\b(i (leave|go|walk (away|out|off)|head (out|off)|turn (and|to) (leave|go))|i'?m (leaving|going|done here)|goodbye|good night|that'?s all|we'?re done|dismissed|get out|leave it there|enough for now)\b/i;
+
+/** How much one exchange changed, by what the bookkeeper wrote down. Under 2 is talk. */
+export function impactOf(d: Diff | null): number {
+  if (!d) return 0;
+  let n = 0;
+  for (const t of d.treatment ?? []) n += Math.min(6, Math.abs(Number(t.size) || 0)) / 2;
+  for (const x of d.memories ?? []) n += (Number(x.importance) || 0) >= 6 ? 1.5 : 0.3;
+  for (const e of d.edges ?? []) n += (Math.abs(Number(e.warmth_delta) || 0) + Math.abs(Number(e.trust_delta) || 0)) >= 8 ? 1 : 0.2;
+  n += (d.agreements?.length ?? 0) * 2 + (d.agreements_drop?.length ?? 0) * 2;
+  n += (d.facts_learned?.length ?? 0) * 0.7 + (d.strain?.length ?? 0) * 1.5 + (d.spent?.length ?? 0) * 1 + (d.manner?.length ?? 0) * 1;
+  n += (d.body?.length ?? 0) * 0.7 + (d.marks?.length ?? 0) * 0.5 + (d.rumors?.length ?? 0) * 0.5 + (d.canon_add?.length ?? 0) * 2;
+  return n;
+}
+
+/** What changed in the city since this scene last moved, in the game's own terms. */
+function changedLine(s: SaveState, m: Moment): string {
+  if (!m.city) return "";
+  const d = cityDelta(m.city, citySnap(s));
+  return d.length ? `## HOW THE CITY HAS CHANGED SINCE THIS SCENE LAST MOVED\nThese are facts. Where they touch the people or the place in this scene, it shows.\n${d.map((x) => `· ${x}`).join("\n")}` : "";
+}
+
+/** The same week, but things happened elsewhere after this scene last moved. */
+function elsewhere(s: SaveState, m: Moment): string {
+  if (m.chron === undefined) return "";
+  const fresh = (s.chronicle ?? []).slice(m.chron).slice(-6);
+  if (!fresh.length) return "";
+  return `## WHAT'S HAPPENED ELSEWHERE SINCE THIS SCENE LAST MOVED\nThe player left this scene and did other things before coming back. The people here may have heard, and if it changes things, they act on it. Pick up from where things stand now.\n${fresh.map((e) => `· ${e.text.slice(0, 220)}`).join("\n")}`;
 }
 
 /** What a scene with citizens needs to know: the city, its laws, what you've done, what's said. */

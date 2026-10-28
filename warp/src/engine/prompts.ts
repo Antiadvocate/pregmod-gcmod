@@ -189,11 +189,13 @@ Output JSON format:
  "manner": [{"id":"p1","toward":"the other person's name","how":"one plain sentence describing how she acts toward them now"}],
  "strain": [{"id":"p1","hole":"vagina|anus|throat","what":"sore|stretched|torn","by":"owner, or the ID of the character whose cock caused it"}],
  "spent": [{"id":"p1","amount":2500,"what":"what she bought"}],
+ "settled": false,
  ${MARKS_SCHEMA}
 }
 agreements: Log any ongoing rule or standing order the owner established this turn about how she (or the entire household) must address or behave around the owner going forward, provided she accepted or complied with it. Do not log one-off commands meant only for the current scene.
 strain: If the prose describes penetration that was a tight fit or too big for her (based on HOW YOU FIT HER or another character's anatomy), log the resulting wear and who caused it: "sore", "stretched" (if she took it and was stretched out), or "torn" (only if the prose explicitly mentions tearing or bleeding). Leave this blank if the fit was easy.
 manner: Log this whenever the turn establishes an ongoing dynamic between her and someone other than the owner (another slave, a guest, a citizen, etc.)—for example, "subservient to him and nobody else; talks to him gently" or "cold to her in public, sweet when they're alone." Log it if the scene shows that dynamic settling into place or if the player explicitly declares it. Set "toward" to that person's name as written in the prose. Because this overwrites her previous manner entry for that person, write out her complete current attitude toward them, not just what changed. Do not use this for temporary moods.
+settled: Set this to true when this turn settled what the scene was about, such as a question answered, a decision made, a quarrel finished, sex over and done, or someone leaving, so that carrying on would only be talk that changes nothing. Otherwise leave it false.
 spent: Log it when a slave pays for something out of her own money (HER MONEY on her card) during this turn, with the amount in ¤ and what she bought. Only her own spending, never the owner's.
 ${MARKS_RULES}
 Only use character IDs provided in your context, and omit any keys that have no updates. Never log invented legal clauses, exemptions, or technicalities as facts, rumors, or memories—laws only say what is explicitly written in their text.`;

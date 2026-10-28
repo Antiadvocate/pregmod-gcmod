@@ -32,6 +32,7 @@ import { DYNAMIC_EFFECTS, effectList } from "./dynamic";
 import { ACT_BY_ID } from "../data/intimacy";
 import { EXTRA_BY_ID } from "../data/rooms";
 import { betweenEvents, rulesLine } from "./houserules";
+import { aroundBrief, cityPicture } from "./snapshot";
 
 export interface Reason { tag: string; why: string; weight: number; /** Happened this week, as opposed to how things have been for a while. */ fresh?: boolean }
 
@@ -149,7 +150,7 @@ export function pickWants(s: SaveState): { p: Person; reasons: Reason[]; score: 
   return out;
 }
 
-const WANT_SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. It's about ONE of the owner's slaves and what SHE wants this week, which might be to get something, stop something, change something, say something, or do something about her situation, whether by asking, bargaining, sulking, scheming, seducing, defying or running.
+export const WANT_SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. It's about ONE of the owner's slaves and what SHE wants this week, which might be to get something, stop something, change something, say something, or do something about her situation, whether by asking, bargaining, sulking, scheming, seducing, defying or running.
 
 How to build it:
 - Start from HER REASONS THIS WEEK, which are facts the game found. Pick the one or two that matter most to her and build what she wants out of them, filtered through who she is (her background, her career before, her personality, her fetishes and her flaws), how she stands with the owner, and the laws she lives under.
@@ -180,6 +181,8 @@ export async function generateWant(s: SaveState, p: Person, reasons: Reason[], s
       snapshot,
       `## HER\n${personCard(s, p)}`,
       chronicleBrief(s, [p.id], 8),
+      cityPicture(s),
+      aroundBrief(s),
       `## HER REASONS THIS WEEK\n${reasons.slice(0, 6).map((r) => `· ${r.why}`).join("\n")}`,
       rulesLine(s),
       ask ? `## ENGINE REQUEST\n${ask.text}${ask.against ? ` (It goes against ${ask.against}, and she knows.)` : ""}` : "",

@@ -49,7 +49,7 @@ import { activeGovernors, governorBrief, governorshipOf, GOV_ORDERS } from "./go
 import { grantAsk, refuseAsk, voiceAsk } from "./asks";
 import { generateWant, pickWants } from "./wants";
 import { generateGoing, pickGoings } from "./goings";
-import { weekSnapshot } from "./snapshot";
+import { aroundBrief, weekSnapshot } from "./snapshot";
 import { GOV_VOICE } from "./talk";
 import { writeWeekProse, enrichPerson } from "./forge";
 import { runOf } from "./run";
@@ -136,6 +136,7 @@ export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Prom
     user: [
       snap,
       ctx.text,
+      aroundBrief(s),
       `## THE FACTS\nThis is the game's own version. Rewrite it.\n${e.seed}`,
       // Business and the outside world get a few lines; the people in your house get room.
       `## LENGTH\n${e.person ? "One or two short paragraphs." : "Two to four sentences. It's a decision, not a story."}`,

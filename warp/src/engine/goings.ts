@@ -32,7 +32,8 @@ import { latitudeOf } from "./voice";
 import { romanceOf } from "./romance";
 import { workplaceOf, inPlace } from "./whereabouts";
 import { tiedTo, file, tie, note, partIn } from "./others";
-import { castBrief } from "./faces";
+import { castBrief, facesIn } from "./faces";
+import { aroundBrief, cityPicture } from "./snapshot";
 import { rng } from "./rng";
 import { betweenEvents, forcedAllowed, rulesLine, sexBetween } from "./houserules";
 import { pairFitLine } from "./fit";
@@ -40,7 +41,7 @@ import { pairFitLine } from "./fit";
 export interface Going {
   /** Cooldown key: the same pair, or the same woman and the same kind, sits out a few weeks. */
   key: string;
-  kind: "between" | "outside" | "pursuit";
+  kind: "between" | "outside" | "pursuit" | "fallout";
   main: Person;
   other?: Person;
   /** What the game knows that makes it live now. */
@@ -49,6 +50,27 @@ export interface Going {
 }
 
 const COOLDOWN = 3;
+
+/** What her last few goings-on were about and who was in them. */
+const recentFor = (s: SaveState, id: string, weeks = 8) => (s.goings_seen ?? []).filter((g) => (g.person === id) && s.arcology.week - g.week <= weeks);
+
+/** What the owner has said or done about someone, from what they remember and the deeds that name
+ *  them: so a tailor told to stop doesn't turn up next week as if nothing was said. */
+function ownerWordOn(s: SaveState, name: string): string[] {
+  const first = name.split(" ")[0];
+  const deeds = (s.deeds ?? []).filter((d) => d.summary.includes(first)).slice(-2).map((d) => `week ${d.week}: ${d.summary}`);
+  return deeds;
+}
+
+/** The big things lately: what the owner did in public, and what happened to the city. */
+function bigLately(s: SaveState): string[] {
+  const week = s.arcology.week;
+  const out: string[] = [];
+  for (const d of s.deeds ?? []) if (d.public && week - d.week <= 2) out.push(d.summary);
+  for (const h of s.world?.headlines ?? []) if (week - h.week <= 1) out.push(h.text);
+  for (const r of s.reports ?? []) if (week - r.week <= 1) for (const l of r.lines) if (l.weight >= 8 && !l.person) out.push(l.text.split(/\n/)[0]);
+  return [...new Set(out)].slice(0, 3);
+}
 
 const household = (s: SaveState) => Object.values(s.people).filter((p) =>
   (p.status === "owned" || p.status === "indentured") && p.age >= 18 && !p.governs && p.psyche.state !== "broken" && !(p.health.recovery_weeks > 0));
@@ -102,11 +124,15 @@ export function goingsCandidates(s: SaveState): Going[] {
   for (const p of people) {
     // One of yours and the people around her at work, or in her life outside.
     const where = workplaceOf(s, p);
-    const ties = tiedTo(s, p.id).filter((t) => !t.face.fate);
+    // Not the same outsider again: whoever was in her last goings-on sits out, and what the owner
+    // said or did about the ones that remain comes with them.
+    const lately = new Set(recentFor(s, p.id).flatMap((g) => g.who.map((w) => w.split(" ")[0])));
+    const ties = tiedTo(s, p.id).filter((t) => !t.face.fate && !lately.has(t.face.name.split(" ")[0]));
     const talk = s.rumors.filter((r) => r.about === p.id && r.week >= week - 2).slice(0, 1);
     const facts = [
       where.withYou ? `Her place is with the owner (${p.assignment}), and the people around her are the owner's guests, staff and visitors.` : `She works ${inPlace(where.name)}, which is ${where.look}. The people there are whoever works there or comes there.`,
       ...ties.slice(0, 3).map((t) => `In her life outside the house: ${t.face.name}, ${t.what}.`),
+      ...ties.slice(0, 3).flatMap((t) => ownerWordOn(s, t.face.name).map((x) => `What the owner did about ${t.face.name}, which still stands: ${x}. If he told them to stop or keep away, they do, or if they come back it's tense and it costs them, never business as usual.`)),
       ...talk.map((r) => `People are saying: ${r.content}`),
     ];
     let w = 1.2 + (where.privacy === "public" ? 1.6 : where.withYou ? 0 : 0.6) + Math.min(1.5, ties.length * 0.8) + (talk.length ? 1 : 0);
@@ -114,14 +140,28 @@ export function goingsCandidates(s: SaveState): Going[] {
     if (w > 0) out.push({ key: `out:${p.id}`, kind: "outside", main: p, facts, weight: w });
 
     // What she does with her own time, when someone else gets mixed up in it.
+    // One of her interests at a time, a different one each time, so her own time isn't one subject.
     const does = p.persona.interests ?? [], wants = p.persona.goals ?? [];
+    const turn = recentFor(s, p.id, 52).filter((g) => g.key.startsWith("own:")).length;
     if (does.length || wants.length) out.push({
       key: `own:${p.id}`, kind: "pursuit", main: p, weight: 1 + (wants.length ? 0.4 : 0),
       facts: [
-        does.length ? `What she does with her own time: ${sentences(does)}` : "",
-        wants.length ? `What she wants in the long run: ${sentences(wants)}` : "",
+        does.length ? `What she does with her own time, the part this is about: ${sentences([does[turn % does.length]])}` : "",
+        wants.length ? `What she wants in the long run: ${sentences([wants[turn % wants.length]])}` : "",
         `Someone else gets involved in it this week, ${betweenEvents(s) ? "another of the owner's women, " : ""}someone where she works, or a citizen.`,
       ].filter(Boolean),
+    });
+
+    // When something big has happened, how it lands on her and the people around her.
+    const big = bigLately(s);
+    if (big.length) out.push({
+      key: `fallout:${p.id}`, kind: "fallout", main: p, weight: 2.4,
+      facts: [
+        `What happened in the arcology lately: ${big.join(" | ")}`,
+        `This event is about how that lands on ${p.name} and the people around her, where she works or lives or in her life outside. That could be fear, damage, opportunity, people blaming her or wanting something from her because of whose she is, or a person from her life caught up in it.`,
+        where.withYou ? `Her place is with the owner (${p.assignment}).` : `She works ${inPlace(where.name)}.`,
+        ...ties.slice(0, 2).map((t) => `In her life outside the house: ${t.face.name}, ${t.what}.`),
+      ],
     });
   }
   return out;
@@ -150,10 +190,12 @@ export function pickGoings(s: SaveState): Going[] {
   return out;
 }
 
-const GOING_SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. It is NOT one of the owner's slaves wanting something from the owner. It's something going on between people that the owner comes across, walks in on or hears about, and can get involved in. The people can be two of the owner's slaves, or one of them and someone outside the household, like a customer, a coworker, her boss, a citizen, a guard, somebody else's slave, or someone from her life before.
+export const GOING_SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. It is NOT one of the owner's slaves wanting something from the owner. It's something going on between people that the owner comes across, walks in on or hears about, and can get involved in. The people can be two of the owner's slaves, or one of them and someone outside the household, like a customer, a coworker, her boss, a citizen, a guard, somebody else's slave, or someone from her life before.
 
 How to build it:
 - Start from THE FACTS. They're true, and they're why it's happening now. Build it out of them, the people's natures, how they feel about each other, where they are, and this week.
+- It happens in the same world as everything else. Tie it into WHAT ELSE IS GOING ON and THIS WEEK where it fits, so people know what the owner did and what happened to the city, it's on their minds, it changes what they want, and it can be the reason the event happens. Mix threads rather than following one on its own.
+- It's NOT a continuation of her recent goings-on (listed under HER RECENT GOINGS-ON). Pick a different subject, a different place and different people. Someone the owner told to stop or keep away doesn't carry on as if nothing was said.
 - It happens somewhere real, like where she works, somewhere in the house, or on the concourse. Say where.
 - ${NOT_PAPERWORK}
 - This is an adult game and sex is most of what happens between people in it. Something is actually happening, with a shape, and more often than not it's sexual, like a customer who gets rough, a coworker or her boss with his hands on her, a crowd gathering to watch, or a client who wants her for a whole night. Between two of the owner's own women, only what BETWEEN THEM below allows. It can also be a quarrel, a favour, a dare, a secret found out or a competition, but it doesn't have to stay clean. Their fetishes, bodies and what they're into (on their cards) decide what it is. Write the sex as plainly as the rest. It's not a mood and it's not a status report.
@@ -187,6 +229,9 @@ export async function generateGoing(s: SaveState, g: Going, snapshot = ""): Prom
       `## THE PEOPLE\n${people.map((p, i) => `### ${i === 0 ? "MAIN" : "OTHER"}\n${personCard(s, p, g.facts.join(" "))}`).join("\n\n")}`,
       castBrief(s, g.facts.join("\n")),
       chronicleBrief(s, people.map((p) => p.id), 6),
+      cityPicture(s),
+      aroundBrief(s),
+      recentFor(s, g.main.id).length ? `## HER RECENT GOINGS-ON\nThis one is about something else.\n${recentFor(s, g.main.id).map((x) => `· week ${x.week}: ${x.title ?? x.topic ?? "something"}${x.who.length ? `, with ${x.who.join(", ")}` : ""}`).join("\n")}` : "",
       `## THE FACTS\n${g.facts.map((f) => `· ${f}`).join("\n")}`,
       rulesLine(s),
       g.other ? `## BETWEEN THEM\n${[betweenThem(s), pairFitLine(s, g.main, g.other), pairFitLine(s, g.other, g.main)].filter(Boolean).join("\n")}` : "",
@@ -220,6 +265,9 @@ export async function generateGoing(s: SaveState, g: Going, snapshot = ""): Prom
     note(s, f, partIn(situation, name));
   }
   (s.event_log ??= {})[`going:${g.key}`] = week;
+  // What it was about and who was in it, so the next ones go somewhere else.
+  const who = [...new Set([...(Array.isArray(out.cast) ? out.cast : []).map((c) => String(c?.name ?? "").trim()).filter(Boolean), ...facesIn(s, situation, 4).map((f) => f.name)])].slice(0, 4);
+  s.goings_seen = [...(s.goings_seen ?? []), { week, person: g.main.id, key: g.key, title: out.title ? String(out.title).slice(0, 60) : undefined, who, topic: situation.slice(0, 80) }].slice(-30);
   return {
     id: `going-${week}-${g.main.id}${g.other ? `-${g.other.id}` : ""}`,
     kind: "dynamic",

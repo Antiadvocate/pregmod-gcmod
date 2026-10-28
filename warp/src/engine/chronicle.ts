@@ -23,6 +23,30 @@ export interface ChronicleEntry {
   hook?: string;
   /** Set once a later event has picked the hook up. */
   closed?: boolean;
+  /** How many weeks the hook stays open, by how much the event that left it mattered. A thread is
+   *  meant to drive the next thing or be over, not hang about forever (default 4). */
+  life?: number;
+}
+
+/**
+ * WHEN A THREAD IS OVER. A storylet is defined by what it changes, and a thread that has stopped
+ * changing anything is finished, so it shouldn't keep being offered, or paid for in tokens, as
+ * something to continue. A hook stays open for its life in weeks (longer the more its event
+ * mattered), and closes early when:
+ *   · a later event picked it up (closeHooks);
+ *   · everyone it's about is gone: sold, freed, dead, or a face that has been dealt with;
+ *   · the owner chose to leave it alone (the event's "leave them to it" answer leaves no hook).
+ */
+export const HOOK_LIFE = 4;
+function stillMatters(s: SaveState, e: ChronicleEntry): boolean {
+  if (s.arcology.week - e.week > (e.life ?? HOOK_LIFE)) return false;
+  const about = e.keys.filter((k) => k !== "city" && !k.startsWith("law:") && !k.startsWith("place:") && !k.startsWith("gov:"));
+  if (!about.length) return true;
+  return about.some((k) => {
+    if (k.startsWith("face:")) { const f = s.faces?.[k.slice(5)]; return !!f && !f.fate; }
+    const p = s.people[k];
+    return !!p && (p.status === "owned" || p.status === "indentured" || p.status === "free");
+  });
 }
 
 const MAX = 240;
@@ -48,7 +72,7 @@ export function entriesFor(s: SaveState, keys: string[], n = 8): ChronicleEntry[
 /** Open threads: hooks nobody has picked up yet, newest first. */
 export function openHooks(s: SaveState, keys: string[]): ChronicleEntry[] {
   const want = new Set(keys);
-  return chronicleOf(s).filter((e) => e.hook && !e.closed && e.keys.some((k) => want.has(k)) && s.arcology.week - e.week <= 20).reverse();
+  return chronicleOf(s).filter((e) => e.hook && !e.closed && e.keys.some((k) => want.has(k)) && stillMatters(s, e)).reverse();
 }
 
 export function closeHooks(s: SaveState, keys: string[]): void {
@@ -59,6 +83,6 @@ export function closeHooks(s: SaveState, keys: string[]): void {
 export function chronicleBrief(s: SaveState, keys: string[], n = 8): string {
   const done = entriesFor(s, keys, n);
   if (!done.length) return "";
-  const lines = done.map((e) => `· week ${e.week}: ${e.text}${e.hook && !e.closed ? ` (Left open: ${e.hook})` : ""}`);
+  const lines = done.map((e) => `· week ${e.week}: ${e.text}${e.hook && !e.closed && stillMatters(s, e) ? ` (Left open: ${e.hook})` : ""}`);
   return `WHAT HAS ALREADY HAPPENED, in order. This is history, so build on it rather than repeating it:\n${lines.join("\n")}`;
 }
