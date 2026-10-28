@@ -79,7 +79,7 @@ export function tie(f: Face, what: string, person?: string): void {
 
 /** Everyone on file tied to one of yours. */
 export function tiedTo(s: SaveState, personId: string): { face: Face; what: string }[] {
-  return Object.values(s.faces ?? {}).flatMap((f) => (f.ties ?? []).filter((x) => x.person === personId).map((x) => ({ face: f, what: x.what })));
+  return Object.values(s.faces ?? {}).filter((f) => !f.banned).flatMap((f) => (f.ties ?? []).filter((x) => x.person === personId).map((x) => ({ face: f, what: x.what })));
 }
 
 /** Everything on file about someone, for a prompt: what they do, who they are to people, what

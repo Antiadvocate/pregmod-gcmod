@@ -73,6 +73,7 @@ import "./faces-id.test.ts";
 import "./drift.test.ts";
 import "./nomoral.test.ts";
 import "./senses.test.ts";
+import "./bans.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);

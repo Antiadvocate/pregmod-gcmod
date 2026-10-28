@@ -35,6 +35,7 @@ import { note, tie } from "./others";
 import { addWays } from "./ways";
 import { RECORD_RULES, soundsLikeAnalysis } from "./style";
 import { hasHeat } from "./chronicle";
+import { isBanned } from "./bans";
 
 export interface Deed {
   id: string;
@@ -609,6 +610,7 @@ function fireFollow(s: SaveState, d: Deed): boolean {
   const f = d.follow;
   if (!f || f.fired) return false;
   f.fired = true;
+  if (isBanned(s, f.situation)) return false;
   const p = d.person ? s.people[d.person] : undefined;
   // She has to still be here for it to be about her.
   if (d.person && (!p || (p.status !== "owned" && p.status !== "indentured" && p.status !== "free"))) return false;

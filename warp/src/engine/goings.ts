@@ -32,6 +32,7 @@ import { latitudeOf } from "./voice";
 import { romanceOf } from "./romance";
 import { workplaceOf, inPlace } from "./whereabouts";
 import { tiedTo, file, tie, note, partIn } from "./others";
+import { isBanned } from "./bans";
 import { castBrief, facesIn } from "./faces";
 import { aroundBrief, cityPicture } from "./snapshot";
 import { rng } from "./rng";
@@ -256,6 +257,7 @@ export async function generateGoing(s: SaveState, g: Going, snapshot = ""): Prom
 
   const week = s.arcology.week;
   const situation = String(out.situation).slice(0, 2400);
+  if (isBanned(s, `${out.title ?? ""} ${situation} ${out.hook ?? ""}`)) return null;
   // Whoever the model brought in goes on file, tied to her, so they can turn up again.
   for (const c of (Array.isArray(out.cast) ? out.cast : []).slice(0, 2)) {
     const name = String(c?.name ?? "").trim();

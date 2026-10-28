@@ -15,6 +15,7 @@ import { YourWeek, TalkToHer } from "./YourRoom";
 import { readHer } from "../engine/herwill";
 import { takeStats, chipsBetween, type Chip } from "../lib/delta";
 import PassingBy from "./PassingBy";
+import { DropStory } from "./DropStory";
 import { STYLE_NOTE } from "../engine/reign";
 import { useRef, useState, type ReactNode } from "react";
 import type { SaveState } from "../engine/types";
@@ -344,6 +345,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
               pick(live, { id: r.id, label: typed }, r.orders ?? [], typed);
               return "";
             }} /> : null}
+            <DropStory e={e} />
           </Card>
         );
       })}

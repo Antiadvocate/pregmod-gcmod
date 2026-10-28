@@ -78,6 +78,7 @@ import { tickWorks } from "./works";
 import { tickGenome, menialResistance } from "./genome";
 import { tickMenials } from "./menials";
 import { pruneFaces, settleFaces, syncStoryCast } from "./faces";
+import { purgeBanned } from "./bans";
 import { tickSagas } from "./saga";
 import { modelsAvailable } from "../config";
 import { cityThisWeek } from "./citylife";
@@ -470,6 +471,8 @@ export function endWeek(s: SaveState): WeekReport {
   // An event about someone who's gone (dead, sold) can't be about her any more.
   const here = (e: { person?: string }) => !e.person || ["owned", "indentured", "free"].includes(s.people[e.person]?.status ?? "");
   s.events = [...s.events.filter((e) => week - e.week < 2 && here(e)), ...fresh];
+  // Nothing about a storyline the player ended makes it onto this week's table.
+  purgeBanned(s);
   for (const e of fresh) {
     push(e.seed, e.severity === "major" ? "warning" : "neutral", 10, e.person);
   }

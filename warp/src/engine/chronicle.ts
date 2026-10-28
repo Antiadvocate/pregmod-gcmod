@@ -10,6 +10,7 @@
  * Keys: a person id, `place:<power id>`, `law:<law id>`, `gov:<power id>`, or `city`.
  */
 import type { SaveState } from "./types";
+import { isBanned } from "./bans";
 
 export interface ChronicleEntry {
   week: number;
@@ -78,7 +79,13 @@ export const hasHeat = (text: string): boolean => HEAT.test(text);
 
 /** Open threads with something worth playing in them. */
 export function hotHooks(s: SaveState, keys: string[]): ChronicleEntry[] {
-  return openHooks(s, keys).filter((e) => hasHeat(`${e.hook ?? ""} ${e.text}`));
+  const gone = Object.values(s.faces ?? {}).filter((f) => f.fate || f.banned).map((f) => f.name.split(" ")[0]).filter((n) => n.length >= 3);
+  return openHooks(s, keys).filter((e) => {
+    const text = `${e.hook ?? ""} ${e.text}`;
+    // A thread about someone already killed, ruined, thrown out or dropped is over.
+    if (gone.some((n) => new RegExp(`\\b${n}\\b`, "i").test(e.hook ?? ""))) return false;
+    return hasHeat(text) && !isBanned(s, text);
+  });
 }
 
 export function openHooks(s: SaveState, keys: string[]): ChronicleEntry[] {
