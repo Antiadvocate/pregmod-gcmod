@@ -35,7 +35,7 @@ export interface Fit {
   /** What she takes comfortably, on the same scale. */
   cap: number;
   over: number;
-  word: "loose" | "fits" | "snug" | "struggle" | "damage";
+  word: "loose" | "easy" | "fits" | "snug" | "struggle" | "damage";
 }
 
 /** What a hole takes comfortably, on the dick scale. */
@@ -63,7 +63,7 @@ export function ownerSize(s: SaveState): { size: number; what: string } {
 export function fitOf(p: Person, hole: Hole, size: number, s?: SaveState): Fit {
   const cap = capacity(p, hole, s);
   const over = +(size - cap).toFixed(1);
-  const word: Fit["word"] = over <= -3 ? "loose" : over <= 0 ? "fits" : over <= 1.5 ? "snug" : over <= 3 ? "struggle" : "damage";
+  const word: Fit["word"] = over <= -3 ? "loose" : over <= -1.5 ? "easy" : over <= 0 ? "fits" : over <= 1.5 ? "snug" : over <= 3 ? "struggle" : "damage";
   return { hole, size, cap, over, word };
 }
 
@@ -73,10 +73,13 @@ const NAME: Record<Hole, string> = { vagina: "pussy", anus: "ass", throat: "thro
 export function fitWords(f: Fit, what: string, p: Person): string {
   const where = f.hole === "vagina" ? `her ${vaginaWord(p.body.vagina ?? 0, p.body.hymen)} pussy` : f.hole === "anus" ? `her ${anusWord(p.body.anus ?? 0)} ass` : "her throat";
   const said = `${what.charAt(0).toUpperCase()}${what.slice(1)} in ${where}`;
-  if (f.hole === "throat" && (f.word === "loose" || f.word === "fits")) return `${said} is no trouble, and she takes it all${f.word === "loose" ? ", though it barely reaches her throat" : ""}.`;
+  if (f.hole === "throat" && (f.word === "loose" || f.word === "easy" || f.word === "fits")) return `${said} is no trouble, and she takes it all${f.word !== "fits" ? ", though it barely reaches her throat" : ""}.`;
   switch (f.word) {
     case "loose": return `${said} is loose. She barely feels it unless she clenches.`;
-    case "fits": return `${said} fits.`;
+    // A tight hole is still bigger than a very small cock. The word "tight" on her card and a pain
+    // rule above it had a two-inch cock hurting a girl and leaving her sore.
+    case "easy": return `${said} slides in with no effort at all. Tight as she is, it's small to her, so it doesn't stretch her, ache or make her sore, and she only feels it a little. Never write her tight around it.`;
+    case "fits": return `${said} fits comfortably. It doesn't hurt her.`;
     case "snug": return `${said} is a tight fit. It takes a moment, some spit or lube and a slow start, and she feels every inch and it aches.`;
     case "struggle": return `${said} is too big for her. Getting it in at all takes time, lube and steady pressure. It hurts, she's stretched to the limit around it${f.hole === "throat" ? ", she gags and chokes, her eyes stream, and she can't take all of it" : ""}, and it will stretch her for good.`;
     default: return `${said} doesn't fit. Forced, it tears her${f.hole === "throat" ? ", and she chokes, retches and can't breathe around it" : " and she bleeds"}. Without force, only part of it goes in.`;
@@ -165,8 +168,11 @@ export function fitLines(s: SaveState, p: Person): string[] {
   const out: string[] = [];
   const { size, what } = ownerSize(s);
   const holes: Hole[] = [...(p.body.vagina !== null ? ["vagina" as const] : []), "anus", "throat"];
-  const bits = holes.map((h) => fitWords(fitOf(p, h, size, s), what.replace(/^your /, "your "), p));
-  out.push(`HOW YOU FIT HER. This is a fact, so write the difficulty, the time, the lube, the pain and the aftermath it takes, and never a smooth slide past what fits. ${bits.join(" ")}`);
+  const fits = holes.map((h) => fitOf(p, h, size, s));
+  const bits = fits.map((f) => fitWords(f, what, p));
+  out.push(fits.some((f) => f.over > 0)
+    ? `HOW YOU FIT HER. This is a fact, so where it's too big, write the difficulty, the time, the lube, the pain and the aftermath it takes, and never a smooth slide past what fits. Where it fits, it doesn't hurt. ${bits.join(" ")}`
+    : `HOW YOU FIT HER. This is a fact. Nothing of yours is a strain for her, so your size never makes her wince, ache, bleed, get sore or ask you to go slow. If she's frightened, that's fear, not your cock. ${bits.join(" ")}`);
   const week = s.arcology.week;
   const sore = holes.filter((h) => soreUntil(p, h) >= week).map((h) => NAME[h]);
   const torn = p.health.injuries.filter((i) => !i.healed_week && /^torn /.test(i.what)).map((i) => i.what);
