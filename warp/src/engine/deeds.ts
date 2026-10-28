@@ -32,7 +32,7 @@ import { asFate, sameName, settle, settledBrief, weightBrief } from "./fates";
 import { isOwnerName } from "./you";
 import { findFace, meet } from "./faces";
 import { note, tie } from "./others";
-import { addWays } from "./ways";
+import { addWays, dropWays } from "./ways";
 import { RECORD_RULES, soundsLikeAnalysis } from "./style";
 import { hasHeat } from "./chronicle";
 import { isBanned } from "./bans";
@@ -272,7 +272,8 @@ export const CONSEQUENCE_SYSTEM = `You read a finished scene from Free Cities, a
  "lasting_fact":"one sentence that is now true of the world because of this, or empty",
  "sold":["names of the player's slaves that the player actually had sold or taken away to be sold in this scene, as an order carried out rather than a threat, or empty if none"],
  "threatened":["names of OTHER people in the scene (not her) whom the player threatened to sell, exile or punish, or empty if none"],
- "ways":["0 to 2 lines about a way the player and SHE do things together that this scene set up, confirmed or repeated, like a ritual, how they talk to each other, what she calls him or what always happens, written so a later scene can keep it, for example 'he talks to her soles, never her face, and she answers through them'. Leave it empty if the scene didn't settle anything"],
+ "ways":["0 to 2 lines about a way the player and SHE do things together that this scene set up, confirmed or repeated, like a ritual, how they talk to each other, what she calls him or what always happens, written so a later scene can keep it, for example 'he talks to her soles, never her face, and she answers through them'. Only what the player wanted or went along with: if he complained about it, punished her for it or ordered the opposite, it is NOT a way. If he said how it should go instead, write that. Leave it empty if the scene didn't settle anything"],
+ "ways_end":["lines copied from HOW YOU TWO DO THINGS on her card that the player rejected in this scene, by complaining about it, punishing her for it, or ordering or saying the opposite. Empty if none"],
  "outsiders":[{"name":"full name of someone in the scene who is neither the player nor one of the player's slaves, and who mattered in it","what":"what they do, in a few words","remembers":"one sentence from their side of what happened, with the player as 'the owner'","toward":"warmer|colder|same, toward the owner after this","likes":"something the scene showed they like, or empty","dislikes":"something the scene showed they can't stand, or empty","tie":{"with":"name of one of the player's slaves, or 'the owner'","what":"what they are to them now, if that formed or changed in the scene, like her husband, her regular, or someone who owes the owner ¤20,000, or empty"}}],
  "dealt_with":[{"name":"full name of someone who is NOT the player's slave","fate":"dead|ruined|exiled|jailed|bought","how":"one plain sentence saying who did it and how"}],
  "follow_up":{"weeks":2,"situation":"3-6 sentences in the present tense about a moment that many weeks later which happens BECAUSE of this scene. It isn't a summary of how people feel. It's somebody named, in the room with the player, doing and saying something in their own voice. End where the player has to decide","options":[{"label":"what the player does, 2-8 words","effect":"one EFFECT id","value":"optional"}]}}
@@ -295,6 +296,7 @@ interface Read {
   sold?: string[]; threatened?: string[];
   dealt_with?: { name?: string; fate?: string; how?: string }[];
   ways?: string[];
+  ways_end?: string[];
   outsiders?: { name?: string; what?: string; remembers?: string; toward?: string; likes?: string; dislikes?: string; tie?: { with?: string; what?: string } }[];
   follow_up?: { weeks?: number; situation?: string; options?: { label?: string; effect?: string; value?: string | number }[] };
 }
@@ -396,6 +398,8 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
   deed.effects.push(...othersInScene(s, deed, r));
   deed.effects.push(...dealtWith(s, deed, r));
   deed.effects.push(...outsiders(s, deed, r));
+  // What he rejected goes first, so a way the narrator invented and he punished her for can't stand.
+  if (p && Array.isArray(r.ways_end)) dropWays(p, r.ways_end.map(String));
   if (p && Array.isArray(r.ways)) for (const w of addWays(s, p, r.ways.map(String))) deed.effects.push(`between you now: ${w}`);
   if (offered) deed.effects.push(`${p!.name} is holding out a collar for you`);
   m.concluded = deed.id;

@@ -18,7 +18,7 @@ import { applyMarks, marksForAct } from "./marks";
 import { walkIn, walkInLine, misreads, misreadLine } from "./alive";
 import { coarsen, REGISTER_TAIL } from "./register";
 import { inventsLaw } from "./lawguard";
-import { captureInstructions, keep, houseRules, agreementsOf } from "./agreements";
+import { clipRule, captureInstructions, keep, houseRules, agreementsOf } from "./agreements";
 import { setManner } from "./manner";
 import type { ActionMode, Person, SaveState, TurnEntry } from "./types";
 import { call, parseJson } from "../llm";
@@ -469,7 +469,7 @@ export function applyDiff(s: SaveState, d: Diff, prose: string, said?: string): 
   // Standing orders she agreed to, kept for every scene after this one.
   for (const a of (d.agreements ?? []).slice(0, 3)) {
     if (!a?.rule) continue;
-    const rule = String(a.rule).slice(0, 140);
+    const rule = clipRule(String(a.rule));
     const calls = a.calls ? String(a.calls).slice(0, 32) : undefined;
     if (said !== undefined && !calls && !ownerSaidIt(rule, said)) continue;
     if (a.id === "household") { keep(houseRules(s), { rule, week: s.arcology.week, by: "you", calls }); if (calls) s.player.address = calls; }

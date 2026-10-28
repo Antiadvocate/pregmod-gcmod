@@ -8,6 +8,7 @@
  * on the Penthouse, and picks up where it left off. With no model, the written game answers in her
  * voice and still offers you the next thing to say.
  */
+import { continuitySlips } from "./continuity";
 import { practiseFrom } from "./player";
 import { coarsen, REGISTER_TAIL } from "./register";
 import { sentinelsLine } from "./battles";
@@ -36,7 +37,7 @@ import { whereLine, type Whereabouts } from "./whereabouts";
 import { rulesLine } from "./houserules";
 import { pairFitLine } from "./fit";
 
-export interface MomentLine { role: "you" | "scene"; text: string }
+export interface MomentLine { role: "you" | "scene"; text: string; /** Facts the prose still broke after a rewrite (engine/continuity). */ slips?: string[] }
 
 export interface Moment {
   id: string;
@@ -349,8 +350,8 @@ export async function playMoment(
   ].filter(Boolean).join("\n\n");
 
   let shown = "";
-  const res = await call({
-    system: walking ? WALK_SYSTEM : city ? CITY_SCENE_SYSTEM : MOMENT_SYSTEM, user,
+  const ask = (extra = "") => call({
+    system: walking ? WALK_SYSTEM : city ? CITY_SCENE_SYSTEM : MOMENT_SYSTEM, user: extra ? `${user}\n\n${extra}` : user,
     model: s.models.narrator_model, fallback: s.models.fallback_model,
     maxTokens: 1600, temperature: 0.8, presence: 0.3, signal: opts?.signal,
     onDelta: opts?.onDelta ? (c) => {
@@ -360,21 +361,39 @@ export async function playMoment(
     } : undefined,
     onReset: () => { shown = ""; opts?.onReset?.(); },
   });
+  let res = await ask();
   if (!res.ok) {
     const prose = fallback();
     m.log.push({ role: "scene", text: prose });
     m.options = fallbackOptions();
     return { ok: false, prose, error: res.error };
   }
-  const { prose: uncast, cast } = parseCast(salvage(res.text));
-  const { prose: raw, options } = splitOptions(uncast);
-  const prose = coarsen(finishLast(raw || uncast.trim()));
+  const parse = (text: string) => {
+    const { prose: uncast, cast } = parseCast(salvage(text));
+    const { prose: raw, options } = splitOptions(uncast);
+    return { prose: coarsen(finishLast(raw || uncast.trim())), cast, options };
+  };
+  let { prose, cast, options } = parse(res.text);
+  // Checked in code against what the game knows (engine/continuity). One rewrite with the fact
+  // named; if that still breaks it, the scene keeps the better draft and says what slipped.
+  const inScene = [p, ...others].filter((x): x is Person => !!x);
+  let slips = continuitySlips(s, prose, inScene);
+  if (slips.length) {
+    shown = "";
+    opts?.onReset?.();
+    const again = await ask(`## CONTINUITY\nYour last draft broke facts the game keeps. Write your reply again, keeping to these:\n${slips.map((x) => `· ${x}`).join("\n")}`);
+    if (again.ok) {
+      const next = parse(again.text);
+      const left = continuitySlips(s, next.prose, inScene);
+      if (left.length <= slips.length) { res = again; ({ prose, cast, options } = next); slips = left; }
+    }
+  }
   // Anyone new the model put in the scene goes on file with their face; anyone on file who turned up is seen again.
   const ours = new Set(Object.values(s.people).filter((x) => x.status === "owned" || x.status === "indentured").map((x) => keyOf(x.name)));
   for (const c of cast) if (!ours.has(keyOf(c.name))) meet(s, c);
   for (const f of facesIn(s, prose, 6)) meet(s, f);
   noteStock(s, prose);
-  m.log.push({ role: "scene", text: prose });
+  m.log.push({ role: "scene", text: prose, ...(slips.length ? { slips } : {}) });
   m.options = options.length >= 2 ? options : fallbackOptions();
   m.unexpanded = false;
 

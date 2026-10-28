@@ -121,7 +121,10 @@ export function powerBetween(s: SaveState, p: Person): string {
       ? `THE POWER BETWEEN YOU. She's free and she's your ${rom.standing === "wife" ? "wife" : rom.standing === "betrothed" ? "fiancée" : "partner"}, so you're equals${d >= 40 ? ", and in private she leads" : ""}. She still knows you own the city around her.`
       : `THE POWER BETWEEN YOU. She's free now, and she speaks to you as a free woman who used to be your property, in a city you own.`;
   }
-  if (d >= 40) return `THE POWER BETWEEN YOU. She holds it. Between the two of you she leads and you defer, by your own choice. She can tell you what to do, tease you and refuse you, and she expects to be obeyed. In front of other people she knows you're still the owner of the arcology.`;
+  if (d >= 40) {
+    const scared = p.bond.fear >= 60 && (read(p, s.memory[p.id]).fragility >= 0.5 || p.bond.bond <= 0);
+    return `THE POWER BETWEEN YOU. She holds it. Between the two of you she leads and you defer, by your own choice. She can tell you what to do, tease you and refuse you, and she expects to be obeyed. In front of other people she knows you're still the owner of the arcology.${scared ? " But right now she's terrified of you. When you speak as her owner, give an order or threaten her, the lead is yours again, and she does what you say at once, and doesn't argue, correct or lecture you." : ""}`;
+  }
   const lat = latitudeOf(p);
   const own = `THE POWER BETWEEN YOU. You own her, and you own the city, with its laws, its guards and its army. She knows exactly what you can do to her. If you kneel to her or worship her for your own pleasure, that's yours to start and stop. It gives her no say over you, and she doesn't bargain with it.`;
   if (lat === "free") return `${own} But you've given her leave to talk to you freely, however she likes, as an equal in words${rom.standing === "wife" ? " (she's your wife)" : ""}. She can call you by name, argue, tease you, refuse you to your face and say what she thinks. She's still yours on paper, and if you speak as her owner she remembers it.`;

@@ -32,6 +32,15 @@ export function addWays(s: SaveState, p: Person, lines: string[]): string[] {
   return added;
 }
 
+/** Take out ways the player rejected. Matched loosely, since the writer copies them from her card. */
+export function dropWays(p: Person, lines: string[]): number {
+  const gone = lines.map((l) => norm(String(l ?? ""))).filter((n) => n.length >= 12);
+  if (!gone.length || !p.ways?.length) return 0;
+  const before = p.ways.length;
+  p.ways = p.ways.filter((w) => { const n = norm(w.text); return !gone.some((g) => n === g || n.includes(g.slice(0, 30)) || g.includes(n.slice(0, 30))); });
+  return before - p.ways.length;
+}
+
 /** Replace the whole list, from a reading of everything between you. */
 export function setWays(s: SaveState, p: Person, lines: string[]): void {
   p.ways = [];
@@ -42,5 +51,5 @@ export function setWays(s: SaveState, p: Person, lines: string[]): void {
 export function waysBrief(p: Person): string {
   const list = (p.ways ?? []).filter((w) => !soundsLikeAnalysis(w.text));
   if (!list.length) return "";
-  return `HOW YOU TWO DO THINGS. These were settled between you over many scenes. Every scene keeps to them unless the player changes them in this one, and nobody acts like they're new. They're how things go between you, so show them happening. Nobody recites them or says "you always…":\n${list.map((w) => `· ${w.text}`).join("\n")}`;
+  return `HOW YOU TWO DO THINGS. These were settled between you over many scenes. Every scene keeps to them unless the player changes them in this one, and nobody acts like they're new. They're how things go between you, so show them happening. Nobody recites them or says "you always…". They're habits, so they give way: if one disagrees with a law of the arcology or one of her standing orders, the law or the order wins, and the player's words in the scene win over all of them:\n${list.map((w) => `· ${w.text}`).join("\n")}`;
 }

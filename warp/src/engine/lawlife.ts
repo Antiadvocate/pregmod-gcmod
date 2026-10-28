@@ -227,6 +227,7 @@ registerEvents(LAW_EVENTS);
 export function lawsLine(s: SaveState): string {
   const ls = lawsOf(s).map((x) => LAW_BY_ID[x.id]).filter(Boolean) as LawDef[];
   if (!ls.length) return "";
-  return `LAWS OF THE ARCOLOGY. People keep or break them where it fits the scene. ${ls.map((l) => `The ${l.name} says: ${l.text.replace(/\.?$/, ".")}`).join(" ")}`;
+  // "Keep or break them where it fits" let a narrator drop the half of a law it didn't fancy writing.
+  return `LAWS OF THE ARCOLOGY. These are law, and everyone keeps them, because the owner enforces them. Whenever one applies to someone in the scene, the citizens, the slave or the owner, show it being kept, every part of it, explicitly. A law that names someone binds them. One is broken only if the player orders it or someone openly defies it, and then what the law says follows. ${ls.map((l) => `The ${l.name} says: ${l.text.replace(/\.?$/, ".")}`).join(" ")}`;
 }
 
