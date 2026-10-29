@@ -18,7 +18,8 @@
 export type DistrictKind =
   | "spire" | "residential" | "commercial" | "industrial"
   | "civic" | "docks" | "academy" | "barracks" | "pleasure"
-  | "arena" | "clinic" | "garden" | "temple" | "exchange" | "dairy" | "power";
+  | "arena" | "clinic" | "garden" | "temple" | "exchange" | "dairy" | "power"
+  | "therapy" | "restaurant" | "university" | "park" | "wall";
 
 export interface DistrictDef {
   kind: DistrictKind;
@@ -52,7 +53,15 @@ export interface DistrictDef {
     /** Military strength, which is the only currency the neighbours read. */
     arms: number;
     rep: number;
+    /** A weekly lift for any of your slaves who is fracturing or broken. Therapy offices. */
+    mending: number;
+    /** A little hope every week for everyone in the household, who eat from it. Restaurants. */
+    fare: number;
+    /** Pollution taken out of the air every week. Parks. */
+    clean: number;
   }>;
+  /** Only on these rings (engine/city canRaise). */
+  rings?: number[];
   /** Doctrines that want this built, and pay reputation for it. */
   favoured_by?: string[];
   /** What it does to the household, if anything. The city is not separate from the people in it. */
@@ -153,6 +162,41 @@ export const DISTRICTS: DistrictDef[] = [
     found: 17000, step: 13000, bulk: 0.3, hue: "#8a8270", cap: 6,
     yields: { cash: 1500, rep: 4, prosperity: -1 },
     favoured_by: ["pastoralist", "expansionist", "cummunism"],
+  },
+  {
+    kind: "therapy", name: "Therapy offices", blurb: "Counsellors for the citizens, and for owners who'd rather their broken slaves worked.",
+    found: 13000, step: 9500, bulk: 0.22, hue: "#7f8f86", cap: 4,
+    yields: { mending: 1, prosperity: 2, rep: 6 },
+    favoured_by: ["paternalist", "chinese"],
+    household: "Your slaves who are fracturing or broken pull back a little every week, more with each level.",
+  },
+  {
+    kind: "restaurant", name: "Restaurant row", blurb: "Kitchens, bars and terraces, and slaves serving in whatever the dress code allows.",
+    found: 11000, step: 8500, bulk: 0.24, hue: "#9a6f52", cap: 6,
+    yields: { cash: 1100, prosperity: 3, rep: 5, fare: 1 },
+    favoured_by: ["hedonist", "edo", "arabian"],
+    household: "Your household eats from it, and a decent meal every day keeps their hopes up a little.",
+  },
+  {
+    kind: "university", name: "University", blurb: "Lecture halls, labs and a library, for citizens' children and the arcology's research.",
+    found: 28000, step: 21000, bulk: 0.4, hue: "#7d7468", cap: 5,
+    yields: { schooling: 0.2, industry: 3, rep: 26, prosperity: 3 },
+    favoured_by: ["professionalism", "transformation", "eugenics"],
+    household: "Slaves in classes learn faster, and the research makes everything you build a little cheaper.",
+  },
+  {
+    kind: "park", name: "Public gardens", blurb: "Lawns, a pond and paths on the ground, for anyone who wants to remember what grass is.",
+    found: 8000, step: 6000, bulk: 0.08, hue: "#5a7d4e", cap: 4,
+    yields: { prosperity: 3, clean: 1, rep: 6 },
+    favoured_by: ["pastoralist", "body_purist", "paternalist"],
+    household: "Every level takes a little pollution out of the air.",
+  },
+  {
+    kind: "wall", name: "Border wall", blurb: "Concrete, wire, towers and a gate. Nobody gets in without you knowing, and nobody gets out.",
+    found: 25000, step: 18000, bulk: 0.2, hue: "#6f6a62", cap: 5, rings: [2, 3],
+    yields: { security: 8, arms: 6, prosperity: -1 },
+    favoured_by: ["neo_imperial", "roman"],
+    household: "It runs round the whole platform. Raiders hit it first, and a slave who runs has a wall to climb.",
   },
   {
     kind: "power", name: "Power plant", blurb: "Reactors and cooling towers. The lights stay on through a siege.",

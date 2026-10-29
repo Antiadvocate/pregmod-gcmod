@@ -119,6 +119,26 @@ const PLACE_LINES: Record<Place["kind"], string[]> = {
     "Kids are playing in the dust between the containers. One of them has a toy collar on a doll.",
   ],
   spire: ["The spire's lobby is marble and quiet."],
+  therapy: [
+    "A woman in a cardigan holds the door of the therapy offices for an owner leading his slave in on a leash. The slave's eyes are red. The sign by the door says sessions are fifty minutes and the couch is wipe-clean.",
+    "Through a ground-floor window a counsellor is taking notes while a naked slave on the couch talks with her hands. Her owner is in the waiting room reading a magazine and checking his watch.",
+  ],
+  restaurant: [
+    "The terraces on restaurant row are full. A waitress in an apron and nothing else leans over a table to pour, and the man she's pouring for gets his hand up the back of it without looking up from his menu.",
+    "A cook is screaming at a kitchen slave in the alley behind a steakhouse, and she's scraping a tray into the bins with her head down. Out front, a couple is sharing a dessert off a slave girl's belly.",
+  ],
+  university: [
+    "Students are sprawled on the lawn in front of the library. One of them has his slave doing his reading out loud to him with her head in his lap, stopping whenever he wants to make a note.",
+    "A lecture is letting out. Two professors are arguing on the steps about who gets the department's slave for the evening, and she stands between them holding both their coffees.",
+  ],
+  park: [
+    "The public gardens smell of cut grass. Old men are feeding ducks on the pond, and a slave on all fours on the lawn is being walked round the path on a lead like a dog, sniffing where she's told to.",
+    "A couple has dragged a blanket under the trees by the fountain and isn't hiding what they're doing under it. A park keeper walks past, has a look, and keeps walking.",
+  ],
+  wall: [
+    "The gate in the border wall has a queue of trucks and walkers. A guard is going through a woman's bag item by item, and another has two refugee girls up against the fence with their hands on the wire while he pats them down slower than he needs to.",
+    "On top of the wall a sentry is smoking with his rifle across his knees. Below him, scratched into the concrete, somebody has counted the days. Further along the wire there's a scrap of dress that didn't make it over.",
+  ],
 };
 
 const NORM_LINES: Record<Norm, { hi: string[]; lo: string[] }> = {

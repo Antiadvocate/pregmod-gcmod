@@ -64,7 +64,8 @@ export const EVENTS: EventDef[] = [
   {
     id: "flight", severity: "major", endogenous: true,
     candidates: (s) => owned(s).filter((p) => read(p).flight_risk > 0.3).map((person) => ({ person })),
-    weight: (_s, c) => read(c.person!).flight_risk * 14,
+    // A border wall round the platform is a wall to climb: fewer of them try.
+    weight: (s, c) => read(c.person!).flight_risk * 14 * ((s.city?.districts ?? []).some((d) => d.kind === "wall" && d.level > 0) ? 0.6 : 1),
     seed: (_s, c) => `Security caught ${c.person!.name} at a service door on the industrial level at four in the morning, with a bag of stolen food and a keycard she shouldn't have had. She was trying to escape.\n\nShe's sitting in your security office now, handcuffed to a chair. She won't look at anyone, and she's shaking.`,
     options: [
       { id: "cell", label: "The cellblock", note: "she'll obey out of fear, and never forget it",

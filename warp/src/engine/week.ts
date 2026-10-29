@@ -72,6 +72,8 @@ import { tickCulture } from "./culture";
 import { tickCourt } from "./court";
 import { tickReign } from "./reign";
 import { tickCampaigns } from "./civic";
+// Trouble around each kind of district you own (engine/districtlife); registered on import.
+import "./districtlife";
 import { tickWorld } from "./world";
 import { tickGlobe } from "./globe";
 import { tickWorks } from "./works";
@@ -134,7 +136,8 @@ export function endWeek(s: SaveState): WeekReport {
   lines.push(...runHeadGirl(s));
 
   /* ── 2. the work ────────────────────────────────────────────────────────────────────────── */
-  const schooling = cityYield(s).schooling;
+  const town = cityYield(s);
+  const schooling = town.schooling;
   const dead: Person[] = [];
   const housed = alive(s);
   const meanComfort = housed.length ? housed.reduce((n, p) => n + comfort(p), 0) / housed.length : 0;
@@ -189,7 +192,11 @@ export function endWeek(s: SaveState): WeekReport {
     // What she is wearing, every day, all week. Small and relentless — the way clothing actually is.
     let worn = 0;
     for (const item of [p.clothes, p.collar, p.shoes]) worn += GARMENT_BY_NAME[item]?.relaxation ?? 0;
-    const felt = shove(p.psyche, load.relaxation * (1 + (p.health.energy < 25 ? 0.4 : 0)) + worn + (managedByThem && mgr ? mgr.care : 0) + (p.psyche.state !== "intact" ? adds.mending : 0));
+    // The city's therapy offices take the broken ones in hand (data/districts).
+    const mended = p.psyche.state !== "intact" ? adds.mending + Math.min(1.2, town.mending * 0.3) : 0;
+    const felt = shove(p.psyche, load.relaxation * (1 + (p.health.energy < 25 ? 0.4 : 0)) + worn + (managedByThem && mgr ? mgr.care : 0) + mended);
+    // And restaurant row feeds them: a decent meal every day is a little hope.
+    if (town.fare) p.bond.hope = clamp(p.bond.hope + Math.min(1, town.fare * 0.15), 0, 100);
     if (load.wear < -0.8) p.psyche.braced_run += 2;
     if (load.wear > 0.8) p.psyche.settled_run += 2;
 
@@ -376,6 +383,8 @@ export function endWeek(s: SaveState): WeekReport {
   // THE WORLD: weather, climate, the economy, the regions. Before the money is settled, because the
   // weather changes what the farms grew and what the power cost.
   lines.push(...tickWorld(s, led));
+  // The public gardens take some of it back out of the air.
+  if (s.world && town.clean) s.world.pollution = clamp(s.world.pollution - Math.min(4, town.clean * 0.6), 0, 100);
   for (const l of tickGlobe(s)) push(l, "good", 8);
   tickWorks(s, led);
   for (const l of tickGenome(s)) push(l, "neutral", 5);

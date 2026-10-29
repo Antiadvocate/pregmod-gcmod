@@ -22,6 +22,7 @@ import {
 import { empireOf, has, units } from "../engine/power";
 import { globeOf } from "../engine/globe";
 import { freedInCity } from "../engine/freed";
+import { designHeight, drawDesign, perimeterWall, type Kit } from "./isoBuildings";
 
 const SALVAGE = ["#7a5236", "#5f6a47", "#6b4a3f", "#4f5f6a", "#8a6a3a"];
 const TARP = ["#3f6d8f", "#b0642c", "#8a8f3a"];
@@ -108,6 +109,10 @@ export default function IsoCity({ onPick, selected }: { onPick?: (id: string) =>
       const h = d.kind === "spire" ? Math.max(heightOf(d), tallest * 1.3) : heightOf(d);
       things.push({ depth: at.x + at.y, node: <Building key={d.id} p={p} d={d} x={at.x} y={at.y} hw={at.hw} h={h} era={era} finish={finish} style={style} strength={strength} hour={hour} people={people} picked={selected === d.id} onPick={onPick} /> });
     }
+
+    /* the border wall, if there is one: round the whole platform, taller with its level */
+    const wall = Math.max(0, ...city.districts.filter((d) => d.kind === "wall").map((d) => d.level));
+    if (wall) things.push(...perimeterWall(p, R - 0.15, wall, sky.light, DISTRICT_BY_KIND.wall.hue));
 
     /* the sprawl: as many shacks and blocks as there are people the districts don't house */
     const over = Math.max(0, pop - housed * 0.6);
@@ -230,10 +235,11 @@ function Windows({ p, x, y, hw, h, z, lit, seed, color }: { p: Proj; x: number; 
 }
 
 function heightOf(d: District): number {
-  const bulk = DISTRICT_BY_KIND[d.kind as DistrictKind]?.bulk ?? 0.3;
-  if (d.kind === "spire") return 230 + d.level * 20;
-  if (d.kind === "arena") return 18 + d.level * 4;
-  return Math.max(16, 20 + bulk * d.level * 120);
+  return designHeight(d.kind, d.level, DISTRICT_BY_KIND[d.kind as DistrictKind]?.bulk ?? 0.3);
+}
+
+function kitFor(out: ReactNode[], p: Proj, light: number, lamps: number, win: string, base: string, seed: number, level: number, ascendant: boolean): Kit {
+  return { out, p, light, lamps, win, base, seed, level, ascendant };
 }
 
 function Building({ p, d, x, y, hw, h, era, finish, style, strength, hour, people, picked, onPick }:
@@ -280,10 +286,12 @@ function Building({ p, d, x, y, hw, h, era, finish, style, strength, hour, peopl
     parts.push(<circle key="beacon" cx={m1[0]} cy={m1[1]} r={4} fill="#ff4d3a"><animate attributeName="opacity" values="1;0.15;1" dur="1.6s" repeatCount="indefinite" /></circle>);
     if (era === "ascendant") { const c = p.at(x, y, z + h * 0.82); parts.push(<ellipse key="holo" cx={c[0]} cy={c[1]} rx={p.s * 1.6} ry={p.s * 0.6} fill="none" stroke="#7fe0ff" strokeWidth={2}><animate attributeName="opacity" values="0.2;0.9;0.2" dur="3s" repeatCount="indefinite" /></ellipse>); }
     if (dressed) parts.push(<Roof key="roof" p={p} x={x} y={y} hw={hw * 0.45} z={z + h} style={style} light={sky.light} />);
-  } else if (d.kind === "arena") {
-    const c = p.at(x, y, z + h);
-    box(x, y, hw, h, z, base, "a");
-    parts.push(<ellipse key="bowl" cx={c[0]} cy={c[1]} rx={p.s * hw * 1.2} ry={p.s * hw * 0.62} fill={shade("#c9b48a", sky.light)} stroke={shade(base, sky.light * 0.7)} strokeWidth={6} />);
+  } else if (drawDesign(kitFor(parts, p, sky.light, lit, win, base, seed, d.level, era === "ascendant"), d.kind, x, y, hw, z, h)) {
+    // Its own design (views/isoBuildings). Scrap patches on the salvage era, as on the old boxes.
+    if (era === "salvage") {
+      const t = prism(p, x - hw * 0.2, y - hw * 0.2, hw * 0.4, hw * 0.35, z + h * 0.5, 2);
+      parts.push(<polygon key="tarp" points={t.top} fill={shade(TARP[seed % TARP.length], sky.light)} />);
+    }
   } else {
     box(x, y, hw, h, z, base, "b");
     parts.push(<Windows key="w" p={p} x={x} y={y} hw={hw} h={h} z={z} lit={lit} seed={seed} color={win} />);

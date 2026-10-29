@@ -332,13 +332,63 @@ function silhouette(kind: string, x: number, y: number, w: number, h: number, s:
       details.push({ d: `M${f(x + w * 0.26)} ${f(y + 3 * s)} a${f(1.5 * s)} ${f(1.5 * s)} 0 1 0 0.1 0 M${f(x + w * 0.74)} ${f(y + 3 * s)} a${f(1.5 * s)} ${f(1.5 * s)} 0 1 0 0.1 0`, stroke: "#e0574a", sw: 2.6 * s, anim: "blink", p: n(10) });
       return { body, details, windows: "none", boxy: false, smokeAt: { x: x + w / 2, y } };
     }
+    case "therapy": {
+      // Two calm storeys, a roof garden, and a round quiet room off one side.
+      const r = Math.min(w * 0.22, h * 0.35);
+      details.push({ d: `M${f(x + w)} ${f(y + h)} v${f(-h * 0.5)} a${f(r)} ${f(r)} 0 0 1 ${f(r * 2)} 0 v${f(h * 0.5)} Z`, fill: mix(fill, "#c8d8d0", 0.4) });
+      for (let i = 0; i < 3; i++) { const tx = x + w * (0.2 + i * 0.3), tr = 3.5 * s; details.push({ d: `M${f(tx - tr)} ${f(y - tr)} a${f(tr)} ${f(tr)} 0 1 0 ${f(tr * 2)} 0 a${f(tr)} ${f(tr)} 0 1 0 ${f(-tr * 2)} 0`, fill: "#5f8a4f", anim: "sway", ox: tx, oy: y, p: n(11 + i) }); }
+      return { details, windows: "grid", boxy: true };
+    }
+    case "restaurant": {
+      // Shopfronts of different heights, an awning each, and lights strung along the street.
+      const cols = ["#b8433a", "#d8b04a", "#3f7f5f", "#e0e0d0"];
+      const shops = 3, sw = w / shops;
+      let d = `M${f(x)} ${f(y + h)}`;
+      for (let i = 0; i < shops; i++) { const hh = h * (0.7 + noise(seed, 70 + i) * 0.3); d += ` V${f(y + h - hh)} H${f(x + sw * (i + 1))}`; }
+      d += ` V${f(y + h)} Z`;
+      for (let i = 0; i < shops; i++) details.push({ d: `M${f(x + sw * i + 2 * s)} ${f(y + h - 12 * s)} h${f(sw - 4 * s)} l${f(-2 * s)} ${f(5 * s)} h${f(-(sw - 8 * s))} Z`, fill: cols[(seed + i) % cols.length] });
+      for (let i = 0; i < 10; i++) details.push({ d: `M${f(x + (w / 10) * (i + 0.5))} ${f(y + h - 15 * s + Math.sin((i / 9) * Math.PI) * 3 * s)} a${f(1 * s)} ${f(1 * s)} 0 1 0 0.1 0`, stroke: "#ffd98a", sw: 2 * s, anim: "blink", p: i / 10, night: true });
+      return { body: d, details, windows: "sparse", boxy: false };
+    }
+    case "university": {
+      // A long hall under a dome, and a bell tower with a spire.
+      const r = Math.min(w * 0.2, h * 0.4), dx = x + w * 0.38;
+      details.push({ d: `M${f(dx - r)} ${f(y)} a${f(r)} ${f(r)} 0 0 1 ${f(r * 2)} 0 Z`, fill: mix(fill, "#6f8f8a", 0.5) });
+      const tw = w * 0.13, tx = x + w * 0.8, th = 46 * s;
+      details.push({ d: `M${f(tx)} ${f(y)} v${f(-th)} h${f(tw)} v${f(th)} Z`, fill });
+      details.push({ d: `M${f(tx - 1.5 * s)} ${f(y - th)} L${f(tx + tw / 2)} ${f(y - th - 18 * s)} L${f(tx + tw + 1.5 * s)} ${f(y - th)} Z`, fill: dk });
+      const cols = Math.max(4, Math.round(w / (9 * s)));
+      for (let i = 0; i <= cols; i++) details.push({ d: `M${f(x + (w / cols) * i)} ${f(y + h)} v${f(-h * 0.32)}`, stroke: lt, sw: 1.8 * s, op: 0.7 });
+      return { details, windows: "grid", boxy: true };
+    }
+    case "park": {
+      // Ground-level green: a low hedge line and trees.
+      const body = `M${f(x)} ${f(y + h)} V${f(y + h - 5 * s)} H${f(x + w)} V${f(y + h)} Z`;
+      const count = Math.max(3, Math.round(w / (8 * s)));
+      for (let k = 0; k < count; k++) {
+        const tx = x + (w / count) * (k + 0.5), r = (4 + noise(seed, 80 + k) * 3) * s, ty = y + h - 5 * s;
+        details.push({ d: `M${f(tx)} ${f(ty)} v${f(-r * 1.4)}`, stroke: "#5a4632", sw: 1.4 * s });
+        details.push({ d: `M${f(tx - r)} ${f(ty - r * 1.6)} a${f(r)} ${f(r)} 0 1 0 ${f(r * 2)} 0 a${f(r)} ${f(r)} 0 1 0 ${f(-r * 2)} 0`, fill: mix("#4f7a45", "#7aa05a", noise(seed, 90 + k)), anim: "sway", ox: tx, oy: ty, p: noise(seed, 95 + k) });
+      }
+      return { body, details, windows: "none", boxy: false };
+    }
+    case "wall": {
+      // A crenellated curtain wall with two towers and the gate between them.
+      const m = Math.max(4, Math.round(w / (7 * s))), mw = w / m, wh = h * 0.55;
+      let d = `M${f(x)} ${f(y + h)} V${f(y)} h${f(w * 0.22)} V${f(y + h - wh)}`;
+      for (let i = 0; i < m; i++) d += ` h${f(mw * 0.56 / 2)} v${f(-4 * s)} h${f(mw * 0.56 / 2)} v${f(4 * s)}`;
+      d += ` H${f(x + w * 0.78)} V${f(y)} H${f(x + w)} V${f(y + h)} Z`;
+      details.push({ d: `M${f(x + w / 2 - 7 * s)} ${f(y + h)} v${f(-10 * s)} a${f(7 * s)} ${f(7 * s)} 0 0 1 ${f(14 * s)} 0 v${f(10 * s)} Z`, fill: "#15171b" });
+      details.push({ d: `M${f(x + w * 0.89)} ${f(y - 4 * s)} a${f(1.6 * s)} ${f(1.6 * s)} 0 1 0 0.1 0`, stroke: "#e0574a", sw: 3 * s, anim: "blink", p: n(12) });
+      return { body: d, details, windows: "sparse", boxy: false };
+    }
     default:
       return { details, windows: "grid", boxy: true };
   }
 }
 
 /** Kinds whose own outline IS the architecture; the style layer leaves their silhouette alone. */
-const OWN_SHAPE = new Set(["industrial", "barracks", "arena", "garden", "exchange", "dairy", "power"]);
+const OWN_SHAPE = new Set(["industrial", "barracks", "arena", "garden", "exchange", "dairy", "power", "restaurant", "park", "wall"]);
 
 /**
  * The revival's dressing on a boxy block: a crown on the roof and, on the lower floors, the
@@ -610,6 +660,7 @@ function roofFor(kind: string, seed: number, x: number, y: number, w: number, sc
   switch (kind) {
     case "industrial": case "docks": case "barracks": case "arena": case "garden":
     case "exchange": case "dairy": case "power": case "temple": case "clinic": case "academy": case "pleasure": case "commercial":
+    case "therapy": case "restaurant": case "university": case "park": case "wall":
       return "";
     case "civic":
       return `M${x + w * 0.5 - 7 * s} ${y} l${7 * s} ${-13 * s} l${7 * s} ${13 * s} Z`;
