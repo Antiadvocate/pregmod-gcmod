@@ -72,6 +72,7 @@ export async function askHer(s: SaveState, personId: string, question: string): 
       `WHERE YOU STAND WITH THE OWNER: ${rom.standing}.`,
       powerBetween(s, p).replace(/^THE POWER BETWEEN YOU\. /, "THE POWER BETWEEN YOU AND THE OWNER. Below, \"you\" is the owner and \"she\" is you. "),
       `YOUR JOB: ${p.assignment}${p.facility ? ` in the ${s.arcology.facilities[p.facility]?.name}` : ""}.`,
+      mem?.digest ? `YOUR TIME HERE, IN SHORT: ${mem.digest}` : "",
       relevant.length ? `WHAT YOU REMEMBER THAT BEARS ON THIS: ${relevant.map((m) => `${m.content} (week ${m.week})`).join(" | ")}` : "",
       mem?.beliefs.length ? `WHAT YOU HAVE CONCLUDED: ${mem.beliefs.map((b) => `"${b.text}"`).join(" ")}` : "",
       mem?.facts.length ? `THINGS YOU HAVE BEEN TOLD: ${sentences(mem.facts.slice(-6).map((f) => f.text))}` : "",

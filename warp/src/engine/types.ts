@@ -569,6 +569,9 @@ export interface EpisodicMemory {
   /** The same thing, filed again: how many times, and the last week it happened. */
   times?: number;
   last_week?: number;
+  /** Several memories condensed into this one (engine/condense): it weighs in the bank's tilt as
+   *  much as they did together. */
+  weight?: number;
 }
 
 export interface Belief { text: string; strength: number; week: number }
@@ -580,6 +583,10 @@ export interface PersonMemory {
   facts: DurableFact[];
   /** Gist: what a decayed memory leaves behind. */
   gist: string[];
+  /** The shape of her time here, in a few sentences of her own, written when the bank was last
+   *  condensed (engine/condense). */
+  digest?: string;
+  condensed_week?: number;
 }
 
 /** A directed relationship. Warmth is liking; attraction is wanting; they are not the same
@@ -814,6 +821,9 @@ export interface ModelSettings {
   tension: number;
   /** Repair the narrator's tics in place (see engine/reviser.ts). Off by default. */
   prose_reviser: boolean;
+  /** Condense a big memory bank with one quick model call when it gets large (engine/condense).
+   *  Default on. */
+  auto_condense?: boolean;
   /** The cheap model that writes the city feed in the background. Empty uses the bookkeeper. */
   feed_model?: string;
   /** Minutes between feed batches while the game is open. 0 turns the background feed off. */

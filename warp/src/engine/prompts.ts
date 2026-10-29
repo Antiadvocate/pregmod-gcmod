@@ -366,6 +366,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (outside.length) lines.push(`CONNECTIONS OUTSIDE THE HOUSEHOLD: ${outside.map((x) => `${x.face.name}, ${x.what}${x.face.fate ? ` (${gone[x.face.fate.fate]} since week ${x.face.fate.week}: ${x.face.fate.how})` : record(s, x.face)}`).join(" / ")}`);
 
   lines.push(`HOW SHE ADDRESSES YOU: ${s.player.owned_by === p.id ? (s.reign?.your_name ?? "whatever she likes") : calledBy(s, p)}${s.player.owned_by === p.id ? "" : " (she always uses this title unless she is openly defying you)"}.`);
+  if (mem?.digest) lines.push(`HER TIME HERE, IN SHORT, in her words: ${mem.digest}`);
   if (memories.length) lines.push(`RELEVANT MEMORIES: ${memories.map(memoryLine).join(" | ")}`);
   if (p.psyche.state !== "intact") lines.push(`MENTAL STATE: She is ${p.psyche.state}${p.psyche.break_mode ? ` (${p.psyche.break_mode})` : ""}. Make sure her behavior reflects this rather than writing her as unaffected.`);
   // Coarsen any overly polite wording in older background strings so it doesn't soften the narrator's register.

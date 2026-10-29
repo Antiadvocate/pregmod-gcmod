@@ -49,6 +49,7 @@ import { getLocalImage, modelsAvailable } from "../config";
 import { POSES, restingPose, type Pose } from "../lib/rig";
 import { renderDoll } from "../lib/dollrender";
 import { askHer } from "../engine/consult";
+import { condenseMemory, memoryTokens } from "../engine/condense";
 import SlaveArt, { SlaveHead } from "./SlaveArt";
 import { practise, skill } from "../engine/player";
 import { buildOf } from "../engine/build";
@@ -699,6 +700,8 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
             </Section>
           ) : null}
           <Section title="Memories">
+            {mem?.digest ? <Card><div className="text-[10.5px] uppercase tracking-wider dim mb-1">Her time here, in short</div><p className="font-prose text-[14px] leading-relaxed">{mem.digest}</p></Card> : null}
+            {mem?.episodic.length ? <Condense id={id} /> : null}
             {mem?.episodic.length ? (
               <div className="space-y-1.5">
                 {[...mem.episodic].sort((a, b) => b.week - a.week).slice(0, 14).map((m) => (
@@ -763,6 +766,30 @@ function AllowanceRow({ id }: { id: string }) {
         <span className="ml-auto"><span className="dim">in her purse </span><Money n={purseOf(p)} /></span>
       </div>
       <div className="dim mt-1">Paid from your cash every week. She spends it on her own, and you'll hear what on. Saying it in a scene works too, like "I'll give you 100k a week".</div>
+    </div>
+  );
+}
+
+/** How big her memory is, and a button to boil it down now (engine/condense). */
+function Condense({ id }: { id: string }) {
+  const { save, mutate } = useGame();
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  const mem = save.memory[id];
+  const p = save.people[id];
+  if (!mem || !p) return null;
+  const go = async () => {
+    setBusy(true); setNote("");
+    const r = await condenseMemory(save, p, { force: true });
+    mutate(() => {});
+    setNote(r.note);
+    setBusy(false);
+  };
+  return (
+    <div className="flex items-center gap-2 text-[11.5px] dim my-1.5">
+      <span>{mem.episodic.length} memories, about {memoryTokens(mem).toLocaleString()} tokens{mem.condensed_week !== undefined ? `, last condensed week ${mem.condensed_week}` : ""}</span>
+      {modelsAvailable() ? <button className="underline" disabled={busy} title="One quick model call that merges and trims her older memories. Core memories and the last few weeks are kept as they are" onClick={() => void go()}>{busy ? "condensing…" : "condense"}</button> : null}
+      {note ? <span>{note}</span> : null}
     </div>
   );
 }

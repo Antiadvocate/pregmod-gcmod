@@ -120,6 +120,7 @@ function brief(s: SaveState, p: Person): string {
     agreementsBrief(s, p),
     mannerLines(p).length ? `## HOW SHE IS WITH OTHER PEOPLE\n${mannerLines(p).join("\n")}` : "",
     (mem?.facts ?? []).length ? `## WHAT SHE KNOWS ABOUT THE OWNER\nEach one has the week she learned it.\n${mem!.facts.map((f) => `· week ${f.week}: ${f.text}`).join("\n")}` : "",
+    mem?.digest ? `## HER TIME HERE, IN SHORT, IN HER WORDS\n${mem.digest}` : "",
     `## WHAT HAS HAPPENED TO HER\nThese are the things that matter most, in order.\n${memories.join("\n")}`,
   ].filter(Boolean).join("\n\n");
 }

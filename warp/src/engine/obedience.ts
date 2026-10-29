@@ -129,7 +129,7 @@ export function memoryTilt(mem?: PersonMemory): number {
   if (!mem?.episodic?.length) return 0;
   let sum = 0, weight = 0;
   for (const e of mem.episodic) {
-    const w = (e.importance / 10) * Math.max(0.2, e.decay) * (e.core ? 2 : 1);
+    const w = (e.importance / 10) * Math.max(0.2, e.decay) * (e.core ? 2 : 1) * (e.weight ?? 1);
     const sign = e.charge === "warm" || e.charge === "bright" ? 1 : e.charge === "sharp" || e.charge === "cold" ? -1 : 0;
     sum += sign * w;
     weight += w;
