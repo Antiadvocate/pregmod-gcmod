@@ -16,6 +16,7 @@
  */
 import type { Person } from "./types";
 import { rng, type Rng } from "./rng";
+import { OTHERS_RE } from "./alone";
 
 /** Version of these tables. A woman seeded by an older one is seeded again; the first were
  *  ordinary hobbies (seedlings, crosswords) with nothing sexual in them. */
@@ -146,11 +147,19 @@ export function seedOwnLife(p: Person, r: Rng = rng(`ownlife:${p.id}`)): void {
   p.persona.own_v = OWN_V;
 }
 
-/** Her own life on her card: not a script, things that can come up. */
-export function ownLifeLines(p: Person): string[] {
+/** Her own life on her card: not a script, things that can come up. `alone`: she's the only slave
+ *  in the house, so what only makes sense with other girls around goes, and something of her own
+ *  stands in for it (engine/alone). Her card in the save keeps it, for when she isn't alone. */
+export function ownLifeLines(p: Person, alone = false): string[] {
   const out: string[] = [];
-  const does = p.persona.interests ?? [];
-  const wants = p.persona.goals ?? [];
+  let does = p.persona.interests ?? [];
+  let wants = p.persona.goals ?? [];
+  if (alone) {
+    const r = rng(`ownlife-alone:${p.id}`);
+    const keep = (xs: string[]) => xs.filter((x) => !OTHERS_RE.test(x));
+    if (does.length) { does = keep(does); for (const x of r.shuffle(keep(DOES))) if (does.length < 2 && !does.includes(x)) does.push(x); }
+    if (wants.length) { wants = keep(wants); if (!wants.length) wants = [r.pick(keep(WANTS).filter((x) => !/favourite/.test(x)))]; }
+  }
   if (does.length) out.push(`HER OWN TIME. This is what she does when she isn't working or with you. She can be in the middle of it, mention it, or ask for time or things for it: ${does.join(", and ")}.`);
   if (wants.length) out.push(`WHAT SHE WANTS FOR HERSELF IN THE LONG RUN. It colours what she hopes for and asks for, though she rarely says it outright: ${wants.join(", and ")}.`);
   return out;

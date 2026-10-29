@@ -16,6 +16,7 @@
 import { featuresLine } from "./features";
 import { placeOf } from "./places";
 import { OWN_LIFE_ASK, ownLifeLines } from "./ownlife";
+import { isAlone, withoutOthers } from "./alone";
 import { rulesLine } from "./houserules";
 import { obeysLine } from "./compliance";
 import { characterLines } from "./character";
@@ -344,7 +345,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   const gov = governorLine(s, p);
   if (gov) lines.push(gov);
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
-  lines.push(...ownLifeLines(p));
+  const alone = isAlone(s);
+  lines.push(...ownLifeLines(p, alone));
   const between = deedsBrief(s, p.id);
   if (p.stains?.length) lines.push(`VISIBLE ON HER BODY RIGHT NOW (remains there until washed off, and noticeable to anyone looking at her): ${marksLine(s, p.stains)}.`);
   const carrying = today(s, p);
@@ -369,8 +371,10 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (mem?.digest) lines.push(`HER TIME HERE, IN SHORT, in her words: ${mem.digest}`);
   if (memories.length) lines.push(`RELEVANT MEMORIES: ${memories.map(memoryLine).join(" | ")}`);
   if (p.psyche.state !== "intact") lines.push(`MENTAL STATE: She is ${p.psyche.state}${p.psyche.break_mode ? ` (${p.psyche.break_mode})` : ""}. Make sure her behavior reflects this rather than writing her as unaffected.`);
+  // The only slave in the house: anything on her card that assumes other girls goes (engine/alone).
+  const card = alone ? lines.map((l) => (l.startsWith("### ") ? l : withoutOthers(l))).filter(Boolean) : lines;
   // Coarsen any overly polite wording in older background strings so it doesn't soften the narrator's register.
-  return coarsen(lines.join("\n"));
+  return coarsen(card.join("\n"));
 }
 
 /** Compiles the current world state from scratch every turn. */
