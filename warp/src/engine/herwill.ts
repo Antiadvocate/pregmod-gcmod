@@ -13,7 +13,7 @@ import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { personCard, HOUSE_STYLE } from "./prompts";
 import { PLAIN_RULES, RECORD_RULES } from "./style";
-import { coarsen } from "./register";
+import { coarsen, FC_VOICE } from "./register";
 import { weekSnapshot } from "./snapshot";
 import { LAWS, LAW_BY_ID } from "../data/laws";
 import { ASSIGNMENTS, type AssignmentDef } from "../data/assignments";
@@ -214,7 +214,7 @@ export async function herDecides(s: SaveState, request?: string): Promise<{ said
     return { said: "", did: text ? [text] : [] };
   }
   const res = await call({
-    system: SYSTEM,
+    system: `${SYSTEM}\n\n${FC_VOICE}`,
     user: context(s, h, r, request),
     model: s.models.narrator_model,
     fallback: s.models.fallback_model,

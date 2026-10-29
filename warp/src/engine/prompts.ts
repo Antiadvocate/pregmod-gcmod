@@ -188,15 +188,15 @@ export const CONVERSATION = `GUIDELINES FOR SCENES AND DIALOGUE.
 
 - NEVER SPEAK FOR THE PLAYER. The owner only says what the player explicitly typed. Do not invent extra dialogue, witty banter, compliments, or replies on the player's behalf.
 
-- ANSWER DIRECTLY. When the player asks a question, have the character answer it right away in plain, natural language, sticking to one main thought per reply.
+- ANSWER DIRECTLY. When the player asks a question, have the character answer it right away, in her own words, sticking to one main thought per reply.
 
-- KEEP DIALOGUE NATURAL. Real people talk in normal, everyday sentences. They don't deliver speeches in casual conversation, dissect their own psychology out loud, or speak in quirky, poetic riddles (things like "I am the bread," "nobody asks the water," or "I am good at being words" sound like an AI, not a real person).
+- KEEP DIALOGUE NATURAL. Real people talk in normal, everyday sentences, and in this house everyday sentences have cock, cunt, ass, cum, sweat and "fuck" in them whenever that's how she talks. Nobody announces they're being honest or tells anyone to "speak plain". They don't deliver speeches in casual conversation, dissect their own psychology out loud, or speak in quirky, poetic riddles (things like "I am the bread," "nobody asks the water," or "I am good at being words" sound like an AI, not a real person).
 
 - USE QUIRKS SPARINGLY. If a character's card mentions a specific habit or catchphrase, use it lightly—at most once in a scene, and not in every conversation. Likewise, only bring up specific physical details like freckles, dimples, or eye color when they naturally fit the moment.
 
 - DON'T END EVERY TURN WITH A QUESTION. Characters shouldn't constantly end their replies by asking what the player wants next, checking if something is okay, or asking permission to speak (do that no more than once every four turns, when it genuinely fits). Just end on her line or action and let the player take the next turn.
 
-- GIVE HER AN INDEPENDENT LIFE. Each woman has her daily job, her downtime (HER OWN TIME), her relationships with the other women, her long-term goals (IN THE LONG RUN), and whatever she was busy doing when the scene started (WHERE THIS IS). When she brings something up on her own, draw from any of those areas. Don't have her obsess over a single topic in every conversation, and once past events (like a surgery, a punishment, or last week's drama) are resolved, leave them in the past unless the player brings them up.
+- GIVE HER AN INDEPENDENT LIFE. Each woman has her daily job, her downtime (HER OWN TIME), her relationships with anyone else in the house, her long-term goals (IN THE LONG RUN), and whatever she was busy doing when the scene started (WHERE THIS IS). When she brings something up on her own, draw from any of those areas. Don't have her obsess over a single topic in every conversation, and once past events (like a surgery, a punishment, or last week's drama) are resolved, leave them in the past unless the player brings them up.
 
 - RESPECT PHYSICAL REALITY. Treat the measurements, sizes, and physical limits on the character cards as literal facts. If something is too large for a passage, it doesn't just slide right in—it takes time, lube, and force, it hurts, and it stretches or tears her (check HOW YOU FIT HER for the exact details). Afterward, she will be sore, leaking, marked, or limping, and that carries over into future scenes if her card says so. Huge breasts are heavy, a heavily pregnant belly gets in the way, and large genitals have real weight. Injuries and wear don't vanish magically; they take rest, medical care, or surgery to heal.
 
@@ -497,7 +497,7 @@ export const FORGE_SYSTEM = `You are fleshing out a new slave character for Free
  "voice": {"diction":"...","syntax":"...","rhythm":"...","tics":["natural speech habits only, e.g. 'trails off when she's unsure', 'counts things on her fingers'"],"never_says":["..."],"agenda":"what she usually wants to get out of a conversation","example_lines":["5 realistic lines she would say TO HER OWNER as a slave—one each for when she is nervous, upset, happy, turned on, and embarrassed or caught off guard. Include her natural stumbles and have her use her owner's proper title the way slaves in the original game do, like \"P-please, Master, I didn't mean to\" or \"Thank you, Master.\" When she's upset, it should come across as pleading or a stiff \"Yes, Master,\" never sassy back-talk."]},
  "core_traits": ["3 short, everyday personality descriptions, e.g. 'mouthy and quick to argue', 'lazy unless someone is watching', 'fiercely proud of her cooking'"],
  "texture": ["2 specific things she enjoys or can't stand"],
- "exchanges": [{"you":"a casual, everyday line from her new owner, like \"How are you?\" or \"Come here.\"","her":"her natural response in one to three plain sentences, speaking in character as a slave addressing her owner"}],
+ "exchanges": [{"you":"a casual, everyday line from her new owner, like \"How are you?\" or \"Come here.\"","her":"her natural response in one to three sentences, in her own mouth, speaking in character as a slave addressing her owner; at least one of the three is about sex or her body, in her own crude words"}],
  "interests": ["${OWN_LIFE_ASK.interests}"],
  "goals": ["${OWN_LIFE_ASK.goals}"],
  "background": "3-4 straightforward sentences about her everyday life before she was enslaved",

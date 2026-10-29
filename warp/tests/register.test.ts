@@ -17,3 +17,16 @@ const innocent = [
 ];
 for (const t of innocent) check(`left alone: ${t}`, coarsen(t) === t, coarsen(t));
 check("the tail tells the model the context isn't its style", /is not your style/.test(REGISTER_TAIL) && /cock/.test(REGISTER_TAIL));
+
+{
+  // Every story bible and scene is shown what this game sounds like, and told what it isn't: a player
+  // read a pitch about "watching for the catch" and "kneeling because she wants to, not because she
+  // has to" and called it HBO.
+  const { FC_VOICE, REGISTER_TAIL } = await import("../src/engine/register.ts");
+  const { SAGA_SYSTEM } = await import("../src/engine/saga.ts");
+  check("the voice block shows crude, human talk", /'Fuck, you taste like/.test(FC_VOICE) && /armpit/.test(FC_VOICE));
+  check("and names the prestige-TV lines as what not to write", /watching for the catch/.test(FC_VOICE) && /not because she has to/.test(FC_VOICE));
+  check("every scene request ends with it", REGISTER_TAIL.includes(FC_VOICE));
+  check("story bibles get it too", SAGA_SYSTEM.includes(FC_VOICE));
+  check("and nothing tells anyone to speak plain", !/plain talk/.test(REGISTER_TAIL));
+}

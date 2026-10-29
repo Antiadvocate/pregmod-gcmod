@@ -19,7 +19,7 @@
 import type { EpisodicMemory, Person, PersonMemory, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
-import { coarsen } from "./register";
+import { coarsen, FC_VOICE } from "./register";
 import { memId } from "./memory";
 import { memoryTilt } from "./obedience";
 import { clamp } from "./psyche";
@@ -79,7 +79,7 @@ Each memory comes numbered, with its week (or weeks and how many times it happen
 - "importance" is 0 to 10 and "charge" is one of warm, bright, cold, sharp, dull, the same as the strongest of what it covers.
 - Write about half as many memories as you were given, or fewer.
 - "facts" are the things she knows, merged where they say the same thing, and only from the facts given.
-- "story" is two to four plain sentences, in the first person, on the shape of her time here so far: how it started, what turned, where she is with the owner now. Only from what's given.
+- "story" is two to four blunt sentences, in the first person, in her own crude words: what's been done to her and by her here, who's had her and how, what she does all week, what she's into now and where she stands with the owner. What happened, never an arc about growing or feeling. Only from what's given.
 
 {"memories":[{"text":"...","covers":[1,2],"importance":6,"charge":"warm"}],"facts":["..."],"story":"..."}`;
 
@@ -170,7 +170,7 @@ export async function condenseMemory(s: SaveState, p: Person, opts?: { force?: b
   const lines = foldable(mem, week);
   if (lines.length < (opts?.force ? 4 : MIN_LINES) || (!opts?.force && !needsCondensing(mem, week))) return { ok: false, before, after: before, note: "There isn't enough to condense yet." };
   const res = await call({
-    system: CONDENSE_SYSTEM,
+    system: `${CONDENSE_SYSTEM}\n\n${FC_VOICE}`,
     user: brief(p, mem, lines),
     model: s.models.bookkeeper_model || s.models.narrator_model,
     fallback: s.models.fallback_model,

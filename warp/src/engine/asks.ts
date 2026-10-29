@@ -44,6 +44,7 @@ import { changeRoom, roomWish } from "./rooms";
 import { chronicle, chronicleBrief } from "./chronicle";
 import { HOUSE_STYLE } from "./prompts";
 import { roomLine } from "./rooms";
+import { FC_VOICE } from "./register";
 
 export type AskKind = "intimate" | "comfort" | "household" | "personal" | "instruction";
 
@@ -593,7 +594,7 @@ export async function voiceAsk(s: SaveState, ask: Ask): Promise<string> {
 
 ${HOUSE_STYLE}
 
-Output JSON only: {"says":"the scene"}`,
+Output JSON only: {"says":"the scene"}\n\n${FC_VOICE}`,
     user: [
       `HER: ${p.name}, ${p.age}. ${p.persona.speech_pattern}`,
       p.persona.exchanges?.length ? `HOW SHE TALKS. This is an ordinary exchange, so don't reuse it. You: "${p.persona.exchanges[0].you}" / ${p.name}: "${p.persona.exchanges[0].her}"` : p.persona.voice?.example_lines?.length ? `SHE SOUNDS LIKE THIS: "${p.persona.voice.example_lines[0]}"` : "",
