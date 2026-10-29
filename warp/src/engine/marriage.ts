@@ -18,7 +18,7 @@ import type { Person, ReportLine, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
 import { HOUSE_STYLE, personCard } from "./prompts";
-import { coarsen } from "./register";
+import { coarsen, FC_VOICE } from "./register";
 import { romanceOf } from "./romance";
 import { applyTreatment, refresh } from "./obedience";
 import { clamp, shove, addState } from "./psyche";
@@ -94,7 +94,7 @@ Reply with JSON only.`;
 export function marriagePrompt(s: SaveState, p: Person, terms: string): { system: string; user: string } {
   const doctrines = Object.entries(s.arcology.doctrines).filter(([, d]) => d.adoption >= 15).map(([id, d]) => `${id} (${DOCTRINE_BY_ID[id]?.noun ?? id}, ${Math.round(d.adoption)}%)`).join(", ");
   return {
-    system: SYSTEM,
+    system: `${SYSTEM}\n\n${FC_VOICE}`,
     user: [
       personCard(s, p),
       `THE ARCOLOGY: ${s.arcology.name}, week ${s.arcology.week}, ${s.arcology.population.toLocaleString()} citizens, reputation ${Math.round(s.arcology.rep)}.${doctrines ? ` Its doctrines: ${doctrines}.` : ""}`,

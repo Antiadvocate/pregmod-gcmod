@@ -26,7 +26,7 @@ import { powerBetween } from "./self";
 import { agreementsBrief } from "./agreements";
 import { mannerLines } from "./manner";
 import { read } from "./obedience";
-import { coarsen } from "./register";
+import { coarsen, FC_VOICE } from "./register";
 import { cleanList, OWN_LIFE_ASK, OWN_V } from "./ownlife";
 import { surgeryPast } from "./health";
 import { inBed } from "./sexlife";
@@ -42,10 +42,13 @@ const EVERY = 6;
  *  personality; 5 is told who she is in bed (fetish, paraphilia, quirk, flaw) and writes her
  *  personality with room for it, after a dom with an abusive streak came out meek; 6 flattened every
  *  voice into the same plain, clumsy speech and was taken back, so 7 is 5 again, and a woman read
- *  by 6 is read again to get her own voice back. */
-export const GROW_V = 7;
-/** A reading that has to be done again: anything before 5, and 6. */
-const STALE_V = (v: number) => v < 5 || v === 6;
+ *  by 6 is read again to get her own voice back. 7 still asked for "plain, ordinary sentences" and
+ *  polite small talk as her sample lines, and every voice in the house stopped swearing or saying
+ *  anything about a body; 8 asks for how she swears and talks dirty, in her own way, and one of her
+ *  sample lines filthy. Everyone is read once more for it. */
+export const GROW_V = 8;
+/** A reading that has to be done again: anything before 8. */
+const STALE_V = (v: number) => v < 8;
 
 function lastRead(p: Person): number { return p.persona.grown_week ?? p.origin.acquired_week ?? 0; }
 
@@ -77,7 +80,7 @@ const GROW_SYSTEM = `You re-read a woman in Free Cities, an adult text game abou
 Her first card was written the week she arrived, and a lot has happened since. What has happened to her, the orders she lives under, where she stands with the owner and how she is with people now are the truth about her. Write the real, grounded person all of that has made, as a person and not a bundle of quirks.
 
 Rules that matter most:
-- She talks like a real person, in mostly plain, ordinary sentences. Describe her voice the way you'd describe someone you know (blunt, quiet, quick, warm or dry), and not as a list of gimmicks.
+- She talks like a real person from her background, and in this house that includes sex and bodies. Describe her voice the way you'd describe someone you know (blunt, quiet, quick, mouthy, filthy, prim, dry), and not as a list of gimmicks. Say how she swears and how she talks dirty, in her own way: a street girl says "fuck" every other word, a prim one says "cock" like it costs her and goes red, a bored one talks about cum like it's laundry. Nobody in this game talks like a therapist or a novel.
 - Don't turn a one-off joke, image or number from a scene into who she is. If a scene had her call herself bread, or count to eighty-nine, that was one moment, so leave it there.
 - "tics" is at most two small, believable habits that real people have, like a word from her own language when she swears, what she calls the owner, or a way she laughs, and each is something she does only now and then. Leave it empty if nothing fits, and never use generic fillers like "like", "just", "honestly", "okay" or "I mean".
 - Her body is fact. Where a memory says something her body couldn't have done, such as taking a cock that's far too big for her throat all the way down, the body wins. It went as far as it physically could, and that's who she is and what she remembers.
@@ -85,14 +88,14 @@ Rules that matter most:
 - HER NATURE IS FIXED. Her fetishes, her paraphilia and her conscience are the game's, and scenes don't change them. The writer of those scenes sometimes went soft on her, having a sadist stop to check whether he could take it, an abuser pull out because he begged, or a cold woman go pink and apologise. That was the writer's slip, not who she is. Never write checking in, stopping when asked, gentleness, aftercare or apologies into her traits, history or signature when her nature says otherwise.
 - What's done is done. An operation, a punishment, a promise or a scene that already happened is in her past. It can have changed her, but she doesn't count the days since it, wait for it, or bring it up every time she talks. DONE TO HER BODY and the weeks on everything tell you what's over.
 - She has a life of her own besides the owner and what's been done to her. This is a porn game, so it has a sexual edge, and it grows out of her personality traits first, then her fetishes, then the job she had. "interests": ${OWN_LIFE_ASK.interests}. "goals": ${OWN_LIFE_ASK.goals}. Keep the ones on her card that still fit, and change what her weeks here would have changed.
-- "exchanges" is three short, ordinary exchanges with the owner, the kind that happen every day, in the relationship they actually have. THE POWER BETWEEN THEM and her STANDING ORDERS decide how she speaks to him. The owner says something ordinary ("How are you?", "Come here.", "What do you think of the new room?") and she answers in one to three plain sentences, as herself. These set the length and plainness of how she talks, so keep them short and natural.
+- "exchanges" is three short exchanges with the owner, the kind that happen every day, in the relationship they actually have. THE POWER BETWEEN THEM and her STANDING ORDERS decide how she speaks to him. The owner says something ordinary ("How are you?", "Come here.", "What do you think of the new room?") and she answers in one to three sentences, as herself. At least one of the three is about sex or her body, in her own crude words ("My ass is still sore from Tuesday, Master, but you can have it."). These set the length and the mouth she talks with, so keep them short and human.
 
 Also:
 - "core_traits" is 3 to 5 traits, concrete and specific to her now, the way the game lists them ("fixes anything that rattles", "fucks the owner's throat the moment she sees him").
-- "voice" has diction, syntax and rhythm (a plain sentence each), never_says, and agenda.
-- "life_history" is 4 to 6 plain sentences about who she has become here and the turning points that made her, with the weeks.
+- "voice" has diction, syntax and rhythm (a short sentence each, diction saying how she swears and talks about sex), never_says, and agenda.
+- "life_history" is 4 to 6 blunt sentences about who she has become here and what was done to her and by her that made her, with the weeks. What happened, not how it felt to grow.
 - "signature" is one sentence about the one thing she has that nobody else in the house has, shown as something she does.
-Use plain words and nothing literary. Keep everything true to the facts given, and invent nothing that contradicts them.
+Use everyday, crude words and nothing literary or therapeutic. Keep everything true to the facts given, and invent nothing that contradicts them.
 
 {"core_traits":["..."],"interests":["..."],"goals":["..."],"speech_pattern":"a few words","voice":{"diction":"...","syntax":"...","rhythm":"...","tics":["..."],"never_says":["..."],"agenda":"..."},"exchanges":[{"you":"...","her":"..."}],"life_history":"...","signature":"..."}`;
 
@@ -140,7 +143,7 @@ interface GrowOut {
 export async function growPersona(s: SaveState, p: Person, signal?: AbortSignal): Promise<boolean> {
   if (!modelsAvailable() || s.models.lean_mode) return false;
   const res = await call({
-    system: GROW_SYSTEM,
+    system: `${GROW_SYSTEM}\n\n${FC_VOICE}`,
     user: brief(s, p),
     model: s.models.forge_model,
     fallback: s.models.fallback_model,

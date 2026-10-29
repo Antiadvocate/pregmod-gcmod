@@ -42,7 +42,7 @@ import { note } from "./others";
 import { deedsOf } from "./deeds";
 import { HOUSE_STYLE } from "./prompts";
 import { settledBrief, weightBrief } from "./fates";
-import { coarsen, REGISTER_TAIL } from "./register";
+import { coarsen, FC_VOICE, REGISTER_TAIL } from "./register";
 import { cultureOf, NORMS, NORM_IDS, normLine, pushNorm, type Norm } from "./culture";
 import { resolveAct } from "./intimacy";
 import { isOwnerName } from "./you";
@@ -648,7 +648,9 @@ Keep the bodies, rooms and things concrete. Everyone talks like themselves, and 
 
 ${HOUSE_STYLE}
 
-The same goes for every field you write, including the chapter text, the outcomes, what people want in bed and what they won't do. Use plain crude words, and never a euphemism or a poetic turn.
+The same goes for every field you write, including the premise, the endings, the chapter text, the outcomes, what people want in bed and what they won't do: crude everyday words, never a euphemism, a poetic turn or a line about feelings.
+
+${FC_VOICE}
 
 Choices matter, and most of them are about sex, such as what the player does to whom, what they allow, who they hand to whom, and what they do in public. Each option goes somewhere different. Different people get off or get hurt, a taste gets fed or starved, the city's customs get pushed or broken, and endings open or close. Never offer three versions of the same thing. At least one option costs the player something they care about. An option can need something, like money, reputation, a fact learned earlier, someone's regard, how far someone's taste has gone, or how far the city has gone, and you should show it even when the player can't take it yet.
 
@@ -673,9 +675,10 @@ export function biblePrompt(s: SaveState, x: Saga): string {
     `## WRITE THE SAGA'S BIBLE
 The player is the owner and is written as "you". Do NOT put the player in the cast${s.player.name && s.player.name !== "you" ? `, under their name (${s.player.name}) or any other` : ""}, because the cast is everyone else. The story happens to and around "you", and "you" make its choices.
 
-It's an erotic story, so its premise is a desire, a taboo, an appetite or a sexual power struggle that could only happen under these laws and customs. It has three to five acts, each with a sexual turn, and three to six people in it, all of them adults. Use the player's people and the people already met above by their exact names, and invent the rest with full names. At least one character must be someone who isn't the player's slave. Give three or four ways it could end, each one genuinely different in who wins, who's lost, who becomes what in bed, and what the arcology's customs become.
+It's a porn story, so the premise says who is going to fuck whom, how, and what's dirty or dangerous about it here, under these laws and customs: a kink someone's hiding, a body someone wants, a rival who wants your girl, a public act that would be a scandal. Write the premise and stakes crude and concrete, about bodies and acts, the way a horny friend would pitch it, never as a drama logline about feelings, trust, identity or being known. It has three to five acts, each with a sexual turn, and three to six people in it, all of them adults. Use the player's people and the people already met above by their exact names, and invent the rest with full names. At least one character must be someone who isn't the player's slave. Give three or four ways it could end, each one a different sexual outcome, said crudely: who ends up fucking whom, who's on her knees for whom in public, whose kink takes over the house, who gets sold or bred or famous for it, and what the arcology starts doing because of it.
+CHECK IT MAKES SENSE. A slave knows she's the player's slave, and so does everyone in the arcology who's met her. Nothing everybody already knows can be a secret, and nothing can depend on someone not knowing what the facts above say they know. Every stake has to be something that could actually happen to these people here.
 
-JSON: {"title":"2-5 words","premise":"2-3 sentences","stakes":"one sentence: what the player could win or lose","tone":"a few words","acts":["act 1 aim","act 2 aim","..."],"paths":[{"id":"short_id","label":"one way it ends"}],"cast":[{"name":"full name","role":"their part in this","want":"...","fear":"...","secret":"...","toward":-100..100,"now":"where they stand, a few words","desire":"what they want in bed","limit":"what they won't do, yet","pronoun":"she|he","age":N,"nationality":"...","skin":"...","hair":"colour, style","eyes":"...","detail":"one visible detail"}]}`,
+JSON: {"title":"2-5 words","premise":"2-3 crude sentences: who fucks whom and what's filthy or risky about it","stakes":"one sentence: what the player could win or lose, concretely (a body, money, standing, a kink spreading)","tone":"a few words","acts":["act 1 aim","act 2 aim","..."],"paths":[{"id":"short_id","label":"one way it ends"}],"cast":[{"name":"full name","role":"their part in this","want":"...","fear":"...","secret":"...","toward":-100..100,"now":"where they stand, a few words","desire":"what they want in bed","limit":"what they won't do, yet","pronoun":"she|he","age":N,"nationality":"...","skin":"...","hair":"colour, style","eyes":"...","detail":"one visible detail"}]}`,
     REGISTER_TAIL,
   ].filter(Boolean).join("\n\n");
 }

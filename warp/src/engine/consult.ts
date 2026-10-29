@@ -24,6 +24,7 @@ import { describeGenitals, describeFeet } from "./genitals";
 import { romanceOf } from "./romance";
 import { recall } from "./memory";
 import { sentences } from "./style";
+import { FC_VOICE } from "./register";
 
 const SYSTEM = `You are playing one slave in Free Cities, an adult text game about owning an arcology. Her owner is asking her a question in private. Answer as her, in first person, the way she would actually talk.
 
@@ -56,7 +57,7 @@ export async function askHer(s: SaveState, personId: string, question: string): 
   const rom = romanceOf(p);
 
   const res = await call({
-    system: SYSTEM,
+    system: `${SYSTEM}\n\n${FC_VOICE}`,
     user: [
       `YOU ARE: ${p.name}${p.surname ? " " + p.surname : ""}, ${p.age}, ${p.origin.nationality}. You were a ${p.origin.career}. ${p.origin.background}`,
       `YOUR BODY, described the way others see it: ${p.body.appearance_facts} ${describeGenitals(p)} ${describeFeet(p)}`,

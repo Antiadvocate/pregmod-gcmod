@@ -35,6 +35,7 @@ import { remember } from "./memory";
 import { moveEdge } from "./social";
 import { canSire, hasCock, playerBody } from "./you";
 import { skill, practise } from "./player";
+import { houseSlaves } from "./alone";
 
 /** What "pay her tribute" costs you. */
 export const TRIBUTE = 1500;
@@ -97,6 +98,8 @@ export function canDo(p: Person, act: ActDef, s?: SaveState): string | null {
   if (sane(p.health.recovery_weeks) > 0 && act.group !== "tenderness") return s ? `she is ${recoveryNote(s, p)}` : "she is recovering from surgery";
   if (s && act.you === "cock" && !hasCock(s)) return "you have no cock";
   if (s && act.you === "sire" && !canSire(s)) return hasCock(s) ? "you can't get anyone pregnant" : "you have no cock";
+  // Another slave has to be there to be shared with or served (engine/alone).
+  if (s && /another slave/.test(act.what) && houseSlaves(s).filter((x) => x.id !== p.id).length === 0) return "there's no other slave in the house to bring in";
   if (s && act.id === "tribute" && s.arcology.cash < TRIBUTE) return `you don't have ¤${TRIBUTE.toLocaleString()} to give her`;
   return null;
 }

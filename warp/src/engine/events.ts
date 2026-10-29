@@ -26,6 +26,7 @@ import { resolveAct } from "./intimacy";
 import { chronicle } from "./chronicle";
 import { changeRoom, roomWish } from "./rooms";
 import { selfRelease } from "./houserules";
+import { houseSlaves } from "./alone";
 
 export interface EventOption {
   id: string;
@@ -336,7 +337,7 @@ export const EVENTS: EventDef[] = [
       { id: "sleep", label: "Let her sleep beside you, and nothing more",
         resolve: (s, _e, p) => { resolveAct(s, p!, "sleeping together"); return `You let her climb in and hold her until she settles. She's a little disappointed at first, then she relaxes and falls asleep against your chest.\n\nIn the morning she's shy about it, and very pleased.`; } },
       { id: "send", label: "Send her back to the dormitory",
-        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "neglect", size: 2, why: "sent back to the dormitory in the night" }, s.arcology.week); return `You tell her to go back to bed. She goes, embarrassed, and the other girls hear her crying quietly in her bunk.\n\nShe doesn't come to your room again without being told to.`; } },
+        resolve: (s, _e, p) => { applyTreatment(p!, { kind: "neglect", size: 2, why: "sent back to the dormitory in the night" }, s.arcology.week); return `You tell her to go back to bed. She goes, embarrassed, ${houseSlaves(s).length > 1 ? "and the other girls hear her crying quietly in her bunk" : "and you hear her crying quietly through the wall"}.\n\nShe doesn't come to your room again without being told to.`; } },
     ],
   },
   {

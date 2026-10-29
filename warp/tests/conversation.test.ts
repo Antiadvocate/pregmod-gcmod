@@ -55,8 +55,10 @@ her.persona.grown_week = s.arcology.week; her.persona.grown_v = 1; her.economics
 check("a woman written by the old reading is read again", GROW_V >= 2 && dueToGrow(s).includes(her));
 her.persona.grown_v = 6;
 check("one whose voice was flattened by the reading that was taken back is read again", dueToGrow(s).includes(her));
-her.persona.grown_v = 5;
-check("but one read just before it keeps her voice and isn't read again", !dueToGrow(s).includes(her));
+her.persona.grown_v = 7;
+check("one whose voice was sanded into polite small talk is read again, to get her mouth back", dueToGrow(s).includes(her));
+her.persona.grown_v = GROW_V;
+check("but one read by the current reading isn't read again", !dueToGrow(s).includes(her));
 
 // Nobody talks in riddles, and "fine about what?" gets a plain answer, not two new mysteries.
 {

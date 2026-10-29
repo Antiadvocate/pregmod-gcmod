@@ -11,7 +11,7 @@ import { allowed as mayI, NOT_ALLOWED } from "./kept";
 import type { SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
-import { coarsen } from "./register";
+import { coarsen, FC_VOICE } from "./register";
 import { HOUSE_STYLE, personCard } from "./prompts";
 import { PLAIN_RULES, didntFollow } from "./style";
 import { chronicle, chronicleBrief } from "./chronicle";
@@ -71,7 +71,7 @@ export async function speakToPower(s: SaveState, id: string, said: string): Prom
   const open = terms.filter((t) => !t.why).map((t) => `· ${t.id}: ${t.term.label}. Value: ${t.term.value}.${t.cap !== undefined ? ` At most ${t.cap.toLocaleString()}.` : ""}`);
   const shut = terms.filter((t) => t.why).map((t) => `· ${t.id}: ${t.term.label}. Not now: ${t.why}.`);
   const res = await call({
-    system: POWER_SYSTEM,
+    system: `${POWER_SYSTEM}\n\n${FC_VOICE}`,
     user: [
       powerBrief(s, p),
       chronicleBrief(s, [`place:${id}`], 10),
@@ -157,7 +157,7 @@ export async function speakToGovernor(s: SaveState, placeId: string, said: strin
   if (g.used.n >= TALK_PER_WEEK + 4) return { ok: false, says: "", deals: [], error: `${p.name} has a city to run. Call again next week.` };
   const orders = Object.entries(GOV_ORDERS).map(([id, o]) => `· ${id}: ${o.note}`);
   const res = await call({
-    system: GOV_SYSTEM,
+    system: `${GOV_SYSTEM}\n\n${FC_VOICE}`,
     user: [
       personCard(s, p, said),
       governorBrief(s, g),

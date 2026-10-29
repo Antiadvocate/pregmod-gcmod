@@ -18,6 +18,7 @@ import { FORGE_SYSTEM, WEEK_SYSTEM } from "./prompts";
 import { remember } from "./memory";
 import { cleanList, OWN_V } from "./ownlife";
 import { inBed } from "./sexlife";
+import { FC_VOICE } from "./register";
 
 interface ForgeOut {
   voice?: Person["persona"]["voice"];
@@ -54,7 +55,7 @@ function sketch(p: Person): string {
 export async function enrichPerson(s: SaveState, p: Person, voiceOnly = false): Promise<boolean> {
   if (!modelsAvailable()) return false;
   const res = await call({
-    system: FORGE_SYSTEM,
+    system: `${FORGE_SYSTEM}\n\n${FC_VOICE}`,
     user: sketch(p),
     model: s.models.forge_model,
     fallback: s.models.fallback_model,
@@ -101,7 +102,7 @@ export async function writeWeekProse(s: SaveState, report: WeekReport): Promise<
   const material = report.lines.slice(0, 12).map((l) => `· ${l.text}`).join("\n");
   const money = `Cash ${report.cash_start} → ${report.cash_end}. Reputation ${report.rep_start} → ${report.rep_end}.`;
   const res = await call({
-    system: WEEK_SYSTEM,
+    system: `${WEEK_SYSTEM}\n\n${FC_VOICE}`,
     user: `ARCOLOGY: ${s.arcology.name}, week ${report.week}.\n${money}\n\nWHAT HAPPENED:\n${material}\n\nPROBLEMS:\n${report.problems.map((p) => `· ${p}`).join("\n") || "· none"}`,
     model: s.models.narrator_model,
     fallback: s.models.fallback_model,
