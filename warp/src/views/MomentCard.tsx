@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, MessageCircle, RotateCcw, Square, X } from "lucide-react";
 import { useGame } from "../lib/game";
 import { Button, cx } from "../lib/ui";
-import { closeAllMoments, momentsOf, openMoment, playMoment } from "../engine/moments";
+import { closeAllMoments, endedMoments, momentsOf, openMoment, playMoment, resumeMoment } from "../engine/moments";
 import { rollback, snapshot } from "../engine/state";
 import { acceptCollar, concludeMoment, deedsOf, refuseCollar, DEED_TAGS } from "../engine/deeds";
 import { modelsAvailable } from "../config";
@@ -154,6 +154,7 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
             <input className="flex-1 min-w-0" value={text} onChange={(e) => setText(e.target.value)} placeholder="Say or do something else" />
             <Button size="sm" kind="primary" disabled={!text.trim()} onClick={() => { if (text.trim()) void go(text.trim()); }}>Go</Button>
           </form>
+          {m.winding ? <div className="text-[12px] dim mt-2">This might have wound down ({m.winding}). It stays open until you say you're done.</div> : null}
           <div className="flex gap-2 mt-2">
             {bare ? null : <Button size="sm" kind="ghost" onClick={() => { setFolded(true); onClose?.(); }}>Continue later</Button>}
             {last.current !== undefined ? <Button size="sm" kind="ghost" onClick={retry} title="Throw away that response and ask the model again"><RotateCcw size={12} /> Retry</Button> : null}
@@ -161,32 +162,48 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
           </div>
         </>
       ) : null}
-      {!m.open && m.ended ? <div className="text-[12px] dim mt-3">This one's done, because {m.ended}. What happened in it counts, and it can come back up if something it set going matters later.</div> : null}
+      {!m.open && m.ended ? <div className="text-[12px] dim mt-3">This one ended because {m.ended}. What happened in it counts.</div> : null}
       {!m.open ? <DeedCard id={m.concluded} onClose={onClose} /> : null}
+      {!m.open && !busy && m.log.length > 1 ? (
+        <Button size="sm" className="mt-2" onClick={() => mutate((s) => { resumeMoment(s, m.id); })} title="Carry on from exactly where it stopped. What it already changed stands">Pick it back up</Button>
+      ) : null}
     </div>
   );
 }
 
-/** Her open scenes, or everyone's. */
+/** Her open scenes, or everyone's, and the ones that ended lately, which can be picked back up. */
 export function OpenMoments({ person, title, hide = [] }: { person?: string; title?: string; hide?: string[] }) {
   const { save, mutate } = useGame();
   const [on, setOn] = useState<string | null>(null);
+  const [past, setPast] = useState(false);
   const list = momentsOf(save).filter((m) => m.open && m.log.length > 1 && !hide.includes(m.id) && (!person || m.person === person)).slice(-8).reverse();
-  if (!list.length) return null;
+  const ended = endedMoments(save, person).filter((m) => !hide.includes(m.id)).slice(0, 6);
+  if (!list.length && !ended.length) return null;
+  const row = (m: typeof list[number]) => on === m.id
+    ? <MomentCard key={m.id} id={m.id} onClose={() => setOn(null)} />
+    : (
+      <button key={m.id} className="actbtn w-full text-left" onClick={() => setOn(m.id)}>
+        <span className="block text-[13px]">{m.title}{!person && m.person && save.people[m.person] ? ` · ${save.people[m.person].name}` : ""}</span>
+        <span className="block text-[11px] dim truncate">{m.log[m.log.length - 1]?.text.slice(0, 120)}</span>
+      </button>
+    );
+  if (!list.length) {
+    return (
+      <div className="space-y-2">
+        <button className="text-[11px] dim underline" onClick={() => setPast((x) => !x)}>{past ? "hide" : "show"} scenes that ended lately ({ended.length})</button>
+        {past ? ended.map(row) : null}
+      </div>
+    );
+  }
   return (
     <div className="space-y-2">
       <div className="flex items-center">
         {title ? <div className="text-[11px] uppercase tracking-wider dim">{title}</div> : null}
         {!person ? <button className="ml-auto text-[11px] dim underline" title="End every one of these where it stands. What you said in them still counts" onClick={() => { mutate((s) => { closeAllMoments(s); }); setOn(null); }}>clear all</button> : null}
       </div>
-      {list.map((m) => on === m.id
-        ? <MomentCard key={m.id} id={m.id} onClose={() => setOn(null)} />
-        : (
-          <button key={m.id} className="actbtn w-full text-left" onClick={() => setOn(m.id)}>
-            <span className="block text-[13px]">{m.title}{!person && m.person && save.people[m.person] ? ` · ${save.people[m.person].name}` : ""}</span>
-            <span className="block text-[11px] dim truncate">{m.log[m.log.length - 1]?.text.slice(0, 120)}</span>
-          </button>
-        ))}
+      {list.map(row)}
+      {ended.length ? <button className="text-[11px] dim underline" onClick={() => setPast((x) => !x)}>{past ? "hide" : "show"} scenes that ended lately ({ended.length})</button> : null}
+      {past ? ended.map(row) : null}
     </div>
   );
 }

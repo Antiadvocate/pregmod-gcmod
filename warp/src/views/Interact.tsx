@@ -24,7 +24,7 @@ import { rng } from "../engine/rng";
 import { arrivalLead } from "../engine/writer";
 import { POSE_BY_ID, poseForAct, restingPose, type Pose } from "../lib/rig";
 import { modelsAvailable } from "../config";
-import { closeMoment, momentsOf, noteMoment, openMoment, playMoment, type MomentLine } from "../engine/moments";
+import { closeMoment, momentsOf, noteMoment, openMoment, playMoment, resumeMoment, type MomentLine } from "../engine/moments";
 import { concludeMoment } from "../engine/deeds";
 import { DeedCard } from "./MomentCard";
 import SlaveArt, { SlaveHead } from "./SlaveArt";
@@ -108,6 +108,8 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
   const [said, setSaid] = useState("");
   const engaged = useRef(false);
   const midRef = useRef<string | null>(null);
+  /** The scene you last ended here, so calling her back carries it on instead of starting cold. */
+  const doneRef = useRef<string | null>(null);
   const history = useRef<MomentLine[]>(asLines(log));
   const sceneAt = !spot || summoned ? home.location : (PLACE_BY_ID[spot.place]?.name ?? home.location);
   // For the length of the visit the room is wherever it's happening, with just the two of you in it,
@@ -169,8 +171,9 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     setStream("");
     const entries: Entry[] = res.prose.split(/\n\n+/).filter(Boolean).map((t) => ({ k: "prose" as const, text: t }));
     if (!res.ok && res.error) entries.push({ k: "note", text: res.error });
-    setLog((l) => [...l, ...entries]);
     const mo = save.moments?.find((x) => x.id === m);
+    if (mo?.winding) entries.push({ k: "note", text: `This might have wound down (${mo.winding}). Keep going, or press Done when you are.` });
+    setLog((l) => [...l, ...entries]);
     setReplies(mo?.options ?? []);
     setBusy(false);
   }
@@ -195,9 +198,24 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     mutate(() => {});
     setBusy(false);
     setLog((l) => [...l, d ? { k: "deed", id: d.id } : { k: "note", text: "That's where it ended." }]);
+    doneRef.current = m;
     midRef.current = null; setMid(null); engaged.current = false;
     history.current = [];
     setEnded(true);
+  }
+
+  /** Not done with her after all: the scene you ended carries on from where it stopped. */
+  function callBack() {
+    const m = doneRef.current;
+    const mo = m ? momentsOf(save).find((x) => x.id === m) : undefined;
+    if (m && mo) {
+      mutate((s) => { resumeMoment(s, m); });
+      midRef.current = m; setMid(m); engaged.current = true;
+      history.current = mo.log.slice(-12);
+      setReplies(mo.options);
+    }
+    doneRef.current = null;
+    setEnded(false);
   }
 
   // Walking out: a scene you took part in stays open for later; one you didn't is closed.
@@ -381,7 +399,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
         {ended ? (
           <div className="p-3 flex gap-2">
             <button className="btn btn-primary flex-1" onClick={onClose}>Leave her be</button>
-            <button className="btn" onClick={() => setEnded(false)}>Call her back</button>
+            <button className="btn" onClick={callBack}>Call her back</button>
           </div>
         ) : null}
         {!ended && replies.length && !busy && (!typing || wide) ? (

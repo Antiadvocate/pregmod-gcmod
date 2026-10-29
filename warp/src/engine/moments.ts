@@ -5,8 +5,10 @@
  * follow-up in bed, a question — can open a moment. With a model configured, the narrator writes
  * the moment out in full and offers four ways to answer; your reply (picked or typed) continues it,
  * and the bookkeeper records what changed. A moment you walk away from stays open on her page and
- * on the Penthouse, and picks up where it left off. With no model, the written game answers in her
- * voice and still offers you the next thing to say.
+ * on the Penthouse, and picks up where it left off, however many weeks later. Only you end one; the
+ * game says when it thinks a scene has wound down, and leaves the call to you. An ended one can be
+ * picked back up. With no model, the written game answers in her voice and still offers you the next
+ * thing to say.
  */
 import { continuitySlips } from "./continuity";
 import { practiseFrom } from "./player";
@@ -55,10 +57,18 @@ export interface Moment {
   city?: CitySnap;
   /** The city picture has been given once; the scene doesn't need it every turn. */
   pictured?: boolean;
-  /** Turns in a row that changed nothing. Two and the scene has run its course. */
+  /** Turns in a row that changed nothing. */
   flat?: number;
-  /** Why it ended on its own, when it did: you left, it was settled, it stopped going anywhere. */
+  /** Why it ended, when it did. */
   ended?: string;
+  /** Why the game thinks it has wound down (it's settled, it stopped going anywhere). Only a hint:
+   *  the scene stays open until you end it. */
+  winding?: string;
+  /** Picked back up after it ended: where the next ending starts reading from, so what the first
+   *  ending already counted isn't counted twice. */
+  from?: number;
+  /** What it left behind each earlier time it ended. */
+  past?: string[];
   log: MomentLine[];
   options: string[];
   /** Still open: it can be picked up later. */
@@ -221,8 +231,11 @@ export function openMoment(s: SaveState, o: { person?: string; others?: string[]
   if (o.you) log.push({ role: "you", text: o.you });
   if (o.happened) log.push({ role: "scene", text: o.happened });
   list.push({ id, person: o.person, others: o.others?.filter((x) => x && x !== o.person), title: o.title, source: o.source, week: s.arcology.week, updated: s.arcology.week, chron: (s.chronicle ?? []).length, city: citySnap(s), log, options: DEFAULT_OPTIONS, open: true, unexpanded: !o.ready && modelsAvailable(), seeded: log.length, ...(o.where ? { where: o.where } : {}) });
-  // Keep the list from growing without end: close the oldest finished ones.
-  if (list.length > 60) s.moments = list.slice(-60);
+  // Keep the list from growing without end: drop the oldest finished ones, never one still open.
+  if (list.length > 60) {
+    const drop = new Set(list.filter((m) => !m.open).slice(0, list.length - 60));
+    s.moments = list.filter((m) => !drop.has(m));
+  }
   return id;
 }
 
@@ -231,24 +244,51 @@ export function noteMoment(s: SaveState, id: string, lines: MomentLine[]): void 
   const m = momentsOf(s).find((x) => x.id === id);
   if (!m) return;
   m.log.push(...lines.filter((l) => l.text.trim()));
-  if (m.log.length > 40) m.log = m.log.slice(-40);
+  trimLog(m);
   m.updated = s.arcology.week;
   m.unexpanded = false;
 }
 
-/** Moments you walked away from a month ago are over. */
+/** A long scene keeps its last forty lines; where a picked-up scene reads from moves with them. */
+function trimLog(m: Moment): void {
+  const cut = m.log.length - 40;
+  if (cut <= 0) return;
+  m.log = m.log.slice(cut);
+  if (m.from !== undefined) m.from = Math.max(0, m.from - cut);
+}
+
+/** Weekly. A scene still open stays open: the week ending is not you deciding you're done with her.
+ *  Only ended ones are let go, three months after they last moved. */
 export function ageMoments(s: SaveState): void {
-  // The week ending ends every scene still open, where it stands. What you said in it still counts,
-  // read from your own words without another model call.
-  closeAllMoments(s);
   s.moments = momentsOf(s).filter((m) => m.open || s.arcology.week - m.updated < 12);
 }
 
 /** End every open scene where it stands, offline. Returns how many ended. */
 export function closeAllMoments(s: SaveState): number {
   let n = 0;
-  for (const m of momentsOf(s)) if (m.open) { m.open = false; n++; void concludeMoment(s, m, { offline: true }); }
+  for (const m of momentsOf(s)) if (m.open) { m.open = false; m.ended ??= "you cleared it"; n++; void concludeMoment(s, m, { offline: true }); }
   return n;
+}
+
+/** Scenes that ended, newest first, that can still be picked back up. */
+export function endedMoments(s: SaveState, personId?: string): Moment[] {
+  return momentsOf(s).filter((m) => !m.open && m.log.length > 1 && (!personId || m.person === personId)).sort((a, b) => b.updated - a.updated);
+}
+
+/** Pick an ended scene back up where it stopped. What it already left behind stands; the next time
+ *  it ends, only what happened after this is read back. */
+export function resumeMoment(s: SaveState, id: string): boolean {
+  const m = momentsOf(s).find((x) => x.id === id);
+  if (!m) return false;
+  if (m.open) return true;
+  if (m.concluded) { (m.past ??= []).push(m.concluded); m.concluded = undefined; }
+  m.from = m.log.length;
+  m.open = true;
+  m.ended = undefined;
+  m.winding = undefined;
+  m.flat = 0;
+  m.updated = s.arcology.week;
+  return true;
 }
 
 export function closeMoment(s: SaveState, id: string): void {
@@ -287,8 +327,8 @@ export async function playMoment(
 ): Promise<{ ok: boolean; prose: string; error?: string }> {
   const m = momentsOf(s).find((x) => x.id === id);
   if (!m) return { ok: false, prose: "", error: "no such moment" };
-  // Over is over: a scene that ended on its own isn't played on, at a model call a turn.
-  if (m.ended && !m.open) return { ok: false, prose: "", error: `This one's done, because ${m.ended}.` };
+  // Answering an ended scene is picking it back up.
+  if (!m.open) resumeMoment(s, id);
   const p = m.person ? s.people[m.person] : undefined;
   if (reply) m.log.push({ role: "you", text: reply });
   // What you tell her about how to treat you outlasts the scene.
@@ -308,6 +348,7 @@ export async function playMoment(
     m.log.push({ role: "scene", text: prose });
     m.options = fallbackOptions();
     m.unexpanded = false;
+    m.winding = reply && LEAVING.test(reply) ? "you sounded like you were leaving" : undefined;
     return { ok: true, prose };
   }
 
@@ -418,20 +459,16 @@ export async function playMoment(
   m.city = citySnap(s);
   m.pictured = true;
 
-  // Is it over? A scene is worth playing while it changes something. When it's settled, when you
-  // walk away, or when two turns in a row change nothing, it ends and makes its deed, so it stops
-  // costing a model call a turn for talk that leads nowhere. A scene that ran flat ends offline.
-  const turns = m.log.filter((l) => l.role === "you").length;
+  // Has it wound down? The game used to end a scene here on its own (settled, two flat turns, "that's
+  // all" in your reply) and the player lost scenes they weren't done with. Now it only says so; the
+  // scene stays open until you end it.
+  const turns = m.log.slice(m.from ?? 0).filter((l) => l.role === "you").length;
   m.flat = (p ? impactOf(diff) < 2 : true) ? (m.flat ?? 0) + 1 : 0;
-  const why = reply && LEAVING.test(reply) ? "you left"
-    : diff?.settled && turns >= 2 ? "it's settled"
-    : p && m.flat >= 2 && turns >= 3 ? "it stopped going anywhere"
-    : !p && turns >= 8 ? "it's run its course"
-    : "";
-  if (why && m.open) {
-    m.ended = why;
-    await concludeMoment(s, m, { offline: why === "it stopped going anywhere" || why === "it's run its course", signal: opts?.signal });
-  }
+  m.winding = reply && LEAVING.test(reply) ? "you sounded like you were leaving"
+    : diff?.settled && turns >= 2 ? "what it was about is settled"
+    : p && m.flat >= 2 && turns >= 3 ? "the last few turns didn't change anything"
+    : !p && turns >= 8 ? "it's run a long while"
+    : undefined;
   return { ok: true, prose };
 }
 

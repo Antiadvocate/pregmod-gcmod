@@ -20,7 +20,9 @@ import { openMoment, openMoments, playMoment, closeMoment, splitOptions, moments
   check("it offers things to say next", m.options.length >= 2, m.options);
   check("kindness counts", her.bond.bond >= bondBefore, [bondBefore, her.bond.bond]);
   for (let w = 0; w < 6; w++) endWeek(s);
-  check("a moment left for a month closes", openMoments(s, her.id).length === 0);
+  // The week ending used to end every open scene, and the player lost conversations they weren't done with.
+  check("a moment left for a month is still open, where you left it", openMoments(s, her.id).length === 1 && momentsOf(s).find((x) => x.id === id)!.log.length === 4);
+  closeMoment(s, id);
   const id2 = openMoment(s, { person: her.id, title: "Again", source: "test", happened: "x" });
   closeMoment(s, id2);
   check("ending it closes it", openMoments(s).length === 0);
