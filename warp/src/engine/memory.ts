@@ -72,6 +72,8 @@ export function compactMemory(mem: PersonMemory): number {
       same.importance = Math.max(same.importance, e.importance);
       same.decay = Math.max(same.decay, e.decay);
       if (e.core) same.core = true;
+      // A condensed memory keeps its weight when it's folded into another (engine/condense).
+      if (e.weight || same.weight) same.weight = (same.weight ?? 1) + (e.weight ?? 1);
       merged++;
     } else out.push(e);
   }

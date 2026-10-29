@@ -19,6 +19,33 @@ export interface FacilityUpgrade {
   note: string;
   /** Requires this many levels of the facility first. */
   needs_level?: number;
+  /** What having it does, every week. Per worker unless it says otherwise; on top of the facility's
+   *  own `psyche`. Read by week.ts and economy.ts through `upgradeAdds`. Most upgrades used to
+   *  have none of this and did nothing but cost money. */
+  adds?: UpgradeAdds;
+}
+
+export interface UpgradeAdds {
+  /** Added to the earnings multiplier. A facility that earns from customers counts 0.12 for an
+   *  upgrade that doesn't say. */
+  income?: number;
+  relaxation?: number;
+  /** Pressure on the resting point, as the facility's own `wear`. */
+  wear?: number;
+  health?: number;
+  energy?: number;
+  /** Added to the training multiplier. */
+  training?: number;
+  fear?: number;
+  education?: number;
+  /** Extra relaxation for somebody who is fracturing or broken. */
+  mending?: number;
+  /** Upkeep per worker; negative saves. */
+  upkeep?: number;
+  food?: number;
+  /** Per week, for the facility, while anybody works there. */
+  rep?: number;
+  security?: number;
 }
 
 export interface ManagerPost {
@@ -82,9 +109,9 @@ export const FACILITIES: FacilityDef[] = [
     psyche: { relaxation: -0.8, wear: -1, health: -2, energy: 45 },
     trains: { oral: 1.4, vaginal: 1.4, anal: 1.0, whoring: 2.0 },
     upgrades: [
-      { id: "advertising", name: "Advertising", cost: 5000, note: "more customers, worse ones" },
-      { id: "drugs", name: "Bar and dispensary", cost: 8000, note: "customers pay more and stay longer" },
-      { id: "rooms", name: "Private rooms", cost: 12000, note: "higher prices, and the work is less public", needs_level: 2 },
+      { id: "advertising", name: "Advertising", cost: 5000, note: "more customers, worse ones", adds: { income: 0.22, health: -0.6 } },
+      { id: "drugs", name: "Bar and dispensary", cost: 8000, note: "customers pay more and stay longer", adds: { income: 0.18 } },
+      { id: "rooms", name: "Private rooms", cost: 12000, note: "higher prices, and the work is less public", needs_level: 2, adds: { income: 0.15, relaxation: 0.3 } },
     ],
     pleases: ["degradationist", "cummunism"],
   },
@@ -98,8 +125,8 @@ export const FACILITIES: FacilityDef[] = [
     psyche: { relaxation: 0.2, wear: 0, health: -1, energy: 35 },
     trains: { entertainment: 2.0, oral: 0.6, whoring: 0.6 },
     upgrades: [
-      { id: "lights", name: "Lighting rig", cost: 6000, note: "extra reputation each week" },
-      { id: "bar", name: "Full bar", cost: 9000, note: "citizens stay longer, so income goes up" },
+      { id: "lights", name: "Lighting rig", cost: 6000, note: "extra reputation each week", adds: { rep: 25 } },
+      { id: "bar", name: "Full bar", cost: 9000, note: "citizens stay longer, so income goes up", adds: { income: 0.18 } },
     ],
     pleases: ["hedonist", "roman"],
   },
@@ -113,9 +140,9 @@ export const FACILITIES: FacilityDef[] = [
     psyche: { relaxation: -0.4, wear: -0.6, health: -1, energy: 30 },
     trains: {},
     upgrades: [
-      { id: "pumps", name: "Industrial pumps", cost: 10000, note: "yield up, comfort down" },
-      { id: "feeds", name: "Feed lines", cost: 12000, note: "cows stay on the machines full time", needs_level: 2 },
-      { id: "restraints", name: "Full restraint", cost: 15000, note: "maximum yield, at a heavy cost to the cows' minds", needs_level: 3 },
+      { id: "pumps", name: "Industrial pumps", cost: 10000, note: "yield up, comfort down", adds: { income: 0.25, relaxation: -0.3 } },
+      { id: "feeds", name: "Feed lines", cost: 12000, note: "cows stay on the machines full time", needs_level: 2, adds: { income: 0.2, energy: 10 } },
+      { id: "restraints", name: "Full restraint", cost: 15000, note: "maximum yield, at a heavy cost to the cows' minds", needs_level: 3, adds: { income: 0.35, relaxation: -0.8, wear: -0.8 } },
     ],
     pleases: ["pastoralist", "expansionist"],
   },
@@ -130,7 +157,7 @@ export const FACILITIES: FacilityDef[] = [
     trains: {},
     upgrades: [
       { id: "hydroponics", name: "Hydroponics", cost: 14000, note: "each farmhand grows 60% more food" },
-      { id: "livestock", name: "Livestock", cost: 18000, note: "meat, and a use for the pens" },
+      { id: "livestock", name: "Livestock", cost: 18000, note: "meat, and a use for the pens", adds: { food: 18 } },
     ],
   },
   {
@@ -142,8 +169,8 @@ export const FACILITIES: FacilityDef[] = [
     psyche: { relaxation: -2.5, wear: -3, health: -8, energy: 60 },
     trains: { oral: 0.8, anal: 0.8, vaginal: 0.8 },
     upgrades: [
-      { id: "sanitation", name: "Sanitation", cost: 7000, note: "fewer health problems" },
-      { id: "restraints", name: "Comfortable restraints", cost: 9000, note: "less physical damage" },
+      { id: "sanitation", name: "Sanitation", cost: 7000, note: "fewer health problems", adds: { health: 4 } },
+      { id: "restraints", name: "Comfortable restraints", cost: 9000, note: "less physical damage", adds: { health: 2, relaxation: 0.4 } },
     ],
     pleases: ["degradationist"],
   },
@@ -157,8 +184,8 @@ export const FACILITIES: FacilityDef[] = [
     psyche: { relaxation: -2.0, wear: -2.5, health: -3, energy: 20 },
     trains: {},
     upgrades: [
-      { id: "isolation", name: "Isolation", cost: 8000, note: "faster, and worse" },
-      { id: "chemicals", name: "Chemical suite", cost: 11000, note: "drugs that break them without marking them" },
+      { id: "isolation", name: "Isolation", cost: 8000, note: "faster, and worse", adds: { relaxation: -0.7, wear: -0.7, fear: 3 } },
+      { id: "chemicals", name: "Chemical suite", cost: 11000, note: "drugs that break them without marking them", adds: { fear: 3, relaxation: -0.4, health: 2 } },
     ],
   },
   {
@@ -171,8 +198,8 @@ export const FACILITIES: FacilityDef[] = [
     psyche: { relaxation: 1.6, wear: 1.5, health: 4, energy: -30 },
     trains: {},
     upgrades: [
-      { id: "pool", name: "Mineral pool", cost: 9000, note: "health recovery up" },
-      { id: "counselling", name: "Counselling", cost: 12000, note: "helps mentally broken slaves recover" },
+      { id: "pool", name: "Mineral pool", cost: 9000, note: "health recovery up", adds: { health: 3 } },
+      { id: "counselling", name: "Counselling", cost: 12000, note: "helps mentally broken slaves recover", adds: { mending: 1 } },
     ],
     pleases: ["paternalist"],
   },
@@ -186,7 +213,7 @@ export const FACILITIES: FacilityDef[] = [
     psyche: { relaxation: 0.4, wear: 0.4, health: 8, energy: -20 },
     trains: {},
     upgrades: [
-      { id: "diagnostics", name: "Diagnostics", cost: 10000, note: "catches health problems early" },
+      { id: "diagnostics", name: "Diagnostics", cost: 10000, note: "catches health problems early", adds: { health: 2 } },
       { id: "surgery", name: "Surgical theatre", cost: 16000, note: "unlocks surgery on each slave's surgery tab, and level 2 unlocks the advanced procedures" },
       { id: "organ_farm", name: "Organ farm", cost: 22000, note: "grow the parts instead of buying them", needs_level: 2 },
       { id: "gene_lab", name: "Gene lab", cost: 30000, note: "unlocks fleshcraft on the surgery tab, with real ears and tails, scales, milk and fertility genes, slowed ageing", needs_level: 2 },
@@ -203,8 +230,8 @@ export const FACILITIES: FacilityDef[] = [
     psyche: { relaxation: 0.5, wear: 0.4, health: 0, energy: 15 },
     trains: { oral: 1.0, vaginal: 1.0, anal: 1.0, entertainment: 1.0, whoring: 1.0 },
     upgrades: [
-      { id: "remedial", name: "Remedial track", cost: 8000, note: "teaches illiterate slaves to read" },
-      { id: "advanced", name: "Advanced curriculum", cost: 12000, note: "higher skill caps", needs_level: 2 },
+      { id: "remedial", name: "Remedial track", cost: 8000, note: "teaches illiterate slaves to read", adds: { education: 3 } },
+      { id: "advanced", name: "Advanced curriculum", cost: 12000, note: "higher skill caps", needs_level: 2, adds: { training: 0.35 } },
     ],
     pleases: ["professionalism", "paternalist", "chinese"],
   },
@@ -217,7 +244,7 @@ export const FACILITIES: FacilityDef[] = [
     work: "work as a servant", income: "none",
     psyche: { relaxation: 0.1, wear: -0.2, health: 0, energy: 30 },
     trains: {},
-    upgrades: [{ id: "machines", name: "Labour machinery", cost: 9000, note: "fewer bodies for the same work" }],
+    upgrades: [{ id: "machines", name: "Labour machinery", cost: 9000, note: "fewer bodies for the same work", adds: { upkeep: -60 } }],
   },
   {
     id: "master_suite", name: "The Master Suite",
@@ -229,8 +256,8 @@ export const FACILITIES: FacilityDef[] = [
     psyche: { relaxation: 1.0, wear: 1.0, health: 1, energy: 25 },
     trains: { oral: 0.8, vaginal: 0.8, anal: 0.6, entertainment: 0.6 },
     upgrades: [
-      { id: "luxury", name: "Furnishing", cost: 12000, note: "slaves in the suite relax faster" },
-      { id: "pit", name: "Sunken bath", cost: 9000, note: "health, and room for group sex" },
+      { id: "luxury", name: "Furnishing", cost: 12000, note: "slaves in the suite relax faster", adds: { relaxation: 0.5 } },
+      { id: "pit", name: "Sunken bath", cost: 9000, note: "health, and room for group sex", adds: { health: 1.5, relaxation: 0.2 } },
     ],
     pleases: ["paternalist", "arabian"],
   },
@@ -243,7 +270,7 @@ export const FACILITIES: FacilityDef[] = [
     work: "work as a servant", income: "none",
     psyche: { relaxation: 0.8, wear: 0.8, health: 1, energy: 25 },
     trains: {},
-    upgrades: [{ id: "school", name: "Early schooling", cost: 11000, note: "children are educated as they grow" }],
+    upgrades: [{ id: "school", name: "Early schooling", cost: 11000, note: "children are educated as they grow", adds: { education: 0.15 } }],
     pleases: ["repopulation", "gender_fundamentalist", "paternalist"],
   },
   {
@@ -269,8 +296,8 @@ export const FACILITIES: FacilityDef[] = [
     psyche: { relaxation: -1.2, wear: -1.2, health: -6, energy: 50 },
     trains: { combat: 3.0 },
     upgrades: [
-      { id: "seating", name: "Seating", cost: 8000, note: "more ticket sales" },
-      { id: "lethal", name: "Lethal bouts", cost: 0, note: "fights to the death, for double the income, but slaves die" },
+      { id: "seating", name: "Seating", cost: 8000, note: "more ticket sales", adds: { income: 0.25 } },
+      { id: "lethal", name: "Lethal bouts", cost: 0, note: "fights to the death, for double the income, but slaves die", adds: { income: 1.0, health: -10 } },
     ],
     pleases: ["roman", "aztec", "degradationist"],
   },
@@ -284,10 +311,25 @@ export const FACILITIES: FacilityDef[] = [
     psyche: { relaxation: 0.2, wear: 0.2, health: 0, energy: 35 },
     trains: { combat: 2.0 },
     upgrades: [
-      { id: "drones", name: "Security drones", cost: 14000, note: "arcology security up" },
+      { id: "drones", name: "Security drones", cost: 14000, note: "arcology security up", adds: { security: 2 } },
       { id: "armory", name: "Armoury", cost: 12000, note: "your forces survive attacks more often" },
     ],
   },
 ];
 
 export const FACILITY_BY_ID: Record<string, FacilityDef> = Object.fromEntries(FACILITIES.map((f) => [f.id, f]));
+
+const NO_ADDS: Required<UpgradeAdds> = { income: 0, relaxation: 0, wear: 0, health: 0, energy: 0, training: 0, fear: 0, education: 0, mending: 0, upkeep: 0, food: 0, rep: 0, security: 0 };
+
+/** Everything the upgrades a facility has bought add up to. */
+export function upgradeAdds(owned: Record<string, number> | undefined, def: FacilityDef | undefined): Required<UpgradeAdds> {
+  const sum = { ...NO_ADDS };
+  if (!def || !owned) return sum;
+  for (const u of def.upgrades) {
+    if (!owned[u.id]) continue;
+    const a = u.adds ?? {};
+    for (const k of Object.keys(sum) as (keyof UpgradeAdds)[]) sum[k] += a[k] ?? 0;
+    if (a.income === undefined && def.income === "customers") sum.income += 0.12;
+  }
+  return sum;
+}

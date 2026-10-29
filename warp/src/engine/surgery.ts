@@ -38,6 +38,11 @@ export function theatreLevel(s: SaveState): number {
   return clinic.level >= 2 ? 2 : 1;
 }
 
+/** What a procedure costs you: the organ farm grows the parts, so it's a third off. */
+export function priceOf(s: SaveState, proc: Procedure): number {
+  return s.arcology.facilities["clinic"]?.upgrades?.["organ_farm"] ? Math.round(proc.cost * 0.67) : proc.cost;
+}
+
 /** Whether the theatre can do it at all, before we ask whether her body can take it. */
 export function available(s: SaveState, proc: Procedure): string | null {
   const level = theatreLevel(s);
@@ -92,7 +97,8 @@ export function operate(s: SaveState, p: Person, procId: string): SurgeryResult 
   if (gate) return { ok: false, why: gate };
   const bodily = proc.can(p, s);
   if (bodily) return { ok: false, why: bodily };
-  if (s.arcology.cash < proc.cost) return { ok: false, why: `costs ¤${proc.cost.toLocaleString()}, which you don't have` };
+  const cost = priceOf(s, proc);
+  if (s.arcology.cash < cost) return { ok: false, why: `costs ¤${cost.toLocaleString()}, which you don't have` };
   p.health.recovery_weeks = sane(p.health.recovery_weeks);
   if (p.health.recovery_weeks > 0) return { ok: false, why: `she is still recovering from the last one (${recoveryNote(s, p).replace(/^recovering from surgery: /, "")})` };
   if (p.womb.fetuses.length && proc.group !== "body") return { ok: false, why: "not while she is carrying" };
@@ -100,7 +106,7 @@ export function operate(s: SaveState, p: Person, procId: string): SurgeryResult 
   const week = s.arcology.week;
   const felt = howSheTakesIt(s, p, proc);
 
-  s.arcology.cash -= proc.cost;
+  s.arcology.cash -= cost;
   proc.apply(p);
   reconcileAnatomy(p);
   if (proc.group === "feet") footSurgery(s, p, proc.id);
@@ -156,8 +162,8 @@ export function operate(s: SaveState, p: Person, procId: string): SurgeryResult 
   }
 
   return {
-    ok: true, cost: proc.cost,
-    line: `${proc.name}. ¤${proc.cost.toLocaleString()}, ${proc.recovery} week${proc.recovery > 1 ? "s" : ""} of recovery.`,
+    ok: true, cost,
+    line: `${proc.name}. ¤${cost.toLocaleString()}, ${proc.recovery} week${proc.recovery > 1 ? "s" : ""} of recovery.`,
     reaction: reactionLine(p, felt.score, felt.why),
   };
 }
@@ -178,7 +184,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function optionsFor(s: SaveState, p: Person): { proc: Procedure; blocked: string | null; felt: ReturnType<typeof howSheTakesIt> }[] {
   return Object.values(PROCEDURE_BY_ID).map((proc) => ({
     proc,
-    blocked: available(s, proc) ?? proc.can(p, s) ?? (s.arcology.cash < proc.cost ? "you cannot afford it" : null),
+    blocked: available(s, proc) ?? proc.can(p, s) ?? (s.arcology.cash < priceOf(s, proc) ? "you cannot afford it" : null),
     felt: howSheTakesIt(s, p, proc),
   }));
 }

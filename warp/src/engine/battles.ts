@@ -76,6 +76,8 @@ export function garrison(s: SaveState): { total: number; parts: string[] } {
     ["militia", f["plot_militia"] ? 1.5 : 0],
     ["knights", f["plot_knights"] ? 1.5 : 0],
     ["bodyguard", guardStrength(s)],
+    // The barracks' armoury: the women who guard you are armed properly, and it shows in a fight.
+    ["barracks", arc.facilities["barracks"]?.upgrades?.["armory"] ? (arc.facilities["barracks"].workers.length) * 0.4 : 0],
     ["arsenal", forces(s).defence],
   ];
   const on = parts.filter(([, n]) => n > 0.05);

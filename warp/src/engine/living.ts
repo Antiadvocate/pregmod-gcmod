@@ -26,6 +26,7 @@ import { purgeBanned } from "./bans";
 import { hasPending, oneEach } from "./pending";
 import { toWrite, writeNext } from "./saga";
 import { dueToGrow, growPersona } from "./growth";
+import { condenseMemory, dueToCondense } from "./condense";
 import { pickOption, type Order } from "./ownwords";
 import { regionOf, regionNews, knownWord, bring } from "./region";
 import { powers } from "./power";
@@ -460,6 +461,9 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
   // through something big since they were last read, or were read by an older version of the
   // reading, are written again as who they've become (engine/growth).
   for (const p of dueToGrow(s).slice(0, 2)) { step(`who ${p.name} has become`); await growPersona(s, p); }
+  // A memory bank that has got big is boiled down to what mattered, one quick call each, up to three
+  // women a week, biggest first (engine/condense).
+  if (s.models.auto_condense !== false) for (const p of dueToCondense(s).slice(0, 3)) { step(`${p.name}'s memories`); await condenseMemory(s, p); }
   // A long story you've begun writes its next chapter in the background, one a week, and it waits on
   // the Penthouse like any event. A new one is only ever offered: it's a big thing to take on, so it
   // waits on the Story screen until you begin it yourself.

@@ -152,18 +152,19 @@ check("but one read just before it keeps her voice and isn't read again", !dueTo
   check("and isn't given it again every turn", !/THE CITY WHERE THIS HAPPENS/.test(next));
   check("but is told exactly what changed since it last moved", new RegExp(`HOW THE CITY HAS CHANGED SINCE THIS SCENE LAST MOVED[\\s\\S]*${law.name}`).test(next), next.slice(0, 300));
 
-  // Over when you walk away, and over when it stops changing anything.
+  // Walking away, or turns that change nothing, only say it might be over: the player ends it. It
+  // used to end on its own, and the player lost scenes they weren't done with.
   const leave = openMoment(c, { person: girl.id, title: "A word", source: "event", happened: "She waits." });
   await playMoment(c, leave, "Fine. I leave.");
   const lm = momentsOf(c).find((x) => x.id === leave)!;
-  check("walking away ends the scene", !lm.open && lm.ended === "you left", lm.ended);
+  check("walking away only says it might be over", lm.open && !lm.ended && /leaving/.test(lm.winding ?? ""), [lm.open, lm.winding]);
   const flat = openMoment(c, { person: girl.id, title: "Small talk", source: "event", happened: "She hums." });
   bookFlat = true;
   for (const line of ["Nice weather.", "Mm.", "Yes."]) await playMoment(c, flat, line);
   const fm = momentsOf(c).find((x) => x.id === flat)!;
-  check("two turns that change nothing end it, offline", !fm.open && fm.ended === "it stopped going anywhere", [fm.open, fm.ended, fm.flat]);
+  check("two turns that change nothing leave it open, with a hint", fm.open && !fm.concluded && !!fm.winding, [fm.open, fm.winding, fm.flat]);
   const more = await playMoment(c, flat, "Anyway.");
-  check("and once it's over, it isn't played on", !more.ok && /done/.test(more.error ?? ""));
+  check("and it plays on when you carry on", more.ok && fm.open);
   bookFlat = false;
 
   // Threads left open close when they stop mattering.

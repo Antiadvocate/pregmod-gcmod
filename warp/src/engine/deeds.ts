@@ -286,10 +286,17 @@ Each turn of the game is a week. The follow-up happens "weeks" weeks after the s
 
 /** For reading the consequences: everything the player said (that's what the deed is made of),
  *  and the prose only from the last few beats. */
-function transcript(m: Moment): string {
-  const lastScenes = new Set(m.log.map((l, i) => (l.role === "scene" ? i : -1)).filter((i) => i >= 0).slice(-3));
-  return m.log.map((l, i) => (l.role === "you" ? `PLAYER: ${l.text}` : lastScenes.has(i) || i === 1 ? l.text : "")).filter(Boolean).join("\n\n").slice(-6000);
+function transcript(m: Moment, before?: string): string {
+  // A scene picked back up is read from where it was picked up; what it left the last time it ended
+  // is already counted, and is only there so the reader knows what this part follows on from.
+  const log = since(m);
+  const lastScenes = new Set(log.map((l, i) => (l.role === "scene" ? i : -1)).filter((i) => i >= 0).slice(-3));
+  const body = log.map((l, i) => (l.role === "you" ? `PLAYER: ${l.text}` : lastScenes.has(i) || i === 1 ? l.text : "")).filter(Boolean).join("\n\n").slice(-6000);
+  return before ? `(Earlier in this scene, already counted, so don't count it again: ${before})\n\n${body}` : body;
 }
+
+/** The part of a scene that hasn't been counted yet. */
+const since = (m: Moment) => m.log.slice(m.from ?? 0);
 
 interface Read {
   summary?: string; tags?: string[]; public?: boolean; witnesses?: string[]; her_memory?: string; lasting_fact?: string;
@@ -337,11 +344,11 @@ export function affirms(text: string, re: RegExp): boolean {
 }
 
 function offlineRead(m: Moment): Read {
-  const mine = m.log.filter((l) => l.role === "you").map((l) => l.text).join(" \n ");
+  const mine = since(m).filter((l) => l.role === "you").map((l) => l.text).join(" \n ");
   const tags: string[] = [];
   for (const [re, t] of KEYWORDS) if (affirms(mine, re) && !tags.includes(t)) tags.push(t);
   if (tags.includes("owner_enslaved")) { const i = tags.indexOf("owner_submitted"); if (i >= 0) tags.splice(i, 1); }
-  const last = m.log.filter((l) => l.role === "you").slice(-1)[0]?.text ?? m.title;
+  const last = since(m).filter((l) => l.role === "you").slice(-1)[0]?.text ?? m.title;
   const who = m.person ? m.title.replace(/^With (\S+).*/, "$1") : "";
   if (m.source === "walk") return { summary: `You went ${m.title.replace(/^Walking /, "down to ")}, and in front of everyone: "${last.replace(/"/g, "'").slice(0, 200)}"`, tags: tags.slice(0, 4), public: true };
   return { summary: `You said to ${who && who !== m.title ? who : "her"}: "${last.replace(/"/g, "'").slice(0, 200)}"`, tags: tags.slice(0, 4), public: false };
@@ -352,7 +359,8 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
   if (m.concluded) return deedsOf(s).find((d) => d.id === m.concluded) ?? null;
   m.open = false;
   // A scene where you never said anything leaves nothing behind.
-  if (!m.log.some((l) => l.role === "you")) return null;
+  if (!since(m).some((l) => l.role === "you")) return null;
+  const before = m.past?.length ? deedsOf(s).find((d) => d.id === m.past!.at(-1))?.summary : undefined;
   const p = m.person ? s.people[m.person] : undefined;
 
   let r: Read | null = null;
@@ -361,7 +369,7 @@ export async function concludeMoment(s: SaveState, m: Moment, opts?: { offline?:
     const tags = Object.entries(DEED_TAGS).map(([id, t]) => `${id} — ${t.when}`).join("\n");
     const res = await call({
       system: CONSEQUENCE_SYSTEM,
-      user: `${p ? `## HER\n${personCard(s, p, m.title)}\n\n` : ""}${[weightBrief(s), settledBrief(s, 6)].filter(Boolean).join("\n\n")}\n\n## THE SCENE (${m.title})\n${transcript(m)}\n\n## TAGS\n${tags}\n\n## EFFECT IDS (for follow_up options)\n${effects}`,
+      user: `${p ? `## HER\n${personCard(s, p, m.title)}\n\n` : ""}${[weightBrief(s), settledBrief(s, 6)].filter(Boolean).join("\n\n")}\n\n## THE SCENE (${m.title})\n${transcript(m, before)}\n\n## TAGS\n${tags}\n\n## EFFECT IDS (for follow_up options)\n${effects}`,
       model: s.models.bookkeeper_model || s.models.narrator_model, fallback: s.models.fallback_model, json: true, maxTokens: 900, signal: opts?.signal,
     });
     if (res.ok) r = parseJson<Read>(res.text);

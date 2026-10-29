@@ -9,7 +9,7 @@ import { useHand } from "../lib/hand";
 import { Reaction } from "./MomentCard";
 import { FLESH, FLESH_BY_ID, canGrow, fleshFelt, geneLab, startGrowing } from "../engine/fleshcraft";
 import { Button, Card, Empty, Section } from "../lib/ui";
-import { optionsFor, operate, theatreLevel } from "../engine/surgery";
+import { optionsFor, operate, priceOf, theatreLevel } from "../engine/surgery";
 import type { Procedure } from "../data/surgery";
 
 const GROUPS: { id: Procedure["group"]; label: string; note: string }[] = [
@@ -64,7 +64,7 @@ export default function Surgery({ id }: { id: string }) {
                       <div className="font-prose text-[12.5px] dim">{proc.what}</div>
                     </div>
                     <div className="text-right shrink-0 text-[11px] dim">
-                      <div>¤{proc.cost.toLocaleString()}</div>
+                      <div>¤{priceOf(save, proc).toLocaleString()}</div>
                       <div>{proc.recovery ? `${proc.recovery}w down` : "no recovery"}</div>
                     </div>
                   </div>

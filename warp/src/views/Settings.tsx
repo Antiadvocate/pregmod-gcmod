@@ -108,6 +108,11 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
               <Chip on={save.models.write_outcomes !== false} onClick={() => mutate((s) => { s.models.write_outcomes = true; })}>Write it out</Chip>
               <Chip on={save.models.write_outcomes === false} onClick={() => mutate((s) => { s.models.write_outcomes = false; })}>Just apply it</Chip>
             </div>
+            <div className="text-[12px] dim mt-3 mb-1">When a woman's memories get long, boil the older ones down to what mattered with one quick call to the bookkeeper model, at the end of the week. Core memories and the last few weeks are never touched. Each woman also has a button for it under her memories.</div>
+            <div className="flex gap-1.5">
+              <Chip on={save.models.auto_condense !== false} onClick={() => mutate((s) => { s.models.auto_condense = true; })}>Condense automatically</Chip>
+              <Chip on={save.models.auto_condense === false} onClick={() => mutate((s) => { s.models.auto_condense = false; })}>Leave them</Chip>
+            </div>
           </Field>
           <Field label="Thinking" hint="Reasoning models (and many flash models) think before they write, which can take a long time. Off asks them not to, and if a model refuses the switch, the call is sent again without it.">
             <div className="flex gap-1.5">

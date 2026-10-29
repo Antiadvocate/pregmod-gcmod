@@ -44,12 +44,12 @@ const game = (seed: string) => newGame({ seed, starting_slaves: 3, plot: false }
   await playMoment(s, id, "Thank you. I promise I'll free you in a year.");
   endWeek(s);
   const m = momentsOf(s).find((x) => x.id === id)!;
-  check("ending the week ends the scene", !m.open);
-  await new Promise((r) => setTimeout(r, 0));
-  check("and it still counts", deedsOf(s).some((d) => d.source === "test"), deedsOf(s).map((d) => d.source));
+  check("ending the week leaves the scene open for you", m.open);
   const id2 = openMoment(s, { person: p.id, title: "Again", source: "test2", happened: "x" });
   openMoment(s, { person: p.id, title: "Again", source: "test3", happened: "y" });
-  check("clear all ends every open scene", closeAllMoments(s) === 2 && !momentsOf(s).some((x) => x.open), id2);
+  check("clear all ends every open scene", closeAllMoments(s) === 3 && !momentsOf(s).some((x) => x.open), id2);
+  await new Promise((r) => setTimeout(r, 0));
+  check("and what was said in them still counts", deedsOf(s).some((d) => d.source === "test"), deedsOf(s).map((d) => d.source));
 }
 
 {
