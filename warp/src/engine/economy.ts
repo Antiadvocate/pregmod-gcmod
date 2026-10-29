@@ -13,7 +13,7 @@ import { foodEats } from "./menials";
 import { jobMoney } from "./idols";
 import { DRUG_BY_ID } from "../data/drugs";
 import type { LedgerEntry, Person, SaveState } from "./types";
-import { FACILITY_BY_ID } from "../data/facilities";
+import { FACILITY_BY_ID, upgradeAdds } from "../data/facilities";
 import { ASSIGNMENT_BY_ID } from "../data/assignments";
 import { clamp } from "./psyche";
 import { societyScore } from "./society";
@@ -86,6 +86,7 @@ export function weeklyMoney(state: SaveState, p: Person): { income: number; upke
   const def = ASSIGNMENT_BY_ID[p.assignment];
   const fac = p.facility ? arc.facilities[p.facility] : undefined;
   const facDef = fac ? FACILITY_BY_ID[fac.kind] : undefined;
+  const adds = upgradeAdds(fac?.upgrades, facDef);
 
   const prosperity = clamp(arc.prosperity / 100, 0.3, 2.0);
   const society = 1 + clamp(societyScore(state, p).total, -0.8, 0.8) * 0.35;
@@ -98,7 +99,7 @@ export function weeklyMoney(state: SaveState, p: Person): { income: number; upke
     // Balanced so a working brothel out-earns the rents, as the original's players asked: the
     // slaves are the business, and the building is where it happens.
     const base = facDef.id === "arcade" ? 650 : facDef.id === "brothel" ? 2000 : facDef.id === "club" ? 1500 : facDef.id === "pit" ? 850 : 900;
-    const upg = 1 + Object.keys(fac!.upgrades ?? {}).length * 0.12 + (fac!.level - 1) * 0.05;
+    const upg = 1 + adds.income + (fac!.level - 1) * 0.05;
     const kind = facDef.id === "club" ? "entertain" : facDef.id === "pit" ? "fight" : "sex";
     const mult = appeal(p) * competence(p, kind) * prosperity * society * upg;
     customers = Math.round(clamp(14 * mult, 0, 220));
@@ -107,13 +108,13 @@ export function weeklyMoney(state: SaveState, p: Person): { income: number; upke
   } else if (facDef && facDef.income === "production") {
     if (facDef.id === "dairy") {
       const litres = clamp((p.body.boobs / 220) * (p.body.lactation ? 1 : 0.15) * (1 + p.health.health / 300), 0, 40);
-      income = Math.round(litres * 90 * prosperity * society);
+      income = Math.round(litres * 90 * prosperity * society * (1 + adds.income));
       note = `${litres.toFixed(1)} litres`;
     } else {
       // The farmyard does not earn: it FEEDS. Paying a worker's wage AND crediting the food they
       // grew is the double count that made the old budget screen disagree with the bank, so the
       // whole value of a farmhand shows up on the food line instead.
-      const food = clamp(34 * (1 + p.health.energy / 200) * competence(p, "labour") * (fac?.upgrades?.hydroponics ? 1.6 : 1), 0, 220);
+      const food = clamp(34 * (1 + p.health.energy / 200) * competence(p, "labour") * (fac?.upgrades?.hydroponics ? 1.6 : 1) + adds.food, 0, 240);
       arc.food.production += food;
       note = `${Math.round(food)} units of food`;
     }
@@ -139,7 +140,7 @@ export function weeklyMoney(state: SaveState, p: Person): { income: number; upke
   upkeep += p.health.drugs.reduce((n, id) => n + (DRUG_BY_ID[id]?.cost ?? 90), 0);
   upkeep += p.health.curatives * 60 + p.health.aphrodisiacs * 40;
   if (p.health.recovery_weeks > 0) upkeep += 180;
-  if (fac && facDef) upkeep += facDef.upkeep_per_slot;
+  if (fac && facDef) upkeep += Math.max(0, facDef.upkeep_per_slot + adds.upkeep);
   if (p.womb.fetuses.length) upkeep += 60 * p.womb.fetuses.length;
   if (p.health.diet !== "healthy") upkeep += 45;
   // Doctrine costs money on the ones it likes. Paternalism is expensive; that is the trade.

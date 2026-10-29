@@ -36,7 +36,7 @@ import { tickCorp } from "./corp";
 import { tickFlesh } from "./fleshcraft";
 import { tickIdol, secretaryRebate } from "./idols";
 import type { Person, ReportLine, SaveState, WeekReport } from "./types";
-import { FACILITY_BY_ID } from "../data/facilities";
+import { FACILITY_BY_ID, upgradeAdds } from "../data/facilities";
 import { ASSIGNMENT_BY_ID } from "../data/assignments";
 import { Ledger, arcologyMoney, weeklyMoney } from "./economy";
 import { tickHealth } from "./health";
@@ -120,6 +120,12 @@ export function endWeek(s: SaveState): WeekReport {
   // own week is worked in the loop below like anybody else's.
   const managed = new Map<string, ManagerEffect>();
   for (const fac of Object.values(s.arcology.facilities)) {
+    // What a busy facility's upgrades do for the place as a whole: the club's lights, the drones.
+    const whole = upgradeAdds(fac.upgrades, FACILITY_BY_ID[fac.kind]);
+    if (fac.level && fac.workers.length) {
+      if (whole.rep) s.arcology.rep += whole.rep;
+      if (whole.security) s.arcology.security = clamp(s.arcology.security + whole.security, 0, 100);
+    }
     if (!fac.level || !fac.manager) continue;
     const eff = runManager(s, fac.id);
     managed.set(fac.id, eff);
@@ -137,7 +143,12 @@ export function endWeek(s: SaveState): WeekReport {
     const fac = p.facility ? s.arcology.facilities[p.facility] : undefined;
     const facDef = fac ? FACILITY_BY_ID[fac.kind] : undefined;
     const asgDef = ASSIGNMENT_BY_ID[p.assignment];
-    const load = facDef?.psyche ?? asgDef?.psyche ?? { relaxation: 0, wear: 0, health: 0, energy: 20 };
+    const base = facDef?.psyche ?? asgDef?.psyche ?? { relaxation: 0, wear: 0, health: 0, energy: 20 };
+    // What the facility's upgrades add to the work, on top of the work itself (data/facilities).
+    const adds = upgradeAdds(fac?.upgrades, facDef);
+    const load = { relaxation: base.relaxation + adds.relaxation, wear: base.wear + adds.wear, health: base.health + adds.health, energy: base.energy + adds.energy };
+    if (adds.fear) p.bond.fear = clamp(p.bond.fear + adds.fear, 0, 100);
+    if (adds.education) p.persona.education = clamp(p.persona.education + adds.education, 0, 100);
 
     const mgr = p.facility ? managed.get(p.facility) : undefined;
     const managedByThem = mgr && fac?.manager !== p.id;
@@ -178,7 +189,7 @@ export function endWeek(s: SaveState): WeekReport {
     // What she is wearing, every day, all week. Small and relentless — the way clothing actually is.
     let worn = 0;
     for (const item of [p.clothes, p.collar, p.shoes]) worn += GARMENT_BY_NAME[item]?.relaxation ?? 0;
-    const felt = shove(p.psyche, load.relaxation * (1 + (p.health.energy < 25 ? 0.4 : 0)) + worn + (managedByThem && mgr ? mgr.care : 0));
+    const felt = shove(p.psyche, load.relaxation * (1 + (p.health.energy < 25 ? 0.4 : 0)) + worn + (managedByThem && mgr ? mgr.care : 0) + (p.psyche.state !== "intact" ? adds.mending : 0));
     if (load.wear < -0.8) p.psyche.braced_run += 2;
     if (load.wear > 0.8) p.psyche.settled_run += 2;
 
@@ -198,7 +209,7 @@ export function endWeek(s: SaveState): WeekReport {
     const willing = clamp(1 + read(p).devotion / 200, 0.4, 1.4);
     const teacher = (fac && facDef?.manager && fac.manager ? 1.7 : 1) * skill.slaving(s);
     for (const [skill, rate] of Object.entries(trains)) {
-      const gain = (rate as number) * aptitude * willing * teacher * (managedByThem && mgr ? mgr.training : 1);
+      const gain = (rate as number) * aptitude * willing * teacher * (managedByThem && mgr ? mgr.training : 1) * (1 + adds.training);
       const key = skill as keyof typeof p.skills;
       if (typeof p.skills[key] === "number") {
         const before = p.skills[key] as number;

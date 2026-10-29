@@ -76,6 +76,9 @@ import "./senses.test.ts";
 import "./bans.test.ts";
 import "./continuity.test.ts";
 import "./pending.test.ts";
+import "./resume.test.ts";
+import "./condense.test.ts";
+import "./upgrades.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);
