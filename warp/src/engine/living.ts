@@ -508,7 +508,9 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
   if (!hasSlaveEvent(s)) {
     const w = bestWant(s);
     if (w) { step(w.p.name); const e = await generateWant(s, w.p, w.reasons, snap); if (e) { s.events.push(e); purgeBanned(s); } }
-    if (!hasSlaveEvent(s)) { const e = ensureSlaveEvent(s); if (e) { step(s.people[e.person!]?.name ?? "her"); await writeEvent(s, e, snap); } }
+    let e: ReturnType<typeof ensureSlaveEvent> = null;
+    try { if (!hasSlaveEvent(s)) e = ensureSlaveEvent(s); } catch (err) { console.error(err); }
+    if (e) { step(s.people[e.person!]?.name ?? "her"); await writeEvent(s, e, snap); }
   }
   // Any request still waiting (a model failed, or it came from her page) is written as a moment too.
   for (const a of s.asks ?? []) { step(`${s.people[a.person]?.name ?? "her"}'s request`); a.text = await voiceAsk(s, a); }
