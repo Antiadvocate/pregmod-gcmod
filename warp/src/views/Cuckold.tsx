@@ -14,6 +14,7 @@ import { answerOwn, canWrite, writeChapter, writeOutcome } from "../engine/cuckw
 import { POSE_BY_ID, type Pose } from "../lib/rig";
 import SlaveArt from "./SlaveArt";
 import type { SaveState } from "../engine/types";
+import { keepLine } from "../engine/yourvoice";
 
 const ENDING_NAME: Record<Ending, string> = {
   called_off: "called off",
@@ -140,7 +141,7 @@ export default function Cuckold({ id, onClose }: { id: string; onClose: () => vo
   const sayOwn = () => {
     const t = own.trim();
     if (!t) return;
-    void run("reading", async (sig) => { const r = await answerOwn(save, t, sig); if (r.ok) setOwn(""); return r; });
+    void run("reading", async (sig) => { const r = await answerOwn(save, t, sig); if (r.ok) { mutate((s) => { keepLine(s, t); }); setOwn(""); } return r; });
   };
 
   const past = c ? c.log.slice(0, c.chapter ? undefined : -1) : [];

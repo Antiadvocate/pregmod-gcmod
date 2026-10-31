@@ -959,6 +959,8 @@ export interface SaveState {
   compare_written?: Record<string, { model: string; week: number; fp: string; outfits: import("./compare").Outfits }>;
   /** Campaigns you are paying for, and the last week you spoke. See engine/civic. */
   campaigns?: import("./civic").Campaign[];
+  /** How the player writes, and the narration they rewrote. See engine/yourvoice. */
+  yourvoice?: import("./yourvoice").YourVoice;
   last_speech?: number;
   /** What the city has come to think is normal. See engine/culture. */
   culture?: import("./culture").Culture;

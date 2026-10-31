@@ -9,7 +9,9 @@ import { getThinking, setThinking, type Thinking, getApiKey, setApiKey, getLocal
 import { generateLocalImage, KONTEXT_WORKFLOW, listLocalCheckpoints, WORKFLOW_TOKENS } from "../lib/diffusion";
 import { dynamicReadiness } from "../engine/dynamic";
 import { exportSave } from "../store";
-import { llmErrors, listOpenRouterModels, listLocalModels, type ModelInfo } from "../llm";
+import { llmCalls, llmErrors, listOpenRouterModels, listLocalModels, type ModelInfo } from "../llm";
+import { getYourVoice, setYourVoice } from "../config";
+import { rewritesJsonl, voiceOf } from "../engine/yourvoice";
 import ModelPicker from "../lib/ModelPicker";
 import { imageModels } from "../lib/imagegen";
 
@@ -114,6 +116,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
               <Chip on={save.models.auto_condense === false} onClick={() => mutate((s) => { s.models.auto_condense = false; })}>Leave them</Chip>
             </div>
           </Field>
+          <YourWriting />
           <Field label="Thinking" hint="Reasoning models (and many flash models) think before they write, which can take a long time. Off asks them not to, and if a model refuses the switch, the call is sent again without it.">
             <div className="flex gap-1.5">
               {([["off", "Off — fastest"], ["low", "A little"], ["model", "Model's default"]] as [Thinking, string][]).map(([v, label]) => (
@@ -321,5 +324,41 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
         </Section>
       ) : null}
     </>
+  );
+}
+
+/** How you write, as the narration is shown it, and your rewrites to take away (engine/yourvoice). */
+function YourWriting() {
+  const { save, mutate } = useGame();
+  const [on, setOn] = useState(getYourVoice());
+  const v = save.yourvoice;
+  const lines = v?.lines?.length ?? 0, rewrites = v?.rewrites?.length ?? 0;
+  const download = () => {
+    const blob = new Blob([rewritesJsonl(save)], { type: "application/jsonl" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${(save.arcology.name || "warp").replace(/\W+/g, "-").toLowerCase()}-rewrites.jsonl`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  const recent = llmCalls.filter((c) => c.tag !== "json").slice(-6).reverse();
+  return (
+    <Field label="Your writing" hint="The narration is shown a few of the lines you type yourself and the paragraphs you've rewritten (the pencil after any paragraph), so it writes more like you. Only the narration: the women keep their own voices. Your rewrites replace what the model wrote, and the originals aren't sent to it again.">
+      <div className="flex gap-1.5 items-center flex-wrap">
+        <Chip on={on} onClick={() => { setYourVoice(true); setOn(true); }}>On</Chip>
+        <Chip on={!on} onClick={() => { setYourVoice(false); setOn(false); }}>Off</Chip>
+        <span className="text-[12px] dim ml-2">{lines} of your lines kept · {rewrites} rewrite{rewrites === 1 ? "" : "s"}</span>
+      </div>
+      <div className="flex gap-2 mt-2 flex-wrap">
+        <Button size="sm" disabled={!rewrites} onClick={download}>Download rewrites (.jsonl)</Button>
+        <Button size="sm" kind="ghost" disabled={!lines} onClick={() => { if (window.confirm("Forget every line of yours the game has kept? Your rewrites stay.")) mutate((s) => { voiceOf(s).lines = []; }); }}>Forget my lines</Button>
+      </div>
+      {recent.length ? (
+        <div className="text-[11.5px] dim mt-2 space-y-0.5">
+          <div>Recent calls, prompt tokens and how many came from the provider's cache:</div>
+          {recent.map((c, i) => <div key={i} className="font-mono">{c.tag.padEnd(10)} {c.usage.prompt_tokens.toLocaleString()} in · {(c.usage.cached_tokens ?? 0).toLocaleString()} cached · {c.usage.completion_tokens.toLocaleString()} out{c.usage.cost !== undefined ? ` · $${c.usage.cost.toFixed(5)}` : ""}</div>)}
+        </div>
+      ) : null}
+    </Field>
   );
 }

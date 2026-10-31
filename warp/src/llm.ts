@@ -12,12 +12,23 @@
  *     because the engine's contract is that a model failure degrades one pass for one turn and
  *     never takes the week with it.
  */
-import { getApiKey, getLocalEndpoint, getThinking, isLocalModel, localModelId } from "./config";
+import { getApiKey, getLocalEndpoint, getThinking, getYourVoice, isLocalModel, localModelId } from "./config";
 import { plain } from "./engine/style";
 
 const OR_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-export interface Usage { prompt_tokens: number; completion_tokens: number; cost?: number }
+export interface Usage { prompt_tokens: number; completion_tokens: number; cost?: number; /** Prompt tokens the provider served from its cache. */ cached_tokens?: number }
+
+/** The last few calls, for seeing what a turn costs and whether the cache is being hit. */
+export const llmCalls: { at: number; model: string; tag: string; usage: Usage }[] = [];
+function logCall(model: string, tag: string, usage: Usage): void {
+  llmCalls.push({ at: Date.now(), model, tag, usage });
+  if (llmCalls.length > 40) llmCalls.shift();
+}
+const usageOf = (u: Record<string, unknown> | undefined): Usage => {
+  const d = (u?.prompt_tokens_details ?? {}) as Record<string, unknown>;
+  return { prompt_tokens: Number(u?.prompt_tokens ?? 0), completion_tokens: Number(u?.completion_tokens ?? 0), cost: u?.cost as number | undefined, cached_tokens: Number(d.cached_tokens ?? u?.prompt_cache_hit_tokens ?? 0) || undefined };
+};
 export interface LLMResult { ok: boolean; text: string; usage: Usage; model: string; error?: string }
 
 export const llmErrors: { at: number; model: string; message: string }[] = [];
@@ -78,6 +89,10 @@ export interface CallOptions {
   urgent?: boolean;
   /** A mild penalty on repeating what's already been said (OpenRouter's presence_penalty). */
   presence?: number;
+  /** This call writes narration: it's shown how the player writes (engine/yourvoice), when that's on. */
+  narration?: boolean;
+  /** A short name for the call in the log of recent calls. */
+  tag?: string;
 }
 
 /** Anyone can listen for rate-limit waits (the shell shows a notice), without every caller
@@ -152,6 +167,12 @@ const STREAM_IDLE_MS = 90_000;
  */
 let ownerContext = "";
 export function setOwnerContext(text: string): void { ownerContext = text; }
+
+/** How the player writes, for narration calls only. Set from the save (engine/yourvoice); goes at the
+ *  end of the system prompt, which stays the same all week, so the provider's cache keeps it. */
+let voiceContext = "";
+export function setVoiceContext(text: string): void { voiceContext = text; }
+export const voiceContextNow = () => voiceContext;
 const OWNER_MARK = "THE OWNER. This is the player";
 
 /** A prompt that already says who the owner is (the scene digest does) still gets the rest of what
@@ -166,7 +187,8 @@ export function withOwner<T extends { system: string; user: string }>(raw: T): T
 }
 
 export async function call(raw: CallOptions): Promise<LLMResult> {
-  const opts = withOwner(raw);
+  const owned = withOwner(raw);
+  const opts = owned.narration && voiceContext && getYourVoice() ? { ...owned, system: `${owned.system}\n\n${voiceContext}` } : owned;
   const chain = [opts.model, opts.fallback].filter(Boolean) as string[];
   let lastErr = "";
   for (const model of chain) {
@@ -180,6 +202,7 @@ export async function call(raw: CallOptions): Promise<LLMResult> {
         opts.onReset?.();
         continue;
       }
+      logCall(model, opts.tag ?? (opts.narration ? "narration" : opts.json ? "json" : "prose"), res.usage);
       // Every reply loses the dashes and the markdown before anything keeps it.
       return { ...res, text: plain(res.text) };
     } catch (e) {
@@ -283,11 +306,7 @@ async function onceWith(opts: CallOptions, alive: () => void): Promise<LLMResult
     const text = String(json?.choices?.[0]?.message?.content ?? "");
     return {
       ok: true, text: opts.json ? text : stripThinking(text), model: opts.model,
-      usage: {
-        prompt_tokens: json?.usage?.prompt_tokens ?? 0,
-        completion_tokens: json?.usage?.completion_tokens ?? 0,
-        cost: json?.usage?.cost,
-      },
+      usage: usageOf(json?.usage),
     };
   }
 
@@ -312,7 +331,7 @@ async function onceWith(opts: CallOptions, alive: () => void): Promise<LLMResult
         const j = JSON.parse(payload);
         const delta = j?.choices?.[0]?.delta?.content;
         if (delta) { full += delta; opts.onDelta!(delta); }
-        if (j?.usage) usage = { prompt_tokens: j.usage.prompt_tokens ?? 0, completion_tokens: j.usage.completion_tokens ?? 0, cost: j.usage.cost };
+        if (j?.usage) usage = usageOf(j.usage);
       } catch { /* keep-alive comment or partial frame */ }
     }
   }

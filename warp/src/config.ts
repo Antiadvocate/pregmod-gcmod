@@ -14,6 +14,12 @@ const THINK = "warp-thinking";
 export function getThinking(): Thinking { try { const v = localStorage.getItem(THINK); return v === "low" || v === "model" ? v : v === "off" ? "off" : "model"; } catch { return "model"; } }
 export function setThinking(v: Thinking): void { try { localStorage.setItem(THINK, v); } catch { /* storage blocked */ } }
 
+/** Whether the narration is shown how you write (engine/yourvoice). On this device, so a turn can be
+ *  retried with it off and on to compare. Default on. */
+const YOURVOICE = "warp-yourvoice";
+export function getYourVoice(): boolean { try { return localStorage.getItem(YOURVOICE) !== "off"; } catch { return true; } }
+export function setYourVoice(on: boolean): void { try { localStorage.setItem(YOURVOICE, on ? "on" : "off"); } catch { /* storage blocked */ } }
+
 /** A model id prefixed `local/` routes to an OpenAI-compatible server on your own machine —
  *  KoboldCpp, llama-server, LM Studio, Ollama. That prefix is the whole routing mechanism, so any
  *  one slot can be local while the rest stay in the cloud. The useful split is a local narrator

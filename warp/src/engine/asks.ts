@@ -589,7 +589,7 @@ export async function voiceAsk(s: SaveState, ask: Ask): Promise<string> {
   const habits = NORM_IDS.filter((k) => Math.abs(w.norms[k]) >= 25).map((k) => `${NORMS[k].name}: ${normLine(k, w.norms[k])}`);
   const doctrines = Object.entries(s.arcology.doctrines).filter(([, d]) => d.adoption >= 30).map(([id, d]) => `${DOCTRINE_BY_ID[id]?.noun ?? id} (${Math.round(d.adoption)}%)`);
   const flaw = p.persona.flaw ? FLAW_BY_ID[p.persona.flaw.id]?.note : undefined;
-  const res = await call({
+  const res = await call({ narration: true, tag: "ask",
     system: `You write one short scene for Free Cities, an adult text game about owning an arcology where slavery is legal. One of the owner's slaves wants something from them. Write the moment she asks. Say where she catches the owner, why she's asking now, which comes out of her record and what has already happened between them, and what she says in her own words, the way this particular person would say it. She's crude if she's crude, frightened if she's frightened, and cold if she's cold. She lives in this arcology and knows its laws, its customs and how its slaves dress, so if what she wants goes against a law or a custom, she knows it and it shows. Don't change what she's asking for. Write three to six sentences in the second person and the present tense, with her line in quotes.
 
 ${HOUSE_STYLE}

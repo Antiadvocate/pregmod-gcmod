@@ -128,7 +128,7 @@ export async function writeChapter(s: SaveState, signal?: AbortSignal): Promise<
   const { may, must } = movesNow(s);
   let note = "";
   for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await call({
+    const res = await call({ narration: true, tag: "cuckold",
       system: CHAPTER_SYSTEM,
       user: [
         ...context(s, c.bull ? `${c.bull.short} the owner` : "another man"),
@@ -208,7 +208,7 @@ export async function writeOutcome(s: SaveState, signal?: AbortSignal): Promise<
   const p = herOf(s);
   if (!c || !last || !p || last.text) return { ok: !!last?.text };
   if (!canWrite(s)) return { ok: false, error: "needs a model set up in Settings" };
-  const res = await call({
+  const res = await call({ narration: true, tag: "cuckold",
     system: OUTCOME_SYSTEM,
     user: [
       ...context(s, `${c.bull?.short ?? ""} ${last.chose}`),

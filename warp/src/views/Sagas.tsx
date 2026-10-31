@@ -18,9 +18,10 @@ import { answerOwn, choose, locked, rerollSaga, restartSaga, running, sagasOf, s
 import { facesOf, personOf } from "../engine/faces";
 import Portrait from "./Portrait";
 import { Reaction } from "./MomentCard";
+import { keepLine } from "../engine/yourvoice";
 
 const writerFor = (s: SaveState, signal: AbortSignal): Writer => async (system, user) => {
-  const r = await call({ system, user, model: s.models.narrator_model, fallback: s.models.fallback_model, json: true, maxTokens: 4000, temperature: 0.9, signal });
+  const r = await call({ narration: true, tag: "story", system, user, model: s.models.narrator_model, fallback: s.models.fallback_model, json: true, maxTokens: 4000, temperature: 0.9, signal });
   return { ok: r.ok, text: r.text, error: r.error };
 };
 
@@ -115,7 +116,7 @@ export function SagaCard({ id }: { id: string }) {
   const answer = () => run(async (w) => {
     const ch = x.chapter!;
     const res = await answerOwn(save, x.id, own, w);
-    if (res.ok && res.result) { setAfter({ ...res.result, chose: own.trim(), title: ch.title, setup: ch.text }); setOwn(""); }
+    if (res.ok && res.result) { mutate((s) => { keepLine(s, own); }); setAfter({ ...res.result, chose: own.trim(), title: ch.title, setup: ch.text }); setOwn(""); }
     return res;
   });
 

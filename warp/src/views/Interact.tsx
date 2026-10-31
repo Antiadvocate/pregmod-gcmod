@@ -32,6 +32,8 @@ import { useVisibleViewport } from "../lib/viewport";
 import { obeys } from "../engine/compliance";
 import type { Moment } from "../lib/expression";
 import { RoomBackdrop } from "../lib/rooms";
+import { keepLine, rewriteInMoment, saveRewrite } from "../engine/yourvoice";
+import { ProsePara, VoiceSwitch } from "./Rewrite";
 
 type Entry =
   | { k: "you"; text: string }
@@ -202,6 +204,18 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     midRef.current = null; setMid(null); engaged.current = false;
     history.current = [];
     setEnded(true);
+  }
+
+  /** Your version of a paragraph: on the screen, in the scene the next turn is written from, and kept
+   *  as a pair (engine/yourvoice). */
+  function rewrite(i: number, original: string, text: string) {
+    setLog((l) => l.map((x, k) => (k === i && x.k === "prose" ? { ...x, text } : x)));
+    history.current = history.current.map((h) => (h.role === "scene" && h.text.includes(original) ? { ...h, text: h.text.replace(original, text) } : h));
+    const m = midRef.current ?? doneRef.current;
+    mutate((s) => {
+      if (m) rewriteInMoment(s, m, original, text);
+      saveRewrite(s, { original, rewrite: text, where: "encounter", person: id, model: s.models.narrator_model });
+    });
   }
 
   /** Not done with her after all: the scene you ended carries on from where it stopped. */
@@ -384,7 +398,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
 
       {/* what happened */}
       <div ref={logRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
-        {log.map((e, i) => <LogEntry key={i} e={e} />)}
+        {log.map((e, i) => <LogEntry key={`${i}-${"text" in e ? e.text.length : 0}`} e={e} onRewrite={e.k === "prose" && !busy ? (t) => rewrite(i, e.text, t) : undefined} />)}
         {spot && !spot.withYou && !mid && !busy && log.length <= 2 ? (
           <div className="flex justify-center">
             <button className="chip !text-[12px]" onClick={() => sendFor(!summoned)}>{summoned ? `Go to her ${inPlace(spot.name)} instead` : "Send for her instead"}</button>
@@ -412,13 +426,14 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
             e.preventDefault();
             const t = said.trim();
             // Sent: the keyboard goes, so her answer has the screen. (A disabled input doesn't always say it lost focus.)
-            if (t) { setSaid(""); inputRef.current?.blur(); setTyping(false); void carryOn(t); }
+            if (t) { setSaid(""); inputRef.current?.blur(); setTyping(false); mutate((s) => { keepLine(s, t, replies); }); void carryOn(t); }
           }}>
             <input ref={inputRef} className="flex-1 min-w-0" value={said} disabled={busy} onChange={(e) => setSaid(e.target.value)} onFocus={() => setTyping(true)} onBlur={() => setTyping(false)} placeholder={`Say or do something to ${p.name}`} />
             {busy && stopper.current
               ? <button type="button" className="btn btn-sm btn-danger" onClick={() => stopper.current?.abort()} title="Stop the model and throw this reply away"><Square size={12} /> stop</button>
               : <button className="btn btn-sm btn-primary" disabled={busy || !said.trim()} onMouseDown={(e) => e.preventDefault()}>Go</button>}
             {!busy && lastCall.current ? <button type="button" className="btn btn-sm" onClick={retry} title="Throw away that response and ask the model again"><RotateCcw size={12} /> retry</button> : null}
+            {!busy && lastCall.current ? <VoiceSwitch className="self-center shrink-0" /> : null}
             {mid && engaged.current ? <button type="button" className="btn btn-sm" disabled={busy} onClick={() => void endHere()} title="End the scene, and what you did in it starts to count">Done</button> : null}
           </form>
         ) : null}
@@ -474,10 +489,10 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
   );
 }
 
-function LogEntry({ e }: { e: Entry }) {
+function LogEntry({ e, onRewrite }: { e: Entry; onRewrite?: (t: string) => void }) {
   switch (e.k) {
     case "you": return <div className="player-line !my-1 fade-in">{e.text}</div>;
-    case "prose": return <p className="font-prose text-[15.5px] leading-relaxed fade-in" style={{ color: "#e6dfd1" }}>{e.text}</p>;
+    case "prose": return <ProsePara text={e.text} className="text-[15.5px] fade-in" style={{ color: "#e6dfd1" }} onRewrite={onRewrite} />;
     case "said": return <p className="said-line fade-in">&ldquo;{e.text.replace(/^"|"$/g, "")}&rdquo;</p>;
     case "learned": return <div className="text-[12px] good fade-in">You learned: {e.text}</div>;
     case "note": return <div className="text-[12px] bad fade-in">{e.text}</div>;

@@ -15,6 +15,8 @@ import { rollback, snapshot } from "../engine/state";
 import { acceptCollar, concludeMoment, deedsOf, refuseCollar, DEED_TAGS } from "../engine/deeds";
 import { modelsAvailable } from "../config";
 import Portrait, { castOf } from "./Portrait";
+import { keepLine, rewriteInMoment, saveRewrite } from "../engine/yourvoice";
+import { ProsePara, VoiceSwitch } from "./Rewrite";
 
 export interface Seed { person?: string; others?: string[]; title: string; source: string; setup?: string; you?: string; happened: string }
 
@@ -87,6 +89,8 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
     setStream(""); setBusy(false); setText("");
     if (!res.ok && res.error) setErr(res.error);
   };
+  // Your own words, not a clicked option: kept as how you write (engine/yourvoice).
+  const typed = (t: string) => { mutate((s) => { keepLine(s, t, momentsOf(s).find((x) => x.id === id)?.options ?? []); }); void go(t); };
   const retry = () => {
     if (busy || last.current === undefined) return;
     const reply = last.current;
@@ -134,7 +138,8 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
       <div className="space-y-3">
         {lines.map((l, i) => l.role === "you"
           ? <div key={i} className="player-line !my-1">{l.text}</div>
-          : [...l.text.split(/\n\n+/).map((para, j) => <p key={`${i}-${j}`} className="font-prose text-[15px] leading-relaxed" style={{ color: "#e6dfd1" }}>{para}</p>),
+          : [...l.text.split(/\n\n+/).map((para, j) => <ProsePara key={`${i}-${j}-${para.length}`} text={para} className="text-[15px]" style={{ color: "#e6dfd1" }}
+              onRewrite={busy ? undefined : (t) => mutate((s) => { if (rewriteInMoment(s, id, para, t)) saveRewrite(s, { original: para, rewrite: t, where: "moment", person: m.person, model: s.models.narrator_model }); })} />),
             // What the narrator still got wrong after being told once (engine/continuity).
             ...(l.slips?.length ? [<div key={`${i}-slips`} className="text-[11.5px] warn leading-snug">Continuity slip: {l.slips.join(" ")}</div>] : [])])}
         {stream ? <p className="font-prose text-[15px] leading-relaxed mid whitespace-pre-line">{stream}</p> : null}
@@ -150,14 +155,15 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
               <button key={o} className="choice" onClick={() => void go(o)}><span className="block text-[14px] leading-snug">{o}</span></button>
             ))}
           </div>
-          <form className="mt-2 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (text.trim()) void go(text.trim()); }}>
+          <form className="mt-2 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (text.trim()) void typed(text.trim()); }}>
             <input className="flex-1 min-w-0" value={text} onChange={(e) => setText(e.target.value)} placeholder="Say or do something else" />
-            <Button size="sm" kind="primary" disabled={!text.trim()} onClick={() => { if (text.trim()) void go(text.trim()); }}>Go</Button>
+            <Button size="sm" kind="primary" disabled={!text.trim()} onClick={() => { if (text.trim()) void typed(text.trim()); }}>Go</Button>
           </form>
           {m.winding ? <div className="text-[12px] dim mt-2">This might have wound down ({m.winding}). It stays open until you say you're done.</div> : null}
           <div className="flex gap-2 mt-2">
             {bare ? null : <Button size="sm" kind="ghost" onClick={() => { setFolded(true); onClose?.(); }}>Continue later</Button>}
             {last.current !== undefined ? <Button size="sm" kind="ghost" onClick={retry} title="Throw away that response and ask the model again"><RotateCcw size={12} /> Retry</Button> : null}
+            {last.current !== undefined ? <VoiceSwitch className="self-center" /> : null}
             <Button size="sm" kind="ghost" disabled={ending} onClick={() => void end()} title="End it where it is. What you did still counts">{ending ? "…" : "Done"}</Button>
           </div>
         </>

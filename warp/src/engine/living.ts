@@ -134,7 +134,7 @@ export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Prom
   const def = EVENT_BY_ID[e.kind];
   const opts = def?.options ?? e.options;
   const ctx = eventContext(s, e);
-  const res = await call({
+  const res = await call({ narration: true, tag: "event",
     system: WRITE_SYSTEM,
     user: [
       snap,
@@ -229,7 +229,7 @@ export async function narrateOutcome(s: SaveState, o: { person?: string; others?
   if (!ready(s) || !o.happened) return "";
   const keys = [o.person ?? "", ...(o.others ?? [])].filter(Boolean);
   const p = o.person ? s.people[o.person] : undefined;
-  const res = await call({
+  const res = await call({ narration: true, tag: "outcome",
     system: OUTCOME_SYSTEM,
     user: [
       p ? personCard(s, p, o.chose) : cityBrief(s),
@@ -471,7 +471,7 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
   if (saga) {
     step(saga.title || "a new story");
     await writeNext(s, saga.id, async (system, user) => {
-      const r = await call({ system, user, model: s.models.narrator_model, fallback: s.models.fallback_model, json: true, maxTokens: 4000, temperature: 0.85 });
+      const r = await call({ narration: true, tag: "story", system, user, model: s.models.narrator_model, fallback: s.models.fallback_model, json: true, maxTokens: 4000, temperature: 0.85 });
       return { ok: r.ok, text: r.text, error: r.error };
     });
   }

@@ -224,7 +224,7 @@ export async function generateGoing(s: SaveState, g: Going, snapshot = ""): Prom
   if (!modelsAvailable() || s.models.lean_mode) return null;
   const pair = Object.keys(PAIR_EFFECTS).map((k) => `${k}: ${PAIR_EFFECTS[k].note}`);
   const people = [g.main, g.other].filter((x): x is Person => !!x);
-  const res = await call({
+  const res = await call({ narration: true, tag: "goings",
     system: GOING_SYSTEM,
     user: [
       snapshot,

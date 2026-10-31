@@ -364,21 +364,23 @@ export async function playMoment(
   const others = (m.others ?? []).map((id) => s.people[id]).filter(Boolean) as Person[];
   const bond = (a: Person, b: Person) => { const e = s.edges.find((x) => x.from === a.id && x.to === b.id); return e ? `${a.name} toward ${b.name}: ${e.roles.length ? `${e.roles.join(", ")}; ` : ""}warmth ${Math.round(e.warmth)}` : ""; };
   const user = [
+    // What stays the same from turn to turn goes first, so a provider that caches the front of a
+    // prompt keeps it; the people, the scene so far and your reply come after.
+    s.world ? `## THE WORLD\n${worldBrief(s)}` : "",
+    walking ? "" : lawsLine(s),
+    walking || city ? "" : rulesLine(s),
+    walking || city ? "" : householdLine(s),
+    walking || city ? "" : sentinelsLine(s),
+    settledBrief(s, 8),
+    weightBrief(s),
+    ownedBrief(s),
     walking ? walkContext(s, m.walk) : "",
     city ? cityContext(s) : "",
     card ? `## ${walking ? "WITH THE PLAYER" : "THE SLAVE"}\n${card}` : "",
     m.where ? whereLine(m.where, m.where.summoned) : "",
     ...others.map((o) => `## ALSO IN THE SCENE\n${personCard(s, o, m.title)}`),
     p && others.length ? `## BETWEEN THEM\n${others.flatMap((o) => [bond(p, o), bond(o, p), pairFitLine(s, p, o), pairFitLine(s, o, p)]).filter(Boolean).join("\n")}\nBoth of them talk and act in the scene, each in her own voice.` : "",
-    s.world ? `## THE WORLD\n${worldBrief(s)}` : "",
-    walking ? "" : lawsLine(s),
-    walking || city ? "" : rulesLine(s),
-    walking || city ? "" : householdLine(s),
-    walking || city ? "" : sentinelsLine(s),
     castBrief(s, `${m.title}\n${transcript(m)}\n${reply ?? ""}`),
-    settledBrief(s, 8),
-    weightBrief(s),
-    ownedBrief(s),
     `## THE SCENE SO FAR (${m.title})\n${coarsen(transcript(m))}`,
     lastMoved < s.arcology.week ? aroundBrief(s, { since: lastMoved, scene: m.title }) : elsewhere(s, m),
     changedLine(s, m),
@@ -391,7 +393,7 @@ export async function playMoment(
   ].filter(Boolean).join("\n\n");
 
   let shown = "";
-  const ask = (extra = "") => call({
+  const ask = (extra = "") => call({ narration: true, tag: "moment",
     system: walking ? WALK_SYSTEM : city ? CITY_SCENE_SYSTEM : MOMENT_SYSTEM, user: extra ? `${user}\n\n${extra}` : user,
     model: s.models.narrator_model, fallback: s.models.fallback_model,
     maxTokens: 1600, temperature: 0.8, presence: 0.3, signal: opts?.signal,

@@ -110,7 +110,7 @@ export async function runTurn(
   if (modelsAvailable()) {
     // Before the digest, so someone who walks in is in the room the narrator is shown.
     const beats = aliveBeats(s, action, mode);
-    const res = await call({
+    const res = await call({ narration: true, tag: "scene",
       system: NARRATOR_SYSTEM,
       user: `${digest(s, action)}\n\n## THIS TURN\n${MODE_FRAME[mode](action)}${beats}\n\n${REGISTER_TAIL}`,
       model: s.models.narrator_model,
@@ -224,7 +224,7 @@ export async function runActTurn(
   let tokensIn = 0, tokensOut = 0, cost = 0;
 
   if (modelsAvailable()) {
-    const res = await call({
+    const res = await call({ narration: true, tag: "act",
       system: NARRATOR_SYSTEM,
       user: `${digest(s, act.name, p.id)}\n\n${actDirective(s, p, outcome)}`,
       model: s.models.narrator_model,

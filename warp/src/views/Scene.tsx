@@ -28,6 +28,8 @@ import { scenePrompt } from "../engine/portrait";
 import { band } from "../engine/psyche";
 import { goTo, openPlaces, placeOf } from "../engine/places";
 import { SlaveHead } from "./SlaveArt";
+import { keepLine, saveRewrite } from "../engine/yourvoice";
+import { ProsePara, VoiceSwitch } from "./Rewrite";
 
 const MODES: { id: ActionMode; label: string; hint: string }[] = [
   { id: "do", label: "do", hint: "you act, and the world resolves it" },
@@ -66,7 +68,7 @@ export default function Scene() {
     const m = againMode ?? mode;
     if (!action || busy) return;
     setBusy(true);
-    if (!again) setText("");
+    if (!again) { setText(""); mutate((s) => { keepLine(s, action); }); }
     setStreaming("");
     setNotes([]);
     const ctl = new AbortController();
@@ -166,7 +168,10 @@ export default function Scene() {
             ) : null}
             {t.image ? <img src={t.image} alt="" className="w-full rounded-lg mb-3" /> : null}
             <div className={t.bookkeeping === "offline" ? "stage" : "prose-stream"}>
-              {t.prose.split(/\n\n+/).map((para, i) => <p key={i}>{para}</p>)}
+              {t.prose.split(/\n\n+/).map((para, i) => <ProsePara key={`${i}-${para.length}`} text={para} onRewrite={busy || t.bookkeeping === "offline" ? undefined : (txt) => mutate((s) => {
+                const h = s.history.find((x) => x.turn === t.turn);
+                if (h && h.prose.includes(para)) { h.prose = h.prose.replace(para, txt); saveRewrite(s, { original: para, rewrite: txt, where: "scene", model: s.models.narrator_model }); }
+              })} />)}
             </div>
             <div className="flex items-center gap-2 mt-1.5 opacity-0 hover:opacity-100 transition-opacity">
               <span className="text-[10.5px] dim font-mono">
@@ -210,6 +215,7 @@ export default function Scene() {
               <RotateCcw size={11} /> retry
             </button>
           ) : null}
+          {save.history.length && !busy ? <VoiceSwitch /> : null}
           {save.history.length ? (
             <button className="chip" title="undo the last turn"
               onClick={() => { const r = rollback(save); if (r) replace(r); }}>
