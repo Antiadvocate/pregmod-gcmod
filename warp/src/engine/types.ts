@@ -963,6 +963,8 @@ export interface SaveState {
   compare_written?: Record<string, { model: string; week: number; fp: string; outfits: import("./compare").Outfits }>;
   /** Campaigns you are paying for, and the last week you spoke. See engine/civic. */
   campaigns?: import("./civic").Campaign[];
+  /** Who lives in the city, by class, what they're taxed, and the border. See engine/citizens. */
+  citizens?: import("./citizens").Citizens;
   /** How the player writes, and the narration they rewrote. See engine/yourvoice. */
   yourvoice?: import("./yourvoice").YourVoice;
   last_speech?: number;
@@ -1056,6 +1058,11 @@ export interface Player {
   skills: Record<string, number>;
   /** Skills the player made up for themselves; their numbers live in `skills` under the same id. See engine/player. */
   custom_skills?: import("./player").CustomSkill[];
+  /** What the owner is doing this week, and did last week. See engine/yourweek. */
+  plan?: import("./yourweek").WeekPlan;
+  last_plan?: import("./yourweek").WeekPlan;
+  /** This week's three suggestions, so they aren't asked for again every time the screen opens. */
+  plan_options?: { week: number; options: import("./yourweek").PlanOption[] };
   /** What surgery has done to the owner's body, so the city can tell a bought size from a born one. */
   surgery?: { dick_from?: number; dick_week?: number };
   /** How the world reads a small household: the owner who keeps only one or two. See engine/fewslaves. */

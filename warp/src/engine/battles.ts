@@ -137,7 +137,7 @@ function lose(s: SaveState, heavy: boolean): string {
   const cash = Math.round(Math.min(arc.cash * (heavy ? 0.25 : 0.1), ATTACKERS[b.attacker].loot * (heavy ? 2 : 1)));
   arc.cash -= cash;
   arc.prosperity = clamp(arc.prosperity - (heavy ? 12 : 5), 0, 200);
-  arc.population = Math.max(200, Math.round(arc.population * (heavy ? 0.93 : 0.97)));
+  arc.population = Math.round(arc.population * (heavy ? 0.93 : 0.97));
   arc.rep = Math.max(0, arc.rep - (heavy ? 800 : 300));
   const sector = heavy ? arc.sectors.find((x) => x.owner === "you") : undefined;
   if (sector) sector.condition = clamp(sector.condition - 40, 0, 100);

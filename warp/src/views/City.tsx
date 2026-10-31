@@ -23,10 +23,11 @@ import { DISTRICTS, DISTRICT_BY_KIND, REGIONS, RINGS, type DistrictKind } from "
 import { Skyline } from "./Skyline";
 import { STYLES, styleOf, type Style } from "../lib/cityart";
 import IsoCity from "./IsoCity";
+import People from "./People";
 import { FINISHES, lookOf, type Finish, type Look } from "../lib/iso";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 
-type Tab = "build" | "trade" | "neighbours";
+type Tab = "build" | "people" | "trade" | "neighbours";
 
 export default function City() {
   const { save, mutate } = useGame();
@@ -83,14 +84,15 @@ export default function City() {
       ) : null}
 
       <div className="flex gap-1 mb-3">
-        {(["build", "trade", "neighbours"] as Tab[]).map((t) => (
+        {(["build", "people", "trade", "neighbours"] as Tab[]).map((t) => (
           <Button key={t} size="sm" kind={tab === t ? "primary" : "ghost"} onClick={() => setTab(t)}>
-            {t === "build" ? "The city" : t === "trade" ? "Out there" : "The others"}
+            {t === "build" ? "The city" : t === "people" ? "The people" : t === "trade" ? "Out there" : "The others"}
           </Button>
         ))}
       </div>
 
       {tab === "build" && <BuildList city={city} onPick={(id) => { setPicked(id); setNote(null); }} />}
+      {tab === "people" && <People />}
       {tab === "trade" && <Trade reach={y.reach} say={say} />}
       {tab === "neighbours" && <Neighbours say={say} />}
 

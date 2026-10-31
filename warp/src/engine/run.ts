@@ -112,6 +112,8 @@ export interface RunState {
   ended?: Ending;
   /** You read the ending and chose to keep going. */
   continued?: boolean;
+  /** You started with nobody and meant to: a house with no slaves in it isn't a lost run. */
+  free?: boolean;
 }
 
 export interface Ending {
@@ -164,7 +166,7 @@ export function tickRun(s: SaveState): ReportLine[] {
   if (run.ended && run.continued) return lines;
   const week = s.arcology.week;
   run.strain.broke = s.arcology.cash < -50000 ? run.strain.broke + 1 : 0;
-  run.strain.empty = week > 10 && owned(s).length === 0 ? run.strain.empty + 1 : 0;
+  run.strain.empty = week > 10 && owned(s).length === 0 && !run.free ? run.strain.empty + 1 : 0;
   run.strain.revolt = owned(s).length >= 3 && unrest(s) > 85 ? run.strain.revolt + 1 : 0;
 
   if (!run.ended) {

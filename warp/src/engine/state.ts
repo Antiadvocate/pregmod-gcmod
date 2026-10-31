@@ -60,6 +60,10 @@ export interface NewGameOptions {
   /** What you have between your legs, which the scenes follow. The rest is shaped on the You screen. */
   kit?: Kit;
   pronouns?: Pronouns;
+  /** Start with no slaves at all, your origin's household included. */
+  no_slaves?: boolean;
+  /** Start with nobody living in the city: no tenants, no citizens. People come to what you build. */
+  empty_city?: boolean;
 }
 
 const ARC_NAMES = ["Aurelia", "Vireo", "Marrow", "Halcyon", "Sable Rock", "Ninth Terrace", "Corvid", "The Spindle", "Tessellate", "Antioch"];
@@ -124,7 +128,7 @@ export function newGame(opts: NewGameOptions = {}): SaveState {
 
   const people: Record<string, Person> = {};
   const memory: Record<string, ReturnType<typeof newMemory>> = {};
-  const count = opts.starting_slaves ?? 3;
+  const count = opts.no_slaves ? 0 : opts.starting_slaves ?? 3;
   for (let i = 0; i < count; i++) {
     const p = generatePerson({ seed: `${seed}:start:${i}`, week: 1, central: true });
     p.economics.price_paid = 0;
@@ -195,13 +199,26 @@ export function newGame(opts: NewGameOptions = {}): SaveState {
     if (difficulty === "generous") state.arcology.cash += 50000;
     if (difficulty === "hard") state.arcology.cash = Math.round(state.arcology.cash * 0.55);
   }
+  // Nobody to start with, the origin's own household too: whoever lives here, you bring.
+  if (opts.no_slaves) {
+    for (const id of Object.keys(state.people)) if (state.people[id].status === "owned" || state.people[id].status === "indentured") { delete state.people[id]; delete state.memory[id]; }
+    const here = (id: string) => id === "owner" || !!state.people[id];
+    state.edges = state.edges.filter((e) => here(e.from) && here(e.to));
+  }
   newRun(state, seed, opts.twists ?? []);
+  if (opts.no_slaves && state.run) state.run.free = true;
   newStory(state, origin?.id ?? "none", seed, opts.supplication ?? false, opts.plot ?? true);
   for (const p of Object.values(state.people)) refresh(p, state.memory[p.id]);
   // The city starts with its people housed. It used to start 1,200 against room for 400 and spend
   // the first months emptying out.
   cityOf(state);
   state.arcology.population = Math.min(state.arcology.population, Math.round((400 + cityYield(state).housing) * 0.9));
+  // An empty city: no tenants on the inner ring and nobody living anywhere. Whoever comes, comes
+  // for what you build (engine/citizens).
+  if (opts.empty_city) {
+    for (const d of cityOf(state).districts) if (d.kind !== "spire") Object.assign(d, { kind: "vacant", level: 0, condition: 0, owner: "vacant" });
+    state.arcology.population = 0;
+  }
 
   state.market = rollMarkets(state);
   return state;
