@@ -60,6 +60,7 @@ import { ownerLine } from "./you";
 import { PLAIN_RULES, RECORD_RULES } from "./style";
 import { roomLine } from "./rooms";
 import { governorLine } from "./governor";
+import { familyLine } from "./pregnancy";
 
 /**
  * HOUSE STYLE. Shared across every prompt that generates prose so that the main narrator,
@@ -308,7 +309,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (cut) lines.push(`PAST SURGERY (already healed and in the past—only mention if the scene is specifically about it): ${cut}.`);
   const distinct = featuresLine(p);
   if (distinct) lines.push(distinct);
-  if (p.womb.fetuses.length) lines.push(`PREGNANT: ${p.womb.weeks} weeks along with ${p.womb.fetuses.length > 1 ? `${p.womb.fetuses.length} babies` : "one baby"}.`);
+  if (p.womb.fetuses.length) lines.push(`PREGNANT: ${p.womb.weeks} weeks along with ${p.womb.fetuses.length > 1 ? `${p.womb.fetuses.length} babies` : "one baby"}${p.womb.fetuses.some((f) => f.by_owner) ? ", and it's the owner's" : ""}.`);
+  if (p.age >= 18) lines.push(familyLine(s, p));
   const chest = breastsLine(p);
   if (chest) lines.push(chest);
   if (p.health.health < -20) lines.push(`HEALTH: unwell (${p.health.health}). ${p.health.injuries.filter((i) => !i.healed_week).map((i) => i.what).join("; ")}`);

@@ -245,7 +245,9 @@ export function endWeek(s: SaveState): WeekReport {
     // SEX, AND WHAT COMES OF IT
     const exposure = sexualExposure(p, s);
     if (exposure > 0 && !p.womb.contraceptives) {
-      const f = tryConception(s, p, null, exposure);
+      // The jobs that are only you: if she conceives there, it's yours.
+      const yours = ["please you", "be your Concubine", "fucktoy"].includes(p.assignment) && canSire(s);
+      const f = tryConception(s, p, null, exposure, { byOwner: yours });
       if (f) push(`${p.name} is pregnant.`, "neutral", 6, p.id);
     }
     const preg = tickPregnancy(s, p);

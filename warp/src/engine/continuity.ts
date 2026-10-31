@@ -9,6 +9,7 @@
  */
 import type { Person, SaveState } from "./types";
 import { shortName } from "./faceid";
+import { childrenOf } from "./pregnancy";
 
 const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const SPEAKS = "says|said|whispers|whispered|murmurs|asks|asked|answers|replies|mutters|hisses|shouts|yells|tells you|calls out";
@@ -26,6 +27,16 @@ export function continuitySlips(s: SaveState, prose: string, people: Person[]): 
     if (p.body.voice === 0) {
       const talks = new RegExp(`\\b${who}\\s+(?:${SPEAKS})\\b`, "i").test(prose) || new RegExp(`["“][^"”]{2,}["”],?\\s+${who}\\s+(?:${SPEAKS})\\b`, "i").test(prose);
       if (talks) out.push(`${p.name} is mute and cannot say a word. Give her no dialogue at all, only wordless sounds, gestures or writing.`);
+    }
+    // A pregnancy, or a baby, the game doesn't have. Written once, it was remembered, and every
+    // scene after it talked about a child nobody could find.
+    if (!p.womb.fetuses.length) {
+      const claims = new RegExp(`\\b${who}(?:'s|\\s+is|\\s+was)\\s+(?:now\\s+|already\\s+|visibly\\s+)?(?:pregnant|expecting|with child|carrying (?:your|the owner's|his|a|the) (?:child|baby))`, "i").test(prose)
+        || (solo && /["“][^"”]*\bI(?:'m| am)\s+(?:pregnant|carrying your (?:child|baby))/i.test(prose));
+      if (claims) out.push(`${p.name} is not pregnant. Don't write her pregnant, expecting or carrying a baby.`);
+    }
+    if (solo && !childrenOf(s, p).length && /\b(?:our|your) (?:baby|son|daughter|little one)\b/i.test(prose) && !p.womb.fetuses.length) {
+      out.push(`${p.name} has no child with the owner. There's no baby.`);
     }
     if (p.body.eyes === "blind" && new RegExp(`\\b${who}\\s+(?:${SEES})\\b`, "i").test(prose)) {
       out.push(`${p.name} is blind and sees nothing. She never looks at, watches or meets the eyes of anyone; she knows things by touch, sound and smell.`);

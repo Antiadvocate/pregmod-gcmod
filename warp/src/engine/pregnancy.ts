@@ -67,7 +67,7 @@ export function hasWomb(p: Person): boolean {
   return w.uterus !== "none";
 }
 
-export function tryConception(state: SaveState, mother: Person, fatherId: string | null, intensity: number): Fetus | null {
+export function tryConception(state: SaveState, mother: Person, fatherId: string | null, intensity: number, opts?: { byOwner?: boolean }): Fetus | null {
   const w = mother.womb;
   if (!hasWomb(mother)) return null;
   if (w.sterile || w.contraceptives || w.fetuses.length) return null;
@@ -79,7 +79,18 @@ export function tryConception(state: SaveState, mother: Person, fatherId: string
   const health = clamp(1 + mother.health.health / 200, 0.5, 1.4);
   const n = (w.exposures = (w.exposures ?? 0) + 1);
   if (rng(`conceive:${state.arcology.week}:${mother.id}:${n}`)() > base * health) return null;
+  return makeFetus(state, mother, fatherId, opts?.byOwner);
+}
 
+/** She's pregnant, now, whatever the dice would have said: for the cheats, and for a story that
+ *  says so. Null when there's no womb or she's already carrying. */
+export function conceive(state: SaveState, mother: Person, opts?: { fatherId?: string | null; byOwner?: boolean }): Fetus | null {
+  if (!hasWomb(mother) || mother.womb.fetuses.length) return null;
+  return makeFetus(state, mother, opts?.fatherId ?? null, opts?.byOwner);
+}
+
+function makeFetus(state: SaveState, mother: Person, fatherId: string | null, byOwner?: boolean): Fetus {
+  const w = mother.womb;
   const father = fatherId ? state.people[fatherId] : null;
   const seed = `${mother.id}:${fatherId}:${state.arcology.week}`;
   const genes = father ? mixGenes(genesOf(mother), genesOf(father), seed) : { ...genesOf(mother), conditions: [] };
@@ -92,6 +103,7 @@ export function tryConception(state: SaveState, mother: Person, fatherId: string
     genes,
     sex: r.chance(0.51) ? "XX" : "XY",
     viable: true,
+    ...(byOwner ? { by_owner: true } : {}),
   };
   w.fetuses.push(fetus);
   if (fatherId) w.sired_by[fatherId] = (w.sired_by[fatherId] ?? 0) + 1;
@@ -127,7 +139,20 @@ export function tickPregnancy(state: SaveState, p: Person): PregnancyWeek {
   if (w.weeks === 30) out.notes.push("heavily pregnant and slowing down");
 
   if (w.weeks >= TERM_WEEKS) {
-    const risk = clamp(0.06 + (p.health.health < 0 ? 0.15 : 0) + (w.fetuses.length - 1) * 0.06 - (state.arcology.facilities["clinic"]?.level ? 0.06 : 0), 0.01, 0.5);
+    const done = giveBirth(state, p);
+    out.born.push(...done.born);
+    out.notes.push(...done.notes);
+  }
+  return out;
+}
+
+/** The birth itself, at term or now. `safe`: nothing goes wrong (the cheats). */
+export function giveBirth(state: SaveState, p: Person, opts?: { safe?: boolean }): PregnancyWeek {
+  const w = p.womb;
+  const out: PregnancyWeek = { notes: [], born: [] };
+  if (!w.fetuses.length) return out;
+  {
+    const risk = opts?.safe ? 0 : clamp(0.06 + (p.health.health < 0 ? 0.15 : 0) + (w.fetuses.length - 1) * 0.06 - (state.arcology.facilities["clinic"]?.level ? 0.06 : 0), 0.01, 0.5);
     for (const f of w.fetuses) {
       if (rng(`birth:${state.arcology.week}:${p.id}:${f.id}`)() < risk) { w.miscarriages++; out.notes.push("the birth went badly"); continue; }
       w.births++;
@@ -173,10 +198,11 @@ function birth(state: SaveState, mother: Person, f: Fetus): Person {
   child.status = "owned";
   child.assignment = "rest";
   child.central = false;
+  child.parents = { mother: mother.id, ...(f.father_id ? { father: f.father_id } : {}), ...(f.by_owner ? { owner: true } : {}) };
   state.people[child.id] = child;
   state.memory[child.id] = { episodic: [], beliefs: [], facts: [], gist: [] };
   state.edges.push({ from: child.id, to: mother.id, warmth: 40, trust: 40, attraction: 0, power: -20, roles: ["mother"], weeks_known: 0 });
-  state.edges.push({ from: mother.id, to: child.id, warmth: 50, trust: 30, attraction: 0, power: 20, roles: ["daughter"], weeks_known: 0 });
+  state.edges.push({ from: mother.id, to: child.id, warmth: 50, trust: 30, attraction: 0, power: 20, roles: [f.sex === "XY" ? "son" : "daughter"], weeks_known: 0 });
   if (f.father_id && state.people[f.father_id]) {
     state.edges.push({ from: child.id, to: f.father_id, warmth: 20, trust: 20, attraction: 0, power: -20, roles: ["father"], weeks_known: 0 });
   }
@@ -236,4 +262,22 @@ export function tickChild(state: SaveState, p: Person): string[] {
     if (p.age === 18) notes.push(`${p.name} is eighteen. ${raised ? "She was raised in your nursery." : "She grew up without proper care."}`);
   }
   return notes;
+}
+
+/** Her children born in the arcology: by the record, or by the family tie for those born before
+ *  the record was kept. */
+export function childrenOf(state: SaveState, mother: Person): Person[] {
+  return Object.values(state.people).filter((c) => c.id !== mother.id && c.status !== "dead" &&
+    (c.parents?.mother === mother.id || state.edges.some((e) => e.from === c.id && e.to === mother.id && e.roles.includes("mother"))));
+}
+
+/** Pregnant or not, and her children, as facts for her card: the narrator used to be told only when
+ *  she was pregnant, and wrote her pregnant, and then wrote a baby nobody had. */
+export function familyLine(state: SaveState, p: Person): string {
+  const kids = childrenOf(state, p);
+  const kidsText = kids.length
+    ? `HER CHILDREN: ${kids.map((c) => `${c.name} (${c.body.dick ? "boy" : "girl"}, ${c.age < 1 ? "a baby" : `${c.age}`}${c.parents?.owner ? ", the owner's" : ""})`).join(", ")}.`
+    : "She has no children.";
+  if (p.womb.fetuses.length) return kidsText;
+  return hasWomb(p) ? `NOT PREGNANT, which is a fact. Never write her pregnant, expecting, or carrying anyone's baby. ${kidsText}` : kidsText;
 }
