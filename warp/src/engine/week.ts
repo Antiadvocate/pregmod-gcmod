@@ -498,7 +498,8 @@ export function endWeek(s: SaveState): WeekReport {
   oneEach(s);
   // At least one thing from the household every week, not only the city (engine/events). With a
   // model writing the week, engine/living tries to write her one first.
-  if (!writer) { const mine = ensureSlaveEvent(s); if (mine) fresh.push(mine); }
+  // One event's text breaking never takes the week with it.
+  if (!writer) { try { const mine = ensureSlaveEvent(s); if (mine) fresh.push(mine); } catch (e) { console.error(e); } }
   for (const e of fresh) {
     push(e.seed, e.severity === "major" ? "warning" : "neutral", 10, e.person);
   }

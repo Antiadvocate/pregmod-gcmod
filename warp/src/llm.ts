@@ -117,8 +117,25 @@ export function isRefusal(text: string): boolean {
  *  everything ahead of it has finished, which with a week's letters and events queued ahead could
  *  be never. And a call somebody is sitting watching (`urgent`) goes ahead of the background
  *  writing, though never ahead of another urgent one. */
-interface Job { go: () => void; urgent: boolean }
+interface Job { go: () => void; urgent: boolean; fail: (e: unknown) => void }
 const waiting: Job[] = [];
+
+/** What the line is doing right now, for a screen that's waiting on it: which call, on which model,
+ *  since when, and how many are queued behind it. Null when nothing is running. */
+let current: { tag: string; model: string; since: number; wait?: number } | null = null;
+export function nowCalling(): { tag: string; model: string; since: number; wait?: number; queued: number } | null {
+  return current ? { ...current, queued: waiting.length } : null;
+}
+
+/** Every request in flight and every one waiting, so the end of the week can be stopped. */
+const inflight = new Set<AbortController>();
+/** Bumped by a stop, so a call that was between leaving the queue and starting is stopped too. */
+let stops = 0;
+export function stopAllCalls(): void {
+  stops++;
+  for (const c of inflight) c.abort();
+  for (const j of waiting.splice(0)) j.fail(aborted());
+}
 let busy = false;
 let lastStart = 0;
 const aborted = () => Object.assign(new Error("aborted"), { name: "AbortError" });
@@ -129,18 +146,21 @@ function pump(): void {
   busy = true;
   job.go();
 }
-function queued<T>(fn: () => Promise<T>, signal?: AbortSignal, urgent = false): Promise<T> {
+function queued<T>(fn: () => Promise<T>, signal?: AbortSignal, urgent = false, label?: { tag: string; model: string }): Promise<T> {
+  const gen = stops;
   return new Promise<T>((ok, fail) => {
     const job: Job = {
-      urgent,
+      urgent, fail,
       go: async () => {
         try {
-          if (signal?.aborted) throw aborted();
+          if (signal?.aborted || gen !== stops) throw aborted();
+          if (label) current = { ...label, since: Date.now() };
           const gap = 400 - (Date.now() - lastStart);
           if (gap > 0) await sleep(gap, signal);
+          if (gen !== stops) throw aborted();
           lastStart = Date.now();
           ok(await fn());
-        } catch (e) { fail(e); } finally { busy = false; pump(); }
+        } catch (e) { fail(e); } finally { busy = false; current = null; pump(); }
       },
     };
     if (signal?.aborted) { fail(aborted()); return; }
@@ -193,7 +213,7 @@ export async function call(raw: CallOptions): Promise<LLMResult> {
   let lastErr = "";
   for (const model of chain) {
     try {
-      const res = await queued(() => once({ ...opts, model }), opts.signal, opts.urgent);
+      const res = await queued(() => once({ ...opts, model, onWait: (ms, st) => { if (current) current.wait = Date.now() + ms; opts.onWait?.(ms, st); } }), opts.signal, opts.urgent, { tag: opts.tag ?? (opts.json ? "bookkeeping" : "writing"), model });
       // A refusal is not a scene. Try the fallback model; if that refuses too, the caller gets a
       // failure and uses the game's own written version instead of printing the refusal.
       if (!opts.json && isRefusal(res.text)) {
@@ -235,6 +255,7 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 async function once(raw: CallOptions): Promise<LLMResult> {
   // The player's Stop, and the time limit, both end the request.
   const ctl = new AbortController();
+  inflight.add(ctl);
   let timedOut = false;
   const cut = () => { timedOut = true; ctl.abort(); };
   let timer = setTimeout(cut, REQUEST_LIMIT_MS);
@@ -247,6 +268,7 @@ async function once(raw: CallOptions): Promise<LLMResult> {
     throw e;
   } finally {
     clearTimeout(timer);
+    inflight.delete(ctl);
     raw.signal?.removeEventListener("abort", onStop);
   }
 }

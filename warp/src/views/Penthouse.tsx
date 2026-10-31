@@ -17,7 +17,9 @@ import { takeStats, chipsBetween, type Chip } from "../lib/delta";
 import PassingBy from "./PassingBy";
 import { DropStory } from "./DropStory";
 import { STYLE_NOTE } from "../engine/reign";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { nowCalling, stopAllCalls } from "../llm";
+import { rollback, snapshot } from "../engine/state";
 import type { SaveState } from "../engine/types";
 import { AlertTriangle, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import type { Route } from "../App";
@@ -49,7 +51,7 @@ import { modelsAvailable } from "../config";
 type Outcome = NonNullable<SaveState["outcomes"]>[number] & { writing?: boolean; concluding?: boolean };
 
 export default function Penthouse({ go }: { go: (r: Route) => void }) {
-  const { save, mutate } = useGame();
+  const { save, mutate, replace } = useGame();
   // Answered events stay in the save until you close them: going to another page, or reloading,
   // used to throw away the card, and with it what came of the event, after the event itself was
   // already gone. Only "still writing" and "working it out" live here, since they're about this page.
@@ -82,6 +84,9 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
   const [inventing, setInventing] = useState(false);
   const [cuckOpen, setCuckOpen] = useState(false);
   const [writing, setWriting] = useState("");
+  const [weekErr, setWeekErr] = useState("");
+  const [started, setStarted] = useState(0);
+  const stopper = useRef<{ stopped: boolean } | null>(null);
   const [aftermath, setAftermath] = useState<{ line: string; reactions: Reaction[]; setup?: string; person?: string; others?: string[]; title?: string; chose?: string; key?: number } | null>(null);
   const dyn = dynamicReadiness(save);
   const keeper = theKeeper(save);
@@ -101,20 +106,41 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
     .sort((a, b) => b.r.flight_risk - a.r.flight_risk);
 
   async function runWeek() {
-    setRunning(true);
+    setRunning(true); setWeekErr(""); setStarted(Date.now());
+    const stop = (stopper.current = { stopped: false });
+    // The week itself: if it breaks halfway, it's put back as it was rather than left half-done, and
+    // you're told what broke instead of the button spinning forever.
     let report = null as ReturnType<typeof endWeek> | null;
-    mutate((s) => { report = endWeek(s); });
+    try {
+      mutate((s) => { snapshot(s); report = endWeek(s); });
+    } catch (e) {
+      const back = rollback(save);
+      if (back) replace(back);
+      console.error(e);
+      setWeekErr(`The week didn't run, and nothing changed: ${String((e as Error)?.message ?? e)}`);
+      setRunning(false); setWriting("");
+      return;
+    }
+    mutate((s) => { s.snapshots.pop(); });
     // With a model, nothing the week puts in front of you is the canned text: the events, the
     // requests, the law lines, the letters and the week's paragraph are all written from what is
     // true now and what has already happened. The engine fixed what each of them does first.
+    // Stopping, or a failure, only loses the writing: the week has already happened.
     if (modelsAvailable() && !save.models.lean_mode) {
-      await liveWeek(save, report, (what) => setWriting(what));
+      try {
+        await liveWeek(save, report, (what) => { if (stop.stopped) throw Object.assign(new Error("stopped"), { name: "AbortError" }); setWriting(what); });
+      } catch (e) {
+        if (!stop.stopped && (e as Error)?.name !== "AbortError") { console.error(e); setWeekErr(`The week ran, but writing it up broke partway: ${String((e as Error)?.message ?? e)}`); }
+      }
       mutate(() => {});
     }
+    stopper.current = null;
     setWriting("");
     setRunning(false);
     go("report");
   }
+  /** Stop writing the week up: whatever's done stays, the rest is the game's own words. */
+  const stopWeek = () => { if (stopper.current) stopper.current.stopped = true; stopAllCalls(); };
 
   const asks = save.asks ?? [];
   const storyDue = !!pendingBeat(save);
@@ -434,6 +460,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
 
       {/* The one irreversible control, always in reach, saying what is still open. */}
       <div className="endweek">
+        {running_ ? <WeekStatus started={started} onStop={stopWeek} /> : null}
+        {weekErr && !running_ ? <div className="text-[12px] bad px-3 pb-2">{weekErr}</div> : null}
         <button className="endweek-btn" onClick={runWeek} disabled={running_}>
           {running_ ? <><Loader2 size={15} className="animate-spin" /> {writing ? `Writing ${writing}` : "Running the week"}</> : (
             <>
@@ -558,6 +586,22 @@ function HowSheKeepsYou() {
             {err ? <p className="text-[12px] bad mt-1">{err}</p> : null}
           </div>
         )) : null}
+    </div>
+  );
+}
+
+/** While the week is being written: what it's waiting on, for how long, and a way out. */
+function WeekStatus({ started, onStop }: { started: number; onStop: () => void }) {
+  const [, tick] = useState(0);
+  useEffect(() => { const id = setInterval(() => tick((n) => n + 1), 1000); return () => clearInterval(id); }, []);
+  const c = nowCalling();
+  const secs = (t: number) => Math.max(0, Math.round((Date.now() - t) / 1000));
+  const waitLeft = c?.wait ? Math.max(0, Math.round((c.wait - Date.now()) / 1000)) : 0;
+  return (
+    <div className="text-[11.5px] dim px-3 pb-1.5 flex items-center gap-2 flex-wrap">
+      <span>{secs(started)}s so far.</span>
+      {c ? <span>{waitLeft ? `${c.model} is busy, trying again in ${waitLeft}s` : `Waiting on ${c.model} (${c.tag}) for ${secs(c.since)}s`}{c.queued ? `, ${c.queued} more queued` : ""}.</span> : <span>Working out the week.</span>}
+      <button className="underline ml-auto" onClick={onStop} title="Keep the week, skip the rest of the writing">Stop writing and show me the week</button>
     </div>
   );
 }

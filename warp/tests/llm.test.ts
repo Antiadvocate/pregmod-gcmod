@@ -94,3 +94,29 @@ check("stopping doesn't fall through to the fallback model", !stopped.ok && stop
 g.fetch = oldFetch;
 if (hadLS) g.localStorage = oldLS; else delete g.localStorage;
 if (!hadLoc) delete g.location; else g.location = oldLoc;
+
+{
+  // End week sat on "Running the week" with nothing to say what it was waiting on, and no way out.
+  const g = globalThis as unknown as Record<string, unknown>;
+  const store: Record<string, string> = {};
+  const hadLS = "localStorage" in g, oldLS = g.localStorage, oldFetch = g.fetch, hadLoc = "location" in g, oldLoc = g.location;
+  g.localStorage = { getItem: (k: string) => store[k] ?? null, setItem: (k: string, v: string) => { store[k] = v; }, removeItem: (k: string) => { delete store[k]; } };
+  if (!hadLoc) g.location = { origin: "http://test" };
+  const { setApiKey } = await import("../src/config.ts");
+  const { call, nowCalling, stopAllCalls } = await import("../src/llm.ts");
+  setApiKey("sk-test");
+  // A provider that never answers.
+  g.fetch = (_u: string, init: { signal: AbortSignal }) => new Promise((_ok, no) => init.signal.addEventListener("abort", () => no(Object.assign(new Error("aborted"), { name: "AbortError" }))));
+  const hung = call({ system: "x", user: "y", model: "slow/model", tag: "the week" });
+  const queued = call({ system: "x", user: "z", model: "slow/model", tag: "letters" });
+  await new Promise((r) => setTimeout(r, 30));
+  const c = nowCalling();
+  check("while it waits, it says on what, and how many are behind it", c?.model === "slow/model" && c.tag === "the week" && c.queued === 1, c);
+  stopAllCalls();
+  const [a, b] = await Promise.all([hung, queued]);
+  check("stopping ends the one in flight and the ones queued", !a.ok && a.error === "stopped" && !b.ok && b.error === "stopped", [a.error, b.error]);
+  check("and nothing is left running", nowCalling() === null);
+  g.fetch = oldFetch;
+  if (hadLS) g.localStorage = oldLS; else delete g.localStorage;
+  if (!hadLoc) delete g.location; else g.location = oldLoc;
+}
