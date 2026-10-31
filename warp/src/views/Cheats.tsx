@@ -13,6 +13,7 @@ import { NATIONS } from "../data/people";
 import { FETISHES } from "../data/intimacy";
 import { LADDER, RUNG_BY_ID, romanceOf } from "../engine/romance";
 import { endWeek } from "../engine/week";
+import { conceive, giveBirth, hasWomb } from "../engine/pregnancy";
 import { read } from "../engine/obedience";
 import { reversalOf, nextEvent as chainEvent } from "../engine/reversal";
 import { CHAIN } from "../data/reversal";
@@ -254,6 +255,23 @@ export default function Cheats() {
             <div className="flex flex-wrap gap-2">
               <Button size="sm" onClick={() => mutate((s) => { perfect(s, s.people[target.id]); say(`${target.name} is perfect`); })}>perfect her</Button>
               <Button size="sm" onClick={() => mutate((s) => { s.people[target.id].womb.fetuses = []; s.people[target.id].womb.weeks = 0; s.people[target.id].body.belly = 0; say("no longer pregnant"); })}>end pregnancy</Button>
+              {hasWomb(target) && !target.womb.fetuses.length ? (
+                <Button size="sm" onClick={() => mutate((s) => { const f = conceive(s, s.people[target.id], { byOwner: true }); say(f ? `${target.name} is pregnant with your child` : "she can't carry one"); })}>make her pregnant (yours)</Button>
+              ) : null}
+              {hasWomb(target) ? (
+                <Button size="sm" onClick={() => {
+                  const name = window.prompt("Name the baby, or leave it blank and the game picks one:", "") ?? "";
+                  mutate((s) => {
+                    const mom = s.people[target.id];
+                    if (!mom.womb.fetuses.length) conceive(s, mom, { byOwner: true });
+                    // Carried to term, so the belly, the milk and the recovery are all there after.
+                    for (const f of mom.womb.fetuses) f.week = 40;
+                    const born = giveBirth(s, mom, { safe: true }).born;
+                    if (born[0] && name.trim()) born[0].name = name.trim().slice(0, 40);
+                    say(born.length ? `${mom.name} had your baby: ${born.map((c) => c.name).join(" and ")}. On your roster as a child.` : "nothing to deliver");
+                  });
+                }}>she's had your baby</Button>
+              ) : null}
               <Button size="sm" kind="danger" onClick={() => mutate((s) => { delete s.people[target.id]; setWho(""); say(`${target.name} removed`); })}>remove her</Button>
             </div>
             <div className="text-[11px] dim mt-2 font-mono">

@@ -311,6 +311,8 @@ export interface Fetus {
   viable: boolean;
   /** Set when the pregnancy is being carried in a tank instead of a person. */
   incubator?: boolean;
+  /** The owner's. The owner has no person record, so father_id can't say so. */
+  by_owner?: boolean;
 }
 
 /** The heritable record. Deliberately small: enough that a child resembles its parents in the
@@ -471,6 +473,8 @@ export interface Person {
   indenture_weeks?: number;
   exit_week?: number;
   exit_note?: string;
+  /** Who she was born to, when she was born in the arcology. `owner`: the owner is her father. */
+  parents?: { mother?: string; father?: string; owner?: boolean };
   /** Freed and living in your city: where, doing what, and how she feels about you. See engine/freed. */
   free_life?: import("./freed").FreeLife;
   /** How she may speak to you, if you've said. Unset: as a slave, unless her standing says
