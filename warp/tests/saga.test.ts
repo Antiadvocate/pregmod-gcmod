@@ -153,3 +153,16 @@ check("a face in a running story is kept", !!t.faces["oren kade"]);
   await writeNext(t, y.id, fake([{ ...bible, cast: [{ ...bible.cast[0], name: girl.name }, bible.cast[1]] }, chapter()]));
   check("or started over on a new idea", steerSaga(t, y.id, "A rival arcology's heiress arrives to buy the whole household.") && y.status === "unwritten" && y.seed.text.startsWith("A rival"));
 }
+
+import { storyWith } from "../src/engine/saga.ts";
+{
+  // "I should be able to catch up with them": a story with her, now, not when the dice offer one.
+  const s = newGame({ seed: "story-with", starting_slaves: 2 } as never);
+  const her = Object.values(s.people).find((p) => p.status === "owned")!;
+  const x = storyWith(s, her.id)!;
+  check("a story starts with her on demand", !!x && x.status === "unwritten" && !!x.seed.people?.includes(her.id), x?.seed);
+  check("and asking again goes back to it rather than starting another", storyWith(s, her.id) === x);
+  const other = Object.values(s.people).find((p) => p.status === "owned" && p.id !== her.id)!;
+  const y = storyWith(s, other.id, `${other.name.split(" ")[0]} catches the eye of a rich regular who wants to buy her`)!;
+  check("one in your own words is about what you wrote, and about her", y.seed.kind === "own" && /rich regular/.test(y.seed.text) && !!y.seed.people?.includes(other.id), y.seed);
+}

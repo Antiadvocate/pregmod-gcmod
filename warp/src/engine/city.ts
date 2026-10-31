@@ -101,9 +101,10 @@ export function cityOf(s: SaveState): CityState {
 export interface CityYield {
   cash: number; housing: number; prosperity: number; security: number;
   industry: number; reach: number; schooling: number; arms: number; rep: number;
+  mending: number; fare: number; clean: number;
 }
 
-const ZERO: CityYield = { cash: 0, housing: 0, prosperity: 0, security: 0, industry: 0, reach: 0, schooling: 0, arms: 0, rep: 0 };
+const ZERO: CityYield = { cash: 0, housing: 0, prosperity: 0, security: 0, industry: 0, reach: 0, schooling: 0, arms: 0, rep: 0, mending: 0, fare: 0, clean: 0 };
 
 /**
  * Summed over every district you hold, scaled by ring and by condition.
@@ -163,6 +164,7 @@ export function canRaise(s: SaveState, d: District, kind?: DistrictKind): string
   if (d.kind === "spire" && kind && kind !== "spire") return "that is your own building";
   if (d.level >= def.cap) return `${def.name} does not go past level ${def.cap}`;
   if (d.ring === 0 && k !== "spire") return "the core is reserved for the spire";
+  if (def.rings && !def.rings.includes(d.ring)) return `${def.name} only goes on ${def.rings.map((r) => RINGS[r].name).join(" or ")}`;
   const price = costToRaise(s, d, k);
   if (s.arcology.cash < price) return `costs ¤${price.toLocaleString()}, which you don't have`;
   return null;

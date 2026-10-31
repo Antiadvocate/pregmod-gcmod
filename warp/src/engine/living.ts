@@ -39,7 +39,7 @@ import { NOT_PAPERWORK, HOUSE_STYLE, BOOKKEEPER_SYSTEM, bookkeeperContext, perso
 import { PLAIN_RULES } from "./style";
 import { chronicle, chronicleBrief, chronicleOf } from "./chronicle";
 import { DYNAMIC_EFFECTS, effectList, dossier, npcEffect, resolveDynamic } from "./dynamic";
-import { EVENT_BY_ID, resolveEvent } from "./events";
+import { EVENT_BY_ID, ensureSlaveEvent, hasSlaveEvent, resolveEvent } from "./events";
 import { ACT_BY_ID } from "../data/intimacy";
 import { EXTRA_BY_ID } from "../data/rooms";
 import { empireOf, powerById } from "./power";
@@ -50,7 +50,7 @@ import { cultureBrief } from "./culture";
 import { worldBrief } from "./world";
 import { activeGovernors, governorBrief, governorshipOf, GOV_ORDERS } from "./governor";
 import { grantAsk, refuseAsk, voiceAsk } from "./asks";
-import { generateWant, pickWants } from "./wants";
+import { bestWant, generateWant, pickWants } from "./wants";
 import { generateGoing, pickGoings } from "./goings";
 import { aroundBrief, weekSnapshot } from "./snapshot";
 import { GOV_VOICE } from "./talk";
@@ -503,6 +503,13 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
   // Anything written this week that touches a storyline the player ended goes before they see it.
   purgeBanned(s);
   oneEach(s);
+  // And at least one thing from the household, every week: what the one with the most reason wants,
+  // however small; failing that, one of the game's own about her, written up like any other.
+  if (!hasSlaveEvent(s)) {
+    const w = bestWant(s);
+    if (w) { step(w.p.name); const e = await generateWant(s, w.p, w.reasons, snap); if (e) { s.events.push(e); purgeBanned(s); } }
+    if (!hasSlaveEvent(s)) { const e = ensureSlaveEvent(s); if (e) { step(s.people[e.person!]?.name ?? "her"); await writeEvent(s, e, snap); } }
+  }
   // Any request still waiting (a model failed, or it came from her page) is written as a moment too.
   for (const a of s.asks ?? []) { step(`${s.people[a.person]?.name ?? "her"}'s request`); a.text = await voiceAsk(s, a); }
   if (report) { step("the laws"); await writeLawPulse(s, report, snap); }

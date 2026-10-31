@@ -50,6 +50,8 @@ import { POSES, restingPose, type Pose } from "../lib/rig";
 import { renderDoll } from "../lib/dollrender";
 import { askHer } from "../engine/consult";
 import { condenseMemory, memoryTokens } from "../engine/condense";
+import { running, storyWith } from "../engine/saga";
+import { SagaCard } from "./Sagas";
 import SlaveArt, { SlaveHead } from "./SlaveArt";
 import { practise, skill } from "../engine/player";
 import { buildOf } from "../engine/build";
@@ -397,6 +399,7 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
         <div className="space-y-4">
           <AskHer id={id} />
           <OpenMoments person={id} title="Left unfinished with her" />
+          <StoryWith id={id} />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <Meter value={r.devotion} range={[-100, 100]} label={`devotion — ${r.label}`} />
             <Meter value={r.trust} range={[-100, 100]} label={`trust — ${r.trust_label}`} />
@@ -791,5 +794,28 @@ function Condense({ id }: { id: string }) {
       {modelsAvailable() ? <button className="underline" disabled={busy} title="One quick model call that merges and trims her older memories. Core memories and the last few weeks are kept as they are" onClick={() => void go()}>{busy ? "condensing…" : "condense"}</button> : null}
       {note ? <span>{note}</span> : null}
     </div>
+  );
+}
+
+/** A story with her, now, instead of waiting for one to be offered (engine/saga storyWith). */
+function StoryWith({ id }: { id: string }) {
+  const { save, mutate } = useGame();
+  const [open, setOpen] = useState(false);
+  const [idea, setIdea] = useState("");
+  const p = save.people[id];
+  const story = running(save).find((x) => x.seed.people?.includes(id));
+  if (!p) return null;
+  if (story) return <div><div className="text-[11px] uppercase tracking-wider dim mb-1.5">Her story</div><SagaCard id={story.id} /></div>;
+  if (!open) return <Button size="sm" kind="ghost" onClick={() => setOpen(true)}>Start a story with {p.name.split(" ")[0]}</Button>;
+  return (
+    <Card>
+      <div className="text-[12.5px] mid mb-2">What should it be about? Say it your way, or leave it empty and the game builds it from what's going on with her. It branches on what you choose, chapter by chapter, and you can start it over or steer it whenever you like.</div>
+      <textarea className="w-full min-h-[70px]" value={idea} onChange={(e) => setIdea(e.target.value)} placeholder={`e.g. ${p.name.split(" ")[0]} catches the eye of a rich regular at the club, and he wants to buy her`} />
+      <div className="flex gap-2 mt-2">
+        <Button size="sm" kind="primary" onClick={() => { mutate((s) => { storyWith(s, id, idea); }); setOpen(false); setIdea(""); }}>Start it</Button>
+        <Button size="sm" kind="ghost" onClick={() => setOpen(false)}>Never mind</Button>
+      </div>
+      {!modelsAvailable() ? <div className="text-[11.5px] dim mt-2">Stories are written by the model, so you'll need one set up in Settings to begin it.</div> : null}
+    </Card>
   );
 }

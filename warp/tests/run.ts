@@ -80,6 +80,7 @@ import "./resume.test.ts";
 import "./condense.test.ts";
 import "./upgrades.test.ts";
 import "./alone.test.ts";
+import "./districts.test.ts";
 import { report } from "./harness.ts";
 
 process.exit(report() ? 1 : 0);

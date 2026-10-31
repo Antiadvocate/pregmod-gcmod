@@ -8,6 +8,7 @@
  * if it still breaks it, the player is shown what slipped.
  */
 import type { Person, SaveState } from "./types";
+import { shortName } from "./faceid";
 
 const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const SPEAKS = "says|said|whispers|whispered|murmurs|asks|asked|answers|replies|mutters|hisses|shouts|yells|tells you|calls out";
@@ -32,8 +33,10 @@ export function continuitySlips(s: SaveState, prose: string, people: Person[]): 
   }
   for (const f of Object.values(s.faces ?? {})) {
     if (!f.fate && !f.banned) continue;
-    const name = esc(f.name.split(" ")[0]);
-    if (name.length < 3 || people.some((p) => p.name.split(" ")[0] === f.name.split(" ")[0])) continue;
+    const short = shortName(f.name);
+    if (people.some((p) => p.name.split(" ")[0] === (short ?? f.name))) continue;
+    // A description ("the laundry girl") is only ever matched whole.
+    const name = esc(short ?? f.name);
     if (f.banned && new RegExp(`\\b${esc(f.name)}\\b|\\b${name}\\b`, "i").test(prose)) out.push(`${f.name} is out of the story for good. Don't mention them.`);
     else if (f.fate && (f.fate.fate === "dead" || f.fate.fate === "exiled") && new RegExp(`\\b${name}(?:\\s+\\w+)?\\s+(?:${ACTS})\\b`, "i").test(prose)) {
       out.push(`${f.name} is ${f.fate.fate === "dead" ? "dead" : "gone from the arcology"} and can't be in the scene.`);

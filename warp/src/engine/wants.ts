@@ -150,6 +150,16 @@ export function pickWants(s: SaveState): { p: Person; reasons: Reason[]; score: 
   return out;
 }
 
+/** Whoever has the most reason to want something this week, however little: for a week when nobody
+ *  crossed the bar and the household would otherwise have nothing to say (engine/events ensureSlaveEvent). */
+export function bestWant(s: SaveState): { p: Person; reasons: Reason[]; score: number } | null {
+  return Object.values(s.people)
+    .filter((p) => (p.status === "owned" || p.status === "indentured") && p.age >= 18 && !p.governs && p.psyche.state !== "broken")
+    .map((p) => { const reasons = reasonsOf(s, p); return { p, reasons, score: wantScore(s, p, reasons) }; })
+    .filter((x) => x.reasons.length >= 1)
+    .sort((a, b) => b.score - a.score)[0] ?? null;
+}
+
 export const WANT_SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. It's about ONE of the owner's slaves and what SHE wants this week, which might be to get something, stop something, change something, say something, or do something about her situation, whether by asking, bargaining, sulking, scheming, seducing, defying or running.
 
 How to build it:

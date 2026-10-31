@@ -18,6 +18,7 @@ import { newMemory } from "./memory";
 import { refresh } from "./obedience";
 import { startRumor } from "./social";
 import { registerEvents, fireEvent, type EventDef } from "./events";
+import { cityOf } from "./city";
 
 export type Defense = "walls" | "drones" | "armory" | "sentinels";
 export const DEFENSES: Record<Defense, { name: string; note: string; cost: number; power: number }> = {
@@ -76,6 +77,8 @@ export function garrison(s: SaveState): { total: number; parts: string[] } {
     ["militia", f["plot_militia"] ? 1.5 : 0],
     ["knights", f["plot_knights"] ? 1.5 : 0],
     ["bodyguard", guardStrength(s)],
+    // The border wall: raiders meet concrete and towers before they meet anybody of yours.
+    ["border wall", cityOf(s).districts.filter((d) => d.kind === "wall" && d.owner === "you").reduce((n, d) => n + d.level * 0.8, 0)],
     // The barracks' armoury: the women who guard you are armed properly, and it shows in a fight.
     ["barracks", arc.facilities["barracks"]?.upgrades?.["armory"] ? (arc.facilities["barracks"].workers.length) * 0.4 : 0],
     ["arsenal", forces(s).defence],

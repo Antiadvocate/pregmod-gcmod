@@ -66,7 +66,7 @@ export interface Face {
 }
 
 
-import { adultText, keyOf, facesOf, findFace, giveId, oneOfOurs } from "./faceid";
+import { adultText, keyOf, facesOf, findFace, giveId, oneOfOurs, shortName } from "./faceid";
 export { keyOf, facesOf, findFace, faceKey, settleFaces } from "./faceid";
 
 const NATION_NAMES = NATIONS.map((n) => n.name);
@@ -179,10 +179,12 @@ export function facesIn(s: SaveState, text: string, max = 3): Face[] {
   const all = knownFaces(s);
   if (!all.length || !text) return [];
   const firstCount = new Map<string, number>();
-  for (const f of all) { const fn = f.name.split(" ")[0].toLowerCase(); firstCount.set(fn, (firstCount.get(fn) ?? 0) + 1); }
+  for (const f of all) { const fn = shortName(f.name)?.toLowerCase(); if (fn) firstCount.set(fn, (firstCount.get(fn) ?? 0) + 1); }
   const hits: { f: Face; at: number }[] = [];
   for (const f of all) {
-    const names = [f.name, f.short, ...(f.aliases ?? []).filter((a) => a.includes(" ")), firstCount.get(f.name.split(" ")[0].toLowerCase()) === 1 ? f.name.split(" ")[0] : undefined]
+    // "the courier" has no first name to go by: "the" is in every sentence (engine/faceid shortName).
+    const first = shortName(f.name);
+    const names = [f.name, f.short, ...(f.aliases ?? []).filter((a) => a.includes(" ")), first && firstCount.get(first.toLowerCase()) === 1 ? first : undefined]
       .filter((x): x is string => !!x && x.length > 2);
     let at = -1;
     for (const n of names) {

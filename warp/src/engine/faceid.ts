@@ -7,6 +7,21 @@ import type { SaveState } from "./types";
 import type { Face } from "./faces";
 
 export const keyOf = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
+
+/** Words that start a description rather than a name: "the laundry girl", "an old guard". */
+const NOT_A_NAME = new Set(["the", "a", "an", "her", "his", "their", "my", "your", "our", "old", "young", "little", "big", "some", "one", "that", "this", "another", "other", "new", "girl", "woman", "man", "boy", "guard", "officer", "doctor", "nurse", "priest", "priestess", "mister", "miss", "missus", "mr", "mrs", "ms", "dr", "lady", "lord", "sir", "madam", "uncle", "aunt", "sister", "brother", "mother", "father"]);
+
+/**
+ * The short name a piece of writing would use for somebody: "Dario Bellini" is "Dario". A face
+ * that's a description and not a name ("the laundry girl") has none, and only its whole name counts:
+ * checking for its first word was checking for "the", which is in every sentence ever written, so a
+ * dropped laundry girl flagged every scene as a slip and threw away every event.
+ */
+export function shortName(name: string, anyCase = false): string | null {
+  const first = name.trim().split(/\s+/)[0] ?? "";
+  if (first.length < 3 || (!anyCase && first[0] !== first[0].toUpperCase()) || NOT_A_NAME.has(first.toLowerCase())) return null;
+  return first;
+}
 export const facesOf = (s: SaveState): Record<string, Face> => (s.faces ??= {});
 const firstOf = (name: string) => keyOf(name).split(" ")[0];
 
@@ -43,9 +58,11 @@ export function findFace(s: SaveState, ref: string): Face | undefined {
   const list = Object.values(all);
   const named = list.find((f) => (f.aliases ?? []).some((a) => keyOf(a) === k) || (f.short && keyOf(f.short) === k));
   if (named) return named;
-  const fn = firstOf(k);
-  if (fn.length < 3) return undefined;
-  const same = list.filter((f) => firstOf(f.name) === fn || (f.aliases ?? []).some((a) => firstOf(a) === fn));
+  // By first name, only when it is one: "the courier" has none, or it'd find "the laundry girl".
+  const fn = shortName(r.replace(/^face:/i, ""), true)?.toLowerCase();
+  if (!fn) return undefined;
+  const short = (n: string) => shortName(n, true)?.toLowerCase();
+  const same = list.filter((f) => short(f.name) === fn || (f.aliases ?? []).some((a) => short(a) === fn));
   return same.length === 1 ? same[0] : undefined;
 }
 
