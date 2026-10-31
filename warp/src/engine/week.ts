@@ -49,7 +49,7 @@ import { tickSociety } from "./society";
 import { tickPodolatry } from "./podolatry";
 import { tickCuckold } from "./cuckold";
 import { runOrders } from "./rules";
-import { selectEvents } from "./events";
+import { ensureSlaveEvent, selectEvents } from "./events";
 import { selectClassics } from "./classics";
 import { rollMarkets, recruitResult } from "./market";
 import { rng } from "./rng";
@@ -496,6 +496,9 @@ export function endWeek(s: SaveState): WeekReport {
   // than one thing waiting (engine/pending).
   purgeBanned(s);
   oneEach(s);
+  // At least one thing from the household every week, not only the city (engine/events). With a
+  // model writing the week, engine/living tries to write her one first.
+  if (!writer) { const mine = ensureSlaveEvent(s); if (mine) fresh.push(mine); }
   for (const e of fresh) {
     push(e.seed, e.severity === "major" ? "warning" : "neutral", 10, e.person);
   }

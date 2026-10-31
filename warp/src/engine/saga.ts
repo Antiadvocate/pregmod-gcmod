@@ -307,6 +307,34 @@ export function steerSaga(s: SaveState, id: string, idea: string): boolean {
   return true;
 }
 
+/**
+ * A story with one of yours, on your say-so, instead of waiting weeks for the dice to offer one.
+ * What you want it to be about, in your words, or left blank, the strongest thing going on with her
+ * (what she resents, what she's into and getting worse, what her devotion is about to cost). One
+ * open story per woman: if there's one already, that's the one to go back to. It waits on her page
+ * and the Story screen until you begin it, and branches like any other.
+ */
+export function storyWith(s: SaveState, personId: string, idea = ""): Saga | null {
+  const p = s.people[personId];
+  if (!p) return null;
+  const open = running(s).find((x) => x.seed.people?.includes(personId));
+  if (open) return open;
+  const st = sagasOf(s);
+  const week = s.arcology.week;
+  const best = seedsFor(s).filter((x) => x.seed.people?.includes(personId)).sort((a, b) => b.weight - a.weight)[0]?.seed;
+  const seed: SagaSeed = best
+    ? { ...best, id: `${best.id}:with:${week}` }
+    : { id: `with:${personId}:${week}`, kind: "slave", people: [personId], text: `${p.name} works as ${p.assignment}. The player wants a story with her: what she wants and what she's into, who in the arcology wants her or gets in her way, and what the owner lets happen.` };
+  const x: Saga = { id: `saga_${week}_${st.list.length}`, seed, status: "unwritten", title: "", premise: "", stakes: "", acts: [], act: 0, cast: [], facts: [], paths: [], history: [], due: week, started: week };
+  st.list.push(x);
+  st.used.push(seed.id);
+  if (idea.trim()) {
+    steerSaga(s, x.id, idea);
+    if (!x.seed.people?.includes(personId)) x.seed.people = [personId, ...(x.seed.people ?? [])];
+  }
+  return x;
+}
+
 /** Start a running story over from the same seed: a new outline, new people, a new first chapter. */
 export function restartSaga(s: SaveState, id: string): boolean {
   const x = sagasOf(s).list.find((q) => q.id === id);

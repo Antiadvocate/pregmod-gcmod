@@ -38,6 +38,7 @@ import { aroundBrief, cityPicture } from "./snapshot";
 import { rng } from "./rng";
 import { betweenEvents, forcedAllowed, rulesLine, sexBetween } from "./houserules";
 import { pairFitLine } from "./fit";
+import { shortName } from "./faceid";
 
 export interface Going {
   /** Cooldown key: the same pair, or the same woman and the same kind, sits out a few weeks. */
@@ -127,8 +128,8 @@ export function goingsCandidates(s: SaveState): Going[] {
     const where = workplaceOf(s, p);
     // Not the same outsider again: whoever was in her last goings-on sits out, and what the owner
     // said or did about the ones that remain comes with them.
-    const lately = new Set(recentFor(s, p.id).flatMap((g) => g.who.map((w) => w.split(" ")[0])));
-    const ties = tiedTo(s, p.id).filter((t) => !t.face.fate && !lately.has(t.face.name.split(" ")[0]));
+    const lately = new Set(recentFor(s, p.id).flatMap((g) => g.who.map((w) => shortName(w) ?? w)));
+    const ties = tiedTo(s, p.id).filter((t) => !t.face.fate && !lately.has(shortName(t.face.name) ?? t.face.name));
     const talk = s.rumors.filter((r) => r.about === p.id && r.week >= week - 2).slice(0, 1);
     const facts = [
       where.withYou ? `Her place is with the owner (${p.assignment}), and the people around her are the owner's guests, staff and visitors.` : `She works ${inPlace(where.name)}, which is ${where.look}. The people there are whoever works there or comes there.`,

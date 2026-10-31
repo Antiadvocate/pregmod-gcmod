@@ -38,3 +38,30 @@ import { hotHooks } from "../src/engine/chronicle.ts";
   liftBan(s, s.bans![0].id);
   check("and it can be brought back", !s.bans!.length && !s.faces!["mireille faucher"].banned && !isBanned(s, "laundry"));
 }
+
+import { continuitySlips } from "../src/engine/continuity.ts";
+import { facesIn } from "../src/engine/faces.ts";
+{
+  // Someone dropped who was only ever "the laundry girl". Her first word is "the": every scene was
+  // flagged "Continuity slip: the laundry girl is out of the story for good", and every event was
+  // thrown away, so the player's slaves stopped having anything happen to them at all.
+  const s = newGame({ seed: "bans-the", starting_slaves: 1 } as never);
+  const her = Object.values(s.people).find((p) => p.status === "owned")!;
+  const lg = meet(s, { name: "the laundry girl" })!;
+  dropStoryline(s, null, ["laundry", "girl"], [lg.id ?? "the laundry girl"], "laundry");
+  const ordinary = `${her.name} kneels on the rug and takes the owner's cock in her mouth. The girl next door can hear everything.`;
+  check("an ordinary scene isn't a slip", continuitySlips(s, ordinary, [her]).length === 0, continuitySlips(s, ordinary, [her]));
+  check("nor is an ordinary event thrown away", !isBanned(s, ordinary));
+  check("but she's still caught by her whole name", continuitySlips(s, "Then the laundry girl walks in.", [her]).length === 1 && isBanned(s, "Then the laundry girl walks in."));
+  check("and so is what the storyline was about", isBanned(s, "There's a fight in the laundry room."));
+
+  const c = meet(s, { name: "the courier" })!;
+  check("a face called 'the something' isn't in every sentence", !facesIn(s, "She hands the owner the bottle.").includes(c));
+  check("only where it's named", facesIn(s, "The courier is at the door.".replace("The", "the")).includes(c));
+}
+{
+  const s = newGame({ seed: "bans-case", starting_slaves: 1 } as never);
+  const d = meet(s, { name: "Dario Bellini" })!;
+  const { findFace } = await import("../src/engine/faceid.ts");
+  check("a lowercase first name still finds its face", findFace(s, "dario") === d);
+}

@@ -15,7 +15,7 @@
  */
 import type { PendingEvent, SaveState } from "./types";
 import type { Face } from "./faces";
-import { facesOf, keyOf } from "./faceid";
+import { facesOf, keyOf, shortName } from "./faceid";
 
 export interface Ban { id: string; week: number; words: string[]; faces: string[]; what: string }
 
@@ -24,6 +24,9 @@ export const bansOf = (s: SaveState): Ban[] => (s.bans ??= []);
 const STOP = new Set(["about", "after", "again", "being", "could", "every", "from", "have", "here", "into", "just", "like", "more", "much", "only", "over", "some", "than", "that", "their", "them", "then", "there", "these", "they", "this", "what", "when", "where", "which", "while", "with", "would", "your", "yours", "she's", "her's", "owner", "master", "slave", "slaves", "week", "night", "today", "something", "someone", "nothing", "around", "before", "still", "looks", "says", "tells", "wants"]);
 
 const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** Words too ordinary to end a storyline over: a ban on "girl" or "work" would take every event
+ *  in the game with it. Ignored in bans already saved, and never suggested. */
+const GENERIC = new Set(["girl", "girls", "woman", "women", "man", "men", "boy", "boys", "people", "person", "house", "home", "room", "work", "works", "working", "city", "arcology", "body", "time", "thing", "things", "guard", "guards", "lady", "ladies", "wife", "husband", "friend", "friends", "talk", "help", "need", "needs", "back", "down", "first", "last", "good", "great", "little", "long", "make", "made", "take", "took", "know", "knows"]);
 /** A word and the words built on it: "laundr" catches laundry and laundress. */
 const wordRe = (w: string) => new RegExp(`\\b${esc(w.toLowerCase().replace(/(ies|es|s|ing|ed|y)$/, "").slice(0, Math.max(4, w.length - 2)))}`, "i");
 
@@ -37,22 +40,23 @@ export function suggestBan(s: SaveState, e: PendingEvent): { words: string[]; fa
   const ours = new Set(Object.values(s.people).flatMap((p) => [p.name, p.surname ?? ""].map((x) => x.toLowerCase())));
   const all = Object.values(facesOf(s));
   const text = `${e.written?.title ?? ""} ${e.hook ?? ""} ${e.seed}`;
-  const faces = all.filter((f) => new RegExp(`\\b${esc(f.name.split(" ")[0])}\\b`, "i").test(text));
+  const faces = all.filter((f) => new RegExp(`\\b${esc(shortName(f.name) ?? f.name)}\\b`, "i").test(text));
   const named = new Set(faces.flatMap((f) => f.name.toLowerCase().split(" ")));
   const pool = `${e.written?.title ?? ""} ${e.hook ?? ""}`.toLowerCase().match(/[a-z][a-z'-]{3,}/g) ?? [];
-  const words = [...new Set(pool.filter((w) => !STOP.has(w) && !ours.has(w) && !named.has(w)))].slice(0, 4);
+  const words = [...new Set(pool.filter((w) => !STOP.has(w) && !GENERIC.has(w) && !ours.has(w) && !named.has(w)))].slice(0, 4);
   return { words, faces };
 }
 
 /** Whether a piece of writing is about something the player ended. */
 export function isBanned(s: SaveState, text: string): boolean {
   if (!text || !bansOf(s).length) return false;
-  if (bansOf(s).some((b) => b.words.some((w) => w.trim().length >= 3 && wordRe(w.trim()).test(text)))) return true;
-  // A first name alone counts, unless one of the player's own women answers to it.
+  if (bansOf(s).some((b) => b.words.some((w) => w.trim().length >= 3 && !GENERIC.has(w.trim().toLowerCase()) && wordRe(w.trim()).test(text)))) return true;
+  // A first name alone counts, unless one of the player's own women answers to it. A face that's a
+  // description ("the laundry girl") only counts whole.
   const ours = new Set(Object.values(s.people).map((p) => p.name.split(" ")[0].toLowerCase()));
   return bannedFaces(s).some((f) => {
-    const first = f.name.split(" ")[0];
-    return new RegExp(`\\b${esc(f.name)}\\b`, "i").test(text) || (!ours.has(first.toLowerCase()) && new RegExp(`\\b${esc(first)}\\b`, "i").test(text));
+    const first = shortName(f.name);
+    return new RegExp(`\\b${esc(f.name)}\\b`, "i").test(text) || (!!first && !ours.has(first.toLowerCase()) && new RegExp(`\\b${esc(first)}\\b`, "i").test(text));
   });
 }
 

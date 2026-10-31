@@ -552,6 +552,78 @@ export function selectEvents(s: SaveState, opts: { writer?: boolean } = {}): Pen
   return out;
 }
 
+/* ── at least one from the household ───────────────────────────────────────────────────────── */
+
+/** Whether something one of your own slaves is in is waiting. */
+export function hasSlaveEvent(s: SaveState): boolean {
+  return s.events.some((e) => [e.person, e.other].some((id) => !!id && ["owned", "indentured"].includes(s.people[id]?.status ?? "")));
+}
+
+/** She comes to see you. The floor under the week, when nothing else about her came up. */
+const CHECK_IN: EventDef = {
+  id: "slave_checkin", severity: "minor", endogenous: true,
+  // Never drawn by the dice: only put on the table by ensureSlaveEvent.
+  candidates: () => [], weight: () => 0,
+  seed: (_s, c) => checkInSeed(c.person!),
+  options: [
+    { id: "bed", label: "Take her to bed", resolve: (s, _e, p) => { const o = resolveAct(s, p!, p!.body.vagina !== null ? "vaginal" : "anal"); applyTreatment(p!, { kind: "recognition", size: 2, why: "you took her to bed when she came to you" }, s.arcology.week); const m = s.memory[p!.id]; if (m) remember(m, { content: "I went to the owner's room and the owner took me to bed", week: s.arcology.week, importance: 5, charge: "warm" }); const n = p!.name.split(" ")[0]; return "error" in o ? `You take ${n} to your bed and keep her there until she stops asking for anything.` : `You take ${n} to your bed. She was hoping you would, and she makes sure you know it before she's done.`; } },
+    { id: "listen", label: "Sit her down and hear what's on her mind", resolve: (s, _e, p) => { applyTreatment(p!, { kind: "recognition", size: 3, why: "you sat her down and listened" }, s.arcology.week); return `${p!.name.split(" ")[0]} sits on the floor by your chair and talks. It takes a while to get to the thing she actually came about.`; } },
+    { id: "work", label: "Send her back to work", resolve: (s, _e, p) => { applyTreatment(p!, { kind: "neglect", size: 1, why: "you sent her back to work when she came to you" }, s.arcology.week); return `${p!.name.split(" ")[0]} says "Yes, Master," and goes. She doesn't come up again on her own for a while.`; } },
+    { id: "punish", label: "Punish her for wasting your time", resolve: (s, _e, p) => { applyTreatment(p!, { kind: "coercion", size: 3, why: "you punished her for coming to you" }, s.arcology.week); p!.bond.fear = clamp(p!.bond.fear + 4, 0, 100); return `You bend ${p!.name.split(" ")[0]} over the desk and give her ten for wasting your time. She thanks you for each one, and she won't come up uninvited again.`; } },
+  ],
+};
+
+function checkInSeed(p: Person): string {
+  const n = p.name.split(" ")[0];
+  const r = read(p);
+  const doing = p.persona.interests?.[0];
+  if (r.fragility > 0.65 && p.bond.fear > 45) return `${n} is outside your door when you come back, kneeling on the tiles where she's been for an hour, too scared to knock. When you open it she flinches and says she just wanted to ask if she's been doing well. Her hands are shaking.`;
+  if (p.psyche.arousal > 60) return `${n} lets herself into your office in nothing but a shirt that isn't hers, closes the door with her ass, and says she's been wet since breakfast and can't think about anything else. "Please, Master. I'll be quick. Or slow. Whatever you want."`;
+  if (r.devotion > 50) return `${n} brings you a drink you didn't ask for and doesn't leave. She hovers by your chair, then sits on the arm of it, then says she hasn't had you to herself all week and she misses it.${doing ? ` She's been ${doing.replace(/^(\w+)s\b/, "$1ing")} to keep her mind off it.` : ""}`;
+  if (r.devotion < -15) return `${n} has been sent up to you by the staff for a scowl that's lasted three days. She stands in front of your desk with her arms crossed, chin up, and says she hasn't done anything. She clearly has something to say and is waiting for you to make her say it.`;
+  return `${n} knocks and comes in when you call. She says she was told to keep out of your way, but she hasn't seen you in days, and she wanted to know if you still want her. She's dressed for it, just in case.${doing ? ` You know she's been ${doing.replace(/^(\w+)s\b/, "$1ing")}.` : ""}`;
+}
+
+/**
+ * The floor under the week: if nothing about any of your slaves is waiting, put one thing on the
+ * table that is. First one of the game's own events about one of them (the classics, a woman's
+ * wants and troubles), weighted as usual, and if none fits, she comes to see you. Returns it, or
+ * null when something was already waiting or you own nobody.
+ */
+export function ensureSlaveEvent(s: SaveState): PendingEvent | null {
+  if (hasSlaveEvent(s)) return null;
+  const week = s.arcology.week;
+  const log = (s.event_log ??= {});
+  const mine = owned(s).filter((p) => p.age >= 18);
+  if (!mine.length) return null;
+  const ours = new Set(mine.map((p) => p.id));
+  const waiting = new Set(s.events.map((e) => e.kind));
+  const pool: { def: EventDef; c: { person?: Person; facility?: string }; w: number }[] = [];
+  for (const def of EVENTS) {
+    if (!def.endogenous || waiting.has(def.id) || !businessAllowed(s, def.id)) continue;
+    for (const c of def.candidates(s)) {
+      if (!c.person || !ours.has(c.person.id)) continue;
+      if (week - (log[`${def.id}:${c.person.id}`] ?? -99) < 4) continue;
+      const w = def.weight(s, c);
+      if (w > 0) pool.push({ def, c, w });
+    }
+  }
+  const r = rng(`slave-event:${s.id ?? ""}:${week}`);
+  // Whoever you've left alone longest is likeliest to be the one who comes.
+  const seen = (p: Person) => log[`slave_checkin:${p.id}`] ?? -99;
+  const longest = Math.min(...mine.map(seen));
+  const pick = pool.length ? r.weighted(pool, (x) => x.w)
+    : { def: CHECK_IN, c: { person: r.pick(mine.filter((p) => seen(p) === longest)) }, w: 1 };
+  log[`${pick.def.id}:${pick.c.person!.id}`] = week;
+  const e: PendingEvent = {
+    id: `e${week}-${pick.def.id}-${pick.c.person!.id}`, kind: pick.def.id, person: pick.c.person!.id, facility: pick.c.facility,
+    seed: pick.def.seed(s, pick.c), options: pick.def.options.map((o) => ({ id: o.id, label: o.label, note: o.note })),
+    week, severity: pick.def.severity,
+  };
+  s.events.push(e);
+  return e;
+}
+
 export function resolveEvent(s: SaveState, e: PendingEvent, optionId: string): string {
   const def = EVENT_BY_ID[e.kind];
   const opt = def?.options.find((o) => o.id === optionId);
@@ -569,3 +641,5 @@ export function resolveEvent(s: SaveState, e: PendingEvent, optionId: string): s
   s.notifications.push({ id: `n-${e.id}`, week: s.arcology.week, text: line, kind: e.severity === "major" ? "warning" : "info", person: e.person, seen: false });
   return line;
 }
+
+registerEvents([CHECK_IN]);

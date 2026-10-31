@@ -28,3 +28,25 @@ import { pickSubject } from "../src/engine/dynamic.ts";
     if (w === 5) check("a week never leaves anyone with two", true);
   }
 }
+
+import { ensureSlaveEvent, hasSlaveEvent, resolveEvent } from "../src/engine/events.ts";
+{
+  // The player got events from the city and nothing from their own women, week after week.
+  const s = newGame({ seed: "every-week", starting_slaves: 2 } as never);
+  s.models.tension = 0;
+  let every = true;
+  for (let w = 0; w < 6; w++) {
+    // Deal with whatever's waiting, the way a player does, so the next week starts clean.
+    for (const e of [...s.events]) resolveEvent(s, e, e.options[0].id);
+    endWeek(s);
+    if (!hasSlaveEvent(s)) every = false;
+  }
+  check("every week, something from one of your own slaves is waiting", every, s.events.map((e) => e.kind));
+
+  s.events = [];
+  const e = ensureSlaveEvent(s)!;
+  check("the floor puts one on an empty table", !!e && !!e.person && hasSlaveEvent(s));
+  check("and never a second", ensureSlaveEvent(s) === null);
+  const line = resolveEvent(s, e, e.options[0].id);
+  check("and it can be answered", !!line, line);
+}

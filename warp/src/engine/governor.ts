@@ -497,7 +497,11 @@ export function tickGovernors(s: SaveState): { cash: number; lines: GovLine[] } 
       if (!f.gone || f.gone.fate === "bought" || week - f.gone.week < 3 || g.faces.some((x) => x.after === f.name)) continue;
       const nation = r.weighted(NATIONS, (n) => n.weight);
       const male = r.chance(0.55);
-      const next: Face = { name: `${r.pick(male ? nation.male : nation.female)} ${r.pick(nation.surnames)}`, role: f.role, after: f.name,
+      // A new name: the dead man's own, or anybody's already on file there, would be him back.
+      const taken = new Set([...g.faces.map((x) => x.name), ...Object.values(s.faces ?? {}).map((x) => x.name)]);
+      let name = "";
+      for (let tries = 0; tries < 12 && (!name || taken.has(name)); tries++) name = `${r.pick(male ? nation.male : nation.female)} ${r.pick(nation.surnames)}`;
+      const next: Face = { name, role: f.role, after: f.name,
         leaning: f.gone.fate === "dead" || f.gone.fate === "jailed" ? 0.2 : f.gone.fate === "ruined" ? -0.2 : 0 };
       g.faces.push(next);
       const text = `${next.name} is ${f.role} in ${g.name} now, since ${f.name} was ${FATE_WORDS[f.gone.fate]}. ${next.leaning > 0 ? "They're being very careful around her." : "They remember what happened to the last one, and they're quieter about it."}`;
