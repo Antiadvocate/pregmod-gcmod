@@ -129,7 +129,7 @@ export async function writeWedding(s: SaveState, id: string, terms: string, sign
   };
   if (!p || !modelsAvailable()) return fallback;
   const { system, user } = marriagePrompt(s, p, terms);
-  const res = await call({ system, user, model: s.models.narrator_model, fallback: s.models.fallback_model, json: true, maxTokens: 3500, temperature: 0.85, signal, urgent: true });
+  const res = await call({ narration: true, tag: "wedding", system, user, model: s.models.narrator_model, fallback: s.models.fallback_model, json: true, maxTokens: 3500, temperature: 0.85, signal, urgent: true });
   if (!res.ok) return fallback;
   const o = parseJson<Record<string, unknown>>(coarsen(res.text));
   if (!o || typeof o.scene !== "string") return fallback;

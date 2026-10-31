@@ -410,9 +410,8 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   const world = worldBrief(s);
   if (world) out.push(`\n## NEWS THIS WEEK (background context—only bring it up if it's relevant to the current action)\n${world}`);
 
-  out.push(`\n## SETTING THE SCENE`);
-  const room = placeOf(s);
-  out.push(`${s.scene.time}. ${s.scene.location}${room.name === s.scene.location ? ` (${room.look}${room.privacy === "public" ? "; this is a public area with people around who can see what happens" : ""})` : ""}.`);
+  // Everything from here to the scene itself changes week to week at most, so a provider that caches
+  // the front of a prompt keeps it from one turn to the next. What changes every turn comes after it.
   out.push(`${ownerLine(s)} Check individual character cards to see if a specific slave uses a custom title for the owner.`);
   out.push(selfBrief(s));
   const bots = sentinelsLine(s);
@@ -424,16 +423,6 @@ export function digest(s: SaveState, action = "", focus?: string): string {
   out.push(rulesLine(s));
   const house = householdLine(s);
   if (house) out.push(house);
-  if (s.scene.arrivals_pending.length) out.push(`ARRIVING NOW (write them entering the scene): ${s.scene.arrivals_pending.map((id) => s.people[id]?.name).filter(Boolean).join(", ")}`);
-  if (s.scene.departures_pending.length) out.push(`LEAVING NOW (write them exiting the scene): ${s.scene.departures_pending.map((d) => `${d.name} (${d.why})`).join(", ")}`);
-
-  const focused = focus ? present.filter((p) => p.id === focus) : present;
-  const others = focus ? present.filter((p) => p.id !== focus) : [];
-  out.push(`\n## ${focus ? "MAIN CHARACTER IN THIS SCENE" : `CHARACTERS PRESENT (${present.length})`}`);
-  if (!present.length) out.push(`Nobody else is here. The owner is alone.`);
-  for (const p of focused) out.push(personCard(s, p, action));
-  if (others.length) out.push(`\nALSO IN THE ROOM (ignore them unless the player's action directly involves them): ${others.map((p) => `${p.name} [${p.id}]`).join(", ")}`);
-
   const nearby = Object.values(s.people)
     .filter((p) => (p.status === "owned" || p.status === "indentured") && !s.scene.present.includes(p.id))
     .slice(0, 12);
@@ -444,6 +433,21 @@ export function digest(s: SaveState, action = "", focus?: string): string {
 
   const heard = dedupeLines(s.rumors.filter((r) => r.salience > 3 && !r.where).map((r) => `${r.content} (${r.truth})`)).slice(0, 4);
   if (heard.length) out.push(`\n## CURRENT RUMORS\n${heard.map((r) => `· ${r}`).join("\n")}`);
+
+
+  // This turn: where and when, who is coming and going, and the people in the room.
+  out.push(`\n## SETTING THE SCENE`);
+  const room = placeOf(s);
+  out.push(`${s.scene.time}. ${s.scene.location}${room.name === s.scene.location ? ` (${room.look}${room.privacy === "public" ? "; this is a public area with people around who can see what happens" : ""})` : ""}.`);
+  if (s.scene.arrivals_pending.length) out.push(`ARRIVING NOW (write them entering the scene): ${s.scene.arrivals_pending.map((id) => s.people[id]?.name).filter(Boolean).join(", ")}`);
+  if (s.scene.departures_pending.length) out.push(`LEAVING NOW (write them exiting the scene): ${s.scene.departures_pending.map((d) => `${d.name} (${d.why})`).join(", ")}`);
+
+  const focused = focus ? present.filter((p) => p.id === focus) : present;
+  const others = focus ? present.filter((p) => p.id !== focus) : [];
+  out.push(`\n## ${focus ? "MAIN CHARACTER IN THIS SCENE" : `CHARACTERS PRESENT (${present.length})`}`);
+  if (!present.length) out.push(`Nobody else is here. The owner is alone.`);
+  for (const p of focused) out.push(personCard(s, p, action));
+  if (others.length) out.push(`\nALSO IN THE ROOM (ignore them unless the player's action directly involves them): ${others.map((p) => `${p.name} [${p.id}]`).join(", ")}`);
 
   const corr = s.corrections;
   if (corr.filler || corr.maxim || corr.echo || corr.reprint || corr.stock) {

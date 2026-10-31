@@ -4,8 +4,11 @@
  */
 import { useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useGame } from "../lib/game";
+import { keepLine } from "../engine/yourvoice";
 
 export function AnswerOwn({ onSay, placeholder = "or answer in your own words" }: { onSay: (typed: string, signal: AbortSignal) => Promise<string>; placeholder?: string }) {
+  const { mutate } = useGame();
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -20,7 +23,8 @@ export function AnswerOwn({ onSay, placeholder = "or answer in your own words" }
     stop.current = null;
     setBusy(false);
     if (ctl.signal.aborted) return;
-    if (e) setErr(e); else setText("");
+    // What you typed went through: it's kept as how you write (engine/yourvoice).
+    if (e) setErr(e); else { mutate((s) => { keepLine(s, t); }); setText(""); }
   };
   return (
     <div className="mt-2">

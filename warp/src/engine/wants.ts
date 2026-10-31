@@ -185,7 +185,7 @@ export async function generateWant(s: SaveState, p: Person, reasons: Reason[], s
     ...(ask ? [`grant: give her the ENGINE REQUEST${ask.cash ? ` (costs ¤${ask.cash.toLocaleString()})` : ""}`, "refuse: say no to it", "refuse_harsh: say no, and punish her for asking"] : []),
     ...effectList().split("\n"),
   ];
-  const res = await call({
+  const res = await call({ narration: true, tag: "want",
     system: WANT_SYSTEM,
     user: [
       snapshot,
