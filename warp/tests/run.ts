@@ -83,6 +83,7 @@ import "./alone.test.ts";
 import "./districts.test.ts";
 import "./yourvoice.test.ts";
 import "./family.test.ts";
+import "./age.test.ts";
 import "./citizens.test.ts";
 import { report } from "./harness.ts";
 

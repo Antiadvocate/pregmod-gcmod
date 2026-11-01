@@ -25,6 +25,16 @@ check("her nodding isn't", continuitySlips(s, "She nods and points at the door."
 her.body.eyes = "blind";
 check("a blind woman looking at you is caught", continuitySlips(s, `${first} looks at you for a long moment.`, [her]).some((x) => /blind/.test(x)));
 her.body.eyes = "normal";
+
+// Her age, as her page has it. The narrator used to answer "how old are you" with whatever it liked.
+her.body.voice = 50;
+her.age = 23;
+const ageSlip = (t: string) => continuitySlips(s, t, [her]).filter((x) => /not \d+/.test(x));
+check("her saying the wrong age is caught", ageSlip(`"I'm nineteen," she says.`).length === 1 && ageSlip(`"I'm 31 years old, Master."`).length === 1);
+check("the narration giving her the wrong age is caught", ageSlip(`${first} is twenty-six years old and looks it.`).length === 1 && ageSlip(`The 30-year-old ${first} kneels.`).length === 1);
+check("her right age, and an age she once was, aren't", ageSlip(`"I'm twenty-three," she says. "I was nineteen when they took me."`).length === 0 && ageSlip(`"I'm 23 years old."`).length === 0);
+check("nor is a number that isn't her age", ageSlip(`"I'm ten minutes late," she says.`).length === 0);
+her.body.voice = 0;
 s.faces = { "odile marchand": { name: "Odile Marchand", pronoun: "she", age: 40, first: 1, last: 1, seen: 1, fate: { fate: "dead", week: 1, how: "shot" } } } as never;
 check("the dead walking in is caught, the dead remembered isn't", continuitySlips(s, "Odile walks in with a tray.", [her]).length === 1 && continuitySlips(s, "She still thinks about Odile.", [her]).length === 0);
 

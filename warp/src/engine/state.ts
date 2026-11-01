@@ -13,7 +13,7 @@ import { repairCuckold } from "./cuckold";
 import { compactMemory, similar } from "./memory";
 import { hasWomb } from "./pregnancy";
 import { reconcileAnatomy } from "./genitals";
-import { assWord } from "./generate";
+import { assWord, syncAgeFacts } from "./generate";
 import { sane, settleOldSurgery } from "./health";
 import { feetOf } from "./genitals";
 import { newWorld } from "./world";
@@ -298,6 +298,8 @@ export function sanitize(raw: SaveState): SaveState {
     if (p.body.scrotum === undefined) p.body.scrotum = p.body.balls ?? 0;
     feetOf(p);
     reconcileAnatomy(p);
+    // Saves from before the body line kept up with birthdays.
+    syncAgeFacts(p);
     if (p.body.appearance_facts && !/\bass\b/.test(p.body.appearance_facts)) p.body.appearance_facts = p.body.appearance_facts.replace(/\.\s*$/, `, ${assWord(p.body.butt)}.`);
     p.health.injuries = p.health.injuries ?? [];
     p.health.drugs = p.health.drugs ?? [];

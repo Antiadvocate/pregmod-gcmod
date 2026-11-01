@@ -16,6 +16,29 @@ const SPEAKS = "says|said|whispers|whispered|murmurs|asks|asked|answers|replies|
 const SEES = "looks at|looks up at|looks down at|watches|glances|stares|sees|meets your eyes|meets your gaze|catches your eye";
 const ACTS = "says|walks|comes|steps|stands|smiles|laughs|nods|waves|is waiting|arrives|turns up";
 
+const ONES = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+const TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+const AGE_NUM = `\\d{1,2}|(?:${TENS.slice(2).join("|")})(?:[- ](?:${ONES.slice(1, 10).join("|")}))?|${ONES.slice(10).join("|")}`;
+function ageOf(t: string): number | undefined {
+  const x = t.toLowerCase().trim();
+  if (/^\d+$/.test(x)) return Number(x);
+  if (ONES.includes(x)) return ONES.indexOf(x);
+  const [ten, one] = x.split(/[- ]/);
+  const t10 = TENS.indexOf(ten);
+  return t10 >= 2 ? t10 * 10 + (one ? ONES.indexOf(one) : 0) : undefined;
+}
+
+/** The age the prose gives her, when it gives one plainly: "I'm twenty-two", "I'm 22 years old",
+ *  "Mia is 22 years old", "the 22-year-old Mia". Ages she was once ("I was nineteen when") aren't. */
+function statedAges(prose: string, who: string, solo: boolean): number[] {
+  const out: number[] = [];
+  const grab = (re: RegExp) => { for (const m of prose.matchAll(re)) { const n = ageOf(m[1]); if (n !== undefined) out.push(n); } };
+  if (solo) grab(new RegExp(`["“][^"”]*?\\bI(?:'m|’m| am)\\s+(?:only\\s+|just\\s+)?(${AGE_NUM})(?:\\s+years?\\s+old|(?=\\s*[.,!?…—"”]))`, "gi"));
+  grab(new RegExp(`\\b${who}(?:'s|’s|\\s+is)\\s+(?:only\\s+|just\\s+)?(${AGE_NUM})\\s*(?:years?\\s+old|-year-old)`, "gi"));
+  grab(new RegExp(`\\b(${AGE_NUM})-year-old\\s+${who}\\b`, "gi"));
+  return out;
+}
+
 /** The facts the prose broke, each as a line the narrator can be handed. Empty when none. */
 export function continuitySlips(s: SaveState, prose: string, people: Person[]): string[] {
   const out: string[] = [];
@@ -38,6 +61,10 @@ export function continuitySlips(s: SaveState, prose: string, people: Person[]): 
     if (solo && !childrenOf(s, p).length && /\b(?:our|your) (?:baby|son|daughter|little one)\b/i.test(prose) && !p.womb.fetuses.length) {
       out.push(`${p.name} has no child with the owner. There's no baby.`);
     }
+    // Asked how old she is, she'd answer with a number the model liked better than the one on her
+    // page.
+    const wrong = statedAges(prose, who, solo).find((n) => n !== p.age);
+    if (wrong !== undefined) out.push(`${p.name} is ${p.age}, not ${wrong}. Whenever her age comes up, she's ${p.age}.`);
     if (p.body.eyes === "blind" && new RegExp(`\\b${who}\\s+(?:${SEES})\\b`, "i").test(prose)) {
       out.push(`${p.name} is blind and sees nothing. She never looks at, watches or meets the eyes of anyone; she knows things by touch, sound and smell.`);
     }
