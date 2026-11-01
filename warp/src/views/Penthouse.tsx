@@ -20,6 +20,8 @@ import { STYLE_NOTE } from "../engine/reign";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { nowCalling, stopAllCalls } from "../llm";
 import { rollback, snapshot } from "../engine/state";
+import { offlinePlans, planOf, setPlan, suggestPlans } from "../engine/yourweek";
+import { allSkills } from "../engine/player";
 import type { SaveState } from "../engine/types";
 import { AlertTriangle, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import type { Route } from "../App";
@@ -458,6 +460,8 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
         </Fold>
       </div>
 
+      <WeekPlanCard />
+
       {/* The one irreversible control, always in reach, saying what is still open. */}
       <div className="endweek">
         {running_ ? <WeekStatus started={started} onStop={stopWeek} /> : null}
@@ -603,5 +607,55 @@ function WeekStatus({ started, onStop }: { started: number; onStop: () => void }
       {c ? <span>{waitLeft ? `${c.model} is busy, trying again in ${waitLeft}s` : `Waiting on ${c.model} (${c.tag}) for ${secs(c.since)}s`}{c.queued ? `, ${c.queued} more queued` : ""}.</span> : <span>Working out the week.</span>}
       <button className="underline ml-auto" onClick={onStop} title="Keep the week, skip the rest of the writing">Stop writing and show me the week</button>
     </div>
+  );
+}
+
+/** What you're doing with this week: one of three suggestions, or your own words (engine/yourweek). */
+function WeekPlanCard() {
+  const { save, mutate } = useGame();
+  const [own, setOwn] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [changing, setChanging] = useState(false);
+  const plan = planOf(save);
+  const week = save.arcology.week;
+  // When she holds your collar, she decides your week (views/YourRoom).
+  if (save.player.owned_by) return null;
+  const options = save.player.plan_options?.week === week ? save.player.plan_options.options : null;
+  const skillName = (id?: string) => allSkills(save).find((k) => k.id === id)?.name.toLowerCase();
+  const suggest = async () => {
+    setBusy(true);
+    const got = await suggestPlans(save);
+    mutate((s) => { s.player.plan_options = { week: s.arcology.week, options: got }; });
+    setBusy(false);
+  };
+  if (plan && !changing) {
+    return (
+      <Card className="mb-3">
+        <div className="text-[11px] uppercase tracking-wider dim mb-1">Your week</div>
+        <div className="text-[13.5px]">{plan.text}</div>
+        <div className="text-[11.5px] dim mt-1">{plan.skill ? `Trains your ${skillName(plan.skill)}. ` : ""}Scenes this week know where you've been, and something may come of it. <button className="underline" onClick={() => setChanging(true)}>change</button></div>
+      </Card>
+    );
+  }
+  const list = options ?? offlinePlans(save);
+  return (
+    <Card className="mb-3">
+      <div className="text-[11px] uppercase tracking-wider dim mb-1.5">What are you doing this week?</div>
+      <div className="space-y-1.5">
+        {list.map((o) => (
+          <button key={o.label} className="choice w-full text-left" onClick={() => { mutate((s) => { setPlan(s, o.label, "suggested", o.skill); }); setChanging(false); }}>
+            <span className="block text-[13.5px] leading-snug">{o.label}</span>
+            <span className="block text-[11.5px] dim">{[o.skill ? `trains ${skillName(o.skill)}` : "", o.what].filter(Boolean).join(" · ")}</span>
+          </button>
+        ))}
+      </div>
+      <form className="flex gap-2 mt-2" onSubmit={(e) => { e.preventDefault(); if (own.trim()) { mutate((s) => { setPlan(s, own, "own"); }); setOwn(""); setChanging(false); } }}>
+        <input className="flex-1 min-w-0" value={own} onChange={(e) => setOwn(e.target.value)} placeholder="Or say what you're doing, in your own words" />
+        <Button size="sm" kind="primary" disabled={!own.trim()}>Set</Button>
+      </form>
+      {modelsAvailable() ? (
+        <button className="text-[11.5px] dim underline mt-1.5" disabled={busy} onClick={() => void suggest()}>{busy ? "thinking…" : options ? "three different ones" : "suggest three from who I am"}</button>
+      ) : null}
+    </Card>
   );
 }

@@ -23,6 +23,8 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
   const [origin, setOrigin] = useState<string>(() => ORIGINS[Math.floor(Math.random() * ORIGINS.length)].id);
   const [supplication, setSupplication] = useState(false);
   const [plot, setPlot] = useState(true);
+  const [noSlaves, setNoSlaves] = useState(false);
+  const [emptyCity, setEmptyCity] = useState(false);
   const [kit, setKit] = useState<Kit | null>(null);
   const [chosenPronouns, setPronouns] = useState<Pronouns | null>(null);
   const said = address === "custom" ? custom.trim() : address;
@@ -39,6 +41,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
     const s = newGame({
       arcology_name: name || undefined, player_name: player || undefined, difficulty, origin,
       address: address === "custom" ? custom.trim() || (pronouns === "she/her" ? "Mistress" : "Master") : address, supplication, plot, twists, kit: kit ?? undefined, pronouns,
+      no_slaves: noSlaves, empty_city: emptyCity,
     });
     await putSave(s);
     localStorage.setItem("warp-last", s.id);
@@ -111,6 +114,14 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
               }}><Dice5 size={12} /> roll</button>
             </div>
           </Field>
+          <label className="flex items-start gap-2.5 mt-1 cursor-pointer">
+            <input type="checkbox" className="!w-auto mt-0.5" checked={noSlaves} onChange={(e) => setNoSlaves(e.target.checked)} />
+            <span className="text-[12.5px] mid"><span className="hi">Start with no slaves.</span> Nobody comes with the building, your origin's household included. Anyone you own, you'll have bought or found. A house with nobody in it doesn't lose you the run.</span>
+          </label>
+          <label className="flex items-start gap-2.5 mt-1 cursor-pointer">
+            <input type="checkbox" className="!w-auto mt-0.5" checked={emptyCity} onChange={(e) => setEmptyCity(e.target.checked)} />
+            <span className="text-[12.5px] mid"><span className="hi">Start with an empty city.</span> No tenants and no citizens: just your spire and bare ground. People move in for what you build, the poor for work, the middle for flats and shops, the rich for money and safe streets, and you set what they're taxed.</span>
+          </label>
           <label className="flex items-start gap-2.5 mt-1 cursor-pointer">
             <input type="checkbox" className="!w-auto mt-0.5" checked={plot} onChange={(e) => setPlot(e.target.checked)} />
             <span className="text-[12.5px] mid">Run the <span className="hi">main plot</span>: the original game's chain, from the strip club closing in week 6 to the coup in week 71.</span>

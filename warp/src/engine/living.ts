@@ -51,6 +51,7 @@ import { worldBrief } from "./world";
 import { activeGovernors, governorBrief, governorshipOf, GOV_ORDERS } from "./governor";
 import { grantAsk, refuseAsk, voiceAsk } from "./asks";
 import { bestWant, generateWant, pickWants } from "./wants";
+import { generatePlanEvent } from "./yourweek";
 import { generateGoing, pickGoings } from "./goings";
 import { aroundBrief, weekSnapshot } from "./snapshot";
 import { GOV_VOICE } from "./talk";
@@ -498,6 +499,12 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
     if (hasPending(s, g.main.id) || (g.other && hasPending(s, g.other.id))) continue;
     step(g.other ? `${g.main.name} and ${g.other.name}` : g.main.name);
     const e = await generateGoing(s, g, snap);
+    if (e) s.events.push(e);
+  }
+  // Something that happened to you while you were doing what you said you'd spend the week on.
+  if (s.player.last_plan?.week === s.arcology.week - 1 && !s.events.some((e) => e.id === `plan-${s.arcology.week}`)) {
+    step("your week");
+    const e = await generatePlanEvent(s, snap);
     if (e) s.events.push(e);
   }
   // Anything written this week that touches a storyline the player ended goes before they see it.

@@ -74,6 +74,7 @@ import { tickReign } from "./reign";
 import { tickCampaigns } from "./civic";
 // Trouble around each kind of district you own (engine/districtlife); registered on import.
 import "./districtlife";
+import "./border";
 import { tickWorld } from "./world";
 import { tickGlobe } from "./globe";
 import { tickWorks } from "./works";
@@ -93,6 +94,8 @@ import { THREAD_BY_KIND } from "../data/threads";
 import { canSire } from "./you";
 import { comfort, tickRoom } from "./rooms";
 import { tickGovernors } from "./governor";
+import { tickCitizens } from "./citizens";
+import { tickPlan } from "./yourweek";
 
 // The woman who holds your collar is free, but she still lives here: her body, her mind and her memory keep going.
 const alive = (s: SaveState): Person[] => Object.values(s.people).filter((p) => inHousehold(s, p));
@@ -108,6 +111,11 @@ export function endWeek(s: SaveState): WeekReport {
 
   const push = (text: string, tone: ReportLine["tone"] = "neutral", weight = 5, person?: string, facility?: string) =>
     lines.push({ text, tone, weight, person, facility });
+
+  /* ── 0. your own week ───────────────────────────────────────────────────────────────────── */
+  // What you said you'd spend it doing: it trains what it used, and goes in the record (engine/yourweek).
+  const mine = tickPlan(s);
+  if (mine) push(mine, "neutral", 7);
 
   /* ── 1. standing orders ─────────────────────────────────────────────────────────────────── */
   const ruleRuns = runOrders(s, false);
@@ -437,7 +445,8 @@ export function endWeek(s: SaveState): WeekReport {
   const publicWork = alive(s).filter((p) => p.assignment === "public servant" || p.assignment === "whore").length;
   arc.prosperity = clamp(arc.prosperity + clamp((led.cash / 3500) + publicWork * 0.4 - (arc.crime / 40), -6, 6), 5, 200);
   arc.crime = clamp(arc.crime + (arc.security < 30 ? 3 : -2) + (arc.prosperity < 40 ? 2 : -1), 0, 100);
-  arc.population = Math.round(clamp(arc.population * (1 + (arc.prosperity - 60) / 4000), 200, 20000));
+  // Who comes and who goes, by class, for reasons the city screen can name (engine/citizens).
+  for (const l of tickCitizens(s, led)) push(l.text, l.tone, l.weight);
   arc.ownership = clamp(arc.ownership + (arc.cash > 60000 ? 0.4 : 0), 0, 100);
 
   /* ── 5. the world reacts to the arcology ────────────────────────────────────────────────── */
