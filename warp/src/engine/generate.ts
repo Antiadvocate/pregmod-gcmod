@@ -298,6 +298,14 @@ export function assWord(butt: number): string {
     : butt <= 5 ? "a huge ass" : butt <= 7 ? "an enormous ass" : "an ass so huge it's hard to believe";
 }
 
+/** The body line opens with her age as it was the day she was made ("19, Ukrainian, 165cm…"), and
+ *  nothing moved it on: a year later her card said 20 at the top and 19 two lines down, and the
+ *  model picked one. This keeps that number her age. */
+export function syncAgeFacts(p: { age: number; body: { appearance_facts: string } }): void {
+  const t = p.body.appearance_facts;
+  if (t && /^\s*\d{1,3},/.test(t)) p.body.appearance_facts = t.replace(/^\s*\d{1,3},/, `${p.age},`);
+}
+
 export function describeBody(b: Body, nation: Nation, age: number): string {
   const w = buildOf(b.weight);
   const build = w === "slim" ? (b.muscle > 30 ? "visibly strong" : "average build")

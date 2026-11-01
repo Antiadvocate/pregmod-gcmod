@@ -284,7 +284,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   const edge = getEdge(s.edges, p.id, "owner");
 
   const lines: string[] = [];
-  lines.push(`### ${p.name}${p.surname ? " " + p.surname : ""} [${p.id}] — ${p.age}, ${p.origin.nationality}, ${p.pronouns}`);
+  lines.push(`### ${p.name}${p.surname ? " " + p.surname : ""} [${p.id}] — age ${p.age}, ${p.origin.nationality}, ${p.pronouns}`);
   // Put her core identity and relationship dynamic at the very top so they don't get buried in the middle of a long card.
   if (p.persona.signature) lines.push(`CORE IDENTITY: ${p.persona.signature}`);
   if (p.persona.life_history) lines.push(`WHO SHE HAS BECOME HERE: ${p.persona.life_history}`);
@@ -317,7 +317,10 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(`ASSIGNMENT: ${p.assignment}.`);
   const money = purseLine(p);
   if (money) lines.push(money);
-  lines.push(`PAST LIFE: ${p.origin.career}; ${p.origin.background}`);
+  // Her age and her life before, as her page shows them. Asked "how old are you" or "where are you
+  // from", she answers with these. The life story was on her page and never on her card, so the
+  // narrator made one up whenever it came up, and it never matched what the player could read.
+  lines.push(`AGE AND PAST (canon—if asked, this is what she says): She is ${p.age}. Before this she was a ${p.origin.career}. How she ended up here: ${p.origin.background}${p.persona.background ? ` Her life before: ${p.persona.background}` : ""}`);
   lines.push(`PERSONALITY: ${p.persona.core_traits.join("; ")}`);
   const v = p.persona.voice;
   lines.push(p.persona.speech_own

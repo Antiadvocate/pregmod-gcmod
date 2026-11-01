@@ -23,6 +23,7 @@ import { setSpeech } from "../engine/voice";
 import { feetOf } from "../engine/genitals";
 import { romanceOf } from "../engine/romance";
 import { personCard } from "../engine/prompts";
+import { syncAgeFacts } from "../engine/generate";
 
 type Path = (string | number)[];
 
@@ -128,6 +129,8 @@ export default function PersonEditor({ target }: { target: Person }) {
     const p = s.people[id];
     if (path.join(".") === "persona.speech_pattern") setSpeech(p, String(value ?? ""));
     else setAt(p, path, value);
+    // Her age changed here has to change in the body line too, or the card carries both.
+    if (path.join(".") === "age") syncAgeFacts(p);
     refresh(p, s.memory[p.id]);
   });
 
@@ -156,7 +159,7 @@ export default function PersonEditor({ target }: { target: Person }) {
           <Button size="sm" className="mt-1" onClick={() => {
             try {
               const next = JSON.parse(raw) as Person;
-              mutate((s) => { s.people[id] = { ...next, id }; refresh(s.people[id], s.memory[id]); });
+              mutate((s) => { s.people[id] = { ...next, id }; syncAgeFacts(s.people[id]); refresh(s.people[id], s.memory[id]); });
               setErr(""); setRaw(null);
             } catch (e) { setErr(`Not valid JSON: ${(e as Error).message}`); }
           }}>apply JSON</Button>

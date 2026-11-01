@@ -10,7 +10,7 @@ import type { Fetus, GeneRecord, Person, SaveState } from "./types";
 import { clamp } from "./psyche";
 import { rng } from "./rng";
 import { remember } from "./memory";
-import { generatePerson } from "./generate";
+import { generatePerson, syncAgeFacts } from "./generate";
 
 export const TERM_WEEKS = 40;
 
@@ -233,6 +233,7 @@ export function tickAge(state: SaveState, p: Person): string[] {
     p.physical_age = Math.max(18, p.physical_age + 1);
     p.womb.fertility = clamp(p.womb.fertility - (p.physical_age > 30 ? 3 : 1), 0, 100);
     if (p.physical_age > 28) p.body.face = clamp(p.body.face - 0.6, 5, 99);
+    syncAgeFacts(p);
     if (p.age % 10 === 0) return [`${p.name} is ${p.age}.`];
     return [];
   }
@@ -250,6 +251,7 @@ export function tickChild(state: SaveState, p: Person): string[] {
   if ((state.arcology.week - p.birth_week) % 52 === 0) {
     p.age++;
     p.physical_age++;
+    syncAgeFacts(p);
     p.body.height_cm = Math.round(clamp(p.body.height_cm + 6.5, 40, 190));
     if (raised) {
       p.persona.education = clamp(p.persona.education + 6, 0, 100);
