@@ -638,6 +638,7 @@ function WeekPlanCard() {
     );
   }
   const list = options ?? offlinePlans(save);
+  const setOwnPlan = () => { if (!own.trim()) return; mutate((s) => { setPlan(s, own, "own"); }); setOwn(""); setChanging(false); };
   return (
     <Card className="mb-3">
       <div className="text-[11px] uppercase tracking-wider dim mb-1.5">What are you doing this week?</div>
@@ -649,9 +650,10 @@ function WeekPlanCard() {
           </button>
         ))}
       </div>
-      <form className="flex gap-2 mt-2" onSubmit={(e) => { e.preventDefault(); if (own.trim()) { mutate((s) => { setPlan(s, own, "own"); }); setOwn(""); setChanging(false); } }}>
+      {/* Button is type="button", so it never submits the form: clicking Set did nothing and only Enter worked. */}
+      <form className="flex gap-2 mt-2" onSubmit={(e) => { e.preventDefault(); setOwnPlan(); }}>
         <input className="flex-1 min-w-0" value={own} onChange={(e) => setOwn(e.target.value)} placeholder="Or say what you're doing, in your own words" />
-        <Button size="sm" kind="primary" disabled={!own.trim()}>Set</Button>
+        <Button size="sm" kind="primary" disabled={!own.trim()} onClick={setOwnPlan}>Set</Button>
       </form>
       {modelsAvailable() ? (
         <button className="text-[11.5px] dim underline mt-1.5" disabled={busy} onClick={() => void suggest()}>{busy ? "thinking…" : options ? "three different ones" : "suggest three from who I am"}</button>

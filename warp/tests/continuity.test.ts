@@ -27,7 +27,7 @@ check("a blind woman looking at you is caught", continuitySlips(s, `${first} loo
 her.body.eyes = "normal";
 
 // Her age, as her page has it. The narrator used to answer "how old are you" with whatever it liked.
-her.body.voice = 50;
+her.body.voice = 2;
 her.age = 23;
 const ageSlip = (t: string) => continuitySlips(s, t, [her]).filter((x) => /not \d+/.test(x));
 check("her saying the wrong age is caught", ageSlip(`"I'm nineteen," she says.`).length === 1 && ageSlip(`"I'm 31 years old, Master."`).length === 1);
