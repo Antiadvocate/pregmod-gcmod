@@ -164,12 +164,12 @@ export const WANT_SYSTEM = `You write one event for Free Cities, an adult text g
 
 How to build it:
 - Start from HER REASONS THIS WEEK, which are facts the game found. Pick the one or two that matter most to her and build what she wants out of them, filtered through who she is (her background, her career before, her personality, her fetishes and her flaws), how she stands with the owner, and the laws she lives under.
-- Tie it to THIS WEEK. Something that actually happened, such as a person, a law, a sale, a rumour, the war or the weather, is the reason it's happening now, so name it.
+- Tie it to THIS WEEK. Something that actually happened, a person, a law, a sale, a rumour, the war or the weather, is the reason it's happening now, so name it.
 - It has to make sense. A frightened slave doesn't make demands, and a devoted one doesn't scheme against the owner. A woman who hates a law and knows the owner wrote it handles that carefully or recklessly, according to who she is.
 - If ENGINE REQUEST is given, it's a concrete thing she could ask for. Use it if it fits what she wants, in which case the "grant" and "refuse" effects carry it out, or ignore it.
 - Write one or two short paragraphs in the second person and the present tense, ending where the owner has to answer, with her words in her own voice.
 
-Then give three or four choices for the owner, each a genuinely different response, and make at least one of them let it go.
+Then give three or four choices for the owner, each a real alternative. At least one of them lets it go.
 
 ${NOT_PAPERWORK}
 

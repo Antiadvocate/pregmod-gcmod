@@ -121,12 +121,12 @@ export interface Cuck {
 }
 
 export const STYLE_NOTE: Record<ReignStyle, string> = {
-  doting: "She rules gently. She owns you because she loves you and wants you close, and she is protective of you in front of other people.",
-  stern: "She rules firmly and fairly. She expects obedience without argument, and gives order and care back for it.",
-  cruel: "She enjoys it. She uses her power over you for her own pleasure, and she likes an audience for it.",
-  playful: "She treats owning you as a game she's winning, full of teasing, dares and silly names, and she likes showing you off.",
-  vengeful: "She remembers what you did to her, and she's paying it back. She isn't out of control. She's thorough.",
-  reluctant: "She never wanted this. She holds your collar because you gave it to her, keeps asking you what to do, and is afraid of getting it wrong.",
+  doting: "She rules gently. She owns you because she loves you and wants you near her, and in front of other people she protects you.",
+  stern: "She rules firmly and fairly. She expects obedience without argument. In return she gives order and care.",
+  cruel: "She enjoys it. Her power over you is for her own pleasure, and she likes having an audience for it.",
+  playful: "Owning you is a game she's winning, full of teasing, dares and silly names. She likes showing you off.",
+  vengeful: "She remembers what you did to her, and she's paying it back. She stays in control the whole time. She's thorough.",
+  reluctant: "She never wanted this. She holds your collar because you gave it to her. She keeps asking you what to do, and she's afraid of getting it wrong.",
 };
 
 const fet = (p: Person, n: string) => p.persona.fetishes.find((f) => f.name === n)?.strength ?? 0;
@@ -264,12 +264,12 @@ const her = (s: SaveState, p?: Person) => p ?? (s.reign ? s.people[s.reign.keepe
 const fav = (s: SaveState, by: number) => { if (s.reign) s.reign.favour = clamp(s.reign.favour + by, -100, 100); };
 
 const TERMS_VOICE: Record<ReignStyle, (h: Person, r: Reign) => string> = {
-  doting: (h, r) => `${h.name} sits on the end of the bed with a list she's clearly rewritten several times. "I want you close," she says. "That's most of it." You'll call her ${r.her_title}, the way you always have. You'll wear ${r.dress}. You'll sleep ${r.sleep}. She wants you to ${r.duties.join(", and to ")}. She looks up to see how you're taking it.`,
-  stern: (h, r) => `${h.name} has you kneel on the rug in the office while she reads out her terms from a single typed page. You'll call her ${r.her_title}. She'll call you ${r.your_name}. You'll wear ${r.dress}, and you'll sleep ${r.sleep}. Your duties are to ${r.duties.join(", to ")}. "Questions?" she asks, in a tone that means there aren't any.`,
-  cruel: (h, r) => `${h.name} calls you into the atrium with half the household watching, and tells you what you are now. You'll call her ${r.her_title}. You're "${r.your_name}" from today. You'll wear ${r.dress}. You'll sleep ${r.sleep}. You will ${r.duties.join(", ")}. She's smiling the whole time.`,
-  playful: (h, r) => `${h.name} has made you a certificate, with a gold seal, and she reads it out in a ridiculous voice. You'll call her ${r.her_title}. Your name is ${r.your_name} now. You'll wear ${r.dress}, and sleep ${r.sleep}. You will ${r.duties.join(", ")}. Then she puts the collar with the bell on you herself, and laughs when it rings.`,
-  vengeful: (h, r) => `${h.name} doesn't raise her voice. She's had a long time to think about this. You'll call her ${r.her_title}, the way she had to call you. You're "${r.your_name}". You'll wear ${r.dress}, and sleep ${r.sleep}. You'll ${r.duties.join(", and ")}. "It's only what I had," she says. "You told me I'd get used to it."`,
-  reluctant: (h, r) => `${h.name} holds your collar in both hands like it might go off. "I don't know what I'm supposed to do," she says. "Tell me what you want me to do, and I'll do it. That's backwards, isn't it." She wants you to sleep ${r.sleep}, and to ${r.duties.join(", ")}.`,
+  doting: (h, r) => `${h.name} sits on the end of the bed with a list she has clearly rewritten several times. "I want you close," she says. "That's most of it." You'll call her ${r.her_title}, the way you always have. You'll wear ${r.dress}. You'll sleep ${r.sleep}. She wants you to ${r.duties.join(", and to ")}. She looks up to see how you take it.`,
+  stern: (h, r) => `${h.name} has you kneel on the rug in the office while she reads her terms off a single typed page. You'll call her ${r.her_title}. She'll call you ${r.your_name}. You'll wear ${r.dress}, and you'll sleep ${r.sleep}. Your duties are to ${r.duties.join(", to ")}. "Questions?" she asks, in a tone that says there aren't any.`,
+  cruel: (h, r) => `${h.name} calls you into the atrium with half the household watching and tells you what you are now. You'll call her ${r.her_title}. You're "${r.your_name}" from today. You'll wear ${r.dress}. You'll sleep ${r.sleep}. You will ${r.duties.join(", ")}. She's smiling the whole time.`,
+  playful: (h, r) => `${h.name} has made you a certificate with a gold seal, and she reads it out in a ridiculous voice. You'll call her ${r.her_title}. Your name is ${r.your_name} now. You'll wear ${r.dress}, and sleep ${r.sleep}. You will ${r.duties.join(", ")}. Then she puts the collar with the bell on you herself and laughs when it rings.`,
+  vengeful: (h, r) => `${h.name} doesn't raise her voice. She has had a long time to think about this. You'll call her ${r.her_title}, the way she had to call you. You're "${r.your_name}". You'll wear ${r.dress}, and sleep ${r.sleep}. You'll ${r.duties.join(", and ")}. "It's only what I had," she says. "You said I'd get used to it."`,
+  reluctant: (h, r) => `${h.name} holds your collar in both hands like it might go off. "I don't know what I'm supposed to do," she says. "Tell me what you want me to do and I'll do it. That's backwards, isn't it." She wants you to sleep ${r.sleep}, and to ${r.duties.join(", ")}.`,
 };
 
 const ORDERS: Record<ReignStyle, { text: string; public?: boolean }[]> = {

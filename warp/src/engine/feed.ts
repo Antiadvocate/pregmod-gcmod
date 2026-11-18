@@ -149,23 +149,23 @@ function ownerAsTheCitySeesThem(s: SaveState): string {
  * board is people with an angle, taking their world for granted; the facts are the water they
  * swim in, not the subject.
  */
-const FEED_VOICE = `HOW THE POSTS SOUND. They read like a real city's boards, with people typing fast on their phones in the middle of a grievance or a brag, and being horny, petty, funny or scared. They use slang and swearing, and lowercase when they can't be bothered. Nobody writes like a press release, a narrator or a guidebook, and there's no moral, no summing-up last line and no "it's a reminder that".
+const FEED_VOICE = `HOW THE POSTS SOUND. They read like a real city's boards: people typing fast on their phones in the middle of a grievance or a brag, horny, petty, funny or scared. They use slang and swearing, and lowercase when they can't be bothered. Nobody writes like a press release, a narrator or a guidebook. There's no moral, no summing-up last line, and no "it's a reminder that".
 
-EVERY POSTER HAS AN ANGLE. They want something, they're showing off, they're pissed at someone, they're hiding something, or they're trying to get laid, and it leaks into how they write. They're unreliable and biased, and sometimes they're wrong about things. The replies disagree with them.
+EVERY POSTER HAS AN ANGLE. They want something. They're showing off, pissed at someone, hiding something, or trying to get laid, and it leaks into how they write. They're unreliable and biased, and sometimes wrong about things. The replies disagree with them.
 
-SHOW THE WORLD WITHOUT EXPLAINING IT. Each post lets the reader learn one thing about how life works here that an outsider wouldn't know, like what things cost, which floor is rough, what a collar colour means, what the patrols look the other way on, a brand, a queue, a nickname, a bit of slang, or a rumour about the owner. Posters take all of it for granted and never explain it. Invent those details freely, as long as they don't contradict WHAT'S TRUE HERE.
+SHOW THE WORLD WITHOUT EXPLAINING IT. Each post lets the reader learn one thing about how life works here that an outsider wouldn't know: what things cost, which floor is rough, what a collar colour means, what the patrols look the other way on, a brand, a queue, a nickname, a bit of slang, a rumour about the owner. Posters take all of it for granted and never explain it. Invent those details freely, as long as they don't contradict WHAT'S TRUE HERE.
 
-IT'S A PORN GAME. Sex is ordinary here, and people post about it the way people do when nobody's stopping them, crudely and specifically. Say cock, dick, balls, pussy, cunt, clit, ass, asshole, tits, cum, fuck, suck, slut and whore plainly. Never use a euphemism, so no "core", "center", "folds", "member", "length", "womanhood", "down there", "made love" or "had her way". Everyone in a post is an adult.`;
+IT'S A PORN GAME. Sex is ordinary here, and people post about it the way people do when nobody's stopping them, crudely and specifically. Say cock, dick, balls, pussy, cunt, clit, ass, asshole, tits, cum, fuck, suck, slut and whore plainly. Never use a euphemism: no "core", "center", "folds", "member", "length", "womanhood", "down there", "made love", "had her way". Everyone in a post is an adult.`;
 
 /** A different arcology's posts, for the voice only. */
-const EXAMPLES = `EXAMPLES OF THE VOICE. These come from a different arcology, so copy the voice and never these details:
-· Confessions — u/throwaway_31st (citizen): "wife found out i've been tipping the pedicure girl" — Twenty a week so the salon slave on 31 rubs her tits on my shins while the missus gets her nails done. Wife found the receipts. Now she wants the girl for our place and she wants ME to pay for it. Cheapest divorce I never had.
+const EXAMPLES = `EXAMPLES OF THE VOICE. These come from a different arcology. Copy the voice, never the details:
+· Confessions, u/throwaway_31st (citizen): "wife found out i've been tipping the pedicure girl". Twenty a week so the salon slave on 31 rubs her tits on my shins while the missus gets her nails done. Wife found the receipts. Now she wants the girl for our place and she wants ME to pay for it. Cheapest divorce I never had.
    ↳ nailgirl_enjoyer: 20?? she does it for 12 if you ask for the side chair
    ↳ petra_k: your wife is the smartest person in this story
-· For Sale & Wanted — u/verge_locksmith (business): "Lost collar keys? Don't pay the registry's 600" — Model 7s and 9s cut while you wait, bay 14 under the tram bridge. Bring the girl, it's quicker if I can see the lock. Cash, no questions, no receipts.
-· Old World Eyes — u/maya_backpacks (visitor): "day 2 and room service came with a girl" — Not WITH a girl. The girl was part of it. She put the tray down, knelt next to the bed and waited like a lamp. I tipped her and she looked at me like I'd slapped her. Apparently you tip the OWNER. Nobody tells you anything here.
+· For Sale & Wanted, u/verge_locksmith (business): "Lost collar keys? Don't pay the registry's 600". Model 7s and 9s cut while you wait, bay 14 under the tram bridge. Bring the girl, it's quicker if I can see the lock. Cash, no questions, no receipts.
+· Old World Eyes, u/maya_backpacks (visitor): "day 2 and room service came with a girl". Not WITH a girl. The girl was part of it. She put the tray down, knelt next to the bed and waited like a lamp. I tipped her and she looked at me like I'd slapped her. Apparently you tip the OWNER. Nobody tells you anything here.
    ↳ localguy88: tourists tipping slaves is my favourite genre
-· Confessions — u/grey_collar_22 (slave): "he lets me sleep in the bed when she's away" — And I've started hoping she gets another business trip. I know what I am. I still count the days.`;
+· Confessions, u/grey_collar_22 (slave): "he lets me sleep in the bed when she's away". And I've started hoping she gets another business trip. I know what I am. I still count the days.`;
 
 export function feedPrompt(s: SaveState, n = 3): { system: string; user: string } {
   const src = sources(s);

@@ -77,8 +77,10 @@ export function aroundBrief(s: SaveState, opts: { since?: number; scene?: string
   const talk = (s.rumors ?? []).filter((r) => r.week >= since).sort((a, b) => b.salience - a.salience).slice(0, 3).map((r) => r.content);
   if (!list.length && !sagas.length && !talk.length) return "";
   const head = opts.since !== undefined
-    ? `## WHAT'S HAPPENED SINCE ${opts.scene ? "THIS SCENE LAST MOVED" : "THEN"} (week ${since}, and it's week ${week} now)\nTime has passed and the world has moved. Pick up from where things stand now, not from where it stopped. If something here changes the situation, the people in it know, and they act on it. They might bring it up, or be scared, angry or changed by it, or the scene might move on because of it.`
-    : `## WHAT ELSE IS GOING ON\nThis is the same arcology over the last few weeks. Nothing happens in isolation. People know about what happened here and are affected by it, so let what you write tie into it where it fits. That might be what they're talking about, why they're where they are, what's changed for them, or a reason the event happens at all. If something big happened, it's on everyone's mind.`;
+    ? `## WHAT'S HAPPENED SINCE ${opts.scene ? "THIS SCENE LAST MOVED" : "THEN"} (week ${since}, and it's week ${week} now)
+Time has passed and the world has moved. Pick up from where things stand now, not from where it stopped. If something here changes the situation, the people in it know, and they act on it. They might bring it up. They might be scared, angry or changed by it. The scene might move on because of it.`
+    : `## WHAT ELSE IS GOING ON
+This is the same arcology over the last few weeks. Nothing happens in isolation, so people know what happened here and it has affected them. Let what you write tie into it where it fits: what they're talking about, why they're where they are, what's changed for them, or a reason the event happens at all. If something big happened, it's on everyone's mind.`;
   return [head, ...list, sagas.length ? `Stories running: ${sagas.join("; ")}.` : "", talk.length ? `What people are saying: ${talk.join(" | ")}` : ""].filter(Boolean).join("\n");
 }
 
