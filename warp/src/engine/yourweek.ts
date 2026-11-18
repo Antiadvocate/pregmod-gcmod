@@ -74,7 +74,7 @@ export function offlinePlans(s: SaveState): PlanOption[] {
   return pick.map(({ k }) => ({ label: BY_SKILL[k.id] ?? `Practise ${k.name}`, skill: k.id, what: k.does }));
 }
 
-const PLAN_SYSTEM = `You suggest three different ways the owner of an arcology could spend the coming week, in Free Cities, an adult game about owning an arcology where slavery is legal. Each grows out of who the owner is (WHO THE OWNER IS, their skills) and what's going on in the city right now (THE CITY). Make them concrete and specific to this week: where they'd be and what they'd be doing, never a generic category. One plays to the owner's strengths, one works on a weakness, and one is for pleasure.
+const PLAN_SYSTEM = `You suggest three different ways the owner of an arcology could spend the coming week, in Free Cities, an adult game about owning an arcology where slavery is legal. Each one grows out of who the owner is (WHO THE OWNER IS, their skills) and what's going on in the city right now (THE CITY). Make them concrete and specific to this week: where they'd be, what they'd be doing. Never a generic category. One plays to the owner's strengths, one works on a weakness, one is for pleasure.
 
 Reply with JSON only: {"options":[{"label":"what the owner does this week, 5-12 words","skill":"one SKILL id it uses, or empty","what":"one sentence on what could come of it"}]}`;
 
@@ -116,7 +116,7 @@ export function tickPlan(s: SaveState): string | null {
 
 const HAPPENED_SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal. It's about the OWNER, and something that happened to them while they were doing what they spent the week doing (THE OWNER'S WEEK). Somebody they met, something they found, an offer, a problem, a temptation, a fight, a fuck. Tie it to the week they actually had and the city as it is. Write one or two short paragraphs in the second person and the present tense, ending where the owner has to decide something.
 
-Then give three or four genuinely different choices, each with an effect id from EFFECT IDS, and make at least one of them let it go.
+Then give three or four real alternatives, each with an effect id from EFFECT IDS. At least one of them drops it.
 
 ${NOT_PAPERWORK}
 

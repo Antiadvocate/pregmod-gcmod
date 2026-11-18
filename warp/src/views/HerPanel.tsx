@@ -86,12 +86,12 @@ export default function HerPanel({ id }: { id: string }) {
         <p className="font-prose text-[14px] mid">{RUNG_BY_ID[rom.standing].what}</p>
 
         <div className="mt-4">
-          <Meter value={rom.dominion} range={[-100, 100]} label="who is deciding — you ← → her" />
+          <Meter value={rom.dominion} range={[-100, 100]} label="who is deciding: you ← → her" />
           <div className="text-[11px] dim mt-1">
             {rom.dominion <= -60 ? "You decide everything and she knows it."
               : rom.dominion < 0 ? "She has opinions. She mostly keeps them to herself."
               : rom.dominion < 40 ? "She says things now, and sometimes you do them."
-              : rom.dominion < 70 ? "She moves people around the household and tells you afterwards."
+              : rom.dominion < 70 ? "She moves people around the household, then tells you afterwards."
               : rom.dominion < 85 ? "She runs most of it now and tells you what she did."
               : "She decides. You find out after."}
           </div>
@@ -123,7 +123,7 @@ export default function HerPanel({ id }: { id: string }) {
           {busy ? <Loader2 size={13} className="animate-spin" /> : "ask her what she wants"}
         </Button>
       )}
-      {quiet && !ask ? <p className="text-[12.5px] dim">She doesn't ask for anything. {read(p, save.memory[id]).trust < 10 ? "She doesn't trust you enough to." : "She doesn't think you'd give her anything she wants right now."}</p> : null}
+      {quiet && !ask ? <p className="text-[12.5px] dim">She doesn't ask for anything. {read(p, save.memory[id]).trust < 10 ? "She doesn't trust you enough to." : "Right now she doesn't think you'd give her anything she wants."}</p> : null}
 
       <Section title="The ladder">
         <div className="space-y-2">
@@ -183,7 +183,7 @@ export default function HerPanel({ id }: { id: string }) {
       <KillHer id={id} />
 
       <Card className="text-[11.5px] dim">
-        {r.fragility > 0.5 ? "She obeys you more out of fear than love." : "She obeys you more out of love than fear."} To court her it has to be mostly love, and to marry her, almost all of it.
+        {r.fragility > 0.5 ? "She obeys you more out of fear than love." : "She obeys you more out of love than fear."} To court her it has to be mostly love. To marry her, almost all of it.
       </Card>
     </div>
   );
@@ -207,7 +207,7 @@ function LetHerGo({ id }: { id: string }) {
       </div>
       {open ? (
         <div className="mt-2 space-y-1.5">
-          <div className="text-[12px] dim">She'll live in your city afterwards, off your roster. She takes work in one of your districts, and you'll run into her.</div>
+          <div className="text-[12px] dim">She'll live in your city afterwards, off your roster. She takes work in one of your districts, and you'll run into her there.</div>
           {(Object.keys(FREE_HOW) as FreeHow[]).map((how) => {
             const cost = FREE_HOW[how].cost(save);
             return (
@@ -241,7 +241,7 @@ function KillHer({ id }: { id: string }) {
       </div>
       {open ? (
         <div className="mt-2 space-y-1.5">
-          <div className="text-[12px] dim">She's dead and off your roster. Everyone in the household feels it.</div>
+          <div className="text-[12px] dim">She's dead, and off your roster. Everyone in the household feels it.</div>
           {(Object.keys(KILL_HOW) as KillHow[]).map((how) => (
             <button key={how} className="choice" onClick={() => { let r = { ok: false, line: "" }; mutate((s) => { r = killHer(s, id, how); }); setSaid(r.line); setOpen(false); }}>
               <span className="block text-[14px] leading-snug">{KILL_HOW[how].label}</span>

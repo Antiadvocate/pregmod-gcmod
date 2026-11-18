@@ -57,7 +57,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
       <Section title="Start over">
         <Card>
           <div className="text-[12.5px] mid mb-3">
-            A new game generates a fresh arcology and a fresh household. This save is kept, and
+            A new game builds a fresh arcology and a fresh household. This save is kept and
             stays in the save list.
           </div>
           <div className="flex flex-wrap gap-2">
@@ -69,77 +69,77 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
 
       <Section title="Models">
         <Card>
-          <Field label="OpenRouter key" hint="Stored in this browser only, sent to OpenRouter and nowhere else. Warp works without one, using the built-in written scenes.">
+          <Field label="OpenRouter key" hint="Stored in this browser only, sent to OpenRouter and nowhere else. Warp runs without one on the built-in written scenes.">
             <input type="password" value={key} placeholder="sk-or-…" onChange={(e) => { setKey(e.target.value); setApiKey(e.target.value); }} />
           </Field>
-          <Field label="Local server (optional)" hint="An OpenAI-compatible base URL — KoboldCpp http://localhost:5001/v1, LM Studio http://localhost:1234/v1. Then prefix a model id with local/ to route it there.">
+          <Field label="Local server (optional)" hint="An OpenAI-compatible base URL, for example KoboldCpp http://localhost:5001/v1 or LM Studio http://localhost:1234/v1. Then prefix a model id with local/ to route it there.">
             <input value={local} placeholder="http://localhost:5001/v1" onChange={(e) => { setLocal(e.target.value); setLocalEndpoint(e.target.value ? { url: e.target.value } : null); }} onBlur={() => loadModels()} />
           </Field>
           <div className="grid sm:grid-cols-2 gap-3">
-            {([["narrator_model", "Narrator — the long creative call"], ["bookkeeper_model", "Bookkeeper — strict JSON, small model"], ["forge_model", "Forge — writes a person's interior"], ["fallback_model", "Fallback — when the first one fails"]] as const).map(([k, label]) => (
+            {([["narrator_model", "Narrator: the long creative call"], ["bookkeeper_model", "Bookkeeper: strict JSON, small model"], ["forge_model", "Forge: writes a person's interior"], ["fallback_model", "Fallback: when the first one fails"]] as const).map(([k, label]) => (
               <Field key={k} label={label}>
                 <ModelPicker value={save.models[k]} models={models} onChange={(id) => mutate((s) => { s.models[k] = id; })} />
               </Field>
             ))}
           </div>
-          <Field label="City feed — the cheap model that writes the posts" hint="Short posts only, a few at a time, and the narrator writes the full story when you open one. Blank uses the bookkeeper.">
+          <Field label="City feed: the cheap model that writes the posts" hint="Short posts only, a few at a time. The narrator writes the full story when you open one. Blank uses the bookkeeper.">
             <ModelPicker value={save.models.feed_model ?? ""} models={models} onChange={(id) => mutate((s) => { s.models.feed_model = id; })} />
           </Field>
-          <Field label="How often the city posts" hint="While the game is open and in front of you. Each batch is one small call.">
+          <Field label="How often the city posts" hint="Runs while the game is open and in front of you. Each batch is one small call.">
             <div className="flex gap-2 flex-wrap">
               {[0, 2, 5, 10, 20].map((m) => (
                 <Chip key={m} on={(save.models.feed_pace ?? 5) === m} onClick={() => mutate((s) => { s.models.feed_pace = m; })}>{m ? `every ${m} min` : "off"}</Chip>
               ))}
             </div>
           </Field>
-          <Field label="Lean mode" hint="Only call the model when you ask for something. There's no automatic week summary and no automatic assistant brief (she gets a button instead). Scenes, conversations and events still use the model when you play them.">
+          <Field label="Lean mode" hint="The model is only called when you ask for something. No automatic week summary, no automatic assistant brief (she gets a button instead). Scenes, conversations and events still use the model when you play them.">
             <div className="flex gap-1.5">
               <Chip on={!!save.models.lean_mode} onClick={() => mutate((s) => { s.models.lean_mode = true; })}>On</Chip>
               <Chip on={!save.models.lean_mode} onClick={() => mutate((s) => { s.models.lean_mode = false; })}>Off</Chip>
             </div>
-            <div className="text-[12px] dim mt-3 mb-1">Business, money and politics as events, like loans, suppliers, share raids, envoys and summits, strikes, festivals, citizens' meetings. Attacks and wars still come whatever this says.</div>
+            <div className="text-[12px] dim mt-3 mb-1">Business, money and politics as events: loans, suppliers, share raids, envoys and summits, strikes, festivals, citizens' meetings. Attacks and wars still come whatever this says.</div>
             <div className="flex gap-1.5">
               {(["off", "some", "on"] as const).map((k) => <Chip key={k} on={(save.business_events ?? "off") === k} onClick={() => mutate((s) => { s.business_events = k; })}>{{ off: "None of it", some: "One a month", on: "All of it" }[k]}</Chip>)}
             </div>
-            <div className="text-[12px] dim mt-3 mb-1">How much the other powers bother you with envoys, offers and summits, when business events are on. Enemies will still come for you whatever this says.</div>
+            <div className="text-[12px] dim mt-3 mb-1">How much the other powers bother you with envoys, offers and summits, when business events are on. Enemies still come for you whatever this says.</div>
             <div className="flex gap-1.5">
               {(["none", "some", "full"] as const).map((k) => <Chip key={k} on={(save.world_pace ?? "some") === k} onClick={() => mutate((s) => { s.world_pace = k; })}>{{ none: "Leave me alone", some: "Now and then", full: "Constantly" }[k]}</Chip>)}
             </div>
-            <div className="text-[12px] dim mt-3 mb-1">After you answer an event, have the model write out what happens. Off: you get the game's line and what changed, and each event still has "play it out" if you want it.</div>
+            <div className="text-[12px] dim mt-3 mb-1">After you answer an event, the model writes out what happens. Off: you get the game's line and what changed, and each event still has "play it out" if you want it.</div>
             <div className="flex gap-1.5">
               <Chip on={save.models.write_outcomes !== false} onClick={() => mutate((s) => { s.models.write_outcomes = true; })}>Write it out</Chip>
               <Chip on={save.models.write_outcomes === false} onClick={() => mutate((s) => { s.models.write_outcomes = false; })}>Just apply it</Chip>
             </div>
-            <div className="text-[12px] dim mt-3 mb-1">When a woman's memories get long, boil the older ones down to what mattered with one quick call to the bookkeeper model, at the end of the week. Core memories and the last few weeks are never touched. Each woman also has a button for it under her memories.</div>
+            <div className="text-[12px] dim mt-3 mb-1">When a woman's memories get long, the older ones are boiled down to what mattered, with one quick call to the bookkeeper model at the end of the week. Core memories and the last few weeks are never touched. Each woman also has a button for it under her memories.</div>
             <div className="flex gap-1.5">
               <Chip on={save.models.auto_condense !== false} onClick={() => mutate((s) => { s.models.auto_condense = true; })}>Condense automatically</Chip>
               <Chip on={save.models.auto_condense === false} onClick={() => mutate((s) => { s.models.auto_condense = false; })}>Leave them</Chip>
             </div>
           </Field>
           <YourWriting />
-          <Field label="Thinking" hint="Reasoning models (and many flash models) think before they write, which can take a long time. Off asks them not to, and if a model refuses the switch, the call is sent again without it.">
+          <Field label="Thinking" hint="Reasoning models (and many flash models) think before they write, which can take a long time. Off asks them not to. If a model refuses the switch, the call is sent again without it.">
             <div className="flex gap-1.5">
-              {([["off", "Off — fastest"], ["low", "A little"], ["model", "Model's default"]] as [Thinking, string][]).map(([v, label]) => (
+              {([["off", "Off, fastest"], ["low", "A little"], ["model", "Model's default"]] as [Thinking, string][]).map(([v, label]) => (
                 <Chip key={v} on={thinking === v} onClick={() => { setThinking(v); setThinkingState(v); }}>{label}</Chip>
               ))}
             </div>
           </Field>
-          <Field label="Photo model — redraws the drawn feet as photographs" hint={`${imageModels(models).length} OpenRouter models that output images. Each redraw is one image per view, billed by the model.`}>
+          <Field label="Photo model: redraws the drawn feet as photographs" hint={`${imageModels(models).length} OpenRouter models that output images. Each redraw costs one image per view, billed by the model.`}>
             <ModelPicker value={save.models.photo_model ?? ""} models={imageModels(models)} onChange={(id) => mutate((s) => { s.models.photo_model = id; })} />
           </Field>
           <div className="flex items-center gap-2 text-[11.5px] dim">
             <span>{modelsState}</span>
             <Button size="sm" kind="ghost" onClick={() => loadModels(true)}>refresh list</Button>
           </div>
-          <div className="text-[11.5px] dim">{modelsAvailable() ? "Configured." : "Nothing configured — the game runs offline."}</div>
+          <div className="text-[11.5px] dim">{modelsAvailable() ? "Configured." : "Nothing configured. The game runs offline."}</div>
         </Card>
       </Section>
 
       <Section title="Pictures">
         <Card>
           <div className="text-[11.5px] dim mb-3">
-            Point this at ComfyUI or an A1111-style WebUI on your own machine to generate a portrait for each slave
-            (kept consistent across the game) and a picture after every scene. It has to be local, because hosted image APIs
+            Point this at ComfyUI or an A1111-style WebUI on your own machine, and it generates a portrait for each slave
+            (kept consistent across the game) plus a picture after every scene. It has to be local, since hosted image APIs
             refuse most of this game's content and charge per image.
           </div>
           <div className="grid sm:grid-cols-3 gap-3">
@@ -163,7 +163,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
             <Field label="Steps"><input type="number" value={img.steps ?? LOCAL_IMAGE_DEFAULTS.steps} onChange={(e) => saveImg({ steps: Number(e.target.value) })} /></Field>
             <Field label="CFG"><input type="number" step="0.5" value={img.cfg ?? LOCAL_IMAGE_DEFAULTS.cfg} onChange={(e) => saveImg({ cfg: Number(e.target.value) })} /></Field>
           </div>
-          <Field label="Prompt dialect" hint="SD1.5, SDXL and Pony parse comma-separated tags and stop attending past about seventy tokens. Flux and SD3 read sentences.">
+          <Field label="Prompt dialect" hint="SD1.5, SDXL and Pony parse comma-separated tags and stop attending past about seventy tokens. Flux and SD3 read whole sentences.">
             <div className="flex gap-2">
               {(["natural", "tags"] as const).map((d) => (
                 <Button key={d} size="sm" kind={(img.prompt_style ?? "natural") === d ? "primary" : undefined} onClick={() => saveImg({ prompt_style: d })}>{d}</Button>
@@ -175,7 +175,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
             <Chip on={!!img.auto_scene} onClick={() => saveImg({ auto_scene: !img.auto_scene })}>paint every scene turn</Chip>
           </div>
           {img.backend === "comfy" ? (
-            <Field label="Workflow (API format)" hint={`Export yours from ComfyUI with Workflow → Export (API) and replace the values Warp should fill with ${WORKFLOW_TOKENS.slice(0, 8).join(" ")}. Blank uses a plain txt2img graph. Numbers are substituted through their quotes, so "seed": "%seed%" arrives as a real number.`}>
+            <Field label="Workflow (API format)" hint={`Export yours from ComfyUI with Workflow → Export (API), then replace the values Warp should fill with ${WORKFLOW_TOKENS.slice(0, 8).join(" ")}. Blank uses a plain txt2img graph. Numbers are substituted through their quotes, so "seed": "%seed%" lands as a real number.`}>
               <textarea rows={4} className="font-mono text-[11px]" value={img.workflow ?? ""} onChange={(e) => saveImg({ workflow: e.target.value })} />
             </Field>
           ) : null}
@@ -205,8 +205,8 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
           <div className="text-[11.5px] dim">
             The scenes, the generated events and the wording of what she asks for all go through the narrator slot.
             This game asks for explicit material, and hosted models often refuse it or tone it down.
-            Put a local model behind the narrator — KoboldCpp, llama-server, LM Studio, Ollama — and prefix the id
-            with <span className="font-mono">local/</span>. The bookkeeper can stay hosted, because it only outputs JSON,
+            Put a local model behind the narrator (KoboldCpp, llama-server, LM Studio, Ollama) and prefix the id
+            with <span className="font-mono">local/</span>. The bookkeeper can stay hosted, since it only outputs JSON,
             which small local models are bad at.
           </div>
         </Card>
@@ -214,7 +214,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
 
       <Section title="Content">
         <Card>
-          <div className="text-[11.5px] dim mb-2">All on by default, as in the original. Turning one off hides it from surgery, drugs and acts.</div>
+          <div className="text-[11.5px] dim mb-2">All on by default, as in the original. Turn one off and it disappears from surgery, drugs and acts.</div>
           <div className="flex flex-wrap gap-2">
             {([
               ["extreme", "extreme content (castration, removing genitals, clipped tendons)"],
@@ -231,7 +231,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
 
       <Section title="How much the world does on its own">
         <Card>
-          <Field label={`Tension — ${save.models.tension}`} hint="0 means only your own household causes events. Higher means outside events happen more often and escalate faster.">
+          <Field label={`Tension — ${save.models.tension}`} hint="0 means only your own household causes events. Higher means outside events come more often and escalate faster.">
             <input type="range" min={0} max={10} value={save.models.tension} onChange={(e) => mutate((s) => { s.models.tension = Number(e.target.value); })} />
           </Field>
           <Field label={`Scene history kept in context — ${save.models.history_window} turns`} hint="How many recent turns the narrator sees for continuity. Lower is cheaper.">
@@ -274,7 +274,7 @@ export default function SettingsView({ onSwitch }: { onSwitch: () => void }) {
               <button key={k} className={cx("seg", layout === k && "on")} onClick={() => setLayout(k)}>{label}</button>
             ))}
           </div>
-          <div className="text-[11px] dim mb-3">{layout === "columns" ? "Cards flow into as many columns as the window has room for." : layout === "strip" ? "The screen flows into columns down the height of the window and scrolls sideways, like a broadsheet. The mouse wheel scrolls it, and there are arrows at the edges." : "The old single column, scrolling down."}</div>
+          <div className="text-[11px] dim mb-3">{layout === "columns" ? "Cards flow into as many columns as the window has room for." : layout === "strip" ? "The screen flows into columns down the height of the window and scrolls sideways, like a broadsheet. The mouse wheel scrolls it and there are arrows at the edges." : "The old single column, scrolling down."}</div>
           <div className="text-[12px] mid mb-1.5">Getting around, on a wider screen</div>
           <div className="segmented mb-1.5">
             {([["top", "Across the top"], ["rail", "Down the side"]] as const).map(([k, label]) => (
@@ -343,7 +343,7 @@ function YourWriting() {
   };
   const recent = llmCalls.filter((c) => c.tag !== "json").slice(-6).reverse();
   return (
-    <Field label="Your writing" hint="The narration is shown a few of the lines you type yourself and the paragraphs you've rewritten (the pencil after any paragraph), so it writes more like you. Only the narration: the women keep their own voices. Your rewrites replace what the model wrote, and the originals aren't sent to it again.">
+    <Field label="Your writing" hint="The narration sees a few of the lines you type yourself and the paragraphs you've rewritten (the pencil after any paragraph), so it writes more like you. Only the narration: the women keep their own voices. Your rewrites replace what the model wrote, and the originals aren't sent again.">
       <div className="flex gap-1.5 items-center flex-wrap">
         <Chip on={on} onClick={() => { setYourVoice(true); setOn(true); }}>On</Chip>
         <Chip on={!on} onClick={() => { setYourVoice(false); setOn(false); }}>Off</Chip>

@@ -196,7 +196,7 @@ export const GOING_SYSTEM = `You write one event for Free Cities, an adult text 
 
 How to build it:
 - Start from THE FACTS. They're true, and they're why it's happening now. Build it out of them, the people's natures, how they feel about each other, where they are, and this week.
-- It happens in the same world as everything else. Tie it into WHAT ELSE IS GOING ON and THIS WEEK where it fits, so people know what the owner did and what happened to the city, it's on their minds, it changes what they want, and it can be the reason the event happens. Mix threads rather than following one on its own.
+- It happens in the same world as everything else. Tie it into WHAT ELSE IS GOING ON and THIS WEEK where it fits, so people know what the owner did and what happened to the city. It's on their minds, it changes what they want, and it can be the reason the event happens. Mix threads rather than following one on its own.
 - It's NOT a continuation of her recent goings-on (listed under HER RECENT GOINGS-ON). Pick a different subject, a different place and different people. Someone the owner told to stop or keep away doesn't carry on as if nothing was said.
 - It happens somewhere real, like where she works, somewhere in the house, or on the concourse. Say where.
 - ${NOT_PAPERWORK}

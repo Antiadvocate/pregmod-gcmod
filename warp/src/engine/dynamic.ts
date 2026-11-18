@@ -164,7 +164,7 @@ export function dossier(s: SaveState, p: Person): string {
 
 export const SYSTEM = `You write one event for Free Cities, an adult text game about owning an arcology where slavery is legal and ordinary. An event is a short situation with one of the player's slaves that ends with the player having to decide what to do.
 
-Build it from her record, meaning her fetish, her flaw, her job, her body, her room, what has been done to her, what she remembers, how she feels about you, and above all WHAT HAS ALREADY HAPPENED between you. Emergent story is the point. The best event is the next step of something already on her record, like a promise you made, a punishment she hasn't got over, or something left open, with consequences that follow from it. If OPEN THREADS are listed, continue one of them. It should be something that could only happen with her, this week.
+Build it from her record: her fetish, her flaw, her job, her body, her room, what has been done to her, what she remembers, how she feels about you, and above all WHAT HAS ALREADY HAPPENED between you. The story should come out of that. The best event is the next step of something already on her record, a promise you made, a punishment she hasn't got over, something left open, with consequences that follow from it. If OPEN THREADS are listed, continue one of them. It should be something that could only happen with her, this week.
 
 This is a porn game, and every event has a sexual charge: her body, sex, a kink, desire, or power used on someone's body. A thread with no sex in it, like stolen food, a count that's short, a list or a quarrel about chores, is finished. Don't continue it. If her record only has threads like that, start something sexual from her fetishes, body and nature instead.
 
@@ -173,11 +173,11 @@ ${HOUSE_STYLE}
 Do not invent people who are not on the record, except strangers with no name. Everyone is an adult.
 
 Output ONE strict JSON object and nothing else:
-{"title":"2-5 words","situation":"one or two short paragraphs, present tense, ending where you have to decide","options":[{"label":"what you do, 2-8 words","note":"a few plain words for the player, like \"she won't forget it\" or \"costs you ¤2,000\", and never the effect's description","effect":"one id from the list","value":"optional"}],"hook":"one line saying what this leaves open for later, or empty"}
+{"title":"2-5 words","situation":"one or two short paragraphs, present tense, ending where you have to decide","options":[{"label":"what you do, 2-8 words","note":"a few plain words for the player, like "she won't forget it" or "costs you ¤2,000", and never the effect's description","effect":"one id from the list","value":"optional"}],"hook":"one line saying what this leaves open for later, or empty"}
 
-Give three or four options, each a genuinely different response, and make at least one of them leaving it alone.
+Give three or four options, each a real alternative, and at least one of them leaves it alone.
 
-It is now the week named under THE PLACE AND TIME, and each turn of the game is a week. Everything on her record happened in earlier weeks and is over, so don't restage it. This is the next thing, and it's happening now.`;
+It is now the week named under THE PLACE AND TIME, and each turn of the game is a week. Everything on her record happened in earlier weeks and is over, so don't restage it. This is the next thing, happening now.`;
 
 /** The effects as the model reads them: id, what it does, and what to put in "value". */
 export function effectList(): string {

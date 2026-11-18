@@ -102,7 +102,7 @@ export default function Feed() {
       ) : null}
 
       {!shown.length ? (
-        <Empty>{f.posts.length ? "Nothing on this board yet." : "No posts yet. The city starts talking once a model is set. Tap “new posts” to start it now."}</Empty>
+        <Empty>{f.posts.length ? "Nothing on this board yet." : "No posts yet. The city starts talking once a model is set. Tap \"new posts\" if you want it to start now."}</Empty>
       ) : (
         <div className="space-y-2.5">
           {shown.map((p) => <PostCard key={p.id} p={p} onOpen={() => setOpen(p.id)} onLike={() => mutate((s) => likePost(s, p.id))} />)}

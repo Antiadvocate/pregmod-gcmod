@@ -40,8 +40,8 @@ export default function ArcologyView() {
         <Card>
           <div className="grid sm:grid-cols-2 gap-5">
             <div>
-              <div className="mb-2"><Meter value={arc.security} label="security — against the outside" /></div>
-              <Meter value={unrest(save)} range={[0, 100]} invert label="unrest — inside your own household" />
+              <div className="mb-2"><Meter value={arc.security} label="security: against the outside" /></div>
+              <Meter value={unrest(save)} range={[0, 100]} invert label="unrest: inside your own household" />
               <div className="text-[11px] dim mt-2">Security does not touch unrest.</div>
             </div>
             <div>
@@ -54,7 +54,7 @@ export default function ArcologyView() {
                 </>
               ) : (
                 <>
-                  <div className="text-[11.5px] dim mb-2">¤30,000 up front, ¤3,500 a week. They make raids much less damaging.</div>
+                  <div className="text-[11.5px] dim mb-2">¤30,000 up front, then ¤3,500 a week. They make raids much less damaging.</div>
                   <Button size="sm" disabled={arc.cash < 30000} onClick={() => mutate((s) => { hireMercenaries(s); })}>hire a company</Button>
                 </>
               )}
@@ -76,7 +76,7 @@ export default function ArcologyView() {
         </div>
         {lastBattles(save).length ? (
           <div className="mt-2 space-y-1">
-            {lastBattles(save).map((b, i) => <div key={i} className="text-[12px] mid">Week {b.week}: {ATTACKERS[b.attacker].name}, strength {b.size.toFixed(1)} — {b.result === "won" ? "beaten off" : b.result === "lost" ? "they broke in" : b.result === "paid" ? "paid off" : b.result === "held" ? "held at the spire" : "on the way"}</div>)}
+            {lastBattles(save).map((b, i) => <div key={i} className="text-[12px] mid">Week {b.week}: {ATTACKERS[b.attacker].name}, strength {b.size.toFixed(1)}, {b.result === "won" ? "beaten off" : b.result === "lost" ? "they broke in" : b.result === "paid" ? "paid off" : b.result === "held" ? "held at the spire" : "on the way"}</div>)}
           </div>
         ) : null}
       </Section>
@@ -132,7 +132,7 @@ export default function ArcologyView() {
                   <>
                     {def.manager ? (
                       <div className="text-[11.5px] mid mt-2">
-                        {def.manager.title}: {manager ? <span className="hi">{manager.name}</span> : <span className="dim">nobody — {def.manager.effect}</span>}
+                        {def.manager.title}: {manager ? <span className="hi">{manager.name}</span> : <span className="dim">nobody: {def.manager.effect}</span>}
                       </div>
                     ) : null}
                     <div className="flex flex-wrap gap-1.5 mt-3">
@@ -199,7 +199,7 @@ export default function ArcologyView() {
                 }} />
             ))}
           </div>
-          <div className="text-[11.5px] dim">Click a sector you do not own to buy it. Cost depends on condition, and owning more raises your income and control.</div>
+          <div className="text-[11.5px] dim">Click a sector you don't own to buy it. The cost depends on its condition, and owning more raises your income and control.</div>
         </Card>
       </Section>
 
@@ -242,7 +242,7 @@ export default function ArcologyView() {
             {arc.loans.map((l, i) => (
               <Card key={i} className="flex items-center gap-4">
                 <div className="flex-1">
-                  <div className="text-[13px]">{l.lender === "shark" ? "The shark" : "The bank"} — <Money n={l.principal} /></div>
+                  <div className="text-[13px]">{l.lender === "shark" ? "The shark" : "The bank"}: <Money n={l.principal} /></div>
                   <div className="text-[11px] dim">{Math.round(l.apr * 100)}% APR · due week {l.due_week}</div>
                 </div>
                 <Button size="sm" disabled={arc.cash < l.principal}

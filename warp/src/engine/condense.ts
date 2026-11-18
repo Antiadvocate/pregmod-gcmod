@@ -66,12 +66,12 @@ export function dueToCondense(s: SaveState): Person[] {
     .sort((a, b) => memoryTokens(s.memory[b.id]) - memoryTokens(s.memory[a.id]));
 }
 
-export const CONDENSE_SYSTEM = `You condense one woman's memories in Free Cities, an adult text game about owning an arcology, as one strict JSON object. She is a slave in the owner's house. Her memories are read back into later scenes, so what you write is what she will carry from now on.
+export const CONDENSE_SYSTEM = `You condense one woman's memories in Free Cities, an adult text game about owning an arcology, as one strict JSON object. She is a slave in the owner's house. Later scenes read her memories back, so what you write is what she carries from now on.
 
-Each memory comes numbered, with its week (or weeks and how many times it happened), its importance out of 10, and its charge (warm, bright, cold, sharp or dull).
+Each memory arrives numbered, with its week (or weeks, and how many times it happened), its importance out of 10, and its charge (warm, bright, cold, sharp or dull).
 
 - Merge memories that are the same thing, or the same kind of thing, into one. A run of the same work week after week is one memory with the week range.
-- Keep every memory that changed her or that a later scene would need: a first time, a promise, a rule or order, an injury or operation, a punishment, a kindness that mattered, a betrayal, something she was given or had taken away, someone she met. Keep the concrete detail (who, what, where) in plain words.
+- Keep every memory that changed her, or that a later scene will need: a first time, a promise, a rule or order, an injury or operation, a punishment, a kindness that mattered, a betrayal, something she was given or had taken away, someone she met. Keep the concrete detail (who, what, where) in plain words.
 - Drop routine that changed nothing and that nothing later depends on.
 - Write each in the first person, as hers ("I", "me", "my"), with the player as "the owner", never "you". Keep who did what to whom exactly as the originals say it.
 - Invent nothing. Every memory you write must say only what the ones it covers say.

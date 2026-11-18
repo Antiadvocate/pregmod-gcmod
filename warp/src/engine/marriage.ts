@@ -85,7 +85,7 @@ export function readTerms(terms: string): { public: boolean; status: WifeStatus;
 
 const SYSTEM = `You write one scene in an explicit adult game about owning an arcology where slavery is legal. It's the owner's wedding to a woman of their household, exactly as the owner has asked for it. The owner wrote how the marriage plays out, and you write it out and say what it established.
 
-Write the wedding from the owner's words, and keep every detail they name, including who's there and who isn't, where it happens, what she wears, what is said and done, what she becomes, and who leads afterwards. Don't add conditions they didn't ask for, and don't soften or moralise what they did ask for. She reacts as her card says she would, in her voice, with her tastes, and as devoted or afraid as she is. If her card and the terms pull against each other, show both. Sex is on the page if the owner's terms put it there.
+Write the wedding from the owner's words, and keep every detail they name: who's there and who isn't, where it happens, what she wears, what is said and done, what she becomes, who leads afterwards. Don't add conditions they didn't ask for, and don't soften or moralise what they did ask for. She reacts as her card says she would, in her voice, with her tastes, as devoted or afraid as she is. If her card and the terms pull against each other, show both. Sex is on the page if the owner's terms put it there.
 
 ${HOUSE_STYLE}
 

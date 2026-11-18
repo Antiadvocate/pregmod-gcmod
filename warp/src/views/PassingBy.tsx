@@ -55,7 +55,7 @@ export default function PassingBy() {
     mutate((s) => {
       const her = s.people[p.id];
       const before = takeStats(s, [her.id]);
-      applyTreatment(her, { kind: "recognition", size: 3, why: "the owner stopped her in the hall to tell her she was doing well" }, s.arcology.week);
+      applyTreatment(her, { kind: "recognition", size: 3, why: "the owner stopped her in the hall to say she was doing well" }, s.arcology.week);
       out = { text: `You stop ${p.name.split(" ")[0]} in the hall and tell her she's doing well.`, chips: chipsBetween(before, takeStats(s, [her.id])), act: "praise" };
     });
     setDone(out);

@@ -43,7 +43,7 @@ function Setup({ onDone }: { onDone?: () => void }) {
         <PAAvatar look={look} hue={hue} />
         <div>
           <div className="text-[14px]">Your personal assistant</div>
-          <div className="text-[12px] dim">The arcology's AI. She reads everything that happens and answers your questions.</div>
+          <div className="text-[12px] dim">The arcology's AI. She reads everything that goes on and answers your questions.</div>
         </div>
       </div>
       <label className="text-[11px] uppercase tracking-wider dim">Name</label>

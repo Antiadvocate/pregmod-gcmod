@@ -174,8 +174,8 @@ export default function Cuckold({ id, onClose }: { id: string; onClose: () => vo
       <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-4">
         {!c ? (
           <div className="text-[13.5px] space-y-2">
-            <p>Give {p.name} to another man, one you choose, a little more every week, and watch what she becomes.</p>
-            <p className="dim text-[12.5px]">The model writes all of it, from her and from you. You can answer each chapter in your own words.</p>
+            <p>Give {p.name} to another man, one you pick, a little more every week, and watch what she becomes.</p>
+            <p className="dim text-[12.5px]">The model writes all of it, from her side and yours. You can answer each chapter in your own words.</p>
             {why ? <p className="bad text-[12.5px]">{why}.</p> : null}
             {!model ? <p className="bad text-[12.5px]">Needs a model set up in Settings.</p> : null}
           </div>
@@ -217,7 +217,7 @@ export default function Cuckold({ id, onClose }: { id: string; onClose: () => vo
         ) : null}
         {c?.ended && last?.text ? (
           <div className="text-[12px] dim">
-            {c.ended.ending === "shared" || c.ended.ending === "his" ? `She still goes to ${c.bull?.short ?? "him"}, and the week report counts the nights.` : "It's over. You could start this again with another woman, from her page."}
+            {c.ended.ending === "shared" || c.ended.ending === "his" ? `She still goes to ${c.bull?.short ?? "him"}, and the week report counts the nights.` : "It's over. You can start again with another woman, from her page."}
           </div>
         ) : null}
       </div>

@@ -22,8 +22,8 @@ export function DropStory({ e }: { e: PendingEvent }) {
   });
   return (
     <div className="mt-3 p-3 rounded-lg" style={{ background: "var(--ink-2)" }}>
-      <div className="text-[12.5px] mb-1.5">Drop it for good. This event goes, and nothing about it, or the people you tick, comes up again in any event or scene.</div>
-      <label className="text-[11.5px] dim">What it's about. Anything that mentions these words is gone. Separate them with commas.</label>
+      <div className="text-[12.5px] mb-1.5">Drop it for good. This event goes, and nothing about it, or the people you tick, turns up again in any event or scene.</div>
+      <label className="text-[11.5px] dim">What it's about. Anything mentioning these words is gone. Separate them with commas.</label>
       <input className="mt-1 mb-2" value={words} onChange={(ev) => setWords(ev.target.value)} placeholder="laundry, linen" />
       {sug.faces.length ? (
         <div className="mb-2">

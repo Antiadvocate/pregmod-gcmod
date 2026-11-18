@@ -313,7 +313,7 @@ export default function Interact({ id, onClose }: { id: string; onClose: () => v
     }
     if (res.written?.tags.length) entries.push({ k: "tags", tags: res.written.tags, tone: o.landing });
     const refused = res.notes.find((n) => /refused/.test(n));
-    if (refused) entries.push({ k: "note", text: `${refused.replace(/^the narrator did not answer \((.*)\)$/, "$1")}, so this is the game's own version. Pick a different narrator model in Settings.` });
+    if (refused) entries.push({ k: "note", text: `${refused.replace(/^the narrator did not answer \((.*)\)$/, "$1")}, so this is the game's own version. Pick another narrator model in Settings.` });
     setLog((l) => [...l, ...entries]);
     record([{ role: "you", text: act.name }, { role: "scene", text: entries.filter((e) => e.k === "prose" || e.k === "said").map((e) => ("text" in e ? e.text : "")).join("\n\n") }]);
     setReplies([]);

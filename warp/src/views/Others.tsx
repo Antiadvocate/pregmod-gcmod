@@ -39,7 +39,7 @@ export default function Others() {
     .sort((a, b) => Number(!!b.kept) - Number(!!a.kept) || b.last - a.last);
   return (
     <div className="pb-24">
-      <p className="text-[12.5px] dim mb-3">People who aren't yours but keep turning up. What's on their record goes into every scene they're in.</p>
+      <p className="text-[12.5px] dim mb-3">People who aren't yours but keep showing up. What's on their record goes into every scene they're in.</p>
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <Chip on={show === "around"} onClick={() => setShow("around")}>around ({all.filter((f) => !f.fate || f.fate.fate === "bought").length})</Chip>
         <Chip on={show === "gone"} onClick={() => setShow("gone")}>dealt with ({all.filter((f) => f.fate && f.fate.fate !== "bought").length})</Chip>
@@ -156,7 +156,7 @@ function OtherRecord({ f }: { f: Face }) {
               <li key={i} className="flex gap-2"><span className="dim font-mono text-[11px] shrink-0">w{n.week}</span><span className="flex-1">{n.text}</span>
                 {edit ? <button className="text-[11px] dim underline shrink-0" onClick={() => set((x) => { x.notes = (x.notes ?? []).filter((m) => m.text !== n.text); })}>forget</button> : null}
               </li>))}</ul>
-          : <div className="text-[12px] dim">Nothing yet. What happens when they turn up in a scene goes here.</div>}
+          : <div className="text-[12px] dim">Nothing yet. What happens when they show up in a scene goes here.</div>}
         {edit ? (
           <div className="flex gap-2 mt-2">
             <input className="flex-1" placeholder="something they remember" value={newNote} onChange={(e) => setNewNote(e.target.value)} />

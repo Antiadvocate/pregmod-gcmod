@@ -68,12 +68,12 @@ export default function Cheats() {
         <Card>
           <div className="grid sm:grid-cols-3 gap-3">
             {([["prosperity", 200], ["security", 100], ["crime", 100], ["population", 20000], ["ownership", 100]] as const).map(([k, max]) => (
-              <Field key={k} label={`${k} — ${Math.round(save.arcology[k] as number)}`}>
+              <Field key={k} label={`${k}: ${Math.round(save.arcology[k] as number)}`}>
                 <input type="range" min={0} max={max} value={Math.round(save.arcology[k] as number)}
                   onChange={(e) => mutate((s) => { (s.arcology[k] as number) = Number(e.target.value); })} />
               </Field>
             ))}
-            <Field label={`food stores — ${Math.round(save.arcology.food.stores)}`}>
+            <Field label={`food stores: ${Math.round(save.arcology.food.stores)}`}>
               <input type="range" min={0} max={8000} value={Math.round(save.arcology.food.stores)}
                 onChange={(e) => mutate((s) => { s.arcology.food.stores = Number(e.target.value); })} />
             </Field>
@@ -157,7 +157,7 @@ export default function Cheats() {
           </div>
           <Button kind="primary" onClick={() => mutate((s) => {
             const made = spawn(s, { ...spawnSpec, nation: spawnSpec.nation || undefined, fetish: spawnSpec.fetish || undefined });
-            say(`${made.map((m) => m.name).join(", ")} — conjured`);
+            say(`${made.map((m) => m.name).join(", ")}, conjured`);
           })}>conjure</Button>
         </Card>
       </Section>
@@ -168,12 +168,12 @@ export default function Cheats() {
             <Button size="sm" onClick={() => mutate((s) => { for (const p of Object.values(s.people)) perfect(s, p); say("everyone is perfect and adores you"); })}>perfect everyone</Button>
             <Button size="sm" onClick={() => mutate((s) => { for (const p of Object.values(s.people)) maxSkills(p); say("every skill maxed"); })}>max every skill</Button>
             <Button size="sm" onClick={() => mutate((s) => { const n = revealAll(s); say(`${n} hidden things revealed`); })}>reveal every fetish</Button>
-            <Button size="sm" onClick={() => mutate((s) => { const r = backfill(s); say(`backfilled ${r.people} people — ${r.fetishes} fetishes, ${r.quirks} quirks, ${r.flaws} flaws`); })}>
+            <Button size="sm" onClick={() => mutate((s) => { const r = backfill(s); say(`backfilled ${r.people} people, ${r.fetishes} fetishes, ${r.quirks} quirks, ${r.flaws} flaws`); })}>
               backfill an old save
             </Button>
           </div>
           <div className="text-[11px] dim">
-            Backfill only adds missing data, such as fetishes for slaves from saves made before fetishes existed.
+            Backfill only adds data that's missing, like fetishes for slaves from saves made before fetishes existed.
           </div>
         </Card>
       </Section>
@@ -188,7 +188,7 @@ export default function Cheats() {
             </Field>
             <div className="grid sm:grid-cols-4 gap-3">
               {([["bond", -100, 100], ["fear", 0, 100], ["resentment", 0, 100], ["hope", 0, 100]] as const).map(([k, lo, hi]) => (
-                <Field key={k} label={`${k} — ${Math.round(target.bond[k])}`}>
+                <Field key={k} label={`${k}: ${Math.round(target.bond[k])}`}>
                   <input type="range" min={lo} max={hi} value={Math.round(target.bond[k])}
                     onChange={(e) => mutate((s) => setBond(s, s.people[target.id], { [k]: Number(e.target.value) }))} />
                 </Field>
@@ -283,7 +283,7 @@ export default function Cheats() {
 
       {target ? (
         <Section title={`Everything about ${target.name}`}>
-          <div className="text-[11.5px] dim mb-2">Every field on her record. Changes apply as soon as you leave a field. Devotion and trust are worked out from bond, fear, resentment and hope, so edit those.</div>
+          <div className="text-[11.5px] dim mb-2">Every field on her record. A change applies as soon as you leave the field. Devotion and trust are worked out from bond, fear, resentment and hope, so edit those instead.</div>
           <PersonEditor target={target} />
         </Section>
       ) : null}
@@ -328,7 +328,7 @@ export default function Cheats() {
             })}
           </div>
           <div className="text-[11px] dim mt-2">
-            {chainEvent(save) ? `Waiting: ${chainEvent(save)!.title}.` : reversalOf(save).ended ? `Finished: ${reversalOf(save).ended}.` : "Nothing pending. The next beat is gated on its week and your deference."}
+            {chainEvent(save) ? `Waiting: ${chainEvent(save)!.title}.` : reversalOf(save).ended ? `Finished: ${reversalOf(save).ended}.` : "Nothing pending. The next beat waits on its week and on your deference."}
           </div>
         </Card>
       </Section>
@@ -342,7 +342,7 @@ export default function Cheats() {
               </Button>
             ))}
           </div>
-          <div className="text-[11px] dim mt-2">Runs the full weekly pipeline, so everything that would have happened does.</div>
+          <div className="text-[11px] dim mt-2">Runs the whole weekly pipeline, so everything that would have happened does.</div>
         </Card>
       </Section>
     </>

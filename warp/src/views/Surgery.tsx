@@ -17,7 +17,7 @@ const GROUPS: { id: Procedure["group"]; label: string; note: string }[] = [
   { id: "fertility", label: "Fertility", note: "Fertility and sterilization." },
   { id: "body", label: "The body", note: "Other procedures." },
   { id: "feet", label: "Feet", note: "Size, arches, soles, and her tendons." },
-  { id: "senses", label: "Senses and voice", note: "Make her mute, deaf or blind, or pull her teeth. Each stays done until it's undone, and undoing it costs more. The whole house hears about it." },
+  { id: "senses", label: "Senses and voice", note: "Make her mute, deaf or blind, or pull her teeth. Each one stays done until it's undone, and undoing it costs more. The whole house hears about it." },
 ];
 
 export default function Surgery({ id }: { id: string }) {
@@ -31,8 +31,8 @@ export default function Surgery({ id }: { id: string }) {
 
   if (!theatreLevel(save)) {
     return <>{geneLab(save) ? <Fleshcraft id={id} /> : null}<Empty>{clinic?.level
-      ? "The Clinic has no surgical theatre yet. Buy the Surgical theatre upgrade on the Clinic, on the Arcology screen."
-      : "No surgical theatre yet. Build the Clinic on the Arcology screen, then buy its Surgical theatre upgrade."}</Empty></>;
+      ? "The Clinic has no surgical theatre yet. Buy the Surgical theatre upgrade on the Clinic, from the Arcology screen."
+      : "No surgical theatre yet. Build the Clinic on the Arcology screen, then buy the Surgical theatre upgrade for it."}</Empty></>;
   }
 
   return (
@@ -102,10 +102,10 @@ function Fleshcraft({ id }: { id: string }) {
   const [line, setLine] = useState("");
   const p = save.people[id];
   if (!p) return null;
-  if (!geneLab(save)) return <Section title="Fleshcraft"><div className="text-[11.5px] dim">Buy the Gene lab upgrade on the Clinic (level 2) for real ears and tails, scales, glowing eyes, milk and fertility genes, and slowed ageing.</div></Section>;
+  if (!geneLab(save)) return <Section title="Fleshcraft"><div className="text-[11.5px] dim">Buy the Gene lab upgrade on the Clinic (level 2) for real ears and tails, scales, glowing eyes, milk and fertility genes, and slower ageing.</div></Section>;
   return (
     <Section title="Fleshcraft">
-      <div className="text-[11.5px] dim mb-2">Gene treatments. Each takes weeks, costs her some health every week, and leaves a permanent change.</div>
+      <div className="text-[11.5px] dim mb-2">Gene treatments. Each takes weeks and costs her some health every week. The change is permanent.</div>
       {p.body.traits?.length ? <div className="flex flex-wrap gap-1.5 mb-2">{p.body.traits.map((t) => <span key={t} className="chip good">{t}</span>)}</div> : null}
       {p.growing?.length ? (
         <div className="space-y-1.5 mb-3">

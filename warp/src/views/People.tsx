@@ -13,9 +13,9 @@ import { cityYield } from "../engine/city";
 
 const NAME: Record<Klass, string> = { poor: "The poor", middle: "The middle", rich: "The rich" };
 const COMES: Record<Klass, string> = {
-  poor: "come for work at the works, docks, dairy and plant, and anywhere to sleep",
+  poor: "come looking for work at the works, docks, dairy and plant, and anywhere to sleep",
   middle: "come for flats, shops, schools, restaurants and the clinic",
-  rich: "come for the exchange, shops, university and gardens, and leave over crime",
+  rich: "come for the exchange, shops, university and gardens, and leave over the crime",
 };
 
 export default function People() {
@@ -63,7 +63,7 @@ export default function People() {
               <input type="range" className="flex-1" min={0} max={MAX_TAX * 100} value={Math.round(c.tax.business * 100)} onChange={(e) => set("business", Number(e.target.value))} aria-label="business tax" />
               <span className="w-10 text-right text-[12px] font-mono">{Math.round(c.tax.business * 100)}%</span>
             </div>
-            <div className="text-[11px] dim">Over 15% and shops start closing and the city gets poorer; under 5% and it booms.</div>
+            <div className="text-[11px] dim">Above 15% shops start closing and the city gets poorer. Below 5% it booms.</div>
           </div>
           <div className="text-[12px] mid">Industry: {ind.line}</div>
         </div>
@@ -77,7 +77,7 @@ export default function People() {
           ))}
         </div>
         <div className="text-[11.5px] dim mt-1.5">
-          {c.border === "open" ? "Anyone can walk in. More people come, and trouble comes with them." : c.border === "checked" ? "Papers checked at the gate. People come at the usual rate, and some trouble still slips through." : "Shut. Almost nobody gets in, and those who do are mostly rich enough to buy their way. The city stops growing and gets a little poorer."}
+          {c.border === "open" ? "Anyone can walk in. More people come, and trouble comes with them." : c.border === "checked" ? "Papers checked at the gate. People come at the usual rate, and some trouble still gets through." : "Shut. Almost nobody gets in, and the few who do are rich enough to buy their way. The city stops growing and gets a little poorer."}
         </div>
         <div className="flex items-center gap-2 mt-2 text-[12.5px]">
           <span>Patrols</span>
@@ -96,7 +96,7 @@ export default function People() {
             <div className="text-[12.5px] mt-1">Taxes brought in {money(last.revenue.poor + last.revenue.middle + last.revenue.rich + last.revenue.business)}: {money(last.revenue.poor)} from the poor, {money(last.revenue.middle)} from the middle, {money(last.revenue.rich)} from the rich, {money(last.revenue.business)} from businesses.</div>
             {last.reasons.length ? <ul className="text-[12px] mid mt-1 space-y-0.5">{last.reasons.map((r, i) => <li key={i}>· {r}</li>)}</ul> : null}
           </>
-        ) : <div className="text-[12px] dim">Nothing yet. After the first week this says who moved in, who left, and why.</div>}
+        ) : <div className="text-[12px] dim">Nothing yet. After the first week this tells you who moved in, who left, and why.</div>}
       </Card>
     </div>
   );

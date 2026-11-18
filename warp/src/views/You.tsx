@@ -171,7 +171,7 @@ function Skills() {
           </div>
         ))}
       </div>
-      <div className="text-[11px] dim mt-3">Tap a skill to pay for training. You also get better at each by doing it, charm by talking, seduction in bed, intimidation by punishing, insight by finding things out.</div>
+      <div className="text-[11px] dim mt-3">Tap a skill to pay for training. You also get better at each by doing it: charm by talking, seduction in bed, intimidation by punishing, insight by finding things out.</div>
     </Card>
   );
 }

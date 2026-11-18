@@ -135,12 +135,12 @@ export function doctrinesFor(p: Person): string[] {
 export interface Style { id: string; line: string; order: number; prosperity: number; sickness: number; unrest: number }
 
 const STYLES: Record<string, Style> = {
-  iron: { id: "iron", line: "She runs it by fear, with public punishments, informers on every floor, and a curfew she enforces herself.", order: 1.4, prosperity: -0.4, sickness: 0, unrest: 0.1 },
+  iron: { id: "iron", line: "She runs it by fear: public punishments, informers on every floor, a curfew she enforces herself.", order: 1.4, prosperity: -0.4, sickness: 0, unrest: 0.1 },
   soft: { id: "soft", line: "She runs it gently, with amnesties, open kitchens, and slaves allowed to bring her their complaints. People take advantage of her.", order: -1, prosperity: 0.4, sickness: 0, unrest: 0 },
   vice: { id: "vice", line: "Her city runs on pleasure. The brothels and clubs never close, she sets the fashion, and the money follows the fucking.", order: -0.8, prosperity: 0.9, sickness: 0.1, unrest: 0 },
-  queen: { id: "queen", line: "She rules it like a queen, with ceremony, her picture everywhere, and citizens kneeling when she passes. The old families hate it.", order: 0.5, prosperity: -0.3, sickness: 0, unrest: 0.05 },
+  queen: { id: "queen", line: "She rules it like a queen, with ceremony and her picture everywhere, and citizens kneel when she passes. The old families hate it.", order: 0.5, prosperity: -0.3, sickness: 0, unrest: 0.05 },
   lost: { id: "lost", line: "She doesn't really know how to run a city. Contracts sit unsigned, the books go unread, and whoever talks to her last gets their way.", order: -0.6, prosperity: -1, sickness: 0.03, unrest: 0.03 },
-  sharp: { id: "sharp", line: "She runs it like a business. She reads every ledger and cuts what doesn't pay, and nobody fools her twice.", order: 0.4, prosperity: 0.8, sickness: 0, unrest: 0 },
+  sharp: { id: "sharp", line: "She runs it like a business. She reads every ledger, cuts what doesn't pay, and nobody fools her twice.", order: 0.4, prosperity: 0.8, sickness: 0, unrest: 0 },
 };
 
 /** How she governs: one or two styles, from her conscience, her appetites, her pride and her brains. */

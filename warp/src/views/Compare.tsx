@@ -85,14 +85,14 @@ function photoPrompt(x: Society): string {
   const c = castOf(x);
   const setting = settingFor(x);
   if (!h.slave) {
-    return `This image is a stylised 3D-style character from a video game, drawn full-length. Redraw it as a single photorealistic full-length photograph of the same adult woman as a real person, standing in ${setting}. She is an ordinary citizen of the Old World, about 34, wearing ${h.citizen.clothes}. Keep her body shape, skin tone, hair and pose as in the drawing.
-Show her whole body, from the top of her head to her feet, with the ground visible under her feet. Do not crop at the waist or knees. A step behind her stands her husband, ${c.husband}, an adult man of about 37 in ${h.husband}. Nobody else in the frame. Natural light. No text.`;
+    return `This image is a stylised 3D-style character from a video game, drawn full length. Redraw it as a single photorealistic full-length photograph of the same adult woman as a real person, standing in ${setting}. She's an ordinary citizen of the Old World, about 34, wearing ${h.citizen.clothes}. Keep her body shape, skin tone, hair and pose as in the drawing.
+Show her whole body, head to feet, with the ground visible under her. Do not crop at the waist or knees. A step behind her stands her husband, ${c.husband}, an adult man of about 37 in ${h.husband}. Nobody else in the frame. Natural light. No text.`;
   }
   const slave = h.slave.clothes === "no clothing" ? "naked" : h.slave.clothes === "body oil" ? "naked, her skin oiled" : `wearing ${h.slave.clothes}`;
-  return `This image shows two stylised 3D-style characters from an adult video game, drawn full-length side by side. Redraw it as a single photorealistic full-length photograph of the same two adult women as real people, standing side by side in ${setting}.
+  return `This image shows two stylised 3D-style characters from an adult video game, drawn full length side by side. Redraw them as a single photorealistic full-length photograph of the same two adult women as real people, standing side by side in ${setting}.
 On the left: ${c.wife}, a free citizen of ${x.name}, about 34, wearing ${h.citizen.clothes}${h.citizen.shoes === "heels" ? " and heels" : ""}, standing easily.
 On the right: ${c.slave}, her household slave, an adult woman of about 22, ${slave}, wearing ${h.slave.collar}${h.slave.shoes === "barefoot" ? ", barefoot" : ""}. Her posture shows how slaves are kept there: ${x.norms.personhood >= 30 ? "upright and at ease, a half step behind her owner" : x.norms.personhood <= -30 ? "eyes lowered, hands clasped, a step behind" : "attentive, a step behind her owner"}.
-Keep each woman's body shape, skin tone, hair and pose, and exactly what each is wearing or not wearing, as in the drawing. Both are adults.${x.engineered?.citizen.changes.length ? ` The citizen and her husband were genetically engineered: ${x.engineered.citizen.changes.join(", ")}. Show whatever of that is visible, real and natural-looking.` : ""}${x.engineered?.slave.changes.length ? ` The slave was genetically engineered too: ${x.engineered.slave.changes.join(", ")}.` : ""} Show both of them entirely, from the top of the head to the feet, with the floor visible under their feet. Do not crop at the waist or knees. Just behind them, and not blocking either woman, stands the citizen's husband, an adult man of about 37 in ${h.husband}. Nobody else in the frame. Natural light. No text.`;
+Keep each woman's body shape, skin tone, hair and pose, and exactly what each is wearing or not, as in the drawing. Both are adults.${x.engineered?.citizen.changes.length ? ` The citizen and her husband were genetically engineered: ${x.engineered.citizen.changes.join(", ")}. Show whatever of that is visible, real and natural-looking.` : ""}${x.engineered?.slave.changes.length ? ` The slave was genetically engineered too: ${x.engineered.slave.changes.join(", ")}.` : ""} Show both of them whole, head to feet, with the floor visible under them. Do not crop at the waist or knees. Just behind them, and not blocking either woman, stands the citizen's husband, an adult man of about 37 in ${h.husband}. Nobody else in the frame. Natural light. No text.`;
 }
 
 function HouseholdCard({ x, other, yours, compact }: { x: Society; other: Society; yours: Society; compact?: boolean }) {
@@ -193,9 +193,9 @@ function HouseholdCard({ x, other, yours, compact }: { x: Society; other: Societ
       <div className="font-prose text-[14px] leading-relaxed space-y-2 mb-2">{paras.map((para, i) => <p key={i}>{para}</p>)}</div>
       <div className="flex items-center gap-2 flex-wrap mb-2">
         {writing ? <span className="text-[11.5px] dim">The narrator is writing this day from the laws…</span> : null}
-        {modelsAvailable() && !writing ? <Button size="sm" kind="ghost" onClick={() => void write()} title="The narrator reads every law word for word and writes the day, and dresses the household by them">{fresh ? "write it again" : "write it from the laws"}</Button> : null}
+        {modelsAvailable() && !writing ? <Button size="sm" kind="ghost" onClick={() => void write()} title="The narrator reads every law word for word, writes the day, and dresses the household by them">{fresh ? "write it again" : "write it from the laws"}</Button> : null}
         {fresh && !writing ? <button className="text-[11px] dim underline" onClick={() => setPlain(!plain)}>{plain ? "the narrator's version" : "the game's rough version"}</button> : null}
-        {!modelsAvailable() ? <span className="text-[11px] dim">Set a narrator model in Settings to have this day written from your laws.</span> : null}
+        {!modelsAvailable() ? <span className="text-[11px] dim">Set a narrator model in Settings to have the day written from your laws.</span> : null}
         {tellErr ? <span className="text-[11.5px] warn">{tellErr.slice(0, 160)}</span> : null}
       </div>
       <details className="text-[12px] mb-2">
@@ -210,7 +210,7 @@ function HouseholdCard({ x, other, yours, compact }: { x: Society; other: Societ
       </details>
       {model && hasApiKey() ? (
         <div className="flex items-center gap-2 flex-wrap">
-          <Button size="sm" kind="ghost" disabled={busy} onClick={() => void photograph()} title="Redraws the drawn figures as one full-length photograph, in the city's own setting. One image, billed by the photo model in Settings">{busy ? "photographing…" : ph?.url ? "retake the photograph" : "photograph this household"}</Button>
+          <Button size="sm" kind="ghost" disabled={busy} onClick={() => void photograph()} title="Redraws the figures as one full-length photograph, in the city's own setting. One image, billed by the photo model in Settings">{busy ? "photographing…" : ph?.url ? "retake the photograph" : "photograph this household"}</Button>
           {ph?.url ? <button className="text-[11px] dim underline" onClick={() => mutate((s) => { if (s.compare_photos) delete s.compare_photos[x.id]; })}>show the drawing</button> : null}
         </div>
       ) : <div className="text-[11px] dim">Set a photo model in Settings to photograph a household.</div>}
@@ -238,7 +238,7 @@ export default function Compare() {
       <SubTabs id="compare" tabs={[
         { id: "households", label: "A day in each", render: () => (<>
       <Section title={`${yours.name} and ${other.name}`}>
-        <p className="text-[12.5px] dim mb-2.5">One ordinary household in each, on the same day this week, told from what the game knows about the city's habits, the laws in force, prosperity, crime and the patrols. {other.kind === "oldworld" ? "The Old World is judged by how stable its regions are." : `${other.name} is judged by its doctrines and the laws its court has passed from them.`}</p>
+        <p className="text-[12.5px] dim mb-2.5">One ordinary household in each, on the same day this week, written from what the game knows: the city's habits, the laws in force, prosperity, crime and the patrols. {other.kind === "oldworld" ? "The Old World is judged by how stable its regions are." : `${other.name} is judged by its doctrines and the laws its court has passed from them.`}</p>
         <div className="grid gap-2.5 md:grid-cols-2">
           <HouseholdCard x={yours} other={other} yours={yours} />
           <HouseholdCard key={other.id} x={other} other={yours} yours={yours} />

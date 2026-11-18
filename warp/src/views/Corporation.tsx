@@ -26,7 +26,7 @@ export default function Corporation() {
     return (
       <Section title="Corporation">
         <Card>
-          <p className="font-prose text-[14.5px] leading-relaxed mb-3">Found a company that trades in slaves at scale, with acquisition, training, surgery, arcades, dairies and export. You hold the shares and take a dividend. Sell shares when you need cash, and the other shareholders get a say.</p>
+          <p className="font-prose text-[14.5px] leading-relaxed mb-3">Found a company that trades in slaves at scale: acquisition, training, surgery, arcades, dairies and export. You hold the shares and take a dividend. Sell shares when you need cash, and the other shareholders get a say.</p>
           <input value={name} onChange={(e) => setName(e.target.value)} className="mb-2" />
           <Button kind="primary" disabled={save.arcology.cash < FOUNDING} onClick={() => mutate((s) => { foundCorp(s, name); })}>Found it · {money(FOUNDING)}</Button>
         </Card>
@@ -47,7 +47,7 @@ export default function Corporation() {
       <Card className="mt-3">
         <div className="text-[12.5px] mb-1">Dividend: {Math.round(c.dividend * 100)}% of profit</div>
         <input type="range" min={0} max={80} step={5} value={Math.round(c.dividend * 100)} onChange={(e) => mutate((s) => { s.corp!.dividend = Number(e.target.value) / 100; })} className="w-full" />
-        <div className="text-[11px] dim">Paid out is yours in proportion to your stake. What isn't paid out stays in the treasury to build with.</div>
+        <div className="text-[11px] dim">What's paid out is yours in proportion to your stake. What isn't stays in the treasury to build with.</div>
       </Card>
       <div className="grid gap-2 sm:grid-cols-2 mt-3">
         {(Object.keys(DIVISIONS) as Division[]).map((d) => {
@@ -73,7 +73,7 @@ export default function Corporation() {
           <Button size="sm" disabled={c.yours > 90 || save.arcology.cash < v * 0.11} onClick={() => { let cost = 0; mutate((s) => { cost = buyShares(s); }); setNote(cost ? `You bought ten points back for ${money(cost)}.` : ""); }}>Buy 10% · ~{money(v * 0.11)}</Button>
           <Button size="sm" disabled={!c.divisions.capture || c.cash < 4000} onClick={() => { let id: string | null = null; mutate((s) => { id = drawSlave(s); }); const who = id ? save.people[id as string] : undefined; setNote(who ? `${who.name} is brought up from the ${c.divisions.training ? "training pens" : "acquisition stock"}. She's yours now.` : ""); }}>Take a slave from the pipeline · ¤4,000</Button>
         </div>
-        {c.yours < 50 ? <div className="text-[11.5px] mt-2" style={{ color: "var(--warn)" }}>You hold less than half. The other shareholders can outvote you.</div> : null}
+        {c.yours < 50 ? <div className="text-[11.5px] mt-2" style={{ color: "var(--warn)" }}>You hold less than half, so the other shareholders can outvote you.</div> : null}
         {note ? <div className="text-[12px] mid mt-2">{note}</div> : null}
       </Card>
     </Section>
