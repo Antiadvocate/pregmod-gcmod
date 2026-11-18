@@ -176,7 +176,7 @@ export default function Dressing({ id, onClose }: { id: string; onClose: () => v
                 <button key={h.value} className={cx("chip", p.body.hair_style === h.value && "on")} onClick={() => p.body.hair_style !== h.value && body({ hair_style: h.value }, 150)}>{h.label}</button>
               ))}
             </div>
-            <label className="block mb-1">Length — {p.body.hair_length}cm {p.body.hair_length < 3 ? "(shaved)" : ""}</label>
+            <label className="block mb-1">Length: {p.body.hair_length}cm {p.body.hair_length < 3 ? "(shaved)" : ""}</label>
             <input type="range" min={0} max={Math.max(120, p.body.hair_length)} value={p.body.hair_length}
               onChange={(e) => { const n = Number(e.target.value); if (n <= p.body.hair_length) body({ hair_length: n }); }} />
             <div className="text-[11px] dim mb-4">Cutting is instant. Growing it back takes time.</div>

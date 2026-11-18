@@ -125,7 +125,7 @@ function Architecture() {
         <span className="mid"> · {def.note}</span>
         {style !== "modern"
           ? <div className="text-[11.5px] dim mt-0.5">{DOCTRINE_BY_ID[style]?.noun ?? style} at {adoption}% · {strength >= 0.99 ? "the whole city wears it" : "more of the city takes it up as adoption rises"}</div>
-          : <div className="text-[11.5px] dim mt-0.5">A revivalist doctrine past 25% adoption gives the city its architecture.</div>}
+          : <div className="text-[11.5px] dim mt-0.5">Past 25% adoption, a revivalist doctrine gives the city its architecture.</div>}
       </div>
     </div>
   );
@@ -147,7 +147,7 @@ function LookPicker() {
         <span className="text-[11px] uppercase tracking-wider dim mr-1">Finish</span>
         {(Object.keys(FINISHES) as Finish[]).map((f) => <button key={f} title={FINISHES[f].note} className={`chip !text-[12px] !py-1 !px-2.5 ${(look.finish ?? "rebuilt") === f ? "on" : ""}`} onClick={() => set({ finish: f })}>{FINISHES[f].name}</button>)}
       </div>
-      <div className="text-[11.5px] dim">{FINISHES[look.finish ?? "rebuilt"].note} Blocks age from Old World ruin, through salvage, to Free City and then ascendant glass as you raise them, keep them up, and advance your tech.</div>
+      <div className="text-[11.5px] dim">{FINISHES[look.finish ?? "rebuilt"].note} Blocks age from Old World ruin through salvage to Free City, then ascendant glass, as you raise them, keep them up and advance your tech.</div>
     </div>
   );
 }
@@ -170,7 +170,7 @@ function BuildList({ city, onPick }: { city: ReturnType<typeof cityOf>; onPick: 
   return (
     <div className="space-y-4">
       <div>
-        <div className="text-[11px] uppercase tracking-wider dim mb-2">Standing — {held.length}</div>
+        <div className="text-[11px] uppercase tracking-wider dim mb-2">Standing: {held.length}</div>
         <div className="grid gap-1.5 sm:grid-cols-2">
           {held.map((d) => {
             const def = DISTRICT_BY_KIND[d.kind as DistrictKind];
@@ -192,7 +192,7 @@ function BuildList({ city, onPick }: { city: ReturnType<typeof cityOf>; onPick: 
       </div>
       {open.length ? (
         <div>
-          <div className="text-[11px] uppercase tracking-wider dim mb-2">Empty ground — {open.length}</div>
+          <div className="text-[11px] uppercase tracking-wider dim mb-2">Empty ground: {open.length}</div>
           <div className="flex flex-wrap gap-1.5">
             {open.map((d) => (
               <Chip key={d.id} onClick={() => onPick(d.id)}>{RINGS[d.ring].name} · plot {d.slot + 1}</Chip>
@@ -226,7 +226,7 @@ function PlotSheet({ plot, note, onDone }: {
           <div className="flex flex-wrap gap-1.5">
             <Chip on>level {plot.level} of {def.cap}</Chip>
             <Chip>condition {Math.round(plot.condition)}%</Chip>
-            {plot.owner === "citizen" ? <Chip tone="bad">tenanted — you take a third</Chip> : null}
+            {plot.owner === "citizen" ? <Chip tone="bad">tenanted, you take a third</Chip> : null}
           </div>
           <div className="text-[12px] dim">
             Each level: {Object.entries(def.yields).map(([k, v]) => `${v > 0 ? "+" : ""}${v} ${k}`).join(" · ")}
@@ -251,7 +251,7 @@ function PlotSheet({ plot, note, onDone }: {
       ) : (
         <>
           <p className="font-prose text-[14.5px] leading-relaxed">
-            Empty ground on {RINGS[plot.ring].name}. Cheaper to build on the further out it is, and worth less when it is done.
+            Empty ground on {RINGS[plot.ring].name}. The further out it is, the cheaper to build on, and the less it's worth when it's done.
           </p>
           <div className="grid gap-1.5">
             {buildable.map((d) => {
@@ -288,7 +288,7 @@ function Trade({ reach, say }: { reach: number; say: (r: { ok: boolean; why?: st
     <div className="space-y-1.5">
       {!reach ? (
         <Card className="text-[13px] dim mb-2">
-          You need docks to trade. Build them on the outer ring to open the map.
+          You need docks to trade. Put them on the outer ring to open the map.
         </Card>
       ) : null}
       {REGIONS.map((r) => {
@@ -348,7 +348,7 @@ function Neighbours({ say }: { say: (r: { ok: boolean; why?: string; line?: stri
             </div>
             {n.scheme ? (
               <div className="text-[12.5px] warn mb-2">
-                They are running {n.scheme.kind === "raid" ? "people, not paperwork" : `a ${n.scheme.kind}`} — {Math.round(n.scheme.progress)}% along.
+                They are running {n.scheme.kind === "raid" ? "people, not paperwork" : `a ${n.scheme.kind}`}, {Math.round(n.scheme.progress)}% along.
               </div>
             ) : null}
             <div className="flex flex-wrap gap-2">

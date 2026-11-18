@@ -120,7 +120,7 @@ export default function Start({ onStart }: { onStart: (s: SaveState) => void }) 
           </label>
           <label className="flex items-start gap-2.5 mt-1 cursor-pointer">
             <input type="checkbox" className="!w-auto mt-0.5" checked={emptyCity} onChange={(e) => setEmptyCity(e.target.checked)} />
-            <span className="text-[12.5px] mid"><span className="hi">Start with an empty city.</span> No tenants and no citizens: just your spire and bare ground. People move in for what you build, the poor for work, the middle for flats and shops, the rich for money and safe streets, and you set what they're taxed.</span>
+            <span className="text-[12.5px] mid"><span className="hi">Start with an empty city.</span> No tenants and no citizens: just your spire and bare ground. People move in for what you build, the poor for work, the middle for flats and shops, the rich for money and safe streets. You set what they're taxed.</span>
           </label>
           <label className="flex items-start gap-2.5 mt-1 cursor-pointer">
             <input type="checkbox" className="!w-auto mt-0.5" checked={plot} onChange={(e) => setPlot(e.target.checked)} />

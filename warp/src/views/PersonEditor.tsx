@@ -147,7 +147,7 @@ export default function PersonEditor({ target }: { target: Person }) {
       </div>
       {card ? (
         <div className="mb-4">
-          <div className="text-[12px] dim mb-1">Her card, exactly as a scene with her gets it, updated as you edit.</div>
+          <div className="text-[12px] dim mb-1">Her card, exactly as a scene with her gets it, updated while you edit.</div>
           <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-snug p-2 rounded-lg max-h-[60vh] overflow-y-auto" style={{ background: "var(--ink-2)" }}>{personCard(save, target, "")}</pre>
         </div>
       ) : null}

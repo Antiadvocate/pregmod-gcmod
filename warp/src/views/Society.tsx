@@ -122,9 +122,9 @@ function Court() {
                 <div className="font-prose text-[13px] mid">{l.text}</div>
               </div>
             );
-          }) : <div className="text-[12.5px] dim">None yet. The court writes laws when the city's habits go far enough one way.</div>}
+          }) : <div className="text-[12.5px] dim">None yet. The court writes laws once the city's habits go far enough one way.</div>}
           {laws.length ? (
-            <button className="text-[11.5px] acc underline mt-1" title="Removes every clause, exemption, amendment or technicality the game recorded about your laws (world facts, rumours, memories, recent turns), and tells the narrator each law is only its text"
+            <button className="text-[11.5px] acc underline mt-1" title="Removes every clause, exemption, amendment or technicality the game recorded about your laws (world facts, rumours, memories, recent turns), and tells the narrator that each law is only its text"
               onClick={() => { let n = 0; mutate((s) => { n = stripLawInventions(s); }); setSaid((xs) => [...xs, n ? `Stripped ${n} thing${n > 1 ? "s" : ""} the game had added to your laws. From now on each law is only its text.` : "Nothing had been added to your laws. The narrator has been told again that each law is only its text."]); }}>
               Strip everything the game added to these laws
             </button>

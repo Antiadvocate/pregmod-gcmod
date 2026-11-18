@@ -335,7 +335,7 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
             <Button size="sm" kind="ghost" disabled={painting} onClick={async () => {
               setPainting(true); setNote("");
               try {
-                if (!doll.current) throw new Error("she is still being drawn — try again in a moment");
+                if (!doll.current) throw new Error("she is still being drawn. Try again in a moment");
                 const shot = await renderDoll(doll.current);
                 await paintRealistic(save, id, shot.dataUrl, { onProgress: setNote });
                 mutate(() => {});
@@ -364,7 +364,7 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
         <Card className="mb-4">
           <div className="text-[13px]" style={{ color: "var(--warn)" }}>She is {recoveryNote(save, p)}.</div>
           <div className="text-[11.5px] dim mt-1">
-            Recovery goes down each time you end the week. Assigning her to the Clinic speeds it up, a Nurse managing the Clinic speeds it more, and curatives at full dose take off another week.
+            Recovery drops each time you end the week. Assigning her to the Clinic speeds it up, a Nurse managing the Clinic speeds it more, and curatives at full dose take off another week.
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
             <Button size="sm" disabled={save.arcology.cash < rushCost(save, p)} onClick={() => mutate((s) => {
@@ -401,8 +401,8 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
           <OpenMoments person={id} title="Left unfinished with her" />
           <StoryWith id={id} />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <Meter value={r.devotion} range={[-100, 100]} label={`devotion — ${r.label}`} />
-            <Meter value={r.trust} range={[-100, 100]} label={`trust — ${r.trust_label}`} />
+            <Meter value={r.devotion} range={[-100, 100]} label={`devotion: ${r.label}`} />
+            <Meter value={r.trust} range={[-100, 100]} label={`trust: ${r.trust_label}`} />
             <Meter value={p.psyche.relaxation} range={[-10, 10]} label="at ease" />
             <Meter value={p.health.health} range={[-100, 100]} label="health" />
           </div>
@@ -480,7 +480,7 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
             ))}
           </div>
           {p.body.marks.length ? (
-            <Section title="Marks"><Card><ul className="text-[12.5px] mid space-y-1">{p.body.marks.map((m, i) => <li key={i}>{m.what} — {m.where} (wk {m.week})</li>)}</ul></Card></Section>
+            <Section title="Marks"><Card><ul className="text-[12.5px] mid space-y-1">{p.body.marks.map((m, i) => <li key={i}>{m.what}, {m.where} (wk {m.week})</li>)}</ul></Card></Section>
           ) : null}
           <Section title="What she is wearing">
             <Card>
@@ -554,9 +554,9 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
         <div className="space-y-4">
           {isMinor(p) ? (
             <Card className="text-[12px] mid">
-              {p.name} is {p.age}. Rest, the nursery, the schoolroom and medical care are the entire list
-              of things she can be assigned to, and the gate is in the engine rather than in this dropdown —
-              a standing order cannot route around it either.
+              {p.name} is {p.age}. Rest, the nursery, the schoolroom and medical care are the whole list
+              of things she can be assigned to. The gate is in the engine, not in this dropdown,
+              and a standing order cannot route around it either.
             </Card>
           ) : null}
           <Field label="Assignment">
@@ -648,7 +648,7 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
               </div>
               {p.health.drugs.length ? (
                 <ul className="text-[11.5px] mid mb-2 space-y-0.5">
-                  {p.health.drugs.map((x) => <li key={x}><span className="hi">{x}</span> — {DRUGS.find((d) => d.id === x)?.note}</li>)}
+                  {p.health.drugs.map((x) => <li key={x}><span className="hi">{x}</span>: {DRUGS.find((d) => d.id === x)?.note}</li>)}
                 </ul>
               ) : null}
               <div className="flex flex-wrap gap-2 mt-1">
@@ -736,7 +736,7 @@ function PersonPanel({ id, onClose, onWith, onDress, onOther }: { id: string; on
               <div className="space-y-1.5">
                 {save.edges.filter((e) => e.from === id).sort((a, b) => Math.abs(b.warmth) - Math.abs(a.warmth)).slice(0, 8).map((e) => (
                   <div key={e.to} className="card-2 px-3 py-2 flex items-center gap-3">
-                    <span className="text-[12.5px] flex-1">{save.people[e.to]?.name ?? e.to}{e.roles.length ? ` — ${e.roles.join(", ")}` : ""}</span>
+                    <span className="text-[12.5px] flex-1">{save.people[e.to]?.name ?? e.to}{e.roles.length ? `, ${e.roles.join(", ")}` : ""}</span>
                     <div className="w-20"><Meter value={e.warmth} range={[-100, 100]} showValue={false} /></div>
                     <span className="text-[11px] dim font-mono w-8 text-right">{Math.round(e.warmth)}</span>
                     {save.people[e.to] && (save.people[e.to].status === "owned" || save.people[e.to].status === "indentured") && save.people[e.to].age >= 5 && p.age >= 5

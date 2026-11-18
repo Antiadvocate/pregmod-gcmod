@@ -431,7 +431,7 @@ export default function Penthouse({ go }: { go: (r: Route) => void }) {
 
         {!chain && canGesture && her && rev.done.length > 0 ? (
           <Fold id="gestures" title="In public" defaultOpen={false} right={<span className="text-[11px] dim">deference {Math.round(rev.deference)}</span>}>
-            <p className="text-[12.5px] mid mb-2">The arcology takes its cue from the last thing it watched you do. That was {Math.max(0, arc.week - (rev.last_public ?? 0))} weeks ago.</p>
+            <p className="text-[12.5px] mid mb-2">The arcology takes its cue from the last thing it saw you do. That was {Math.max(0, arc.week - (rev.last_public ?? 0))} weeks ago.</p>
             <div className="mb-2"><Options options={GESTURES.map((g) => ({ ...g, note: `${g.note}${g.rep ? ` · ${g.rep} rep` : ""}` }))} onPick={(g) => {
               let out: { line: string; reactions: Reaction[] } = { line: "", reactions: [] };
               mutate((s) => { out = doGesture(s, g.id); });
@@ -545,8 +545,8 @@ function HandCard() {
   return (
     <div className="card p-3 mb-4">
       <p className="text-[13px]">{hand === "shared"
-        ? <>{keeper.name} owns you, and lets you keep running things. She can stop anything you do.</>
-        : <>{keeper.name} runs {save.arcology.name} now. You can see everything she does with it, but you can't change any of it.</>}</p>
+        ? <>{keeper.name} owns you, and lets you keep running things, though she can stop anything you do.</>
+        : <>{keeper.name} runs {save.arcology.name} now. You can watch everything she does with it, but you can't change any of it.</>}</p>
       <HowSheKeepsYou />
       {recent.length ? <ul className="mt-2 space-y-0.5 text-[12px] mid">{recent.map((x, i) => <li key={i}>· week {x.week}: {x.line}</li>)}</ul> : null}
       <div className="flex flex-wrap gap-2 mt-2">
@@ -582,7 +582,7 @@ function HowSheKeepsYou() {
         ? <button className="text-[11.5px] dim underline mt-1" onClick={() => setFixing(true)}>that isn't her</button>
         : (
           <div className="mt-2">
-            <textarea className="w-full" rows={3} placeholder="Say what's wrong with it, like how she's actually treated you, what you've told her, what you are to her." value={note} onChange={(e) => setNote(e.target.value)} />
+            <textarea className="w-full" rows={3} placeholder="Say what's wrong with it: how she's actually treated you, what you've told her, what you are to her." value={note} onChange={(e) => setNote(e.target.value)} />
             <div className="flex gap-2 mt-1">
               <Button size="sm" kind="primary" disabled={busy} onClick={() => void go()}>{busy ? "Reading her again…" : "Read her again"}</Button>
               <Button size="sm" kind="ghost" onClick={() => setFixing(false)}>never mind</Button>
@@ -633,7 +633,7 @@ function WeekPlanCard() {
       <Card className="mb-3">
         <div className="text-[11px] uppercase tracking-wider dim mb-1">Your week</div>
         <div className="text-[13.5px]">{plan.text}</div>
-        <div className="text-[11.5px] dim mt-1">{plan.skill ? `Trains your ${skillName(plan.skill)}. ` : ""}Scenes this week know where you've been, and something may come of it. <button className="underline" onClick={() => setChanging(true)}>change</button></div>
+        <div className="text-[11.5px] dim mt-1">{plan.skill ? `Trains your ${skillName(plan.skill)}. ` : ""}Scenes this week know where you've been, so something may come of it. <button className="underline" onClick={() => setChanging(true)}>change</button></div>
       </Card>
     );
   }

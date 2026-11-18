@@ -156,7 +156,7 @@ export default function Scene() {
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5">
         {!turns.length ? (
           <p className="dim text-[13px] font-prose">
-            Nothing has happened yet. Type what you do. {modelsAvailable() ? "" : "No model is configured, so turns are recorded as plain summaries. Everything else still works."}
+            Nothing has happened yet. Type what you do. {modelsAvailable() ? "" : "No model is configured, so turns get recorded as plain summaries. Everything else still works."}
           </p>
         ) : null}
         {turns.map((t) => (
@@ -210,7 +210,7 @@ export default function Scene() {
             <Chip key={m.id} on={mode === m.id} onClick={() => setMode(m.id)} title={m.hint}>{m.label}</Chip>
           ))}
           {save.history.length && !busy && save.history.at(-1)!.action ? (
-            <button className="chip ml-auto" title="throw away the last response and ask the model again, with the same words"
+            <button className="chip ml-auto" title="throw away the last response and ask the model again with the same words"
               onClick={() => { const last = save.history.at(-1)!; const back = rollback(save); if (back) { replace(back); setRetry({ action: last.action, mode: last.mode }); } }}>
               <RotateCcw size={11} /> retry
             </button>

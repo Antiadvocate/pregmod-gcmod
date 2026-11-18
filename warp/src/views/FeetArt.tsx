@@ -605,7 +605,7 @@ function FeetArtDrawn({ person }: { person: Person }) {
           {busy ? "redrawing…" : photos ? "Redraw as photos again" : "Redraw as photos"}
         </button>
         {photos ? <button className="btn btn-sm btn-ghost" onClick={() => setShowPhoto((x) => !x)}>{showPhoto ? "show the drawing" : "show the photos"}</button> : null}
-        {!model ? <span className="text-[11px] dim">Pick a photo model in Settings to redraw these as photographs.</span> : photos ? <span className="text-[11px] dim">{photos.model} · week {photos.week}</span> : null}
+        {!model ? <span className="text-[11px] dim">Choose a photo model in Settings to redraw these as photographs.</span> : photos ? <span className="text-[11px] dim">{photos.model} · week {photos.week}</span> : null}
         {photos?.error ? <span className="text-[11px] bad w-full">{photos.error}</span> : null}
       </div>
       <div className="text-[11.5px] mid mt-2 text-center">

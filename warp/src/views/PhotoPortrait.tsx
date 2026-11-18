@@ -52,10 +52,10 @@ export default function PhotoPortrait({ id, body }: { id: string; body: RefObjec
       ) : null}
       {model && hasApiKey() ? (
         <div className="flex flex-wrap gap-1.5">
-          <Button size="sm" kind="ghost" disabled={!!busy} onClick={() => void take("face")} title="Head and shoulders, with an expression from who she is and how she feels right now">{busy === "face" ? "photographing…" : ph?.face ? "retake face photo" : "photo portrait (face)"}</Button>
-          <Button size="sm" kind="ghost" disabled={!!busy} onClick={() => void take("body")} title="The whole figure. Image models often refuse this, but nothing is lost if it does">{busy === "body" ? "photographing…" : ph?.body ? "retake full body" : "try full body"}</Button>
+          <Button size="sm" kind="ghost" disabled={!!busy} onClick={() => void take("face")} title="Head and shoulders, with an expression that comes from who she is and how she feels right now">{busy === "face" ? "photographing…" : ph?.face ? "retake face photo" : "photo portrait (face)"}</Button>
+          <Button size="sm" kind="ghost" disabled={!!busy} onClick={() => void take("body")} title="The whole figure. Image models often refuse this, but nothing is lost if one does">{busy === "body" ? "photographing…" : ph?.body ? "retake full body" : "try full body"}</Button>
         </div>
-      ) : <div className="text-[11px] dim">Set a photo model in Settings to redraw her as a photograph.</div>}
+      ) : <div className="text-[11px] dim">Set a photo model in Settings and she's redrawn as a photograph.</div>}
       {ph?.error ? <div className="text-[11.5px] warn mt-1">{ph.error}</div> : null}
     </div>
   );

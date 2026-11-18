@@ -100,7 +100,7 @@ export default function Market() {
               <Meter value={open.person.body.face} label="face" />
             </div>
             <div className="text-[12.5px] mid space-y-1">
-              <div>Was a {open.person.origin.career}. {open.person.persona.attachment.style} attachment — under threat she {open.person.persona.attachment.under_threat}.</div>
+              <div>Was a {open.person.origin.career}. {open.person.persona.attachment.style} attachment. Under threat she {open.person.persona.attachment.under_threat}.</div>
               <div>Traits: {open.person.persona.core_traits.join(" · ")}</div>
             </div>
 

@@ -41,8 +41,8 @@ export default function Sagas() {
       <div className="card p-4 mb-5">
         <div className="text-[11px] uppercase tracking-wider dim mb-1 flex items-center gap-1.5"><BookOpen size={12} /> This arcology's stories</div>
         <p className="text-[13px] mid">{modelsAvailable()
-          ? `Long stories grow out of what this arcology becomes, like the laws you write, the people who hate or love you, the strangers who keep turning up. The first begins around week ${st.next_start}.`
-          : "Long stories written for this arcology need a narrator model (Settings). The written story below runs without one."}</p>
+          ? `Long stories grow out of what this arcology becomes: the laws you write, the people who hate or love you, the strangers who keep turning up. The first begins around week ${st.next_start}.`
+          : "Long stories for this arcology need a narrator model (Settings). The written story below runs without one."}</p>
       </div>
     );
   }
@@ -134,7 +134,7 @@ export function SagaCard({ id }: { id: string }) {
           </Button>
           {busy ? <button className="btn btn-sm btn-danger" onClick={() => stop.current?.abort()}><Square size={12} /> stop</button> : (
             <>
-              <Button size="sm" kind="ghost" onClick={() => { let ok = false; mutate((st) => { ok = rerollSaga(st, x.id); }); setErr(ok ? "" : "Nothing else in the arcology to start a story from right now. Write your own."); }}>
+              <Button size="sm" kind="ghost" onClick={() => { let ok = false; mutate((st) => { ok = rerollSaga(st, x.id); }); setErr(ok ? "" : "There's nothing else in the arcology to start a story from right now. Write your own."); }}>
                 <Shuffle size={13} /> something else
               </Button>
               <Button size="sm" kind="ghost" onClick={() => setSteering((v) => !v)}><PenLine size={13} /> write my own</Button>
@@ -217,7 +217,7 @@ export function SagaCard({ id }: { id: string }) {
             <div className="card-2 p-3 mt-2 fade-in">
               <p className="text-[12.5px] mid mb-2">
                 {x.history.length ? `The ${x.history.length === 1 ? "chapter" : `${x.history.length} chapters`} so far ${x.history.length === 1 ? "is" : "are"} dropped. Whatever ${x.history.length === 1 ? "it" : "they"} already did to people stays done.` : "Nothing has been decided in it yet."}
-                {" "}Leave the box empty to have it rewritten from what it grew from, or say what it should be about.
+                {" "}Leave the box empty and it's rewritten from what it grew from. Or say what it should be about.
               </p>
               <Steer label="Start over" allowEmpty onUse={(idea) => {
                 mutate((st) => { if (idea.trim()) steerSaga(st, x.id, idea); else restartSaga(st, x.id); });
@@ -238,7 +238,7 @@ function Steer({ onUse, label = "Use this", allowEmpty }: { onUse: (idea: string
   return (
     <form className="mt-3 space-y-2" onSubmit={(e) => { e.preventDefault(); if (idea.trim() || allowEmpty) onUse(idea); }}>
       <textarea rows={3} value={idea} onChange={(e) => setIdea(e.target.value)}
-        placeholder="What should this story be about? Name any of your people, a law, a rival, a place." />
+        placeholder="What should this story be about? Name one of your people, a law, a rival, a place." />
       <div className="flex items-center gap-2">
         <Button size="sm" kind="primary" disabled={!idea.trim() && !allowEmpty} onClick={() => { if (idea.trim() || allowEmpty) onUse(idea); }}>{label}</Button>
         <span className="text-[11px] dim">Your people named here are written into it.</span>

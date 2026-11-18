@@ -38,7 +38,7 @@ export function Reaction({ seed, className, auto = false, label = "Play it out",
   if (id) return <MomentCard id={id} className={cx("basis-full", className)} bare />;
   if (!seed.person && !modelsAvailable()) return null;
   return (
-    <button className={cx("btn btn-sm mt-3", className)} onClick={start} title={modelsAvailable() ? "Write it out with the model and answer it. What you do there has consequences" : "Answer it in the written game"}><MessageCircle size={13} /> {label}</button>
+    <button className={cx("btn btn-sm mt-3", className)} onClick={start} title={modelsAvailable() ? "Write it out with the model and answer it. What you do in there has consequences" : "Answer it in the written game"}><MessageCircle size={13} /> {label}</button>
   );
 }
 
@@ -171,7 +171,7 @@ export default function MomentCard({ id, className, bare, onClose }: { id: strin
       {!m.open && m.ended ? <div className="text-[12px] dim mt-3">This one ended because {m.ended}. What happened in it counts.</div> : null}
       {!m.open ? <DeedCard id={m.concluded} onClose={onClose} /> : null}
       {!m.open && !busy && m.log.length > 1 ? (
-        <Button size="sm" className="mt-2" onClick={() => mutate((s) => { resumeMoment(s, m.id); })} title="Carry on from exactly where it stopped. What it already changed stands">Pick it back up</Button>
+        <Button size="sm" className="mt-2" onClick={() => mutate((s) => { resumeMoment(s, m.id); })} title="Carry on from where it stopped. What it's already changed stands">Pick it back up</Button>
       ) : null}
     </div>
   );
@@ -205,7 +205,7 @@ export function OpenMoments({ person, title, hide = [] }: { person?: string; tit
     <div className="space-y-2">
       <div className="flex items-center">
         {title ? <div className="text-[11px] uppercase tracking-wider dim">{title}</div> : null}
-        {!person ? <button className="ml-auto text-[11px] dim underline" title="End every one of these where it stands. What you said in them still counts" onClick={() => { mutate((s) => { closeAllMoments(s); }); setOn(null); }}>clear all</button> : null}
+        {!person ? <button className="ml-auto text-[11px] dim underline" title="End all of these where they stand. What you said in them still counts" onClick={() => { mutate((s) => { closeAllMoments(s); }); setOn(null); }}>clear all</button> : null}
       </div>
       {list.map(row)}
       {ended.length ? <button className="text-[11px] dim underline" onClick={() => setPast((x) => !x)}>{past ? "hide" : "show"} scenes that ended lately ({ended.length})</button> : null}
@@ -218,7 +218,7 @@ export function OpenMoments({ person, title, hide = [] }: { person?: string; tit
 export function DeedCard({ id, onClose }: { id?: string; onClose?: () => void }) {
   const { save } = useGame();
   const d = id ? deedsOf(save).find((x) => x.id === id) : undefined;
-  if (!d) return <div className="text-[12px] dim mt-3">That's where it ended. Nothing you said will change anything.</div>;
+  if (!d) return <div className="text-[12px] dim mt-3">That's where it ended. Nothing you said there changes anything.</div>;
   return (
     <div className="card-2 p-3 mt-3 fade-in">
       <div className="text-[10.5px] uppercase tracking-wider dim mb-1">What came of it</div>
@@ -241,8 +241,8 @@ export function CollarOffer({ id }: { id: string }) {
   const first = p.name.split(" ")[0];
   return (
     <div className="card p-3 mt-3 fade-in">
-      <p className="font-prose text-[14px] leading-relaxed">{first} took that as you giving yourself to her. She has a collar in her hands and she's waiting to see if you kneel.</p>
-      <p className="text-[12px] dim mt-1">If you kneel, she owns you and the arcology answers to her. Ask to keep a hand in and you can still run things, if she agrees, but she can overrule you.</p>
+      <p className="font-prose text-[14px] leading-relaxed">{first} took that as you giving yourself to her. She has a collar in her hands, and she's waiting to see if you kneel.</p>
+      <p className="text-[12px] dim mt-1">If you kneel, she owns you and the arcology answers to her. Ask to keep a hand in and you can still run things if she agrees, but she can overrule you.</p>
       <div className="flex flex-wrap gap-2 mt-2">
         <Button size="sm" kind="primary" onClick={() => mutate((s) => { acceptCollar(s, id); })}>Kneel and give her everything</Button>
         <Button size="sm" onClick={() => mutate((s) => { acceptCollar(s, id, true); })}>Kneel, and ask to keep a hand in</Button>

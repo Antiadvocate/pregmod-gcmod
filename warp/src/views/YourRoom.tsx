@@ -133,7 +133,7 @@ export default function YourRoomView() {
   if (!her || !save.reign || save.reign.ended) return <div className="text-[13px] dim">You own this place. Nobody keeps you anywhere.</div>;
   return (
     <div className="pb-24">
-      {room ? <RoomCard room={room} her={her.name} /> : <p className="text-[13px] dim mb-4">{her.name} hasn't decided where you sleep yet. She will at the end of the week.</p>}
+      {room ? <RoomCard room={room} her={her.name} /> : <p className="text-[13px] dim mb-4">{her.name} hasn't decided where you sleep yet. She will by the end of the week.</p>}
       <div className="card p-3 mb-4 flex gap-3 items-end">
         <SlaveArt person={playerAsPerson(save)} height={240} face={false} />
         <div className="text-[12.5px] mid pb-2">{save.player.stains?.length ? <>On you right now: {marksLine(save, save.player.stains)}.</> : "Nothing on you right now."}</div>
@@ -226,7 +226,7 @@ export function TalkToHer() {
   return (
     <div className="card p-3 mb-4">
       <div className="text-[10.5px] uppercase tracking-wider dim mb-1">Go to {her.name}</div>
-      <p className="text-[12px] dim mb-2">Ask her for something, or tell her what you think she should do with the arcology. {modelsAvailable() ? "She decides, and might act on it." : "She'll say yes or no."}</p>
+      <p className="text-[12px] dim mb-2">Ask her for something, or tell her what you think she ought to do with the arcology. {modelsAvailable() ? "She decides, and might act on it." : "She'll say yes or no."}</p>
       <textarea className="w-full" rows={2} placeholder={`"Let me see the others again." "Sign the paternalist laws." "Have the dock boss dealt with."`} value={text} onChange={(e) => setText(e.target.value)} />
       <Button size="sm" kind="primary" className="mt-2" disabled={busy || !text.trim()} onClick={() => void send()}>{busy ? "She's thinking…" : "Say it"}</Button>
       {got ? (

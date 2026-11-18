@@ -40,7 +40,7 @@ export function ProsePara({ text, onRewrite, className, style }: { text: string;
 export function VoiceSwitch({ className }: { className?: string }) {
   const [on, setOn] = useState(getYourVoice());
   return (
-    <button type="button" className={cx("chip !text-[11px]", on && "on", className)} title="Whether the narration is shown how you write. Flip it and press Retry to have the same turn the other way."
+    <button type="button" className={cx("chip !text-[11px]", on && "on", className)} title="Whether the narration is shown the way you write. Flip it and press Retry to get the same turn the other way."
       onClick={() => { setYourVoice(!on); setOn(!on); }}>
       your writing: {on ? "on" : "off"}
     </button>

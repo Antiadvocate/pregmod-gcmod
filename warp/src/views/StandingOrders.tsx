@@ -46,7 +46,7 @@ export function StandingOrders({ person }: { person?: string }) {
             </li>
           ))}
         </ul>
-      ) : <div className="text-[12px] dim mb-2">Nothing yet. Tell {p ? "her" : "them"} in a scene ("call me Rabi", "from now on…", "always…", "never…") and it's kept here, or write it below.</div>}
+      ) : <div className="text-[12px] dim mb-2">Nothing yet. Tell {p ? "her" : "them"} in a scene ("call me Rabi", "from now on…", "always…", "never…") and it gets kept here, or write it below.</div>}
       {hers.length ? (
         <>
           <div className="text-[11px] uppercase tracking-wider dim mb-1 mt-2">{p && save.player.owned_by === p.id ? "Her rules for you" : "What she's been given over you"}</div>
@@ -89,7 +89,7 @@ export function MannerCard({ person }: { person: string }) {
             </li>
           ))}
         </ul>
-      ) : <div className="text-[12px] dim mb-2">Nothing yet. When a scene settles how she is with someone (another of yours, or anyone else), it's kept here and she stays that way with them. You can write one below.</div>}
+      ) : <div className="text-[12px] dim mb-2">Nothing yet. When a scene settles how she is with someone (another of yours, or anyone else), it's kept here, and she stays that way with them. You can write one below.</div>}
       <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); add(); }}>
         <input className="w-28 min-w-0" value={who} onChange={(e) => setWho(e.target.value)} placeholder="who" />
         <input className="flex-1 min-w-[10rem]" value={how} onChange={(e) => setHow(e.target.value)} placeholder="e.g. subservient to him alone, and talks to him gently" />

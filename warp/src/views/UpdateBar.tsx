@@ -38,7 +38,7 @@ export default function UpdateBar() {
     <button onClick={() => location.reload()}
       className="fixed left-1/2 -translate-x-1/2 z-[80] btn btn-primary btn-sm shadow-lg"
       style={{ top: "max(10px, env(safe-area-inset-top))" }}>
-      New version of the game — tap to reload
+      New version of the game. Tap to reload
     </button>
   );
 }
