@@ -42,3 +42,16 @@ her.persona.speech = { ...dialsOf(her), sentence: 18, words: 60, fumble: 0.4, sw
 const clipped = driftLine(her, ["Lagos.", "Small flat.", "Stripped.", "Same job."]);
 check("a clipped reply from a woman who runs on is named", /CAME OUT WRONG/.test(clipped) && /sentences came out at/.test(clipped), clipped);
 check("a reply in her own rhythm isn't", driftLine(her, ["I grew up in Lagos, in a flat over a tailor's shop, and my mother sold cloth downstairs all day.", "The power went off so much — so much — that I did my homework on the stairs because the stairwell had a window, and that's where I learned to read properly."]) === "");
+
+/* ── she knows who she's talking to ─────────────────────────────────────────────────────────── */
+const { personCard } = await import("../src/engine/prompts.ts");
+const { ownerScale } = await import("../src/engine/self.ts");
+const fresh = women[1];
+const card = personCard(s, fresh, "");
+check("a slave with no money is told she has none", /HER MONEY\. She has none/.test(card));
+check("one you've never talked to doesn't know you", /HOW WELL SHE KNOWS YOU\. Hardly at all/.test(card));
+s.arcology.cash = 15e12;
+const big = ownerScale(s);
+check("a trillionaire is written as one", /¤15\.0 trillion/.test(big) && /richer than most countries/.test(big) && /kitchens and staff/.test(big), big);
+s.arcology.cash = 50_000;
+check("a broke owner isn't", /scraping by/.test(ownerScale(s)) && !/kitchens and staff/.test(ownerScale(s)), ownerScale(s));
