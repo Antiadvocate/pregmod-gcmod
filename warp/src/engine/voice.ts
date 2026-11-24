@@ -10,7 +10,8 @@
  * is the player's name, `{liked}` is filled by the caller when she is naming something.
  */
 import type { Person, SaveState } from "./types";
-import type { Rng } from "./rng";
+import { rng, type Rng } from "./rng";
+import { liveDials } from "./speech";
 import { read } from "./obedience";
 
 export type Register =
@@ -359,4 +360,22 @@ export function claimSpeech(p: Person): void {
   const asks = /slang|lingo|valley|teen|year[- ]old|swear|curs|crude|filler|casual/i.test(p.persona.speech_pattern ?? "");
   const bans = [...(v.never_says ?? []), v.diction ?? "", v.rhythm ?? ""].some((x) => /slang|filler|swear|curse|careful|formal|deliberate/i.test(x));
   if (asks && bans) setSpeech(p, p.persona.speech_pattern);
+}
+
+const SLIPS = [
+  "she starts to answer, stops, and starts again a different way",
+  "she reaches for a word, can't find it, and settles for a worse one",
+  "she says the wrong word and corrects herself",
+  "she trails off in the middle of a thought and has to pick it back up",
+  "she gets a small detail wrong (a day, a name, a number) and either catches it or doesn't",
+  "she answers a slightly different question than the one asked, then realises",
+  "she runs on longer than she meant to and notices",
+];
+
+/** One fumble for this reply, on a roll of her own fumble dial as it is today. Only the way she says it, never
+ *  what happens: a mishearing that changed the plot read as the writer losing it. */
+export function slipBeat(p: Person, seed: string): string {
+  const r = rng(seed);
+  if (r() > liveDials(p).fumble) return "";
+  return `SHE FUMBLES ONCE in this reply: ${r.pick(SLIPS)}. It's a slip in how she says it, not in what happens.`;
 }

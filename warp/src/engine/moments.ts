@@ -27,7 +27,8 @@ import { didntFollow, finishLast } from "./style";
 import { worldBrief } from "./world";
 import { aroundBrief, citySnap, cityDelta, cityPicture, type CitySnap } from "./snapshot";
 import { applyDiff, salvage, noteStock, stockLine, type Diff } from "./turn";
-import { say } from "./voice";
+import { say, slipBeat } from "./voice";
+import { driftLine, spoken } from "./speech";
 import { rng } from "./rng";
 import { applyTreatment, refresh } from "./obedience";
 import { shove } from "./psyche";
@@ -64,6 +65,8 @@ export interface Moment {
   /** Why the game thinks it has wound down (it's settled, it stopped going anywhere). Only a hint:
    *  the scene stays open until you end it. */
   winding?: string;
+  /** How far her last reply came out from her speech numbers, for the next one. See engine/speech. */
+  drift?: string;
   /** Picked back up after it ended: where the next ending starts reading from, so what the first
    *  ending already counted isn't counted twice. */
   from?: number;
@@ -357,6 +360,9 @@ export async function playMoment(
   const beats: string[] = [];
   const lost = didntFollow(reply);
   if (lost) beats.push(lost);
+  const slip = p && !walking ? slipBeat(p, `${m.id}:${m.log.length}`) : "";
+  if (slip) beats.push(slip);
+  if (m.drift && p && !walking) beats.push(m.drift);
   const habits = p ? overused(s, p, m) : "";
   const worn = [habits, againLine(s, m, [...habits.matchAll(/"([^"]+)"/g)].map((x) => x[1].toLowerCase()))].filter(Boolean).join("\n\n");
   const card = p ? personCard(s, p, reply ?? m.title) : "";
@@ -436,6 +442,9 @@ export async function playMoment(
   for (const c of cast) if (!ours.has(keyOf(c.name))) meet(s, c);
   for (const f of facesIn(s, prose, 6)) meet(s, f);
   noteStock(s, prose);
+  // Her quoted speech measured against her numbers; a big miss is named in the next prompt. With
+  // others in the scene the quotes can't be told apart by speaker, so it's only measured alone.
+  m.drift = p && !walking && !others.length ? driftLine(p, spoken(prose)) || undefined : undefined;
   m.log.push({ role: "scene", text: prose, ...(slips.length ? { slips } : {}) });
   m.options = options.length >= 2 ? options : fallbackOptions();
   m.unexpanded = false;

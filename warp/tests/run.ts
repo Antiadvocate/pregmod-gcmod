@@ -4,6 +4,7 @@
 declare const process: { exit(code: number): never };
 
 import "./obedience.test.ts";
+import "./speech.test.ts";
 import "./kernel.test.ts";
 import "./world.test.ts";
 import "./intimacy.test.ts";

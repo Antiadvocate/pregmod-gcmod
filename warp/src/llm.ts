@@ -324,7 +324,20 @@ async function onceWith(opts: CallOptions, alive: () => void): Promise<LLMResult
   }
 
   if (!opts.onDelta) {
-    const json = await res.json();
+    let json = await res.json();
+    // A reasoning model left to think as much as it likes can spend the whole token budget thinking
+    // and hand back nothing. deepseek-v4.1-flash did that on every card rewrite and every judge call,
+    // silently, so cards never grew. Ask once more with thinking switched off.
+    // A JSON answer cut off at the limit is no better than none, so that is asked again too, with
+    // twice the room.
+    const cutOff = (j: typeof json) => j?.choices?.[0]?.finish_reason === "length" && (opts.json || !String(j?.choices?.[0]?.message?.content ?? "").trim());
+    for (let tries = 0; cutOff(json) && !t.local && tries < 2; tries++) {
+      body.reasoning = { enabled: false };
+      body.max_tokens = Math.min(16000, Number(body.max_tokens) * 2);
+      const again = await send();
+      if (!again.ok) break;
+      json = await again.json();
+    }
     const text = String(json?.choices?.[0]?.message?.content ?? "");
     return {
       ok: true, text: opts.json ? text : stripThinking(text), model: opts.model,
