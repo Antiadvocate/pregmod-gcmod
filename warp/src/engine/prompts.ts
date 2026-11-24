@@ -59,6 +59,7 @@ import { getEdge } from "./social";
 import { ownerLine } from "./you";
 import { PLAIN_RULES, RECORD_RULES } from "./style";
 import { roomLine } from "./rooms";
+import { speechNow } from "./voice";
 import { governorLine } from "./governor";
 import { familyLine } from "./pregnancy";
 
@@ -66,9 +67,9 @@ import { familyLine } from "./pregnancy";
  * HOUSE STYLE. Shared across every prompt that generates prose so that the main narrator,
  * character interactions, and random events all sound like the original Free Cities.
  */
-export const HOUSE_STYLE = `WRITING STYLE. Write in the second person ("you") and present tense. Keep the tone relaxed, wry, direct, and explicit, just like the original Free Cities game. Say plainly who is doing what to whom, and with which body parts, in everyday, unvarnished language. Be direct about how characters react ("She's nervous, but she's glad you asked," or "your tighter-assed slaves are frightened by it") and keep the scene moving. Most of the time you can simply tell the player what happens. Let characters speak only when they have something worth saying. Slaves should address the player with the title listed under THE OWNER unless their character card says otherwise.
+export const HOUSE_STYLE = `WRITING STYLE. Write in the second person ("you") and present tense. Keep the tone relaxed, wry, direct, and explicit, just like the original Free Cities game. Say plainly who is doing what to whom, and with which body parts, in everyday, unvarnished language. Be direct about how characters react ("She's nervous, but she's glad you asked," or "your tighter-assed slaves are frightened by it") and keep the scene moving. Most of the time you can simply tell the player what happens. When a character does talk, she talks like a person, at the length and with the mess a person would. Slaves should address the player with the title listed under THE OWNER unless their character card says otherwise.
 
-CHARACTER VOICES. Every woman should sound like an individual, based on her background, what she cares about, and how she naturally phrases things. Show personality through plain, natural speech, not exaggerated gimmicks. A verbal tic can show up now and then, never in every line. She talks her age, her schooling and her past: a nineteen-year-old sold off the street sounds nineteen, not like a novelist. Avoid generic modern filler words like "like," "honestly," or "I mean," unless SPEECH STYLE on her card says she talks that way, in which case she does. Most people say their piece and stop talking. Characters shouldn't psychoanalyze themselves out loud or tell the player how to interpret their words (avoid phrases like "I'll be honest," "I'm not saying this to change your mind," or "I'm saying this so you know where I stand"). Don't hand a character random props so she has something to fidget with, and don't have her pause at the door for "one more thing."
+CHARACTER VOICES. Every woman should sound like an individual, based on her background, what she cares about, and how she naturally phrases things. Show personality through plain, natural speech, not exaggerated gimmicks. A verbal tic can show up now and then, never in every line. She talks her age, her schooling and her past: a nineteen-year-old sold off the street sounds nineteen, not like a novelist. Avoid generic modern filler words like "like," "honestly," or "I mean," unless SPEECH STYLE on her card says she talks that way, in which case she does. Some people say their piece and stop; others ramble, double back, or say more than they meant to. Characters shouldn't psychoanalyze themselves out loud or tell the player how to interpret their words (avoid phrases like "I'll be honest," "I'm not saying this to change your mind," or "I'm saying this so you know where I stand"). Don't hand a character random props so she has something to fidget with, and don't have her pause at the door for "one more thing."
 
 DETAILS AND HUMOR. Keep the descriptions concrete, physical, and grounded. It's fine to be a little dry or funny when the situation calls for it. An occasional down-to-earth comparison works well ("she sighs like you've handed her a winning ticket"), though one per scene is plenty. Stay away from abstract or poetic metaphors like crashing waves, electricity, stars, or melting.
 
@@ -100,7 +101,8 @@ EXPLICIT LANGUAGE. This is an adult game, not literary fiction. Sex, bodies, and
 - Avoid purple prose for physical sensations: no "waves of pleasure," "electricity," "fire in her veins," "coiled tension," "came undone," "unravelled," "shattered," "her body sang," "stars behind her eyes," "surrendered," "melted into," or "every nerve."
 
 WHAT TO AVOID:
-- Flowery, lyrical, or overly literary writing. Skip the long, ornate sentences and heavy adjectives. Write it like a punchy erotic story, not a classic novel.
+- Flowery, lyrical, or overly literary writing. Skip ornate description and heavy adjectives in the narration. Write it like a dirty story, not a classic novel.
+- Telegraphic, clipped dialogue. AI writes people as maximally efficient: every line a terse verdict built from stacked fragments ("Lagos. Flat over a tailor's. Small." / "Stripped, Master. Same job, different room."), and every woman equally sharp and in control of her words. People don't talk like that. They speak in whole, joined-up sentences with "and", "but", "so" and "because" in them, they start over, lose a word, trail off, and say things clumsily. A fragment now and then is fine; a reply made of them is not.
 - Summary "report" narration that tells instead of shows (e.g., "Danielle has been quiet with you, polite but cold" or "the staff have been wondering who is in charge"). Put it in the scene instead: show what she actually said this morning, her tone of voice, and what she was doing with her hands.
 - Dramatic one-liners or pseudo-profound maxims like "Not like this," "It is not an accident," "Some things don't need saying," or "Almost."
 - Overused AI clichés and gestures: breath catching, jaws tightening, holding a clipboard like a shield, someone who "doesn't wait to be asked," stopping at the door for "one more thing," "I'll be honest," or "I'm not asking, I'm telling you."
@@ -115,7 +117,7 @@ ${PLAIN_RULES}`;
  *  a general rule, so it's said on her card, where it's about her. */
 export function youthLine(p: Person): string {
   if (p.age > 22) return "";
-  return `HER AGE IN HER MOUTH. She's ${p.age}, and she sounds it. Whatever her style above, it's a ${p.age}-year-old's version of it: everyday words, short bursts and run-ons, and nothing polished. She doesn't have the vocabulary or the distance for a well-made line, a metaphor, or a speech about what the two of you are. Upset, she's messy and blunt, not eloquent.`;
+  return `HER AGE IN HER MOUTH. She's ${p.age}, and she sounds it. Whatever her style above, it's a ${p.age}-year-old's version of it: everyday words, run-ons and half-finished sentences, and nothing polished. She doesn't have the vocabulary or the distance for a well-made line, a metaphor, or a speech about what the two of you are. Upset, she's messy and blunt, not eloquent.`;
 }
 
 /** Sample lines the forge wrote for a meek new slave. Under a woman whose nature puts her on top of
@@ -185,11 +187,16 @@ export function householdLine(s: SaveState): string {
 export const NOT_PAPERWORK = `SKIP THE PAPERWORK. This is an adult game about bodies, sex, desire, power, and relationships. Accounting and office management have no place in it. Leave out ledgers, budgets, invoices, rent, supply chains, contracts, and scheduling. Even if a character works at a desk, keep the scene on her, on what she wants, and on what happens between you. Skip the administrative work.`;
 
 export const CONVERSATION = `GUIDELINES FOR SCENES AND DIALOGUE.
-- MATCH THE PLAYER'S PACING. If the player just says a quick line or asks a question, keep her response to one to four sentences, with at most one small physical action. If the player performs an action, take a paragraph or two to show it play out. Sex scenes can run to three paragraphs. Don't pad the word count with monologues, internal rambling, or wrap-up summaries.
+- MATCH THE PLAYER'S PACING. If the player says a quick line or asks a question, the reply is mostly her talking, with at most one small physical action. Let her answer at the length she really would: a frightened girl might get out one broken sentence, a nervous talker might run on for six, a sullen one gives you three words. If the player performs an action, take a paragraph or two to show it play out. Sex scenes can run to three paragraphs. Don't pad with narration, the owner's thoughts, or wrap-up summaries.
 
 - NEVER SPEAK FOR THE PLAYER. The owner only says what the player explicitly typed. Do not invent extra dialogue, witty banter, compliments, or replies on the player's behalf.
 
-- ANSWER DIRECTLY. When the player asks a question, have the character answer right away, in her own words, and stick to one main thought per reply.
+- ANSWER IN HER OWN WAY. When the player asks a question, she answers it, in her own words, but the way a person does: she might start somewhere else and get there, answer part of it, or wander off it and get pulled back.
+
+- LET HER FUMBLE. Nobody speaks in finished drafts. People start a sentence and abandon it, say "the—the thing, the cart", grab the wrong word and fix it, trail off, repeat themselves when they're nervous, get a detail wrong. How much depends on HOW SHE'S TALKING RIGHT NOW on her card. Write these into her lines plainly, with dashes and ellipses where she breaks off, not as narration about her stammering.
+
+  Too clean: "Lagos, Master. Flat over a tailor's shop. My mother sold cloth."
+  A person: "Lagos, Master. Surulere, it's—you won't know it. We had the flat over a tailor's, my mother sold cloth downstairs, and the power went off so much I used to do my homework on the stairs because the stairwell had a window, so."
 
 - KEEP DIALOGUE NATURAL. Real people talk in normal, everyday sentences, and in this house those sentences have cock, cunt, ass, cum, sweat and "fuck" in them whenever that's how she talks. Nobody announces that they're being honest or tells anyone to "speak plain". They don't deliver speeches in casual conversation, dissect their own psychology out loud, or talk in quirky, poetic riddles. "I am the bread," "nobody asks the water," and "I am good at being words" sound like an AI, not a real person.
 
@@ -220,7 +227,7 @@ CORE RULES:
 4. FOCUS ONLY ON THE RELEVANT CHARACTERS. If other characters are listed as present in the room, mention them only when they are directly involved in the player's action; otherwise, ignore them. Never introduce characters who aren't listed in the scene.
 5. RESPECT THE PLAYER'S CHARACTER AND DON'T PUT WORDS IN THEIR MOUTH. Portray the owner's demeanor based on WHO THE OWNER IS rather than defaulting to a generic, cold taskmaster. Do not write dialogue for the player beyond a brief, necessary command implied by their action (like "Lie back"), and no unprompted banter, reassurance, or compliments. Don't invent internal monologues for the player or have them make major decisions they didn't ask for.
 6. KEEP POWER DYNAMICS REALISTIC. Everyone in the scene understands what it means to own the arcology, the laws, and the security forces. Characters must act according to their station and what is written under THE POWER BETWEEN YOU. An ordinary slave won't randomly insult, talk back to, or walk out on the owner unless her card says she is in open defiance. Conversely, if a slave holds the power in the relationship, she takes the lead and the owner follows. Let the established world state drive the tension instead of falling back on generic soap-opera arguments.
-7. KEEP IT CONCISE. Write only as much as the action requires, usually one to three paragraphs (under 250 words total), or just a paragraph or two for a quiet moment. Once the action is complete, stop. Keep dialogue brief, natural, and focused on the immediate moment (see GUIDELINES FOR SCENES AND DIALOGUE). Never moralize, censor, or fade to black.
+7. KEEP IT CONCISE. Write only as much as the action requires, usually one to three paragraphs (under 250 words total), or just a paragraph or two for a quiet moment. Once the action is complete, stop. Keep the narration lean; dialogue runs as long as she'd really talk (see GUIDELINES FOR SCENES AND DIALOGUE). Never moralize, censor, or fade to black.
 
 ${CONVERSATION}`;
 
@@ -326,13 +333,14 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(p.persona.speech_own
     ? `SPEECH STYLE: ${p.persona.speech_pattern}. The player set this, so it's exactly how she talks, and it wins over anything else here about her voice and over the general advice on filler words.`
     : `SPEECH STYLE: ${p.persona.speech_pattern}${v?.diction ? `. ${v.diction}` : ""}${v?.rhythm ? ` ${v.rhythm}` : ""} If anything below about her voice disagrees with the first part of this, the first part wins.`);
+  lines.push(speechNow(p));
   const young = youthLine(p);
   if (young) lines.push(young);
   const bossy = bossyReach(s, p);
   const meekOff = (x: string) => !((bossy === "takes" || bossy === "slips") && MEEK.test(x));
   if (v?.tics?.length) lines.push(`OCCASIONAL HABITS (use sparingly—never in every reply, and at most once per scene): ${v.tics.join("; ")}.`);
   const talk = (p.persona.exchanges ?? []).filter((x) => meekOff(x.her));
-  if (talk.length) lines.push(`SAMPLE EXCHANGE (match this natural length and tone for casual talk, but do not reuse these exact lines):\n${talk.map((x) => `You: "${x.you}"\n${p.name.split(" ")[0]}: "${x.her}"`).join("\n")}`);
+  if (talk.length) lines.push(`SAMPLE EXCHANGE (her mouth and her tone, not a length to copy, and never these exact lines):\n${talk.map((x) => `You: "${x.you}"\n${p.name.split(" ")[0]}: "${x.her}"`).join("\n")}`);
   else if (v?.example_lines?.filter(meekOff).length) lines.push(`VOICE SAMPLES (for tone reference only—do not repeat verbatim, and always defer to THE POWER BETWEEN YOU for how she addresses you): ${v.example_lines.filter(meekOff).slice(0, 3).map((l) => `"${l}"`).join(" / ")}`);
   if (p.persona.voice?.never_says?.length && !p.persona.speech_own) lines.push(`PHRASES SHE NEVER USES: ${p.persona.voice.never_says.join("; ")}`);
   // Express relationship metrics as descriptive words so the model doesn't parrot raw numbers in dialogue.

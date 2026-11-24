@@ -7,3 +7,5 @@ dist/
 
 # The repo root ignores lockfiles; Warp needs its own for reproducible CI installs (npm ci).
 !package-lock.json
+.voicecheck.mjs
+voicecheck/

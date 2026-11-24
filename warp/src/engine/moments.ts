@@ -27,7 +27,7 @@ import { didntFollow, finishLast } from "./style";
 import { worldBrief } from "./world";
 import { aroundBrief, citySnap, cityDelta, cityPicture, type CitySnap } from "./snapshot";
 import { applyDiff, salvage, noteStock, stockLine, type Diff } from "./turn";
-import { say } from "./voice";
+import { say, slipBeat } from "./voice";
 import { rng } from "./rng";
 import { applyTreatment, refresh } from "./obedience";
 import { shove } from "./psyche";
@@ -357,6 +357,8 @@ export async function playMoment(
   const beats: string[] = [];
   const lost = didntFollow(reply);
   if (lost) beats.push(lost);
+  const slip = p && !walking ? slipBeat(p, `${m.id}:${m.log.length}`) : "";
+  if (slip) beats.push(slip);
   const habits = p ? overused(s, p, m) : "";
   const worn = [habits, againLine(s, m, [...habits.matchAll(/"([^"]+)"/g)].map((x) => x[1].toLowerCase()))].filter(Boolean).join("\n\n");
   const card = p ? personCard(s, p, reply ?? m.title) : "";
