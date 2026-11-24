@@ -23,7 +23,9 @@ import { writeFileSync, mkdirSync } from "node:fs";
 const args = process.argv.slice(2);
 const opt = (k: string, d: string) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : d; };
 const MODEL = opt("model", "deepseek/deepseek-v4.1-flash");
-const JUDGE = opt("judge", MODEL);
+const JUDGE = opt("judge", "google/gemini-3.5-flash-lite");
+/** The game's Settings → thinking: off, low, or model (the default: whatever the model does). */
+const THINKING = opt("thinking", "model");
 const LABEL = opt("label", "run");
 const SESSIONS = Math.min(4, Number(opt("sessions", "4")));
 const SEED = opt("seed", "voice-0");
@@ -56,6 +58,7 @@ const { call } = await import("../src/llm.ts");
 const { refresh } = await import("../src/engine/obedience.ts");
 type Person = import("../src/engine/types.ts").Person;
 setApiKey(process.env.OPENROUTER_KEY || "proxy-injected");
+store["warp-thinking"] = THINKING;
 
 /** What the player says, conversation by conversation. Every woman hears the same. */
 const SESSION_LINES = [
@@ -172,7 +175,12 @@ if (!AS_DEALT) women.forEach((p, i) => {
 });
 const all: Reply[] = [];
 
-if (GROW) await Promise.all(women.map(async (her) => { her.economics.weeks_owned = 10; await growPersona(s, her); }));
+if (GROW) for (const her of women) {
+  // One at a time, so each is written knowing how the ones before her talk.
+  her.economics.weeks_owned = 10;
+  const ok = await growPersona(s, her);
+  console.error(`grew ${her.name}: ${ok ? her.persona.speech_pattern : "FAILED"}`);
+}
 for (let k = 0; k < SESSIONS; k++) {
   await Promise.all(women.map(async (her) => {
     const id = openMoment(s, { person: her.id, title: "With her", source: "encounter", happened: `You send for ${her.name.split(" ")[0]}. She comes to your office.`, ready: true });

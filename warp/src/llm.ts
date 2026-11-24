@@ -324,7 +324,15 @@ async function onceWith(opts: CallOptions, alive: () => void): Promise<LLMResult
   }
 
   if (!opts.onDelta) {
-    const json = await res.json();
+    let json = await res.json();
+    // A reasoning model left to think as much as it likes can spend the whole token budget thinking
+    // and hand back nothing. deepseek-v4.1-flash did that on every card rewrite and every judge call,
+    // silently, so cards never grew. Ask once more with thinking switched off.
+    if (!String(json?.choices?.[0]?.message?.content ?? "").trim() && json?.choices?.[0]?.finish_reason === "length" && !t.local && thinking !== "off") {
+      body.reasoning = { enabled: false };
+      const again = await send();
+      if (again.ok) json = await again.json();
+    }
     const text = String(json?.choices?.[0]?.message?.content ?? "");
     return {
       ok: true, text: opts.json ? text : stripThinking(text), model: opts.model,
