@@ -15,6 +15,7 @@ import type { Person, SaveState } from "./types";
 import { PLACE_BY_ID, PLACES, type PlaceDef } from "../data/places";
 import { rng } from "./rng";
 import { sane } from "./health";
+import { ownsRoom, partAt, roomIdOf, spacesOf, whereNow } from "./spaces";
 
 export interface Whereabouts {
   /** A place id: a room in data/places, or one of its ELSEWHERE. */
@@ -92,6 +93,13 @@ const at = (id: string, doing: string, extra: Partial<Whereabouts> = {}): Wherea
   return { place: pl.id, name: pl.name, look: pl.look, privacy: pl.privacy, doing, ...extra };
 };
 
+/** "Her room" is her own room on the map when she has one (engine/spaces). */
+function mine(s: SaveState, p: Person, w: Whereabouts): Whereabouts {
+  if (w.place !== "her_room" || !ownsRoom(p)) return w;
+  const x = spacesOf(s)[roomIdOf(p)];
+  return x ? { ...w, place: x.id, name: x.name, look: x.look } : w;
+}
+
 /** Where her work is, whatever she's doing this minute. */
 export function workplaceOf(s: SaveState, p: Person): Whereabouts {
   const job = workplace(s, p);
@@ -106,6 +114,19 @@ export function whereabouts(s: SaveState, p: Person, salt: string | number = s.t
     const ward = p.facility === "clinic" || (p.assignment ?? "").startsWith("get treatment");
     return at(ward ? (built(s, "clinic") ? "clinic_floor" : "town_clinic") : "her_room", "in bed, still recovering from her surgery");
   }
+  // Where the week's schedule has her at this time of day (engine/spaces), when it has her inside.
+  const part = partAt(s.scene?.time);
+  const here = whereNow(s, p, part);
+  // Work hours keep the job's own logic below; her own time in the evening follows the schedule.
+  if (here && part === "evening") {
+    const own = part === "evening";
+    const pool = AT[here.id] ?? (here.owner ? AT.her_room : undefined);
+    const does = p.persona.interests ?? [];
+    const hobby = own && does.length ? ing(r.pick(does).replace(/^she\s+/i, "")) : null;
+    const doing = own ? (hobby ? `on her own time, ${hobby}` : `on her own time${pool ? `, ${r.pick(pool)}` : ""}`) : pool ? r.pick(pool) : "at work";
+    const job0 = workplace(s, p);
+    return { place: here.id, name: here.name, look: here.look, privacy: here.privacy, doing, own: own || undefined, withYou: !own && job0.withYou };
+  }
   const job = workplace(s, p);
   const locked = /cellblock|confined/.test(p.assignment ?? "") || p.facility === "cellblock" || p.facility === "arcade";
   // Some of the time she's off: in her room, or wherever she does what she does with her own time.
@@ -113,10 +134,10 @@ export function whereabouts(s: SaveState, p: Person, salt: string | number = s.t
   if (!locked && does.length && r.chance(job.withYou ? 0.25 : 0.35)) {
     const hobby = r.pick(does).replace(/^she\s+/i, "");
     const doing = ing(hobby);
-    return at(built(s, "servants") && r.chance(0.4) ? "servants_hall" : "her_room", doing ? `on her own time, ${doing}` : `on her own time (she ${hobby})`, { own: true });
+    return mine(s, p, at(built(s, "servants") && r.chance(0.4) ? "servants_hall" : "her_room", doing ? `on her own time, ${doing}` : `on her own time (she ${hobby})`, { own: true }));
   }
   const pool = AT[job.place] ?? AT.her_room;
-  return at(job.place, r.pick(pool), { withYou: job.withYou });
+  return mine(s, p, at(job.place, r.pick(pool), { withYou: job.withYou }));
 }
 
 const DOUBLE: Record<string, string> = { runs: "running", sits: "sitting", gets: "getting", puts: "putting", plans: "planning", swims: "swimming", jogs: "jogging", bets: "betting", knits: "knitting", grins: "grinning", sets: "setting", wins: "winning", begins: "beginning", stops: "stopping", drops: "dropping", slips: "slipping", rubs: "rubbing", hums: "humming", grabs: "grabbing", hugs: "hugging", chats: "chatting", skips: "skipping", strips: "stripping", flips: "flipping" };

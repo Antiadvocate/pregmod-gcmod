@@ -30,6 +30,7 @@ import { applyDiff, salvage, noteStock, stockLine, type Diff } from "./turn";
 import { say, slipBeat } from "./voice";
 import { driftLine, spoken } from "./speech";
 import { orderMissed } from "./orders";
+import { partAt, spaceLine, spacesOf } from "./spaces";
 import { rng } from "./rng";
 import { applyTreatment, refresh } from "./obedience";
 import { shove } from "./psyche";
@@ -385,6 +386,8 @@ export async function playMoment(
     city ? cityContext(s) : "",
     card ? `## ${walking ? "WITH THE PLAYER" : "THE SLAVE"}\n${card}` : "",
     m.where ? whereLine(m.where, m.where.summoned) : "",
+    // The place itself, kept by engine/spaces: what's in it, who else is there now, what happened here.
+    m.where && !m.where.summoned && spacesOf(s)[m.where.place] ? spaceLine(s, spacesOf(s)[m.where.place], partAt(s.scene?.time), [p?.id ?? "", ...(m.others ?? [])]) : "",
     ...others.map((o) => `## ALSO IN THE SCENE\n${personCard(s, o, m.title)}`),
     p && others.length ? `## BETWEEN THEM\n${others.flatMap((o) => [bond(p, o), bond(o, p), pairFitLine(s, p, o), pairFitLine(s, o, p)]).filter(Boolean).join("\n")}\nBoth of them talk and act in the scene, each in her own voice.` : "",
     castBrief(s, `${m.title}\n${transcript(m)}\n${reply ?? ""}`),

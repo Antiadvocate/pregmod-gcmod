@@ -24,6 +24,7 @@ import { Skyline } from "./Skyline";
 import { STYLES, styleOf, type Style } from "../lib/cityart";
 import IsoCity from "./IsoCity";
 import People from "./People";
+import Inside from "./Inside";
 import { FINISHES, lookOf, type Finish, type Look } from "../lib/iso";
 import { DOCTRINE_BY_ID } from "../data/doctrines";
 
@@ -33,6 +34,8 @@ export default function City() {
   const { save, mutate } = useGame();
   const [tab, setTab] = useState<Tab>("build");
   const [picked, setPicked] = useState<string | null>(null);
+  const [side, setSide] = useState<"outside" | "inside">(() => { try { return localStorage.getItem("warp:city-side") === "inside" ? "inside" : "outside"; } catch { return "outside"; } });
+  const pickSide = (v: "outside" | "inside") => { setSide(v); try { localStorage.setItem("warp:city-side", v); } catch { /* private window */ } };
   const [note, setNote] = useState<{ text: string; bad?: boolean } | null>(null);
   const [view, setView] = useState<"above" | "skyline">(() => { try { return localStorage.getItem("warp:city-view") === "skyline" ? "skyline" : "above"; } catch { return "above"; } });
   const pickView = (v: "above" | "skyline") => { setView(v); try { localStorage.setItem("warp:city-view", v); } catch { /* private window */ } };
@@ -45,8 +48,18 @@ export default function City() {
   const say = (r: { ok: boolean; why?: string; line?: string }) =>
     setNote(r.ok ? { text: r.line ?? "Done." } : { text: r.why ?? "No.", bad: true });
 
+  // Outside is the city; inside is the arcology itself, floor by floor (views/Inside).
+  const sideBar = (
+    <div className="flex gap-1 mb-3">
+      <Button size="sm" kind={side === "outside" ? "primary" : "ghost"} onClick={() => pickSide("outside")}>The city</Button>
+      <Button size="sm" kind={side === "inside" ? "primary" : "ghost"} onClick={() => pickSide("inside")}>Inside the arcology</Button>
+    </div>
+  );
+  if (side === "inside") return <>{sideBar}<Inside /></>;
+
   return (
     <>
+      {sideBar}
       {/* THE PLACE. Sticky on a phone so it stays as an anchor while the list below scrolls. */}
       <div className="sticky top-0 z-10 -mx-4 sm:mx-0 mb-3 sm:mb-4 sm:rounded-xl overflow-hidden"
         style={{ background: "var(--bg)" }}>

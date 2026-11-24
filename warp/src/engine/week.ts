@@ -16,6 +16,7 @@
  * afterwards to work out what must have happened, which is how the old end-of-week text and the
  * old budget screen ended up describing two different weeks.
  */
+import { tickSpaces } from "./spaces";
 import { tickMarks } from "./marks";
 import "./grandevents";
 import { tickPowers } from "./power";
@@ -332,6 +333,8 @@ export function endWeek(s: SaveState): WeekReport {
 
   /* ── 3. the household reacts to itself ──────────────────────────────────────────────────── */
   tickProximity(s);
+  // Where everyone was, part of the day by part of the day, and what came of it (engine/spaces).
+  for (const l of tickSpaces(s)) push(l, "neutral", 3);
   const pulled = coRegulate(s);
   const flips = pulled.filter((x) => Math.abs(x.pull) > 0.25).length;
   if (flips >= 3) push(`The mood of ${flips} of your slaves shifted together this week.`, "neutral", 4);

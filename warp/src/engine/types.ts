@@ -1013,6 +1013,10 @@ export interface SaveState {
   works?: { levels: Record<string, number> };
   /** Gene programs run on the slaves and the citizens. See engine/genome. */
   genome?: import("./genome").Genome;
+  /** The places inside the arcology, kept as objects. See engine/spaces. */
+  spaces?: Record<string, import("./spaces").Space>;
+  /** Where everyone is at each part of the day, this week. See engine/spaces. */
+  schedule?: import("./spaces").Schedule;
   /** Menial slaves you own in bulk, and the ones your citizens own. See engine/menials. */
   menials?: import("./menials").Menials;
   /** Faces of people who aren't yours but keep turning up. See engine/faces.ts. */

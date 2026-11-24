@@ -59,6 +59,7 @@ import { getEdge } from "./social";
 import { ownerLine } from "./you";
 import { PLAIN_RULES, RECORD_RULES } from "./style";
 import { roomLine } from "./rooms";
+import { dayLine } from "./spaces";
 import { speechLine } from "./speech";
 import { limbsLine } from "./broken";
 import { governorLine } from "./governor";
@@ -376,6 +377,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (edge?.roles.length) lines.push(`ROLES: ${edge.roles.join(", ")}`);
   const room = roomLine(p);
   if (room) lines.push(room);
+  if (s.schedule?.week === s.arcology.week) { const day = dayLine(s, p); if (day) lines.push(day); }
   const gov = governorLine(s, p);
   if (gov) lines.push(gov);
   if (p.persona.texture.length) lines.push(`LIKES AND DISLIKES: ${p.persona.texture.join("; ")}`);
