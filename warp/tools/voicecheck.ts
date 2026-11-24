@@ -83,7 +83,7 @@ const SWEAR = /\b(fuck\w*|shit\w*|cunt\w*|cock\w*|dick\w*|ass(hole)?|bitch\w*|da
 /** The small words stylometry tells writers apart by. */
 const FUNCTION = "i me my you your it the a and but so because that this just not no yes what if then like when all was is do don't can't i'm it's there they".split(" ");
 
-interface Reply { who: string; name: string; register: string; session: number; you: string; prose: string; quotes: string[]; guessed?: string }
+interface Reply { who: string; name: string; register: string; session: number; you: string; prose: string; quotes: string[]; guessed?: string; voiceGuess?: string }
 
 function lengthStats(rs: Reply[]) {
   const qs = rs.flatMap((r) => r.quotes), ws = qs.flatMap(sentences).map((x) => words(x).length);
@@ -149,6 +149,7 @@ function shared(rs: Reply[], names: string[]): [string, number][] {
 const s = newGame({ seed: SEED, starting_slaves: 4 } as never);
 s.models.narrator_model = MODEL;
 s.models.fallback_model = MODEL;
+s.models.forge_model = MODEL;
 const women = Object.values(s.people).filter((p) => p.status === "owned" && p.age >= 18).slice(0, 4);
 /* The game's starting households are all early twenties and polite, which would test nothing about
  * whether difference survives. Unless asked not to, the four are made as unlike as the engine allows:
@@ -193,14 +194,22 @@ const names = women.flatMap((p) => [p.name, ...p.name.split(" "), p.slave_name ?
 const maskRe = new RegExp(`\\b(${names.map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`, "g");
 const profiles = women.map((p, i) => `${LETTERS[i]}. ${p.age}, ${p.origin.nationality}, was a ${p.origin.career}. ${p.origin.background} Talks: ${p.persona.speech_pattern}. Personality: ${p.persona.core_traits.join("; ")}.`).join("\n");
 const judgeFails: string[] = [];
-const JUDGE_SYSTEM = "You read a few lines of dialogue and decide which of the listed women said them, from how they talk and what they say. Answer with JSON only: {\"who\":\"A\"} (one letter).";
+const JUDGE_SYSTEM = "You read a few lines of dialogue and decide which of the listed women said them. Answer with one letter and nothing else.";
+/** The same, with nothing but age and how she talks: no country, no old job. Scored on the questions
+ *  that don't invite her life story, so only her voice can give her away. */
+const VOICE_ONLY = new Set(["You were late this morning. Why?", "How was your week?", "Take your clothes off.", "Did you eat today?", "Come sit with me.", "You did well today.", "Are you afraid of me?", "I'm thinking of selling you."]);
+const bare = women.map((p, i) => `${LETTERS[i]}. ${p.age}. Talks: ${p.persona.speech_pattern}. ${p.persona.voice?.diction ?? ""}`).join("\n");
+const judgeOnce = async (system: string, user: string): Promise<string | undefined> => {
+  const res = await call({ system, user, model: JUDGE, maxTokens: 800, temperature: 0 });
+  const m = res.ok ? /\b([A-D])\b/.exec(res.text.trim().slice(-40)) ?? /\b([A-D])\b/.exec(res.text) : null;
+  if (!m) { judgeFails.push(res.ok ? res.text.slice(0, 80) || "(empty)" : res.error ?? "no answer"); return undefined; }
+  return women[LETTERS.indexOf(m[1])]?.id;
+};
 await Promise.all(all.map(async (r) => {
   if (!r.quotes.length) return;
   const said = r.quotes.map((q) => `"${q.replace(maskRe, "___")}"`).join("\n");
-  const res = await call({ system: JUDGE_SYSTEM, user: `THE WOMEN:\n${profiles}\n\nSHE WAS ASKED: "${r.you}"\n\nSHE SAID:\n${said}`, model: JUDGE, json: true, maxTokens: 600, temperature: 0 });
-  const m = res.ok ? /"who"\s*:\s*"?([A-D])\b/.exec(res.text) : null;
-  if (m) r.guessed = women[LETTERS.indexOf(m[1])]?.id;
-  else judgeFails.push(res.ok ? res.text.slice(0, 120) : res.error ?? "no answer");
+  r.guessed = await judgeOnce(JUDGE_SYSTEM, `THE WOMEN:\n${profiles}\n\nSHE WAS ASKED: "${r.you}"\n\nSHE SAID:\n${said}`);
+  if (VOICE_ONLY.has(r.you)) r.voiceGuess = await judgeOnce(JUDGE_SYSTEM, `THE WOMEN, by how they talk:\n${bare}\n\nSHE WAS ASKED: "${r.you}"\n\nSHE SAID:\n${said}`);
 }));
 
 /* ── report ─────────────────────────────────────────────────────────────────────────────────── */
@@ -224,7 +233,9 @@ const per = Array.from({ length: SESSIONS }, (_, k) => {
   const acc = judged.filter((r) => r.guessed === r.who).length / (judged.length || 1);
   const ks = keys.filter((x) => x.endsWith(`|${k}`));
   const between = avg(ks.flatMap((a, i) => ks.slice(i + 1).map((b) => dist(z.get(a)!, z.get(b)!))));
-  return { k, acc, n: judged.length, between, ...lengthStats(all.filter((r) => r.session === k)) };
+  const vj = rs.filter((r) => r.voiceGuess);
+  const vacc = vj.filter((r) => r.voiceGuess === r.who).length / (vj.length || 1);
+  return { k, acc, n: judged.length, vacc, vn: vj.length, between, ...lengthStats(all.filter((r) => r.session === k)) };
 });
 
 const firstNames = women.map((p) => p.name.split(" ")[0]);
@@ -232,6 +243,8 @@ const house = shared(all, names);
 const judgedAll = all.filter((r) => r.guessed);
 const totalAcc = judgedAll.filter((r) => r.guessed === r.who).length / (judgedAll.length || 1);
 const tot = lengthStats(all);
+const vAll = all.filter((r) => r.voiceGuess);
+const vAcc = vAll.filter((r) => r.voiceGuess === r.who).length / (vAll.length || 1);
 const out: string[] = [
   `# Voice check: ${LABEL}`, "",
   `model \`${MODEL}\`, judge \`${JUDGE}\`, ${women.length} women × ${SESSIONS} conversations, ${all.length} replies${GROW ? ", grown cards" : ""}${NOBOOK ? ", no bookkeeper" : ""}`, "",
@@ -239,9 +252,10 @@ const out: string[] = [
   ...women.map((p) => `- **${p.name}**, ${p.age}, ${p.origin.nationality}, was a ${p.origin.career}; ${registerOf(p)}; talks: ${p.persona.speech_pattern}`), "",
   "## Can you tell who's talking, and do they drift together?", "",
   `Chance is ${Math.round(100 / women.length)}%. Distinctness is the style distance between women over the spread within each woman (${within.toFixed(2)}); near 1 they're no easier to tell apart than one woman on two days.`, "",
-  "| conversation | judge picks the right woman | distinctness | words / sentence | fragments | fumbles |", "|---|---|---|---|---|---|",
-  ...per.map((x) => `| ${x.k + 1} | ${Math.round(100 * x.acc)}% (${x.n}) | ${(x.between / within).toFixed(2)} | ${x["words / sentence"]} | ${x["fragments (≤4 words)"]} | ${x["quotes with a fumble"]} |`),
-  `| all | ${Math.round(100 * totalAcc)}% | | ${tot["words / sentence"]} | ${tot["fragments (≤4 words)"]} | ${tot["quotes with a fumble"]} |`, "",
+  "The judge reads one reply with the names taken out. **With her past** it knows each woman's age, country, old job and personality, so what she talks about can give her away. **By voice alone** it knows only her age and how her card says she talks, and is scored only on the questions that don't invite her life story.", "",
+  "| conversation | with her past | by voice alone | distinctness | words / sentence | fragments | fumbles |", "|---|---|---|---|---|---|---|",
+  ...per.map((x) => `| ${x.k + 1} | ${Math.round(100 * x.acc)}% (${x.n}) | ${Math.round(100 * x.vacc)}% (${x.vn}) | ${(x.between / within).toFixed(2)} | ${x["words / sentence"]} | ${x["fragments (≤4 words)"]} | ${x["quotes with a fumble"]} |`),
+  `| all | ${Math.round(100 * totalAcc)}% | ${Math.round(100 * vAcc)}% | | ${tot["words / sentence"]} | ${tot["fragments (≤4 words)"]} | ${tot["quotes with a fumble"]} |`, "",
   "## Who gets mistaken for whom", "",
   "| said by ↓ / judged as → | " + firstNames.join(" | ") + " |", "|---|" + firstNames.map(() => "---").join("|") + "|",
   ...women.map((p) => `| ${p.name.split(" ")[0]} | ${women.map((q) => all.filter((r) => r.who === p.id && r.guessed === q.id).length).join(" | ")} |`), "",
