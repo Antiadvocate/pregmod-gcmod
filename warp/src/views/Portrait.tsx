@@ -26,8 +26,12 @@ export function castOf(s: SaveState, m: Scene): Person[] {
   const opening = `${m.title} ${m.log.find((l) => l.role !== "you")?.text.slice(0, 400) ?? ""}`;
   const count = PLURAL.test(opening) ? 3 : 1;
   const look = prevailingLook(s, "citizens");
+  // A stand-in is a man when the scene is about men: stand-ins used to be women whatever the scene said.
+  const count_ = (re: RegExp) => (opening.match(re) ?? []).length;
+  const men = count_(/\b(he|him|his|man|men|guy|guard|husband|father|brother|sir)\b/gi) > count_(/\b(she|her|hers|woman|women|girl|wife|mother|sister|ma'am)\b/gi);
   return Array.from({ length: count }, (_, i) => {
-    const p = generatePerson({ seed: `${m.id} ${i}`, sex: "female", age: 24 + ((m.id.length * 7 + i * 11) % 30) });
+    const p = generatePerson({ seed: `${m.id} ${i}`, sex: men ? "male" : "female", age: 24 + ((m.id.length * 7 + i * 11) % 30) });
+    if (men) { p.body.face_shape = "masculine"; p.body.hair_length = 1; }
     if (look.skin) p.body.skin = `${look.skin} (engineered)`;
     if (look.hair) p.body.hair_color = look.hair;
     if (look.eyes) p.body.eye_color = look.eyes;

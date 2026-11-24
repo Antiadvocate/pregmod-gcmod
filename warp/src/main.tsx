@@ -10,7 +10,7 @@ initGraphics();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {location.hash === "#artlab" ? <ArtLab /> : <App />}
+    {location.hash.startsWith("#artlab") ? <ArtLab /> : <App />}
     <UpdateBar />
   </StrictMode>,
 );

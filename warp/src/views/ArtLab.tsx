@@ -9,10 +9,30 @@ import { useState } from "react";
 import { generatePerson } from "../engine/generate";
 import { feetOf } from "../engine/genitals";
 import SlaveArt from "./SlaveArt";
+import { playerAsPerson } from "../engine/you";
+import { newGame } from "../engine/state";
 
 export default function ArtLab() {
   const [base, setBase] = useState(1);
-  const people = Array.from({ length: 6 }, (_, i) => {
+  // #artlab-men: men, drawn the way the game draws you and the men of the city.
+  const men = location.hash === "#artlab-men";
+  const people = men ? Array.from({ length: 6 }, (_, i) => {
+    const p = generatePerson({ seed: base * 100 + i, age: 25 + ((base + i * 7) % 30), sex: "male" });
+    p.pronouns = "he/him";
+    p.body.face_shape = "masculine";
+    p.body.boobs = 0;
+    p.body.muscle = [0, 20, 45, 70, 100, 30][i];
+    p.body.weight = [-20, 0, 10, 30, 0, 80][i];
+    p.body.hair_length = [1, 3, 8, 1, 2, 12][i];
+    p.clothes = ["no clothing", "nice business attire", "a t-shirt and jeans", "nice business attire", "no clothing", "a military uniform"][i];
+    if (i === 0) {
+      // You, as a new game with a cock draws you.
+      const you = playerAsPerson(newGame({ seed: `lab${base}`, kit: "cock", pronouns: "he/him", starting_slaves: 0 } as never));
+      you.clothes = "nice business attire";
+      return you;
+    }
+    return p;
+  }) : Array.from({ length: 6 }, (_, i) => {
     const p = generatePerson({ seed: base * 100 + i, age: 19 + ((base + i * 3) % 15), sex: "female" });
     // Every other woman with her toenails painted, so polish gets judged too.
     if (i % 2) p.body.feet = { ...feetOf(p), toenails: ["red", "pale pink", "black"][i % 3] };

@@ -33,8 +33,10 @@ export function expressionOf(p: Person, m?: Moment): Expression {
   const a = p.psyche.arousal / 100;
   const scared = p.psyche.relaxation <= -3.5;
   const shy = p.persona.flaw?.id === "shamefast" || p.persona.fetishes.some((f) => f.name === "humiliation" && f.strength > 40);
+  // A man colours far less, and the pack's blush is drawn for a woman's face.
+  const flush = p.pronouns === "he/him" ? 0.3 : 1;
   return {
-    blush: clamp(a * 0.85 + (scared ? 0.15 : 0) + (shy ? 0.2 : 0) + (m?.landing === "wanted" ? 0.25 : 0) + (m?.finished ? 0.3 : 0) - (p.psyche.state === "broken" ? 0.4 : 0)),
+    blush: flush * clamp(a * 0.85 + (scared ? 0.15 : 0) + (shy ? 0.2 : 0) + (m?.landing === "wanted" ? 0.25 : 0) + (m?.finished ? 0.3 : 0) - (p.psyche.state === "broken" ? 0.4 : 0)),
     tears: clamp((m?.landing === "hated" ? 0.85 : 0) + (p.psyche.relaxation <= -6 ? 0.5 : 0) + (m?.act === "throat" ? 0.4 : 0)),
     sweat: clamp((a > 0.75 ? 0.6 : 0) + (m?.finished ? 0.5 : 0) + (p.health.energy < 20 ? 0.4 : 0)),
     gasp: !!m?.finished || a > 0.85 || m?.act === "throat",

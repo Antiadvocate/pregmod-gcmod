@@ -63,6 +63,8 @@ export function playerAsPerson(s: SaveState): Person {
   const p = generatePerson({ seed: "player-figure", age: s.player.age });
   p.id = "player";
   p.name = s.player.name;
+  // Your pronouns, not the template's: the art reads them to decide whether to draw a man.
+  p.pronouns = s.player.pronouns ?? "he/him";
   p.body = { ...playerBody(s), marks: playerBody(s).marks ?? [] };
   p.clothes = s.player.clothes ?? "no clothing";
   p.shoes = s.player.shoes ?? "none";
