@@ -62,6 +62,7 @@ const { openMoment, playMoment, closeMoment } = await import("../src/engine/mome
 const { registerOf } = await import("../src/engine/voice.ts");
 const { growPersona } = await import("../src/engine/growth.ts");
 const { call } = await import("../src/llm.ts");
+const { liveDials, measure } = await import("../src/engine/speech.ts");
 const { refresh } = await import("../src/engine/obedience.ts");
 type Person = import("../src/engine/types.ts").Person;
 setApiKey(process.env.OPENROUTER_KEY || "proxy-injected");
@@ -271,6 +272,15 @@ const out: string[] = [
   "| conversation | with her past | by voice alone | distinctness | words / sentence | fragments | fumbles |", "|---|---|---|---|---|---|---|",
   ...per.map((x) => `| ${x.k + 1} | ${Math.round(100 * x.acc)}% (${x.n}) | ${Math.round(100 * x.vacc)}% (${x.vn}) | ${(x.between / within).toFixed(2)} | ${x["words / sentence"]} | ${x["fragments (≤4 words)"]} | ${x["quotes with a fumble"]} |`),
   `| all | ${Math.round(100 * totalAcc)}% | ${Math.round(100 * vAcc)}% | | ${tot["words / sentence"]} | ${tot["fragments (≤4 words)"]} | ${tot["quotes with a fumble"]} |`, "",
+  "## Does she come out at her numbers?", "",
+  "Her rolled targets (engine/speech, as they are on the day) against what the model wrote, over every reply.", "",
+  "| | words / reply | words / sentence | swears / 100 words | lines with a fumble |", "|---|---|---|---|---|",
+  ...women.map((p) => {
+    const d = liveDials(p), rs = all.filter((r) => r.who === p.id && r.quotes.length);
+    const ms = rs.map((r) => measure(r.quotes));
+    const mean = (f: (x: ReturnType<typeof measure>) => number) => ms.length ? (ms.reduce((a, x) => a + f(x), 0) / ms.length).toFixed(1) : "–";
+    return `| ${p.name.split(" ")[0]} | ${d.words} → ${mean((x) => x.words)} | ${d.sentence} → ${mean((x) => x.sentence)} | ${d.swearing} → ${mean((x) => x.swearing)} | ${Math.round(d.fumble * 100)}% → ${ms.length ? Math.round(100 * ms.reduce((a, x) => a + x.fumble, 0) / ms.length) : "–"}% |`;
+  }), "",
   "## Who gets mistaken for whom", "",
   "| said by ↓ / judged as → | " + firstNames.join(" | ") + " |", "|---|" + firstNames.map(() => "---").join("|") + "|",
   ...women.map((p) => `| ${p.name.split(" ")[0]} | ${women.map((q) => all.filter((r) => r.who === p.id && r.guessed === q.id).length).join(" | ")} |`), "",

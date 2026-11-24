@@ -254,6 +254,10 @@ export interface Persona {
   preferred_hole?: { hole: string; known: boolean };
   /** 0–1 sociability; drives rumour spread and who starts conversations in a facility. */
   gregariousness: number;
+  /** The five usual axes, rolled once. See engine/speech. */
+  temperament?: import("./speech").Temperament;
+  /** How she talks, in numbers, rolled once from her id and who she is. See engine/speech. */
+  speech?: import("./speech").SpeechDials;
 }
 
 /** Trained capability. 0–100 each; the old game's three-tier bands are read off these. */

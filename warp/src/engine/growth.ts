@@ -16,6 +16,7 @@
  * relationship you actually have, a short history of how she got here, and the one thing about her
  * nobody else has. The old card is replaced, not added to. One model call each, a woman at a time.
  */
+import { speechLine } from "./speech";
 import type { Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
@@ -126,7 +127,7 @@ function brief(s: SaveState, p: Person): string {
     (mem?.facts ?? []).length ? `## WHAT SHE KNOWS ABOUT THE OWNER\nEach one has the week she learned it.\n${mem!.facts.map((f) => `· week ${f.week}: ${f.text}`).join("\n")}` : "",
     mem?.digest ? `## HER TIME HERE, IN SHORT, IN HER WORDS\n${mem.digest}` : "",
     `## WHAT HAS HAPPENED TO HER\nThese are the things that matter most, in order.\n${memories.join("\n")}`,
-    `## WHAT HER VOICE IS MADE OF\nShe's ${p.age}. Schooling: ${schooling(p.persona.education ?? 50)}. Her head: ${p.persona.intelligence}. Her nerves right now: ${nerves(p)}.`,
+    `## WHAT HER VOICE IS MADE OF\nShe's ${p.age}. Schooling: ${schooling(p.persona.education ?? 50)}. Her head: ${p.persona.intelligence}. Her nerves right now: ${nerves(p)}.\n${speechLine(p)}\nThose numbers are fixed and are the game's, like her body. Write her voice, speech_pattern and exchanges so they fit them.`,
     othersTalk(s, p),
   ].filter(Boolean).join("\n\n");
 }

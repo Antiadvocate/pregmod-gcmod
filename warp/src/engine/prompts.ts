@@ -59,7 +59,7 @@ import { getEdge } from "./social";
 import { ownerLine } from "./you";
 import { PLAIN_RULES, RECORD_RULES } from "./style";
 import { roomLine } from "./rooms";
-import { speechNow } from "./voice";
+import { speechLine } from "./speech";
 import { governorLine } from "./governor";
 import { familyLine } from "./pregnancy";
 
@@ -333,7 +333,7 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   lines.push(p.persona.speech_own
     ? `SPEECH STYLE: ${p.persona.speech_pattern}. The player set this, so it's exactly how she talks, and it wins over anything else here about her voice and over the general advice on filler words.`
     : `SPEECH STYLE: ${p.persona.speech_pattern}${v?.diction ? `. ${v.diction}` : ""}${v?.rhythm ? ` ${v.rhythm}` : ""} If anything below about her voice disagrees with the first part of this, the first part wins.`);
-  lines.push(speechNow(p));
+  lines.push(speechLine(p));
   const young = youthLine(p);
   if (young) lines.push(young);
   const bossy = bossyReach(s, p);

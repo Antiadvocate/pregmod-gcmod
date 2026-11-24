@@ -11,6 +11,7 @@
  */
 import type { Person, SaveState } from "./types";
 import { rng, type Rng } from "./rng";
+import { liveDials } from "./speech";
 import { read } from "./obedience";
 
 export type Register =
@@ -361,28 +362,6 @@ export function claimSpeech(p: Person): void {
   if (asks && bans) setSpeech(p, p.persona.speech_pattern);
 }
 
-/* ── HOW SHE'S TALKING RIGHT NOW ─────────────────────────────────────────────────────────────
- * A model left alone writes everyone as fluent and efficient: every line a clean verdict, nobody
- * losing a word. Real speech fumbles, and how much depends on the person and the moment. This reads
- * it off her nerves, her head, her schooling, how tired and how turned on she is, so a terrified
- * girl stammers and restarts while a relaxed one runs on and wanders, and a sharp one over-explains. */
-export function speechNow(p: Person): string {
-  const r = p.psyche.relaxation;
-  const out: string[] = [];
-  if (p.psyche.state === "broken") out.push("flat and slow, losing the thread halfway through a sentence and not going back for it");
-  else if (r <= -6) out.push("badly rattled: she starts sentences twice, stammers on the first word, loses the word she wanted, answers a beat too fast or too late, and sometimes says the wrong thing and scrambles to fix it");
-  else if (r <= -3) out.push("on edge: she restarts a sentence now and then, trails off when she can't tell how it's landing, and fills a silence with more than she meant to say");
-  else if (r >= 4) out.push("loose and easy: she talks more than she needs to, wanders off the point and comes back, and lets things slip she didn't mean to");
-  else out.push("ordinary: she talks in full, connected sentences with the odd false start or 'I mean—', like anyone");
-  const iq = p.persona.intelligence, ed = p.persona.education ?? 50;
-  if (iq === "impaired" || iq === "slow") out.push("she gets words a little wrong (a near word for the right one, grammar from where she grew up) and loses track of a long sentence");
-  else if (iq === "brilliant" || (iq === "sharp" && ed >= 70)) out.push("she talks in long sentences and corrects herself mid-way to get it exactly right, and over-explains when she's nervous");
-  else if (ed < 25) out.push("she talks like someone with little schooling: plain words, run-ons strung together with 'and' and 'so', the odd grammar slip");
-  if (p.health.energy < 25) out.push("she's exhausted, so words blur, she yawns through one, and forgets what she was saying");
-  if (p.psyche.arousal >= 70) out.push("she's turned on, so she loses the thread and her words come out breathy and cut off");
-  return `HOW SHE'S TALKING RIGHT NOW: ${out.join("; ")}.`;
-}
-
 const SLIPS = [
   "she starts to answer, stops, and starts again a different way",
   "she reaches for a word, can't find it, and settles for a worse one",
@@ -393,11 +372,10 @@ const SLIPS = [
   "she runs on longer than she meant to and notices",
 ];
 
-/** One fumble for this reply, on a roll weighted by how tense she is. Only the way she says it, never
+/** One fumble for this reply, on a roll of her own fumble dial as it is today. Only the way she says it, never
  *  what happens: a mishearing that changed the plot read as the writer losing it. */
 export function slipBeat(p: Person, seed: string): string {
   const r = rng(seed);
-  const chance = p.psyche.relaxation <= -3 ? 0.6 : p.psyche.relaxation >= 4 ? 0.35 : 0.3;
-  if (r() > chance) return "";
+  if (r() > liveDials(p).fumble) return "";
   return `SHE FUMBLES ONCE in this reply: ${r.pick(SLIPS)}. It's a slip in how she says it, not in what happens.`;
 }
