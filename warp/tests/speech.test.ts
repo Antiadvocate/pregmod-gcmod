@@ -55,3 +55,11 @@ const big = ownerScale(s);
 check("a trillionaire is written as one", /¤15\.0 trillion/.test(big) && /richer than most countries/.test(big) && /kitchens and staff/.test(big), big);
 s.arcology.cash = 50_000;
 check("a broke owner isn't", /scraping by/.test(ownerScale(s)) && !/kitchens and staff/.test(ownerScale(s)), ownerScale(s));
+
+/* ── when he says kill ──────────────────────────────────────────────────────────────────────── */
+const { isKillOrder, orderMissed } = await import("../src/engine/orders.ts");
+check("an order to kill is one", isKillOrder("Guards execute this cook.") && isKillOrder("Kill everyone here except Manon."));
+check("a threat or a question isn't", !isKillOrder("Do it again or I'll kill you.") && !isKillOrder("Should I kill him?") && !isKillOrder("Don't kill him."));
+check("an arrest instead of an execution is caught", /nobody died/.test(orderMissed("Guards execute this cook.", "The guards cuff him and take him to the cells.")));
+check("robots holding him up and waiting is caught", /nobody died|waiting/.test(orderMissed("Kill everyone here.", "The robot has blood on its forearm already, and the first scream comes from the dish pit. Everyone in it is waiting to find out if you meant the guards.")));
+check("a killing carried out isn't", orderMissed("Execute him.", "The guard puts the gun to his head and fires. He drops, dead before he hits the tiles, and the kitchen goes quiet.") === "");

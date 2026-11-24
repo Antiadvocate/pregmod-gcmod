@@ -84,6 +84,9 @@ export interface Layer {
   transform?: string;
   /** Hue rotation in degrees, for clothing she has had recoloured. */
   tint?: number;
+  /** A class on the layer's group, so a stylesheet rule can repaint it (a man's suit is his own
+   *  silhouette, drawn again in cloth). */
+  cls?: string;
 }
 
 /* ── palettes ────────────────────────────────────────────────────────────────────────────────
@@ -149,6 +152,44 @@ export function shade(hex: string, factor: number): string {
  *  uses heavier brows and bare lips, and the portrait adds stubble. */
 export const manly = (p: Person) => p.pronouns === "he/him" && p.body.face_shape === "masculine";
 
+/**
+ * A MAN'S FRAME. The pack only draws women: an hourglass torso, hips wider than the shoulders,
+ * thighs that meet. A he/him body with no breasts is drawn on a frame of its own: the narrowest
+ * legs and hips the pack has, pulled in further, a straight-sided torso drawn for it in the pack's
+ * own coordinates (Torso_Male), and the arms set out to broader shoulders.
+ */
+export const maleFrame = (p: Person) => p.pronouns === "he/him" && (p.body.boobs ?? 0) < 300;
+/**
+ * MEN'S CLOTHES. The pack has none, so for a man the clothes that have a man's version are drawn as
+ * his own silhouette over again in cloth: the torso for a jacket or shirt, the arms for sleeves, the
+ * legs for trousers, which fits any build and any pose because it is his build and his pose. A
+ * shirt front, tie and lapels go over a suit. Anything without a man's version is drawn as it is.
+ */
+export interface Menswear { top: string; sleeves: boolean; trousers: string; shirt?: boolean; tie?: string; tee?: boolean; shoes: string }
+const MENSWEAR: Record<string, Menswear> = {
+  business: { top: "#2a2e35", sleeves: true, trousers: "#2a2e35", shirt: true, tie: "#6b1f2a", shoes: "#141414" },
+  slutbusiness: { top: "#2a2e35", sleeves: true, trousers: "#2a2e35", shirt: true, shoes: "#141414" },
+  conservative: { top: "#4a4f58", sleeves: true, trousers: "#33363d", shirt: true, shoes: "#2b1e16" },
+  tjeans: { top: "#d8d8d4", sleeves: false, trousers: "#34507a", tee: true, shoes: "#e8e8e8" },
+  oversized: { top: "#9aa0a8", sleeves: false, trousers: "#3d3f44", tee: true, shoes: "#e8e8e8" },
+  practical: { top: "#6d6a5f", sleeves: false, trousers: "#4b4a3f", tee: true, shoes: "#3a2a1c" },
+  sweater: { top: "#5b4a3a", sleeves: true, trousers: "#2f3137", tee: true, shoes: "#2b1e16" },
+  military: { top: "#4b5238", sleeves: true, trousers: "#4b5238", shirt: true, tie: "#3a3f2c", shoes: "#151515" },
+  police: { top: "#1f2a44", sleeves: true, trousers: "#1f2a44", shirt: true, tie: "#111827", shoes: "#151515" },
+  battledress: { top: "#5a5a45", sleeves: true, trousers: "#5a5a45", tee: true, shoes: "#2a2418" },
+  bodysuit: { top: "#2c2c30", sleeves: true, trousers: "#2c2c30", tee: true, shoes: "#202020" },
+};
+export function menswearFor(p: Person): Menswear | undefined {
+  if (!maleFrame(p)) return undefined;
+  const id = garment(p.clothes)?.id;
+  return id ? MENSWEAR[id] : undefined;
+}
+
+/** Up to this length a man's hair is drawn as a close crop rather than one of the pack's styles. */
+export const MAN_CROP_CM = 15;
+/** Hips and legs pulled in toward the middle of the body. */
+export const HIPS_IN = "translate(288 0) scale(0.9 1) translate(-288 0)";
+
 export function paletteFor(p: Person): Record<string, string> {
   // A full-body suit is her skin, as far as the art is concerned — that is how the original draws
   // latex, and it is why the suit covers her arms and legs without separate layers for them.
@@ -207,6 +248,16 @@ export function styleFor(p: Person, scope: string): string {
   // line around every one of those internal cuts as well as the silhouette, so a thigh gets a seam
   // down it and a face gets a wire frame. That was mine, and it was wrong.
   rules.push(`.${scope} svg{overflow:visible;}`);
+  const mw = menswearFor(p);
+  if (mw) {
+    const paint = (cls: string, hex: string) => rules.push(`.${scope} .${cls} .skin,.${scope} .${cls} .torso{fill:${hex};}`);
+    paint("mw-top", mw.top); paint("mw-sleeve", mw.top); paint("mw-trousers", mw.trousers); paint("mw-shoes", mw.shoes);
+    rules.push(`.${scope} .mw-shoes .shoe{fill:${mw.shoes};}`);
+    rules.push(`.${scope} .shirt{fill:#f2f2ee;}.${scope} .tie{fill:${mw.tie ?? "#f2f2ee"};}.${scope} .button{fill:${shade(mw.top, 0.6)};}`);
+    if (!mw.tie) rules.push(`.${scope} [id^=Tie_]{display:none;}`);
+  }
+  // A man's face isn't flushed pink.
+  if (maleFrame(p)) rules.push(`.${scope} .lip{fill:${shade(pal.head, 0.88)};}`);
   return rules.join("");
 }
 
@@ -225,6 +276,7 @@ export function styleFor(p: Person, scope: string): string {
 function artWeight(p: Person): number { return weightForArt(p.body.weight); }
 
 export function torsoSize(p: Person): string {
+  if (maleFrame(p)) { const w = artWeight(p); return w >= 161 ? "Obese" : w >= 96 ? "Fat" : w >= 31 ? "Chubby" : "Normal"; }
   const w = artWeight(p), waist = p.body.waist;
   const pick = (t: [number, string][], last: string) => { for (const [min, name] of t) if (w >= min) return name; return last; };
   if (waist >= 96) return pick([[96, "Obese"], [11, "Fat"], [-30, "Chubby"]], "Normal");
@@ -237,6 +289,7 @@ export function torsoSize(p: Person): string {
 }
 
 export function legSize(p: Person): string {
+  if (maleFrame(p)) { const w = artWeight(p); return w >= 161 ? "Wide" : w >= 96 ? "Normal" : "Narrow"; }
   const w = artWeight(p), hips = p.body.hips;
   if (hips <= -2) return w <= 0 ? "Narrow" : w < 161 ? "Normal" : "Wide";
   if (hips === -1) return w <= -11 ? "Narrow" : w < 96 ? "Normal" : "Wide";
@@ -249,7 +302,7 @@ function torsoLayer(p: Person): string { return `Torso_${torsoSize(p)}`; }
 function legLayer(p: Person): string { return `Leg_${legSize(p)}`; }
 
 /** The original's butt index: its 1–7 scale, minus one. */
-function buttIndex(p: Person): number { return Math.max(0, Math.min(6, Math.trunc(Math.max(1, Math.min(7, p.body.butt))) - 1)); }
+function buttIndex(p: Person): number { if (maleFrame(p)) return artWeight(p) >= 96 ? 1 : 0; return Math.max(0, Math.min(6, Math.trunc(Math.max(1, Math.min(7, p.body.butt))) - 1)); }
 function buttLayer(p: Person): string { return `Butt_${buttIndex(p)}`; }
 
 /** Muscle definition, drawn over the torso, legs and arms the way the original does. */
@@ -281,6 +334,8 @@ function hairStyle(p: Person): string {
 function hairLength(p: Person): string {
   const cm = p.body.hair_length;
   if (cm <= 1) return "";
+  // The pack's short cuts are women's cuts; a man with short hair gets the close crop instead.
+  if (maleFrame(p) && cm <= MAN_CROP_CM) return "";
   if (cm > 70) return "Long";
   if (cm > 25) return "Medium";
   return "Short";
@@ -324,6 +379,7 @@ function areolaLayer(p: Person): string {
   // `areolae` is generated 0-4 and was being ignored in favour of guessing from breast size, which
   // is a different fact: a small-breasted woman with wide areolae is a thing the pack can draw and
   // the game could not. The original's own ladder, restored.
+  if (maleFrame(p)) return "Boob_Areola";
   switch (Math.max(0, Math.min(4, Math.round(p.body.areolae ?? 0)))) {
     case 4: return "Boob_Areola_Massive";
     case 3: return "Boob_Areola_Huge";
@@ -334,6 +390,7 @@ function areolaLayer(p: Person): string {
 }
 
 function nippleLayer(p: Person): string {
+  if (maleFrame(p)) return "Boob_NippleTiny";
   switch (p.body.nipples) {
     case "tiny": return "Boob_NippleTiny";
     case "puffy": return "Boob_NipplePuffy";
@@ -599,14 +656,18 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
   if (g?.shine && ["High", "Mid", "Low"].includes(pose.armL)) out.push({ id: `Arm_Outfit_Shine_Left_${pose.armL}` });
   if (p.look?.tail) out.push({ id: `${cap(p.look.tail)}_Tail` });
 
-  out.push({ id: buttLayer(p) });
+  // A man's frame has no buttock swelling past the hip in this three-quarter view.
+  if (!maleFrame(p)) out.push({ id: buttLayer(p) });
   // Bare feet go UNDER the legs, so the ankle's own edge covers the join. The pack's bare feet are
   // drawn pointed, as if she were in heels she isn't wearing; these stand flat, with toes.
   const shoe = garment(p.shoes)?.art;
   const hose = garment(p.legwear)?.art;
   if (!shoe && !hose) out.push({ id: "Feet_Flat" });
-  out.push({ id: legLayer(p) });
-  if (tier) out.push({ id: `${legLayer(p)}_${tier}` });
+  // A man stands on straight legs drawn for him; the pack's are a woman's, thigh and hip.
+  // Heavier, the same legs drawn wider.
+  const thick = maleFrame(p) ? 1 + Math.max(0, Math.min(0.35, artWeight(p) / 500)) : 1;
+  out.push(maleFrame(p) ? { id: "Leg_Male", transform: thick > 1 ? `translate(288 0) scale(${thick.toFixed(3)} 1) translate(-288 0)` : undefined } : { id: legLayer(p) });
+  if (tier && !maleFrame(p)) out.push({ id: `${legLayer(p)}_${tier}` });
 
   // SHOES, then stockings, then the lower half of the outfit.
   if (shoe === "Shoes_Boot" || shoe === "Shoes_Extreme_Heel") out.push({ id: `${shoe}_${legSize(p)}` });
@@ -620,8 +681,8 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
     out.push(worn(`Leg_Outfit_${fit}_${legSize(p)}`, p));
   } else if (g?.shine) out.push({ id: `Leg_Outfit_Shine_${legSize(p)}` });
 
-  out.push({ id: torsoLayer(p) });
-  if (tier) out.push({ id: `${torsoLayer(p)}_${tier}` });
+  out.push({ id: maleFrame(p) ? "Torso_Male" : torsoLayer(p) });
+  if (tier && !maleFrame(p)) out.push({ id: `${torsoLayer(p)}_${tier}` });
 
   // the front of the body
   if (p.body.vagina !== null) {
@@ -680,7 +741,43 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
   if (len) out.push({ id: `Hair_Fore_${style}_${len}` }, { id: `Hair_Fore_${style}` });
   if (ears) out.push({ id: `${cap(ears)}_Ear_Fore` });
 
-  return out;
+  if (!maleFrame(p)) return out;
+  const mw = menswearFor(p);
+  return reframe(mw ? dress(out, mw) : out);
+}
+
+/** A man in a man's version of what he's wearing: the pack's women's outfit taken off, his own
+ *  silhouette drawn again in cloth over the body, and the shirt front on top. */
+function dress(out: Layer[], mw: Menswear): Layer[] {
+  const womens = /_Outfit_|^Bulge_Outfit/;
+  const body = out.filter((l) => !womens.test(l.id));
+  const res: Layer[] = [];
+  for (const l of body) {
+    // Bare feet under a suit become plain shoes.
+    if (l.id === "Feet_Flat") { res.push({ id: "Shoes_Flat", cls: "mw-shoes" }); continue; }
+    res.push(l);
+    if (/^Leg_(Male|Narrow|Normal|Wide|Thick)$/.test(l.id)) res.push({ ...l, cls: "mw-trousers" });
+    if (l.id === "Torso_Male") {
+      res.push({ id: "Torso_Male_Cloth", cls: "mw-top" });
+      res.push({ id: mw.shirt ? "Torso_Male_Shirt" : "Torso_Male_Tee" });
+    }
+    if (mw.sleeves && /^Arm(Fat)?_(Left|Right)_/.test(l.id) && !/_M(Light|Medium|Heavy)$/.test(l.id)) res.push({ ...l, cls: "mw-sleeve" });
+  }
+  // Muscle drawn over a limb is skin, and would sit on top of the sleeve.
+  if (mw.sleeves) for (let i = res.length - 1; i >= 0; i--) if (/^Arm(Fat)?_.*_M(Light|Medium|Heavy)$/.test(res[i].id)) res.splice(i, 1);
+  // Under trousers nothing shows between the legs.
+  return res.filter((l) => !/^(Pubic|Balls|Penis|Flaccid|Chastity|Pussy)/.test(l.id) && !/^Boob_(Areola|Nipple)/.test(l.id));
+}
+
+/** A man's frame over a woman's stack: hips and legs in, shoulders out. */
+function reframe(out: Layer[]): Layer[] {
+  const with_ = (l: Layer, t: string): Layer => ({ ...l, transform: [t, l.transform].filter(Boolean).join(" ") });
+  return out.map((l) => {
+    if (/^(Butt|Leg|Feet|Shoes|Pubic|Balls|Penis|Flaccid|Bulge|Chastity)/.test(l.id)) return with_(l, HIPS_IN);
+    if (/^Arm(Fat)?_Right|^Arm_Outfit_.*_Right/.test(l.id)) return with_(l, "translate(-7 0)");
+    if (/^Arm(Fat)?_Left|^Arm_Outfit_.*_Left/.test(l.id)) return with_(l, "translate(7 0)");
+    return l;
+  });
 }
 
 /** Height is rendered as scale, exactly as the original does it. */

@@ -24,7 +24,7 @@
 import type { ReactElement } from "react";
 import type { Person } from "../engine/types";
 import { featuresOf, hasFeature, type Feature } from "../engine/features";
-import { match, paletteFor, shade, SKIN } from "./vectorart";
+import { maleFrame, match, paletteFor, shade, SKIN } from "./vectorart";
 import { rng } from "../engine/rng";
 
 /** The figure-wide filter and the gradients, once per drawing. */
@@ -34,7 +34,8 @@ export function FinishDefs({ p, scope, grain }: { p: Person; scope: string; grai
   const second = hasFeature(p, "heterochromia")?.detail;
   // The pack's default lip is her skin a shade darker, which comes out grey-beige; real lips have
   // rose in them. Lipstick she's wearing is left as it is.
-  const lip = p.look?.lips ? pal.lip : mix(pal.lip, "#c25e6a", 0.5);
+  // A man's lips are his skin a little darker, with hardly any rose.
+  const lip = p.look?.lips ? pal.lip : mix(pal.lip, "#c25e6a", maleFrame(p) ? 0.12 : 0.5);
   return (
     <defs>
       {/* Form: the silhouette as a surface, lit from the upper left. 1/sin(elevation) keeps flat

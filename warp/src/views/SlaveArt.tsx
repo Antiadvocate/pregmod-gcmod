@@ -21,7 +21,7 @@
  */
 import { useEffect, useState, useMemo, useRef, type ReactElement, type RefObject } from "react";
 import type { Person } from "../engine/types";
-import { ART_BASE, manly, cropFor, layersFor, styleFor, heightTransform, type Crop, type Layer } from "../lib/vectorart";
+import { ART_BASE, manly, maleFrame, MAN_CROP_CM, HIPS_IN, cropFor, layersFor, styleFor, heightTransform, type Crop, type Layer } from "../lib/vectorart";
 import { frameAt, jointFor, restingPose, transformFor, STILL, type Joint, type Pose } from "../lib/rig";
 import { subscribeClock, stillWanted } from "../lib/clock";
 import { useGraphics, type Graphics } from "../lib/graphics";
@@ -154,7 +154,7 @@ function SlaveArtDrawn({ person, height = 260, crop = "full", className, pose, a
   const base = face ? expressionOf(person, moment) : null;
   const man = manly(person);
   // The pack has no men's haircuts. A man with hair_length 1 gets a close crop cut from his own skull.
-  const cropped = man && person.body.hair_length === 1;
+  const cropped = maleFrame(person) ? person.body.hair_length >= 1 && person.body.hair_length <= MAN_CROP_CM : man && person.body.hair_length === 1;
   const expr = base && mood ? { ...base, blush: man ? mood.blush * 0.25 : Math.max(base.blush, mood.blush), tears: Math.max(base.tears, mood.tears), gasp: false } : base;
   const foreAt = markup.findIndex((m) => m.layer.id.startsWith("Hair_Fore") || /_Ear_Fore$/.test(m.layer.id));
 
@@ -251,7 +251,7 @@ function SlaveArtDrawn({ person, height = 260, crop = "full", className, pose, a
   const last = (re: RegExp) => markup.reduce((k, m, i) => (re.test(m.layer.id) ? i : k), -1);
   const at = {
     torso: last(/^Torso_(Normal|Hourglass|Chubby|Fat|Obese|Unnatural)(_M\w+)?$/),
-    legs: last(/^Leg_(Narrow|Normal|Wide|Thick)(_M\w+)?$/),
+    legs: last(/^Leg_(Male|Narrow|Normal|Wide|Thick)(_M\w+)?$/),
     breast: last(/^Boob_Nipple/),
     face: last(/^(Head|Eyes_|Eyebrow_|Nose_Type|Mouth_)/),
   };
@@ -260,7 +260,7 @@ function SlaveArtDrawn({ person, height = 260, crop = "full", className, pose, a
     const out: ReactElement[] = [];
     // Her bare feet are drawn, not taken from the pack: over the bottom of her legs, under anything
     // she wears on them. Geometry, not finish, so the ControlNet render has them too.
-    if (i === at.legs && bare) out.push(<g key="d-feet" data-joint="legs" data-own=""><StandingFeet p={person} scope={scope} /></g>);
+    if (i === at.legs && bare) out.push(<g key="d-feet" data-joint="legs" data-own={maleFrame(person) ? HIPS_IN : ""} transform={maleFrame(person) ? HIPS_IN : undefined}><StandingFeet p={person} scope={scope} /></g>);
     if (!finished) return out;
     if (i === at.torso) out.push(<g key="d-torso" data-joint="chest" data-own=""><TorsoDetail p={person} scope={scope} /></g>);
     if (i === at.legs && finished) out.push(<g key="d-legs" data-joint="legs" data-own=""><LegDetail p={person} scope={scope} /></g>);
@@ -306,6 +306,7 @@ function SlaveArtDrawn({ person, height = 260, crop = "full", className, pose, a
         ) : (
           <g key={`${layer.id}-${i}`}
             data-layer={layer.id}
+            className={layer.cls}
             data-joint={jointFor(layer.id)}
             data-own={layer.transform ?? ""}
             transform={layer.transform}
