@@ -34,6 +34,7 @@ const OUT = opt("out", "voicecheck");
 const GROW = args.includes("--grow");
 /** Skip the bookkeeper (cheaper, but nothing carries from one conversation to the next). */
 const NOBOOK = args.includes("--nobook");
+const DEBUG_GROW = args.includes("--debug-grow");
 /** Use the game's own starting women as they come, instead of shaping four very different ones. */
 const AS_DEALT = args.includes("--as-dealt");
 
@@ -46,7 +47,13 @@ g.fetch = async (url: string, init: { body: string }) => {
   if (NOBOOK && init?.body?.includes("You are the Bookkeeper")) {
     return new Response(JSON.stringify({ choices: [{ message: { content: "{}" } }], usage: { prompt_tokens: 0, completion_tokens: 0 } }), { status: 200 });
   }
-  return realFetch(url, init as RequestInit);
+  const res = await realFetch(url, init as RequestInit);
+  if (DEBUG_GROW && init?.body?.includes("Her first card was written")) {
+    const j = await res.clone().json().catch(() => null);
+    const c = j?.choices?.[0];
+    console.error(`  grow call: http ${res.status}, finish ${c?.finish_reason}, ${String(c?.message?.content ?? "").length} chars, ${j?.usage?.completion_tokens} tokens, reasoning ${JSON.parse(init.body).reasoning ? "off" : "model"}; ends: ${String(c?.message?.content ?? "").slice(-80).replace(/\n/g, " ")}`);
+  }
+  return res;
 };
 
 const { setApiKey } = await import("../src/config.ts");

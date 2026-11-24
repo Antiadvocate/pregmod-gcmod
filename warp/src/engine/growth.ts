@@ -16,7 +16,6 @@
  * relationship you actually have, a short history of how she got here, and the one thing about her
  * nobody else has. The old card is replaced, not added to. One model call each, a woman at a time.
  */
-import { speechNow } from "./voice";
 import type { Person, SaveState } from "./types";
 import { call, parseJson } from "../llm";
 import { modelsAvailable } from "../config";
@@ -81,7 +80,7 @@ const GROW_SYSTEM = `You re-read a woman in Free Cities, an adult text game abou
 Her first card was written the week she arrived, and a lot has happened since. What was done to her, the orders she lives under, where she stands with the owner, how she is with people now: that is the truth about her. Write the real, grounded person all of it has made, not a bundle of quirks.
 
 Rules that matter most:
-- Her voice comes from who she is, not from a default. Build "speech_pattern", "voice" and the exchanges out of her age, her schooling, where she grew up, the job she had, and how frightened or easy she is now: a nineteen-year-old with no schooling, a forty-year-old lawyer and a randy housewife do not talk alike, even when all three are scared. "Quiet, and talks in short sentences" is what every woman gets when nobody thinks about her, so never write it. Under HOW THE OTHERS TALK you're told how the rest of the house talks. She sounds unlike every one of them.
+- Her voice comes from who she is, not from a default. Build "speech_pattern", "voice" and the exchanges out of her age, her schooling, where she grew up, the job she had, and how frightened or easy she is now: a nineteen-year-old with no schooling, a forty-year-old lawyer and a randy housewife do not talk alike, even when all three are scared. "Quiet, and talks in short sentences" is what every woman gets when nobody thinks about her, so never write it, and never write a description that could fit anyone ("full sentences, the odd false start, like anyone"). Under HOW THE OTHERS TALK you're told how the rest of the house talks. She sounds unlike every one of them.
 - She talks like a real person from her background, and in this house that includes sex and bodies. Describe her voice the way you'd describe someone you know (blunt, quiet, quick, mouthy, filthy, prim, dry), not as a list of gimmicks. Say how she swears and how she talks dirty, in her own way: a street girl says "fuck" every other word, a prim one says "cock" like it costs her and goes red, a bored one talks about cum like it's laundry. Nobody in this game talks like a therapist or a novel.
 - Don't turn a one-off joke, image or number from a scene into who she is. If a scene had her call herself bread, or count to eighty-nine, that was one moment. Leave it there.
 - "tics" is at most two small, believable habits that real people have, like a word from her own language when she swears, what she calls the owner, or a way she laughs. Each is something she does only now and then. Leave it empty if nothing fits, and never use generic fillers like "like", "just", "honestly", "okay" or "I mean".
@@ -127,9 +126,14 @@ function brief(s: SaveState, p: Person): string {
     (mem?.facts ?? []).length ? `## WHAT SHE KNOWS ABOUT THE OWNER\nEach one has the week she learned it.\n${mem!.facts.map((f) => `· week ${f.week}: ${f.text}`).join("\n")}` : "",
     mem?.digest ? `## HER TIME HERE, IN SHORT, IN HER WORDS\n${mem.digest}` : "",
     `## WHAT HAS HAPPENED TO HER\nThese are the things that matter most, in order.\n${memories.join("\n")}`,
-    `## WHAT HER VOICE IS MADE OF\nShe's ${p.age}. Schooling: ${schooling(p.persona.education ?? 50)}. Her head: ${p.persona.intelligence}. ${speechNow(p)}`,
+    `## WHAT HER VOICE IS MADE OF\nShe's ${p.age}. Schooling: ${schooling(p.persona.education ?? 50)}. Her head: ${p.persona.intelligence}. Her nerves right now: ${nerves(p)}.`,
     othersTalk(s, p),
   ].filter(Boolean).join("\n\n");
+}
+
+function nerves(p: Person): string {
+  const r = p.psyche.relaxation;
+  return p.psyche.state === "broken" ? "broken" : r <= -6 ? "terrified" : r <= -3 ? "on edge" : r >= 4 ? "at ease" : "steady enough";
 }
 
 function schooling(ed: number): string {
