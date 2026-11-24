@@ -63,3 +63,23 @@ check("a threat or a question isn't", !isKillOrder("Do it again or I'll kill you
 check("an arrest instead of an execution is caught", /nobody died/.test(orderMissed("Guards execute this cook.", "The guards cuff him and take him to the cells.")));
 check("robots holding him up and waiting is caught", /nobody died|waiting/.test(orderMissed("Kill everyone here.", "The robot has blood on its forearm already, and the first scream comes from the dish pit. Everyone in it is waiting to find out if you meant the guards.")));
 check("a killing carried out isn't", orderMissed("Execute him.", "The guard puts the gun to his head and fires. He drops, dead before he hits the tiles, and the kitchen goes quiet.") === "");
+
+/* ── whose event it is ──────────────────────────────────────────────────────────────────────── */
+const { whoItsAbout } = await import("../src/engine/living.ts");
+{
+  const g2 = newGame({ seed: "whose", starting_slaves: 3 } as never);
+  const [ana, man, third] = Object.values(g2.people).filter((p) => p.status === "owned");
+  const first = (p: typeof ana) => p.name.split(" ")[0];
+  g2.events = [{ id: "e1", kind: "dynamic", person: ana.id, seed: `You hear it from behind ${first(man)}'s door. ${first(man)} is on her knees.`, options: [], week: g2.arcology.week, severity: "notable", written: { model: "m" } } as never];
+  whoItsAbout(g2);
+  check("an event written about someone else is filed under her", g2.events[0].person === man.id, g2.events[0].person);
+  g2.events = [
+    { id: "e2", kind: "dynamic", person: ana.id, seed: `${first(man)} is on her knees.`, options: [], week: g2.arcology.week, severity: "notable", written: { model: "m" } } as never,
+    { id: "e3", kind: "dynamic", person: man.id, seed: `${first(man)} asks for a day off.`, options: [], week: g2.arcology.week, severity: "notable", written: { model: "m" } } as never,
+  ];
+  whoItsAbout(g2);
+  check("or dropped if she already has one", g2.events.length === 1 && g2.events[0].id === "e3", g2.events.map((e) => e.id));
+  g2.events = [{ id: "e4", kind: "dynamic", person: third.id, seed: `${first(third)} and ${first(man)} argue in the hall.`, options: [], week: g2.arcology.week, severity: "notable", written: { model: "m" } } as never];
+  whoItsAbout(g2);
+  check("one that names her stays hers", g2.events[0].person === third.id);
+}

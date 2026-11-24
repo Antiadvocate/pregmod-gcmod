@@ -88,7 +88,7 @@ function eventContext(s: SaveState, e: PendingEvent): { text: string; keys: stri
   const keys: string[] = [];
   const out: string[] = [cityBrief(s)];
   const p = e.person ? s.people[e.person] : undefined;
-  if (p) { out.push(`## SHE IS THE ONE IT'S ABOUT\n${personCard(s, p)}`); keys.push(p.id); }
+  if (p) { out.push(`## SHE IS THE ONE IT'S ABOUT: ${p.name}. It happens to her and she's in it, by name. Nobody else from the household takes her place in it.\n${personCard(s, p)}`); keys.push(p.id); }
   const o = e.other ? s.people[e.other] : undefined;
   if (o) { out.push(`## ALSO IN IT\n${dossier(s, o)}`); keys.push(o.id); }
   const about = empireOf(s).about[e.kind];
@@ -122,6 +122,33 @@ ${HOUSE_STYLE}
 
 Output ONE strict JSON object and nothing else:
 {"title":"2-5 words","situation":"the scene","choices":[{"id":"the original choice id","label":"new label"}],"extra":[{"label":"...","note":"a few plain words for the player, like \"she won't forget it\" or \"costs you ¤2,000\", and never the effect's description","effect":"effect id","value":"optional"}]}`;
+
+/**
+ * WHOSE IT IS. A model writing Anastasia's event wrote a scene about Manon, the woman everything had
+ * been about that week, and the card went out with Anastasia's face on it. A written event that
+ * never names the woman it's filed under, and does name another of yours, is about her: it's filed
+ * under her instead (and its choices act on her), or dropped if she already has one waiting.
+ */
+export function whoItsAbout(s: SaveState): void {
+  const mine = Object.values(s.people).filter((x) => x.status === "owned" || x.status === "indentured");
+  const named = (p: Person, text: string) => {
+    const names = [p.name.split(" ")[0], p.slave_name?.split(" ")[0]].filter((x): x is string => !!x && x.length > 1);
+    return names.reduce((n, nm) => n + (text.match(new RegExp(`\\b${nm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g"))?.length ?? 0), 0);
+  };
+  const drop = new Set<string>();
+  for (const e of s.events) {
+    if (!e.person || !e.written || s.arcology.week - e.week > 1) continue;
+    const her = s.people[e.person];
+    if (!her || named(her, e.seed)) continue;
+    const counts = mine.filter((x) => x.id !== her.id).map((x) => ({ x, n: named(x, e.seed) })).filter((c) => c.n > 0).sort((a, b) => b.n - a.n);
+    if (!counts.length) continue;
+    const real = counts[0].x;
+    if (e.other === real.id) { e.other = her.id; e.person = real.id; continue; }
+    if (s.events.some((o) => o !== e && o.person === real.id && !drop.has(o.id))) { drop.add(e.id); continue; }
+    e.person = real.id;
+  }
+  if (drop.size) s.events = s.events.filter((e) => !drop.has(e.id));
+}
 
 /** Rewrite one pending event. Mutates it in place; returns whether it was written. */
 export async function writeEvent(s: SaveState, e: PendingEvent, snap = ""): Promise<boolean> {
@@ -509,6 +536,7 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
   }
   // Anything written this week that touches a storyline the player ended goes before they see it.
   purgeBanned(s);
+  whoItsAbout(s);
   oneEach(s);
   // And at least one thing from the household, every week: what the one with the most reason wants,
   // however small; failing that, one of the game's own about her, written up like any other.
@@ -518,6 +546,7 @@ export async function liveWeek(s: SaveState, report: WeekReport | null, step: (w
     let e: ReturnType<typeof ensureSlaveEvent> = null;
     try { if (!hasSlaveEvent(s)) e = ensureSlaveEvent(s); } catch (err) { console.error(err); }
     if (e) { step(s.people[e.person!]?.name ?? "her"); await writeEvent(s, e, snap); }
+    whoItsAbout(s);
   }
   // Any request still waiting (a model failed, or it came from her page) is written as a moment too.
   for (const a of s.asks ?? []) { step(`${s.people[a.person]?.name ?? "her"}'s request`); a.text = await voiceAsk(s, a); }
