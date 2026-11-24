@@ -29,6 +29,7 @@ import { aroundBrief, citySnap, cityDelta, cityPicture, type CitySnap } from "./
 import { applyDiff, salvage, noteStock, stockLine, type Diff } from "./turn";
 import { say, slipBeat } from "./voice";
 import { driftLine, spoken } from "./speech";
+import { orderMissed } from "./orders";
 import { rng } from "./rng";
 import { applyTreatment, refresh } from "./obedience";
 import { shove } from "./psyche";
@@ -435,6 +436,17 @@ export async function playMoment(
       const next = parse(again.text);
       const left = continuitySlips(s, next.prose, inScene);
       if (left.length <= slips.length) { res = again; ({ prose, cast, options } = next); slips = left; }
+    }
+  }
+  // An order to kill that came back as an arrest, a question or people waiting is written again.
+  const missed = orderMissed(reply, prose);
+  if (missed) {
+    shown = "";
+    opts?.onReset?.();
+    const again = await ask(`## THE ORDER WASN'T CARRIED OUT\n${missed} The owner said: "${reply}". His people do exactly that, now.`);
+    if (again.ok) {
+      const next = parse(again.text);
+      if (!orderMissed(reply, next.prose) || orderMissed(reply, prose) === orderMissed(reply, next.prose)) { res = again; ({ prose, cast, options } = next); }
     }
   }
   // Anyone new the model put in the scene goes on file with their face; anyone on file who turned up is seen again.
