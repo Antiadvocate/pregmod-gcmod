@@ -115,6 +115,7 @@ export function changeRoom(s: SaveState, p: Person, o: { axis?: RoomAxis; level?
     if (s.arcology.cash < x.cost) return `That costs ¤${x.cost.toLocaleString()}.`;
     s.arcology.cash -= x.cost;
     r.extras.push(x.id);
+    settleAsks(s, p, x.name, x.id);
     if (x.fear) p.bond.fear = clamp(p.bond.fear + x.fear, 0, 100);
     if (x.arousal) p.psyche.arousal = clamp(p.psyche.arousal + x.arousal, 0, 100);
     what = x.name;
@@ -136,6 +137,32 @@ export function changeRoom(s: SaveState, p: Person, o: { axis?: RoomAxis; level?
   return gain > 0.2 ? `${p.name} has ${what} now.` : gain < -0.2 ? `${p.name} has ${what} now. She noticed.` : `Done: ${what}.`;
 }
 
+/**
+ * WHAT SHE ASKED FOR, GIVEN. She asked for a mirror, you put a twelve-foot mirror in her room from
+ * her page, and her request stayed open: the next week she asked whether you'd said yes, staring at
+ * a wall the game knew had the mirror on it. Anything that goes into her room closes any request of
+ * hers it answers, and takes back any event still waiting on it.
+ */
+const GENERIC = new Set("room rooms your with that this some just more know asked would could want please master mistress have like what them they their from into make made give gave just only really very little small big giant large tall wide feet foot".split(" "));
+const keyWords = (t: string) => new Set((t.toLowerCase().match(/[a-z]{4,}/g) ?? []).map((w) => w.replace(/s$/, "")).filter((w) => !GENERIC.has(w)));
+export function settleAsks(s: SaveState, p: Person, given: string, extraId?: string): number {
+  const got = keyWords(given);
+  const answers = (text: string, payload?: { kind: string; value?: string | number }) =>
+    (extraId !== undefined && payload?.kind === "room" && String(payload.value) === extraId) || [...keyWords(text)].some((w) => got.has(w));
+  const done = (s.asks ?? []).filter((a) => a.person === p.id && !a.answered && answers(a.text, a.payload));
+  for (const a of done) a.answered = "granted";
+  s.asks = (s.asks ?? []).filter((a) => !done.includes(a));
+  const before = s.events.length;
+  s.events = s.events.filter((e) => !(e.person === p.id && e.ask && (done.some((a) => a.id === e.ask!.id) || answers(e.ask.text, e.ask.payload))));
+  const n = done.length + before - s.events.length;
+  if (n) {
+    p.bond.hope = clamp(p.bond.hope + 3, 0, 100);
+    const mem = s.memory[p.id];
+    if (mem) remember(mem, { content: `I asked the owner for ${given}, and he gave it to me`, week: s.arcology.week, importance: 6, charge: "warm" });
+  }
+  return n;
+}
+
 /** Something personal, in your own words. The narrator reads it; she keeps it. */
 export function addTouch(s: SaveState, p: Person, text: string): string {
   const t = text.trim().replace(/\s+/g, " ").slice(0, 120);
@@ -149,6 +176,7 @@ export function addTouch(s: SaveState, p: Person, text: string): string {
   const mem = s.memory[p.id];
   if (mem) remember(mem, { content: `the owner put ${t} in my room, just for me`, week: s.arcology.week, importance: 6, charge: "warm" });
   chronicle(s, { keys: [p.id], title: "her room", text: `You put ${t} in ${p.name}'s room.` });
+  settleAsks(s, p, t);
   return `${t}: in her room now.`;
 }
 

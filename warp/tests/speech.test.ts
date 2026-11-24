@@ -83,3 +83,17 @@ const { whoItsAbout } = await import("../src/engine/living.ts");
   whoItsAbout(g2);
   check("one that names her stays hers", g2.events[0].person === third.id);
 }
+
+/* ── what she asked for, given ──────────────────────────────────────────────────────────────── */
+const { addTouch, settleAsks } = await import("../src/engine/rooms.ts");
+{
+  const g3 = newGame({ seed: "mirror", starting_slaves: 1 } as never);
+  const her3 = Object.values(g3.people).find((p) => p.status === "owned")!;
+  const ask = { id: "a1", person: her3.id, kind: "request", text: "Master, may I have a mirror for my room?", payload: { kind: "room", value: "vanity" }, gain: 2, loss: 2, week: g3.arcology.week } as never;
+  g3.asks = [ask];
+  g3.events = [{ id: "w1", kind: "dynamic", person: her3.id, seed: "She asks about the mirror.", options: [], week: g3.arcology.week, severity: "notable", ask } as never];
+  g3.arcology.cash = 1e6;
+  addTouch(g3, her3, "A giant mirror, 12' tall and 4' wide");
+  check("putting what she asked for in her room answers her", !(g3.asks ?? []).length && !g3.events.length, { asks: g3.asks, events: g3.events.length });
+  check("and something else doesn't", settleAsks(g3, her3, "a cat") === 0);
+}

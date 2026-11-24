@@ -7,6 +7,8 @@
  * is a crash somewhere far away with no clue in it. Everything it fills is a default that a
  * running game would have produced anyway.
  */
+import { settleAsks } from "./rooms";
+import { EXTRA_BY_ID } from "../data/rooms";
 import { seedOwnLife } from "./ownlife";
 import { seedCharacter } from "./character";
 import { repairCuckold } from "./cuckold";
@@ -233,6 +235,12 @@ export function sanitize(raw: SaveState): SaveState {
   s.memory = s.memory ?? {};
   // The owner was "they" for everyone before there was a choice; settle it from body and address.
   if (s.player) { settlePronouns(s); forgetOwnerAsStranger(s); }
+  // A request already answered by what's in her room is closed (engine/rooms settleAsks).
+  if (Array.isArray(s.events)) for (const p of Object.values(s.people)) {
+    if (!p?.room) continue;
+    for (const x of p.room.touches ?? []) settleAsks(s, p, x.text);
+    for (const id of p.room.extras ?? []) settleAsks(s, p, EXTRA_BY_ID[id]?.name ?? id, id);
+  }
   // Old saves filed the same beat week after week; fold the repeats together once, on load.
   for (const m of Object.values(s.memory)) if (m?.episodic) compactMemory(m);
   // Rumors that say the same thing are one rumor.
