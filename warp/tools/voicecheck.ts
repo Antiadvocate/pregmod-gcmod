@@ -32,6 +32,8 @@ const OUT = opt("out", "voicecheck");
 const GROW = args.includes("--grow");
 /** Skip the bookkeeper (cheaper, but nothing carries from one conversation to the next). */
 const NOBOOK = args.includes("--nobook");
+/** Use the game's own starting women as they come, instead of shaping four very different ones. */
+const AS_DEALT = args.includes("--as-dealt");
 
 const store: Record<string, string> = {};
 const g = globalThis as unknown as Record<string, unknown>;
@@ -51,6 +53,8 @@ const { openMoment, playMoment, closeMoment } = await import("../src/engine/mome
 const { registerOf } = await import("../src/engine/voice.ts");
 const { growPersona } = await import("../src/engine/growth.ts");
 const { call } = await import("../src/llm.ts");
+const { refresh } = await import("../src/engine/obedience.ts");
+type Person = import("../src/engine/types.ts").Person;
 setApiKey(process.env.OPENROUTER_KEY || "proxy-injected");
 
 /** What the player says, conversation by conversation. Every woman hears the same. */
@@ -123,6 +127,7 @@ function zscore(vs: number[][]): number[][] {
 const dist = (a: number[], b: number[]) => Math.sqrt(a.reduce((s, x, i) => s + (x - b[i]) ** 2, 0));
 const avg = (a: number[]) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN;
 
+const SMALL = new Set((FUNCTION.join(" ") + " a an to of in on at for with he she her him we us was were be been am are have has had did done got get go went want wanted know knew think thought said say tell told there here then now out up down about over off into from by as or nor too very really more much some any one two never ever always still even only own same").split(" "));
 /** Three-word phrases said by three or more different women: the house voice. */
 function shared(rs: Reply[], names: string[]): [string, number][] {
   const by = new Map<string, Set<string>>();
@@ -130,7 +135,9 @@ function shared(rs: Reply[], names: string[]): [string, number][] {
   for (const r of rs) for (const q of r.quotes) {
     const w = words(q.toLowerCase().replace(mask, "").replace(/\b(master|mistress|sir)\b/g, "")).map((x) => x.replace(/[^a-z']/g, "")).filter(Boolean);
     for (let i = 0; i + 3 <= w.length; i++) {
-      const k = w.slice(i, i + 3).join(" ");
+      const tri = w.slice(i, i + 3);
+      if (tri.every((x) => SMALL.has(x))) continue;
+      const k = tri.join(" ");
       (by.get(k) ?? by.set(k, new Set()).get(k)!).add(r.who);
     }
   }
@@ -143,6 +150,25 @@ const s = newGame({ seed: SEED, starting_slaves: 4 } as never);
 s.models.narrator_model = MODEL;
 s.models.fallback_model = MODEL;
 const women = Object.values(s.people).filter((p) => p.status === "owned" && p.age >= 18).slice(0, 4);
+/* The game's starting households are all early twenties and polite, which would test nothing about
+ * whether difference survives. Unless asked not to, the four are made as unlike as the engine allows:
+ * a terrified teenager with no schooling, a devoted, educated woman in her forties, a resentful one,
+ * and a randy, eager one. Their cards are then written from that state. */
+const SHAPES: { age: number; relax: number; bond: number; fear: number; resent: number; hope: number; iq: Person["persona"]["intelligence"]; ed: number; libido?: number }[] = [
+  { age: 19, relax: -7, bond: -10, fear: 75, resent: 20, hope: 10, iq: "slow", ed: 10 },
+  { age: 44, relax: 4, bond: 70, fear: 5, resent: 0, hope: 70, iq: "sharp", ed: 85 },
+  { age: 31, relax: -1, bond: -45, fear: 10, resent: 75, hope: 20, iq: "average", ed: 50 },
+  { age: 27, relax: 2, bond: 65, fear: 8, resent: 5, hope: 60, iq: "average", ed: 30, libido: 85 },
+];
+if (!AS_DEALT) women.forEach((p, i) => {
+  const x = SHAPES[i];
+  p.age = x.age; p.physical_age = x.age; p.birth_week = s.arcology.week - x.age * 52;
+  p.psyche.relaxation = x.relax; p.psyche.capacity = Math.max(-6, Math.min(6, x.relax)); p.psyche.capacity_born = p.psyche.capacity;
+  p.bond.bond = x.bond; p.bond.fear = x.fear; p.bond.resentment = x.resent; p.bond.hope = x.hope;
+  p.persona.intelligence = x.iq; p.persona.education = x.ed;
+  if (x.libido) { p.psyche.libido = x.libido; p.psyche.arousal = 45; }
+  refresh(p, s.memory[p.id]);
+});
 const all: Reply[] = [];
 
 if (GROW) await Promise.all(women.map(async (her) => { her.economics.weeks_owned = 10; await growPersona(s, her); }));
@@ -166,13 +192,15 @@ const LETTERS = "ABCD";
 const names = women.flatMap((p) => [p.name, ...p.name.split(" "), p.slave_name ?? ""]).filter((x) => x.length > 1);
 const maskRe = new RegExp(`\\b(${names.map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`, "g");
 const profiles = women.map((p, i) => `${LETTERS[i]}. ${p.age}, ${p.origin.nationality}, was a ${p.origin.career}. ${p.origin.background} Talks: ${p.persona.speech_pattern}. Personality: ${p.persona.core_traits.join("; ")}.`).join("\n");
+const judgeFails: string[] = [];
 const JUDGE_SYSTEM = "You read a few lines of dialogue and decide which of the listed women said them, from how they talk and what they say. Answer with JSON only: {\"who\":\"A\"} (one letter).";
 await Promise.all(all.map(async (r) => {
   if (!r.quotes.length) return;
   const said = r.quotes.map((q) => `"${q.replace(maskRe, "___")}"`).join("\n");
-  const res = await call({ system: JUDGE_SYSTEM, user: `THE WOMEN:\n${profiles}\n\nSHE WAS ASKED: "${r.you}"\n\nSHE SAID:\n${said}`, model: JUDGE, json: true, maxTokens: 60, temperature: 0 });
-  const m = res.ok ? /"who"\s*:\s*"([A-D])"/.exec(res.text) : null;
+  const res = await call({ system: JUDGE_SYSTEM, user: `THE WOMEN:\n${profiles}\n\nSHE WAS ASKED: "${r.you}"\n\nSHE SAID:\n${said}`, model: JUDGE, json: true, maxTokens: 600, temperature: 0 });
+  const m = res.ok ? /"who"\s*:\s*"?([A-D])\b/.exec(res.text) : null;
   if (m) r.guessed = women[LETTERS.indexOf(m[1])]?.id;
+  else judgeFails.push(res.ok ? res.text.slice(0, 120) : res.error ?? "no answer");
 }));
 
 /* ── report ─────────────────────────────────────────────────────────────────────────────────── */
@@ -233,4 +261,5 @@ for (const p of women) {
 mkdirSync(OUT, { recursive: true });
 writeFileSync(`${OUT}/${LABEL}.md`, out.join("\n"));
 writeFileSync(`${OUT}/${LABEL}.json`, JSON.stringify({ model: MODEL, judge: JUDGE, per, within, house, replies: all }, null, 1));
+if (judgeFails.length) console.error(`judge failed ${judgeFails.length}×, e.g. ${judgeFails.slice(0, 3).join(" | ")}`);
 console.log(out.slice(0, head).join("\n"), `\n→ ${OUT}/${LABEL}.md`);
