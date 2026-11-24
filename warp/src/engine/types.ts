@@ -101,6 +101,10 @@ export interface Body {
   voice: 0 | 1 | 2 | 3;  // 0 mute, 1 deep, 2 normal, 3 high
   /** What her voice was before it was cut out, so restoring it gives her own back. */
   voice_before?: 1 | 2 | 3;
+  /** Arms and legs she still has, 0–2; absent means two. Her tongue, false when it was cut out. See engine/broken. */
+  arms?: 0 | 1 | 2;
+  legs?: 0 | 1 | 2;
+  tongue?: boolean;
   teeth: "normal" | "crooked" | "gapped" | "fixed" | "removable" | "pointy" | "baleen";
   /** Everything permanent that was done TO this body, as sentences. The narrator reads these; no
    *  code branches on the strings, so a mod can add a procedure without touching an enum. */

@@ -146,7 +146,10 @@ export function mobility(p: Person): { level: 0 | 1 | 2 | 3; note: string } {
   const d = p.body.dick ?? 0;
   const worst = Math.max(b >= 50 ? 3 : b >= 37 ? 2 : b >= 20 ? 1 : 0, d >= 30 ? 3 : d >= 20 ? 2 : d >= 15 ? 1 : 0);
   const clipped = p.body.feet?.heels_clipped ? 1 : 0;
-  const level = Math.min(3, Math.max(worst, clipped)) as 0 | 1 | 2 | 3;
+  const prosLegs = p.body.marks.some((m) => m.kind === "prosthetic" && /leg|foot|feet/i.test(m.where));
+  const legless = (p.body.legs ?? 2) === 0 && !prosLegs ? 3 : (p.body.legs ?? 2) === 1 && !prosLegs ? 2 : 0;
+  const level = Math.min(3, Math.max(worst, clipped, legless)) as 0 | 1 | 2 | 3;
+  if (legless) return { level, note: legless === 3 ? "she has no legs, and is carried, wheeled or crawls on her stumps" : "she has one leg and hops or is helped" };
   const note = level === 3 ? "she can't walk at all, and has to be carried or wheeled around"
     : level === 2 ? "she can barely walk and waddles slowly"
     : worst === 1 ? "her size makes walking awkward"

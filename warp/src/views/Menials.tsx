@@ -2,6 +2,7 @@
  * Menial slaves, on the People screen above your named household: how many you own, what they're
  * doing, how they're kept, and the slaves your citizens own. Bought and sold in bulk.
  */
+import { takeMenial } from "../engine/broken";
 import { useState } from "react";
 import { useGame } from "../lib/game";
 import { useHand } from "../lib/hand";
@@ -55,6 +56,9 @@ export default function MenialsPanel() {
             <input type="checkbox" className="!w-auto shrink-0" checked={m.autofeed !== false} onChange={(e) => mutate((s) => { menialsOf(s).autofeed = e.target.checked; })} />
             Keep the city fed by moving menials to the farms each week, when the city would otherwise go hungry
           </label>
+          <div className="text-[11px] uppercase tracking-wider dim mt-3 mb-1">Take one out</div>
+          <div className="text-[11.5px] dim mb-1.5">Pull one out of the pens and into the household, as she is. How she comes out depends on how they've been kept: {m.treatment === "harsh" ? "kept harshly, most of what comes out has had limbs or a tongue taken, many are sealed in doll suits, and almost all are broken" : m.treatment === "standard" ? "kept like this, some are missing limbs or a tongue and about half are broken" : "kept decently, she'll be frightened and rough but almost always whole"}. Bringing one back takes a long time.</div>
+          <Button size="sm" disabled={!m.owned} onClick={() => say((s) => takeMenial(s).text)}>Take one into the household</Button>
           {m.last && m.last.week >= save.arcology.week - 1 ? <div className="text-[11.5px] mt-2">Last week: {m.last.cash >= 0 ? "+" : "−"}¤{Math.abs(m.last.cash).toLocaleString()} net{m.last.food ? `, ${m.last.food.toLocaleString()} food grown` : ""}{m.last.lost ? `, ${m.last.lost} lost` : ""}.</div> : null}
         </Card>
         <Card className="min-w-0">

@@ -200,8 +200,8 @@ export function paletteFor(p: Person): Record<string, string> {
   return {
     skin,
     shadow: "#010101",
-    // A suit stops at the neck: her face stays her own.
-    head: suit ? match(SKIN, p.body.skin, "#d9b48f") : skin,
+    // A suit stops at the neck: her face stays her own. A hood doesn't.
+    head: suit && !garment(p.clothes)?.hood ? match(SKIN, p.body.skin, "#d9b48f") : skin,
     torso: skin,
     penis: shade(skin, 0.97),
     scrotum: shade(skin, 0.95),
@@ -625,7 +625,12 @@ function worn(id: string, p: Person, transform?: string): Layer {
  */
 export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
   const out: Layer[] = [];
-  const len = hairLength(p);
+  // What the pens took (engine/broken): no arm is the pack's "None" pose, no legs are stumps.
+  const arms = p.body.arms ?? 2, legs = p.body.legs ?? 2;
+  if (arms === 0) pose = { ...pose, armL: "None", armR: "None" };
+  else if (arms === 1) pose = { ...pose, armR: "None" };
+  const hooded = !!garment(p.clothes)?.hood;
+  const len = hooded ? "" : hairLength(p);
   const style = hairStyle(p);
   // Breasts keep their real size whatever her height: the figure is scaled by height as a whole, so
   // this undoes that for the breast alone, and the same cup reads bigger on a small woman.
@@ -657,16 +662,17 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
   if (p.look?.tail) out.push({ id: `${cap(p.look.tail)}_Tail` });
 
   // A man's frame has no buttock swelling past the hip in this three-quarter view.
-  if (!maleFrame(p)) out.push({ id: buttLayer(p) });
+  if (!maleFrame(p) && legs > 0) out.push({ id: buttLayer(p) });
   // Bare feet go UNDER the legs, so the ankle's own edge covers the join. The pack's bare feet are
   // drawn pointed, as if she were in heels she isn't wearing; these stand flat, with toes.
   const shoe = garment(p.shoes)?.art;
   const hose = garment(p.legwear)?.art;
-  if (!shoe && !hose) out.push({ id: "Feet_Flat" });
+  if (!shoe && !hose && legs > 0) out.push({ id: "Feet_Flat" });
   // A man stands on straight legs drawn for him; the pack's are a woman's, thigh and hip.
   // Heavier, the same legs drawn wider.
   const thick = maleFrame(p) ? 1 + Math.max(0, Math.min(0.35, artWeight(p) / 500)) : 1;
-  out.push(maleFrame(p) ? { id: "Leg_Male", transform: thick > 1 ? `translate(288 0) scale(${thick.toFixed(3)} 1) translate(-288 0)` : undefined } : { id: legLayer(p) });
+  if (legs === 0) out.push({ id: "Leg_Stumps" });
+  else out.push(maleFrame(p) ? { id: "Leg_Male", transform: thick > 1 ? `translate(288 0) scale(${thick.toFixed(3)} 1) translate(-288 0)` : undefined } : { id: legLayer(p) });
   if (tier && !maleFrame(p)) out.push({ id: `${legLayer(p)}_${tier}` });
 
   // SHOES, then stockings, then the lower half of the outfit.
@@ -709,7 +715,7 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
     if (g?.shine) out.push({ id: "Belly_Outfit_Shine", transform: belly });
   }
 
-  const boob = boobTransform(p, heightScale);
+  const boob = hooded ? undefined : boobTransform(p, heightScale);
   if (boob) {
     if (p.body.boobs >= 300) out.push({ id: "Boob_Alt", transform: boob });
     out.push({ id: areolaLayer(p), transform: boob });
@@ -720,7 +726,7 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
 
   // the face
   out.push({ id: "Head" });
-  out.push(...faceLayers(p));
+  if (!hooded) out.push(...faceLayers(p));
   // Facial piercings, which is what Lip_* and Nose_Light/Heavy actually are.
   const pierced = (where: RegExp) => p.body.marks.filter((m) => m.kind === "piercing" && where.test(m.where)).length;
   const lips = pierced(/lip|mouth/i);
@@ -741,6 +747,8 @@ export function layersFor(p: Person, pose: Pose = restingPose(p)): Layer[] {
   if (len) out.push({ id: `Hair_Fore_${style}_${len}` }, { id: `Hair_Fore_${style}` });
   if (ears) out.push({ id: `${cap(ears)}_Ear_Fore` });
 
+  // No legs: nothing to put shoes, stockings or trouser legs on.
+  if (legs === 0) for (let i = out.length - 1; i >= 0; i--) if (/^(Shoes_|Leg_Outfit_|Feet_)/.test(out[i].id)) out.splice(i, 1);
   if (!maleFrame(p)) return out;
   const mw = menswearFor(p);
   return reframe(mw ? dress(out, mw) : out);
@@ -788,5 +796,7 @@ export function heightScaleFor(p: Person): number {
 /** The whole figure scaled by height about the point between her feet. */
 export function heightTransform(p: Person): string {
   const k = heightScaleFor(p);
-  return `translate(297 940) scale(${k.toFixed(3)}) translate(-297 -940)`;
+  // No legs: she rests on the floor on what's left, not floating where her hips would be.
+  const down = (p.body.legs ?? 2) === 0 ? " translate(0 420)" : "";
+  return `translate(297 940) scale(${k.toFixed(3)}) translate(-297 -940)${down}`;
 }

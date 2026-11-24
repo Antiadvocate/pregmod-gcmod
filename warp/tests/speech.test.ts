@@ -97,3 +97,27 @@ const { addTouch, settleAsks } = await import("../src/engine/rooms.ts");
   check("putting what she asked for in her room answers her", !(g3.asks ?? []).length && !g3.events.length, { asks: g3.asks, events: g3.events.length });
   check("and something else doesn't", settleAsks(g3, her3, "a cat") === 0);
 }
+
+/* ── out of the pens ────────────────────────────────────────────────────────────────────────── */
+const { takeMenial, rollDamage, limbBlock, limbsLine } = await import("../src/engine/broken.ts");
+const { menialsOf } = await import("../src/engine/menials.ts");
+const { canDo } = await import("../src/engine/intimacy.ts");
+const { ACT_BY_ID } = await import("../src/data/intimacy.ts");
+{
+  const harsh = Array.from({ length: 200 }, (_, i) => rollDamage("harsh", `h${i}`));
+  const decent = Array.from({ length: 200 }, (_, i) => rollDamage("decent", `d${i}`));
+  const share = (xs: typeof harsh, f: (d: (typeof harsh)[0]) => boolean) => xs.filter(f).length / xs.length;
+  check("harsh pens take more limbs than decent ones", share(harsh, (d) => d.arms < 2 || d.legs < 2) > 0.5 && share(decent, (d) => d.arms < 2 || d.legs < 2) < 0.15);
+  check("and break more minds", share(harsh, (d) => d.mind === "broken") > 0.7 && share(decent, (d) => d.mind === "broken") < 0.3);
+  const g4 = newGame({ seed: "pens", starting_slaves: 1 } as never);
+  menialsOf(g4).owned = 50; menialsOf(g4).treatment = "harsh";
+  const before = Object.keys(g4.people).length;
+  const r = takeMenial(g4);
+  const her4 = g4.people[r.id!];
+  check("a menial taken out is in the household", r.ok && Object.keys(g4.people).length === before + 1 && her4.status === "owned" && menialsOf(g4).owned === 49, r.text);
+  check("and worn down to the floor of who she was", her4.psyche.capacity <= Math.max(-6, her4.psyche.capacity_born - 2.4), [her4.psyche.capacity, her4.psyche.capacity_born]);
+  her4.body.arms = 0; her4.body.legs = 0; her4.body.tongue = false;
+  check("her card says what's missing", /no arms/.test(limbsLine(her4)) && /no legs/.test(limbsLine(her4)) && /tongue was cut out/.test(limbsLine(her4)));
+  check("no feet, no footjob", !!canDo(her4, ACT_BY_ID.footjob));
+  check("no legs, no standing", limbBlock(her4, { what: "she stands", needs: ["standing"] }) === "she has no legs");
+}

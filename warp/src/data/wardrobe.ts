@@ -29,6 +29,8 @@ export interface Garment {
   shine?: boolean;
   /** Covers the groin, so a cock shows as a bulge rather than bare. */
   covers?: boolean;
+  /** Covers her head and face too: no hair, no features, just the suit. */
+  hood?: boolean;
   /** Which group it sits in on the wardrobe screen. */
   kind?: "bare" | "modest" | "work" | "dress" | "lingerie" | "swim" | "costume" | "uniform" | "bondage" | "culture";
 }
@@ -100,6 +102,7 @@ export const WARDROBE: Garment[] = [
     { id: "armor", name: "battlearmor", art: "Battlearmor", kind: "uniform", covers: true, cost: 6500, appeal: 1.0, relaxation: 0.3, rep: 3, wants: ["neo_imperial"], note: "real armor, for a bodyguard or pit fighter" },
     { id: "bodysuit", name: "a comfortable bodysuit", art: "ComfortableBodysuit", kind: "uniform", covers: true, skin: "#464646", cost: 1600, appeal: 1.15, relaxation: 0.15, rep: 1, wants: ["transformation"] },
 
+    { id: "fuckdoll", name: "a fuckdoll suit", art: "Latex", kind: "bondage", skin: "#2b2b2e", shine: true, hood: true, cost: 3500, appeal: 1.1, relaxation: -0.8, rep: 0, wants: ["degradationist"], note: "sealed head to toe in latex, holes only where she's used, no face" },
     { id: "latex", name: "a latex suit", art: "Latex", kind: "bondage", covers: true, skin: "#515351", shine: true, cost: 2800, appeal: 1.2, relaxation: -0.15, rep: 1, wants: ["transformation"] },
     { id: "restrictive", name: "restrictive gear", art: "UncomfortableStraps", kind: "bondage", cost: 1900, appeal: 1.15, relaxation: -0.6, rep: 0, wants: ["degradationist"] },
     { id: "chains", name: "chains", art: "Chains", kind: "bondage", cost: 700, appeal: 1.1, relaxation: -0.7, rep: 0, wants: ["degradationist"] },

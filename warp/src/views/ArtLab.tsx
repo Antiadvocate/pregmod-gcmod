@@ -16,7 +16,15 @@ export default function ArtLab() {
   const [base, setBase] = useState(1);
   // #artlab-men: men, drawn the way the game draws you and the men of the city.
   const men = location.hash === "#artlab-men";
-  const people = men ? Array.from({ length: 6 }, (_, i) => {
+  // #artlab-pens: what comes out of the menial pens.
+  const pens = location.hash === "#artlab-pens";
+  const people = pens ? Array.from({ length: 6 }, (_, i) => {
+    const p = generatePerson({ seed: base * 300 + i, age: 22 + i, sex: "female" });
+    p.body.arms = ([0, 2, 0, 1, 2, 0] as const)[i];
+    p.body.legs = ([0, 0, 2, 2, 1, 0] as const)[i];
+    p.clothes = ["no clothing", "no clothing", "no clothing", "no clothing", "no clothing", "a fuckdoll suit"][i];
+    return p;
+  }) : men ? Array.from({ length: 6 }, (_, i) => {
     const p = generatePerson({ seed: base * 100 + i, age: 25 + ((base + i * 7) % 30), sex: "male" });
     p.pronouns = "he/him";
     p.body.face_shape = "masculine";

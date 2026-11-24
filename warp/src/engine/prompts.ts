@@ -60,6 +60,7 @@ import { ownerLine } from "./you";
 import { PLAIN_RULES, RECORD_RULES } from "./style";
 import { roomLine } from "./rooms";
 import { speechLine } from "./speech";
+import { limbsLine } from "./broken";
 import { governorLine } from "./governor";
 import { familyLine } from "./pregnancy";
 
@@ -325,6 +326,8 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   const now = p.body.appearance_now && !/^wearing\b/i.test(p.body.appearance_now) ? `Right now: ${p.body.appearance_now}. ` : "";
   lines.push(`BODY: ${p.body.appearance_facts} ${now}Wearing ${p.clothes}.`);
   lines.push(`GENITALS (canon—never contradict): ${describeGenitals(p)}`);
+  const limbs = limbsLine(p);
+  if (limbs) lines.push(limbs);
   lines.push(`ANATOMY LOCK (strict rule): ${anatomyLock(p)}`);
   lines.push(`ASS: ${assWord(p.body.butt)}${p.body.butt_implant ? " (implants)" : ""}; asshole is ${anusWord(p.body.anus)}.`);
   lines.push(`FEET: ${describeFeet(p)}`);

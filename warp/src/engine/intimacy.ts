@@ -21,6 +21,7 @@
  *
  * Nothing here writes prose. It writes the facts the prose has to honour.
  */
+import { limbBlock } from "./broken";
 import { actDesireLine, actSkillLine, fed } from "./sexlife";
 import { fitWords, holeFor, LIMP_LINE, ownerLimp, ownerSize, penetrate, type Strain } from "./fit";
 import { forced, obeys, type Stance } from "./compliance";
@@ -95,6 +96,8 @@ export function canDo(p: Person, act: ActDef, s?: SaveState): string | null {
       case "standing": if (feetOf(p).heels_clipped) return "her tendons are clipped, so she can't stand flat"; if (mobility(p).level >= 2) return "she can't stand under her own weight"; break;
     }
   }
+  const limb = limbBlock(p, act);
+  if (limb) return limb;
   if (sane(p.health.recovery_weeks) > 0 && act.group !== "tenderness") return s ? `she is ${recoveryNote(s, p)}` : "she is recovering from surgery";
   if (s && act.you === "cock" && !hasCock(s)) return "you have no cock";
   if (s && act.you === "sire" && !canSire(s)) return hasCock(s) ? "you can't get anyone pregnant" : "you have no cock";

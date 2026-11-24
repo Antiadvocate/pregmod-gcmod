@@ -19,6 +19,7 @@
  * transform instead — the same matrix a hierarchy would have produced, arrived at without moving
  * anything.
  */
+import { garment } from "../data/wardrobe";
 import { useEffect, useState, useMemo, useRef, type ReactElement, type RefObject } from "react";
 import type { Person } from "../engine/types";
 import { ART_BASE, manly, maleFrame, MAN_CROP_CM, HIPS_IN, cropFor, layersFor, styleFor, heightTransform, type Crop, type Layer } from "../lib/vectorart";
@@ -151,7 +152,8 @@ function SlaveArtDrawn({ person, height = 260, crop = "full", className, pose, a
 
   // The face goes on after the features and before the fringe, so hair falls over a blush the way
   // it would.
-  const base = face ? expressionOf(person, moment) : null;
+  // Under a hood there's no face to flush or cry.
+  const base = face && !garment(person.clothes)?.hood ? expressionOf(person, moment) : null;
   const man = manly(person);
   // The pack has no men's haircuts. A man with hair_length 1 gets a close crop cut from his own skull.
   const cropped = maleFrame(person) ? person.body.hair_length >= 1 && person.body.hair_length <= MAN_CROP_CM : man && person.body.hair_length === 1;
