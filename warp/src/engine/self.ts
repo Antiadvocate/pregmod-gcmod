@@ -52,6 +52,27 @@ function ownWords(s: SaveState, n = 6): string[] {
   return out.sort((a, b) => a.week - b.week).slice(-n).map((x) => x.t.replace(/\s+/g, " ").slice(0, 140));
 }
 
+const money = (n: number) => {
+  const a = Math.abs(n);
+  const [d, u] = a >= 1e12 ? [1e12, " trillion"] : a >= 1e9 ? [1e9, " billion"] : a >= 1e6 ? [1e6, " million"] : a >= 1e3 ? [1e3, " thousand"] : [1, ""];
+  return `${n < 0 ? "−" : ""}¤${(a / d).toFixed(a / d >= 100 || d === 1 ? 0 : 1)}${u}`;
+};
+
+/**
+ * HOW BIG THEIR LIFE IS. Without it a devoted slave offered a man with ¤15 trillion and a finished
+ * arcology what you'd offer an ordinary man you loved: she'd make him soup. What she can give a man
+ * like that, and what impresses or frightens her about him, depends on the size of his world.
+ */
+export function ownerScale(s: SaveState): string {
+  const a = s.arcology;
+  const cash = a.cash;
+  const band = cash < 0 ? "in debt" : cash < 200_000 ? "scraping by" : cash < 5e6 ? "comfortably off" : cash < 1e9 ? "rich" : cash < 1e12 ? "one of the richest people alive" : "richer than most countries";
+  const built = Object.values(a.facilities ?? {}).filter((f) => f.level > 0).map((f) => f.name);
+  const menials = s.menials?.owned ?? 0;
+  const staff = built.length >= 6 || menials >= 20 || cash >= 1e8;
+  return `HOW BIG THEIR LIFE IS. They have ${money(cash)} (${band}), own ${Math.round(a.ownership)}% of an arcology of ${a.population.toLocaleString()} people${built.length ? `, with ${built.length} facilities built (${built.slice(0, 8).join(", ")}${built.length > 8 ? ", and more" : ""})` : ""}${menials ? ` and ${menials.toLocaleString()} menial slaves` : ""}. Everyone in the house knows it.${staff ? ` Cooking, cleaning, errands, shopping and fixing things are done for them by kitchens and staff, so a slave offering to make them a meal, run an errand or get them something is offering what a hundred people already do better, and she knows it. Unless it's her job, she offers what nobody else can: herself, her body, her skills, her attention, what she knows and hears.` : ""} Write what she says to them, and what she wants from them, at the size of that life.`;
+}
+
 /** Everything the narrator needs to write you as you. */
 export function selfProfile(s: SaveState): string[] {
   const lines: string[] = [];
@@ -80,6 +101,7 @@ export function selfProfile(s: SaveState): string[] {
   const mine = owned(s);
   const scared = mine.filter((p) => { const r = read(p, s.memory[p.id]); return r.fragility > 0.6 && p.bond.fear >= 40; });
   if (mine.length >= 2 && scared.length * 2 >= mine.length) lines.push(`Their house runs on fear: ${scared.length} of ${mine.length} are afraid of them. It's obedient and quiet. Nobody steps out of line, nobody surprises them, nobody seeks them out or tells them anything they didn't ask for, and every woman in it is the same woman around them.`);
+  lines.push(ownerScale(s));
   const beliefs = Object.entries(s.arcology.doctrines as Record<string, { adoption: number }>).filter(([, d]) => d.adoption >= 30).sort((a, b) => b[1].adoption - a[1].adoption).slice(0, 3).map(([id]) => DOCTRINE_BY_ID[id]?.noun ?? id);
   if (beliefs.length) lines.push(`They have built their city on ${beliefs.join(", ")}.`);
   const words = ownWords(s);

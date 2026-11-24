@@ -124,7 +124,9 @@ export function spendPurse(p: Person, amount: number): number {
 /** For her card. */
 export function purseLine(p: Person): string {
   const a = allowanceOf(p), have = purseOf(p);
-  if (!a && !have) return "";
+  // Said even when there's nothing to say, or the narrator gives her a wallet: a slave with no money
+  // announced she was going to buy something.
+  if (!a && !have) return `HER MONEY. She has none. A slave owns nothing: whatever she uses is the owner's, and anything she wants she has to ask him for. She never says she'll buy, pay for, order or get something herself.`;
   const paid = a ? `The owner pays her an allowance of ¤${a.toLocaleString()} a week, hers to spend however she likes, and nobody can tell her what to spend it on.` : "She has money of her own the owner gave her.";
   const findom = likesBeingPaid(p) ? " Being paid is her kink as well as her income. She puts a price on things and expects it paid, and being paid because she said so turns her on. She never says that's why. It shows in how she asks, how she takes the money and how her mood turns." : "";
   return `HER MONEY. ${paid} She has about ¤${have.toLocaleString()} of it right now and pays for her own things out of it, like clothes, gifts and treats.${findom}`;

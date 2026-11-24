@@ -113,6 +113,20 @@ WHAT TO AVOID:
 
 ${PLAIN_RULES}`;
 
+/**
+ * HOW WELL SHE KNOWS YOU. A slave trained to perfection by somebody else, on her first real talk
+ * with the owner, was written with the easy closeness of a wife of ten years. Devotion is how she
+ * feels about her place; knowing him is time spent with him, and the two are said separately.
+ */
+export function knownLine(s: SaveState, p: Person): string {
+  const talks = (s.moments ?? []).filter((m) => m.person === p.id && m.log.some((l) => l.role === "you")).length;
+  const lived = (s.memory[p.id]?.episodic ?? []).filter((e) => e.source === "lived").length;
+  const weeks = p.economics?.weeks_owned ?? 0;
+  if (talks >= 6 || lived >= 15) return "";
+  if (talks === 0 && lived < 3) return `HOW WELL SHE KNOWS YOU. Hardly at all. ${weeks ? `You've owned her ${weeks} week${weeks === 1 ? "" : "s"} and` : "So far"} you've never really talked. What she knows of you is your rules, your reputation and what she's seen from across a room. However devoted she is, that's devotion to her place and her owner, not familiarity with you: she doesn't know your habits, your tastes or your days, and she doesn't pretend to.`;
+  return `HOW WELL SHE KNOWS YOU. A little: you've talked ${talks === 1 ? "once" : `${talks} times`}. She knows what's happened between you and not much more, and she doesn't talk as if she knows you better than that.`;
+}
+
 /** A young woman sounds young. The general rule says so, but a card full of careful diction outvotes
  *  a general rule, so it's said on her card, where it's about her. */
 export function youthLine(p: Person): string {
@@ -322,8 +336,9 @@ export function personCard(s: SaveState, p: Person, query = ""): string {
   if (chest) lines.push(chest);
   if (p.health.health < -20) lines.push(`HEALTH: unwell (${p.health.health}). ${p.health.injuries.filter((i) => !i.healed_week).map((i) => i.what).join("; ")}`);
   lines.push(`ASSIGNMENT: ${p.assignment}.`);
-  const money = purseLine(p);
-  if (money) lines.push(money);
+  lines.push(purseLine(p));
+  const known = knownLine(s, p);
+  if (known) lines.push(known);
   // Her age and her life before, as her page shows them. Asked "how old are you" or "where are you
   // from", she answers with these. The life story was on her page and never on her card, so the
   // narrator made one up whenever it came up, and it never matched what the player could read.
